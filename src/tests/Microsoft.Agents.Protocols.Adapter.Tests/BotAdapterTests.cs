@@ -5,12 +5,8 @@ using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Bot.Builder.Tests;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit.Sdk;
 using Xunit;
 
 namespace Microsoft.Agents.Protocols.Adapter.Tests
