@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
             void ValidateResponses(IActivity[] activities)
             {
                 responsesSent = true;
-                throw new Exception("ValidateResponses should not be called. Interceptor did not work.");
+                Assert.Fail("ValidateResponses should not be called. Interceptor did not work.");
             }
 
             var a = new SimpleAdapter(ValidateResponses);
@@ -376,7 +376,7 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
             void ValidateUpdate(IActivity activity)
             {
                 adapterCalled = true;
-                throw new Exception("ValidateUpdate should not be called. Interceptor did not work.");
+                Assert.Fail("ValidateUpdate should not be called. Interceptor did not work.");
             }
 
             var a = new SimpleAdapter(ValidateUpdate);
@@ -469,7 +469,7 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
             void ValidateDelete(ConversationReference r)
             {
                 adapterCalled = true;
-                throw new Exception("ValidateDelete should not be called. Interceptor did not work.");
+                Assert.Fail("ValidateDelete should not be called. Interceptor did not work.");
             }
 
             var a = new SimpleAdapter(ValidateDelete);
@@ -530,7 +530,7 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
             try
             {
                 await c.SendActivityAsync(TestMessage.Message());
-                throw new Exception("Should not get here.");
+                Assert.Fail("Should not get here.");
             }
             catch (Exception ex)
             {
