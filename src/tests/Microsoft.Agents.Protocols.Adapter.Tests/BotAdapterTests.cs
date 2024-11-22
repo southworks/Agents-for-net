@@ -5,6 +5,7 @@ using Microsoft.Agents.BotBuilder.Adapters;
 using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.Bot.Builder.Tests;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,48 +15,51 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
     public class BotAdapterTests
     {
         [Fact]
-        public void AdapterSingleUse()
+        public void Use_ShouldAddSingleMiddleware()
         {
-            var a = new SimpleAdapter();
-            a.Use(new CallCountingMiddleware());
+            var adapter = new SimpleAdapter();
+            var middleware = new CallCountingMiddleware();
+            adapter.Use(middleware);
+            Assert.Single((MiddlewareSet)adapter.MiddlewareSet);
         }
 
         [Fact]
-        public void AdapterUseChaining()
+        public void Use_ShouldAddChainingMiddlewares()
         {
-            var a = new SimpleAdapter();
-            a.Use(new CallCountingMiddleware()).Use(new CallCountingMiddleware());
+            var adapter = new SimpleAdapter();
+            adapter.Use(new CallCountingMiddleware()).Use(new CallCountingMiddleware());
+            Assert.Equal(2, ((MiddlewareSet)adapter.MiddlewareSet).Count());
         }
 
         [Fact]
-        public async Task PassResourceResponsesThrough()
+        public async Task SendActivityAsync_ShouldPassResourceResponsesThrough()
         {
             void ValidateResponses(IActivity[] activities)
             {
                 // no need to do anything.
             }
 
-            var a = new SimpleAdapter(ValidateResponses);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateResponses);
+            var context = new TurnContext(adapter, new Activity());
 
             var activityId = Guid.NewGuid().ToString();
             var activity = TestMessage.Message();
             activity.Id = activityId;
 
-            var resourceResponse = await c.SendActivityAsync(activity);
+            var resourceResponse = await context.SendActivityAsync(activity);
             Assert.True(resourceResponse.Id == activityId, "Incorrect response Id returned");
         }
 
         [Fact]
-        public async Task GetLocaleFromActivity()
+        public async Task ProcessRequest_ShouldGetLocaleFromActivity()
         {
             void ValidateResponses(IActivity[] activities)
             {
                 // no need to do anything.
             }
 
-            var a = new SimpleAdapter(ValidateResponses);
-            var c = new TurnContext(a, new Activity());
+            var adapter = new SimpleAdapter(ValidateResponses);
+            var context = new TurnContext(adapter, new Activity());
 
             var activityId = Guid.NewGuid().ToString();
             var activity = TestMessage.Message();
@@ -68,15 +72,15 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
                 return Task.CompletedTask;
             }
 
-            await a.ProcessRequest(activity, SimpleCallback, default(CancellationToken));
+            await adapter.ProcessRequest(activity, SimpleCallback, default(CancellationToken));
         }
 
         [Fact]
-        public async Task ContinueConversation_DirectMsgAsync()
+        public async Task ContinueConversationAsync_ShouldExecuteCallback()
         {
             bool callbackInvoked = false;
             var adapter = new TestAdapter(TestAdapter.CreateConversation("ContinueConversation_DirectMsgAsync"));
-            ConversationReference cr = new ConversationReference
+            ConversationReference convReference = new ConversationReference
             {
                 ActivityId = "activityId",
                 Bot = new ChannelAccount
@@ -108,7 +112,7 @@ namespace Microsoft.Agents.Protocols.Adapter.Tests
                 return Task.CompletedTask;
             }
 
-            await adapter.ContinueConversationAsync("MyBot", cr, ContinueCallback, default(CancellationToken));
+            await adapter.ContinueConversationAsync("MyBot", convReference, ContinueCallback, default(CancellationToken));
             Assert.True(callbackInvoked);
         }
     }
