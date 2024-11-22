@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
         public async Task GetAadTokensAsync_ShouldThrowOnNullUserId()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ChannelId, ResourceUrls, ChannelId, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ConnectionName, ResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
