@@ -12,28 +12,28 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
 {
     public class BotSignInRestClientTests
     {
-        private readonly Uri Endpoint = new("http://localhost");
+        private static readonly Uri Endpoint = new("http://localhost");
+        private const string State = "state";
+        private const string CodeCallenge = "code-challenge";
+        private const string EmulatorUrl = "emulator-url";
+        private const string FinalRedirect = "final-redirect";
 
         [Fact]
-        public void BotSignInRestClient_ShouldThrowOnNullBaseUri()
+        public void Constructor_ShouldInstantiateCorrectly()
         {
-            Assert.Throws<UriFormatException>(() =>
-            {
-                var pipeline = CreateHttpPipeline();
-                return new BotSignInRestClient(pipeline, null);
-            });
-        }
-
-        [Fact]
-        public void BotSignInRestClient_ShouldNotThrowOnHttpUrl()
-        {
-            var pipeline = CreateHttpPipeline();
-            var client = new BotSignInRestClient(pipeline, Endpoint);
+            var client = UseClient();
             Assert.NotNull(client);
         }
 
         [Fact]
-        public void BotSignInRestClient_ShouldThrowOnNullHttpPipeline()
+        public void Constructor_ShouldThrowOnNullEndpoint()
+        {
+            var pipeline = CreateHttpPipeline();
+            Assert.Throws<UriFormatException>(() => new BotSignInRestClient(pipeline, null));
+        }
+
+        [Fact]
+        public void Constructor_ShouldThrowOnNullHttpPipeline()
         {
             Assert.Throws<ArgumentNullException>(() => new BotSignInRestClient(null, Endpoint));
         }
@@ -42,38 +42,29 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
         [Fact]
         public async Task GetSignInUrlAsync_ShouldThrowOnNullState()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new BotSignInRestClient(pipeline, Endpoint);
+            var client = UseClient();
             await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetSignInUrlAsync(null));
         }
 
         [Fact]
-        public async Task GetSignInUrlAsync_ShouldThrowOnNoLocalBot()
+        public async Task GetSignInUrlAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new BotSignInRestClient(pipeline, Endpoint);
-
-            await Assert.ThrowsAsync<RequestFailedException>(() => client.GetSignInUrlAsync(
-                "dummyState", "dummyCodeChallenge", "dummyEmulatorUrl", "dummyFinalRedirect"));
+            var client = UseClient();
+            await Assert.ThrowsAsync<RequestFailedException>(() => client.GetSignInUrlAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
         }
 
         [Fact]
         public async Task GetSignInResourceAsync_ShouldThrowOnNullState()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new BotSignInRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetSignInResourceAsync(
-                null, null));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetSignInResourceAsync(null, null));
         }
 
         [Fact]
-        public async Task GetSignInResourceAsync_ShouldThrowOnNoLocalBot()
+        public async Task GetSignInResourceAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new BotSignInRestClient(pipeline, Endpoint);
-
-            await Assert.ThrowsAsync<RequestFailedException>(() => client.GetSignInResourceAsync(
-                "dummyState", "dummyCodeChallenge", "dummyEmulatorUrl", "dummyFinalRedirect"));
+            var client = UseClient();
+            await Assert.ThrowsAsync<RequestFailedException>(() => client.GetSignInResourceAsync(State, CodeCallenge, EmulatorUrl, FinalRedirect));
         }
 
         private static HttpPipeline CreateHttpPipeline(int maxRetries = 0)
@@ -82,6 +73,11 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
             options.Retry.MaxRetries = maxRetries;
             var pipeline = HttpPipelineBuilder.Build(options, new DefaultHeadersPolicy(options));
             return pipeline;
+        }
+
+        private static BotSignInRestClient UseClient()
+        {
+            return new BotSignInRestClient(CreateHttpPipeline(), Endpoint);
         }
     }
 }

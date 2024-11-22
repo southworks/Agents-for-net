@@ -20,250 +20,170 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
         private const string ConnectionName = "connection-name";
         private const string ChannelId = "channel-id";
         private const string MagicCode = "magic-code";
-        private readonly Uri OauthEndpoint = new("https://test.endpoint");
-        private readonly List<string> Scopes = [];
-        private readonly Mock<IAccessTokenProvider> AccessTokenMock = new();
+        private const string FinalRedirect = "final-redirect";
+        private const string IncludeFilter = "include-filter";
+        private static readonly Uri OauthEndpoint = new("https://test.endpoint");
+        private static readonly List<string> Scopes = [];
+        private readonly string[] ResourceUrls = ["https://test.url"];
+        private static readonly Mock<IAccessTokenProvider> AccessTokenMock = new();
+        private readonly TokenExchangeRequest TokenExchangeRequest = new();
 
         [Fact]
-        public void ConstructorShouldWork()
+        public void Constructor_ShouldInstantiateCorrectly()
         {
-            Assert.NotNull(new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null));
+            var client = UseClient();
+            Assert.NotNull(client);
         }
 
         [Fact]
-        public void ConstructorWithNullAppIdShouldThrow()
+        public void Constructor_ShouldThrowOnNullAppId()
         {
             Assert.Throws<ArgumentNullException>(() => new RestUserTokenClient(null, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null));
         }
 
         [Fact]
-        public async Task GetUserTokenAsyncOfDisposedTokenShouldThrow()
+        public async Task GetUserTokenAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.GetUserTokenAsync(UserId, ConnectionName, ChannelId, MagicCode, CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, MagicCode, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetUserTokenAsyncWithNullUserIdShouldThrow()
+        public async Task GetUserTokenAsync_ShouldThrowOnNullUserId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetUserTokenAsync(null, ConnectionName, ChannelId, MagicCode, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetUserTokenAsync(null, ConnectionName, ChannelId, MagicCode, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetUserTokenAsyncWithNullConnectionNameShouldThrow()
+        public async Task GetUserTokenAsync_ShouldThrowOnNullConnectionName()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetUserTokenAsync(UserId, null, ChannelId, MagicCode, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetUserTokenAsync(UserId, null, ChannelId, MagicCode, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetSignInResourceAsyncOfDisposedTokenShouldThrow()
+        public async Task GetSignInResourceAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.GetSignInResourceAsync(ConnectionName, new Activity(), "final-redirect", CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.GetSignInResourceAsync(ConnectionName, new Activity(), FinalRedirect, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetSignInResourceAsyncWithNullConnectionNameShouldThrow()
+        public async Task GetSignInResourceAsync_ShouldThrowOnNullConnectionName()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetSignInResourceAsync(null, new Activity(), "final-redirect", CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetSignInResourceAsync(null, new Activity(), FinalRedirect, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetSignInResourceAsyncWithNullActivityShouldThrow()
+        public async Task GetSignInResourceAsync_ShouldThrowOnNullActivity()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetSignInResourceAsync(ConnectionName, null, "final-redirect", CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetSignInResourceAsync(ConnectionName, null, FinalRedirect, CancellationToken.None));
         }
 
         [Fact]
-        public async Task SignOutUserAsyncOfDisposedTokenShouldThrow()
+        public async Task SignOutUserAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task SignOutUserAsyncWithNullUserIdShouldThrow()
+        public async Task SignOutUserAsync_ShouldThrowOnNullUserId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.SignOutUserAsync(null, ConnectionName, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutUserAsync(null, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task SignOutUserAsyncWithNullConnectionNameShouldThrow()
+        public async Task SignOutUserAsync_ShouldThrowOnNullConnectionName()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.SignOutUserAsync(UserId, null, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutUserAsync(UserId, null, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetTokenStatusAsyncOfDisposedTokenShouldThrow()
+        public async Task GetTokenStatusAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.GetTokenStatusAsync(UserId, ConnectionName, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.GetTokenStatusAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetTokenStatusAsyncWithNullUserIdShouldThrow()
+        public async Task GetTokenStatusAsync_ShouldThrowOnNullUserId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetTokenStatusAsync(null, ChannelId, "filter", CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenStatusAsync(null, ChannelId, IncludeFilter, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetTokenStatusAsyncWithNullChannelIdShouldThrow()
+        public async Task GetTokenStatusAsync_ShouldThrowOnNullChannelId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetTokenStatusAsync(UserId, null, "filter", CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenStatusAsync(UserId, null, IncludeFilter, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetAadTokensAsyncOfDisposedTokenShouldThrow()
+        public async Task GetAadTokensAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            string[] resourceUrls = { "https://test.url" };
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.GetAadTokensAsync(UserId, ConnectionName, resourceUrls, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.GetAadTokensAsync(UserId, ConnectionName, ResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetAadTokensAsyncWithNullUserIdShouldThrow()
+        public async Task GetAadTokensAsync_ShouldThrowOnNullUserId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            string[] resourceUrls = { "https://test.url" };
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetAadTokensAsync(null, ChannelId, resourceUrls, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ChannelId, ResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetAadTokensAsyncWithNullConnectionNameShouldThrow()
+        public async Task GetAadTokensAsync_ShouldThrowOnNullConnectionName()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            string[] resourceUrls = { "https://test.url" };
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.GetAadTokensAsync(UserId, null, resourceUrls, ChannelId, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(UserId, null, ResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
-        public async Task ExchangeTokenAsyncOfDisposedTokenShouldThrow()
+        public async Task ExchangeTokenAsync_ShouldThrowOnDisposed()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            var tokenExchange = new TokenExchangeRequest();
-
-            userToken.Dispose();
-
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            {
-                await userToken.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, tokenExchange, CancellationToken.None);
-            });
+            var client = UseClient();
+            client.Dispose();
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
-        public async Task ExchangeTokenAsyncWithNullUserIdShouldThrow()
+        public async Task ExchangeTokenAsync_ShouldThrowOnNullUserId()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            var tokenExchange = new TokenExchangeRequest();
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.ExchangeTokenAsync(null, ChannelId, ChannelId, tokenExchange, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(null, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
-        public async Task ExchangeTokenAsyncWithNullConnectionNameShouldThrow()
+        public async Task ExchangeTokenAsync_ShouldThrowOnNullConnectionName()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-
-            var tokenExchange = new TokenExchangeRequest();
-
-            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            {
-                await userToken.ExchangeTokenAsync(UserId, null, ChannelId, tokenExchange, CancellationToken.None);
-            });
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeTokenAsync(UserId, null, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
-        public void DisposeOfDisposedTokenShouldReturn()
+        public void Constructor_ShouldDisposeTwiceCorrectly()
         {
-            var userToken = new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
-            userToken.Dispose();
-            userToken.Dispose();
+            var client = UseClient();
+            client.Dispose();
+            client.Dispose();
+        }
+
+        private static RestUserTokenClient UseClient()
+        {
+            return new RestUserTokenClient(AppId, OauthEndpoint, AccessTokenMock.Object, Audience, Scopes, null);
         }
     }
 }

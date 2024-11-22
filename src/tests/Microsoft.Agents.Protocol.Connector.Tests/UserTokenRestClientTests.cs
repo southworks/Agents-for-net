@@ -10,222 +10,195 @@ using Xunit;
 
 namespace Microsoft.Agents.Protocols.Connector.Tests
 {
-
     public class UserTokenRestClientTests
     {
-        private readonly Uri Endpoint = new("http://localhost");
+        private static readonly Uri Endpoint = new("http://localhost");
+        private const string UserId = "user-id";
+        private const string ConnectionName = "connection-name";
+        private const string ChannelId = "channel-id";
+        private const string Code = "code";
+        private const string Include = "include";
+        private readonly AadResourceUrls AadResourceUrls = new() { ResourceUrls = ["resource-url"] };
+        private readonly TokenExchangeRequest TokenExchangeRequest = new();
 
         [Fact]
-        public void UserTokenRestClient_ShouldThrowOnNullBaseUri()
+        public void Constructor_ShouldInstantiateCorrectly()
         {
-            Assert.Throws<UriFormatException>(() =>
-            {
-                var pipeline = CreateHttpPipeline();
-                return new UserTokenRestClient(pipeline, null);
-            });
-        }
-
-        [Fact]
-        public void UserTokenRestClient_ShouldNotThrowOnHttpUrl()
-        {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
             Assert.NotNull(client);
         }
 
         [Fact]
-        public void UserTokenRestClient_ShouldThrowOnNullHttpPipeline()
+        public void Constructor_ShouldThrowOnNullEndpoint()
+        {
+            var pipeline = CreateHttpPipeline();
+            Assert.Throws<UriFormatException>(() => new UserTokenRestClient(pipeline, null));
+        }
+
+        [Fact]
+        public void Constructor_ShouldThrowOnNullHttpPipeline()
         {
             Assert.Throws<ArgumentNullException>(() => new UserTokenRestClient(null, Endpoint));
         }
 
         [Fact]
-        public async Task GetTokenAsync_ShouldThrowOnEmptyUserId()
+        public async Task GetTokenAsync_ShouldThrowOnNullUserId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync(null, "mockConnection", string.Empty));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync(null, ConnectionName, ChannelId));
         }
 
         [Fact]
-        public async Task GetTokenAsync_ShouldThrowOnEmptyConnectionName()
+        public async Task GetTokenAsync_ShouldThrowOnNullConnectionName()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync("userid", null, string.Empty));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenAsync(UserId, null, ChannelId));
         }
 
         [Fact]
-        public async Task GetTokenAsync_ShouldThrowOnNoLocalBot()
+        public async Task GetTokenAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AGENT_OS")) &&
                 Environment.GetEnvironmentVariable("AGENT_OS").Equals("Windows_NT", StringComparison.Ordinal))
             {
                 // Automated Windows build does not throw an exception.
-                await client.GetTokenAsync("dummyUserid", "dummyConnectionName", "dummyChannelId", "dummyCode");
+                await client.GetTokenAsync(UserId, ConnectionName, ChannelId, Code);
             }
             else
             {
                 // MacLinux build and local build exception:
-                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetTokenAsync(
-                    "dummyUserid", "dummyConnectionName", "dummyChannelId", "dummyCode"));
+                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetTokenAsync(UserId, ConnectionName, ChannelId, Code));
             }
         }
 
         [Fact]
-        public async Task SignOutAsync_ShouldThrowOnEmptyUserId()
+        public async Task SignOutAsync_ShouldThrowOnNullUserId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutAsync(null, "dummyConnection"));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.SignOutAsync(null, ConnectionName, ChannelId));
         }
 
         [Fact]
-        public async Task SignOutAsync_ShouldThrowOnNoLocalBot()
+        public async Task SignOutAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AGENT_OS")) &&
                 Environment.GetEnvironmentVariable("AGENT_OS").Equals("Windows_NT", StringComparison.Ordinal))
             {
                 // Automated Windows build exception:
-                await Assert.ThrowsAsync<ErrorResponseException>(() => client.SignOutAsync(
-                    "dummyUserId", "dummyConnectionName", "dummyChannelId"));
+                await Assert.ThrowsAsync<ErrorResponseException>(() => client.SignOutAsync(UserId, ConnectionName, ChannelId));
             }
             else
             {
                 // MacLinux build and local build exception:
-                await Assert.ThrowsAsync<RequestFailedException>(() => client.SignOutAsync(
-                    "dummyUserId", "dummyConnectionName", "dummyChannelId"));
+                await Assert.ThrowsAsync<RequestFailedException>(() => client.SignOutAsync(UserId, ConnectionName, ChannelId));
             }
         }
 
         [Fact]
         public async Task GetTokenStatusAsync_ShouldThrowOnNullUserId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
             await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenStatusAsync(null));
         }
 
         [Fact]
-        public async Task GetTokenStatusAsync_ShouldThrowOnNoLocalBot()
+        public async Task GetTokenStatusAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AGENT_OS")) &&
                 Environment.GetEnvironmentVariable("AGENT_OS").Equals("Windows_NT", StringComparison.Ordinal))
             {
                 // Automated Windows build exception:
-                await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetTokenStatusAsync(
-                    "dummyUserId", "dummyChannelId", "dummyInclude"));
+                await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include));
             }
             else
             {
                 // MacLinux build and local build exception:
-                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetTokenStatusAsync(
-                    "dummyUserId", "dummyChannelId", "dummyInclude"));
+                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include));
             }
         }
 
         [Fact]
         public async Task GetAadTokensAsync_ShouldThrowOnNullUserId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, "connection", new AadResourceUrls() { ResourceUrls = new string[] { "hello" } }));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(null, ConnectionName, AadResourceUrls));
         }
 
         [Fact]
         public async Task GetAadTokensAsync_ShouldThrowOnNullConnectionName()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(
-                "dummyUserId", null, new AadResourceUrls() { ResourceUrls = new string[] { "dummyUrl" } }));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetAadTokensAsync(UserId, null, AadResourceUrls));
         }
 
         [Fact]
-        public async Task GetAadTokensAsync_ShouldThrowOnNoLocalBot()
+        public async Task GetAadTokensAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AGENT_OS")) &&
                 Environment.GetEnvironmentVariable("AGENT_OS").Equals("Windows_NT", StringComparison.Ordinal))
             {
                 // Automated Windows build exception:
-                await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetAadTokensAsync(
-                    "dummyUserId", "dummyConnectionName", new AadResourceUrls() { ResourceUrls = new string[] { "dummyUrl" } }, "dummyChannelId"));
+                await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId));
             }
             else
             {
                 // MacLinux build and local build exception:
-                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetAadTokensAsync(
-                    "dummyUserId", "dummyConnectionName", new AadResourceUrls() { ResourceUrls = new string[] { "dummyUrl" } }, "dummyChannelId"));
+                await Assert.ThrowsAsync<RequestFailedException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId));
             }
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullUserId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(
-                null, "dummyConnectionName", "dummyChannelId", new TokenExchangeRequest()));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(null, ConnectionName, ChannelId, TokenExchangeRequest));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullConnectionName()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(
-                "dummyUserId", null, "dummyChannelId", new TokenExchangeRequest()));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, null, ChannelId, TokenExchangeRequest));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullChannelId()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(
-                "dummyUserId", "dummyConnectionName", null, new TokenExchangeRequest()));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, null, TokenExchangeRequest));
         }
 
         [Fact]
         public async Task ExchangeAsync_ShouldThrowOnNullExchangeRequest()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(
-                "dummyUserId", "dummyConnectionName", "dummyChannelId", null));
+            var client = UseClient();
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, null));
         }
 
         [Fact]
-        public async Task ExchangeAsync_ShouldThrowOnNoLocalBot()
+        public async Task ExchangeAsync_ShouldThrowWithoutLocalBot()
         {
-            var pipeline = CreateHttpPipeline();
-            var client = new UserTokenRestClient(pipeline, Endpoint);
+            var client = UseClient();
 
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AGENT_OS")) &&
                 Environment.GetEnvironmentVariable("AGENT_OS").Equals("Windows_NT", StringComparison.Ordinal))
             {
                 // Automated Windows build exception:
-                await client.ExchangeAsyncAsync(
-                    "dummyUserId", "dummyConnectionName", "dummyChannelId", new TokenExchangeRequest());
+                await client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest);
                 Assert.True(true, "No exception thrown.");
             }
             else
             {
                 // MacLinux build and local build exception:
-                await Assert.ThrowsAsync<RequestFailedException>(() => client.ExchangeAsyncAsync(
-                    "dummyUserId", "dummyConnectionName", "dummyChannelId", new TokenExchangeRequest()));
+                await Assert.ThrowsAsync<RequestFailedException>(() => client.ExchangeAsyncAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest));
             }
         }
 
@@ -235,6 +208,11 @@ namespace Microsoft.Agents.Protocols.Connector.Tests
             options.Retry.MaxRetries = maxRetries;
             var pipeline = HttpPipelineBuilder.Build(options, new DefaultHeadersPolicy(options));
             return pipeline;
+        }
+
+        private static UserTokenRestClient UseClient()
+        {
+            return new UserTokenRestClient(CreateHttpPipeline(), Endpoint);
         }
     }
 }
