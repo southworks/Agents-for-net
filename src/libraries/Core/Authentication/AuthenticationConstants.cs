@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Authentication
     public static class AuthenticationConstants
     {        
         /// <summary>
-        /// TO CHANNEL FROM BOT: OAuth scope to request.
+        /// Bot Framework OAuth scope to request.
         /// </summary>
         public const string BotFrameworkScope = "https://api.botframework.com";
 
@@ -22,6 +22,31 @@ namespace Microsoft.Agents.Authentication
         /// Default OAuth Url used to get a token from IUserTokenClient.
         /// </summary>
         public const string BotFrameworkOAuthUrl = "https://api.botframework.com";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string PublicAzureBotServiceOpenIdMetadataUrl = "https://login.botframework.com/v1/.well-known/openidconfiguration";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string PublicOpenIdMetadataUrl = "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string EnterpriseChannelOpenIdMetadataUrlFormat = "https://{0}.enterprisechannel.botframework.com/v1/.well-known/openidconfiguration";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string GovAzureBotServiceOpenIdMetadataUrl = "https://login.botframework.azure.us/v1/.well-known/openidconfiguration";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string GovOpenIdMetadataUrl = "https://login.microsoftonline.us/cab8a31a-1906-4287-a0d8-4eef66b95f6e/v2.0/.well-known/openid-configuration";
 
 
         /// <summary>
@@ -58,6 +83,11 @@ namespace Microsoft.Agents.Authentication
         /// Use of this claim is OPTIONAL.
         /// </summary>
         public const string AudienceClaim = "aud";
+
+        /// <summary>
+        /// Token iss claim name. As used in Microsoft AAD tokens.
+        /// </summary>
+        public const string IssuerClaim = "iss";
 
         /// <summary>
         /// Token version claim name. As used in Microsoft AAD tokens.
