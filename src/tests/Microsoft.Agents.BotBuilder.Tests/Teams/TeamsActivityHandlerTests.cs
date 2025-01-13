@@ -7,6 +7,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Agents.Core.Teams.Models;
+using System;
+using System.Globalization;
 
 namespace Microsoft.Agents.BotBuilder.Tests.Teams
 {
@@ -1119,6 +1121,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
         public async Task TestMeetingStartEvent()
         {
             // Arrange
+            var startTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
             var activity = new Activity
             {
                 ChannelId = Channels.Msteams,
@@ -1126,7 +1129,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
                 Name = "application/vnd.microsoft.meetingStart",
                 Value = JsonSerializer.SerializeToElement(new
                 {
-                    StartTime = "2021-06-05T00:01:02.0Z"
+                    StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
                 }),
             };
 
@@ -1142,13 +1145,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
             Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains("12:01:02 AM", _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
         }
 
         [Fact]
         public async Task TestMeetingEndEvent()
         {
             // Arrange
+            var endTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
             var activity = new Activity
             {
                 ChannelId = Channels.Msteams,
@@ -1156,7 +1160,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
                 Name = "application/vnd.microsoft.meetingEnd",
                 Value = JsonSerializer.SerializeToElement(new
                 {
-                    EndTime = "2021-06-05T01:02:03.0Z"
+                    EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
                 }),
             };
 
@@ -1172,7 +1176,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
             Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains("1:02:03 AM", _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
         }
 
         [Fact]
@@ -1209,105 +1213,105 @@ namespace Microsoft.Agents.BotBuilder.Tests.Teams
         //public async Task TestMeetingParticipantsJoinEvent()
         //{
 
-            // Arrange
-            //string json = @"{
-            //        Members: [
-            //            {
-            //                User: 
-            //                {
-            //                    Id: 'id', 
-            //                    Name: 'name'
-            //                }, 
-            //                Meeting: 
-            //                {
-            //                    Role: 'role', 
-            //                    InMeeting: true
-            //                }
-            //            }
-            //        ]}";
+        // Arrange
+        //string json = @"{
+        //        Members: [
+        //            {
+        //                User: 
+        //                {
+        //                    Id: 'id', 
+        //                    Name: 'name'
+        //                }, 
+        //                Meeting: 
+        //                {
+        //                    Role: 'role', 
+        //                    InMeeting: true
+        //                }
+        //            }
+        //        ]}";
 
-            //var x = new TeamsMeetingMember(
-            //    new TeamsChannelAccount() { Id = "id", Name = "name" },
-            //    new UserMeetingDetails() { InMeeting = true, Role = "role" }
-            //);
+        //var x = new TeamsMeetingMember(
+        //    new TeamsChannelAccount() { Id = "id", Name = "name" },
+        //    new UserMeetingDetails() { InMeeting = true, Role = "role" }
+        //);
 
-            //MeetingParticipantsEventDetails details = new MeetingParticipantsEventDetails();
-            //details.Members.Add(x);
+        //MeetingParticipantsEventDetails details = new MeetingParticipantsEventDetails();
+        //details.Members.Add(x);
 
-            ////var serialized = JsonSerializer.SerializeToElement(details);
-            //var serialized = SerializationExtensions.ToJson(details);
-            //var backAgain = SerializationExtensions.ToObject<MeetingParticipantsEventDetails>(serialized);
+        ////var serialized = JsonSerializer.SerializeToElement(details);
+        //var serialized = SerializationExtensions.ToJson(details);
+        //var backAgain = SerializationExtensions.ToObject<MeetingParticipantsEventDetails>(serialized);
 
-            //Assert.True(backAgain.Members.Count == 1);
-
-
-            //var activity = new Activity
-            //{
-            //    ChannelId = Channels.Msteams,
-            //    Type = ActivityTypes.Event,
-            //    Name = "application/vnd.microsoft.meetingParticipantJoin",
-            //    Value = JsonSerializer.SerializeToElement(details)
-            //};
+        //Assert.True(backAgain.Members.Count == 1);
 
 
-            //var activity = new Activity
-            //{
-            //    ChannelId = Channels.Msteams,
-            //    Type = ActivityTypes.Event,
-            //    Name = "application/vnd.microsoft.meetingParticipantJoin",                
-            //    Value = JsonSerializer.SerializeToElement( new
-            //    {                    
-            //        Members = new[]
-            //        {
-            //            new
-            //            {
-            //                User = new
-            //                {
-            //                    Id = "id",
-            //                    Name = "name"
-            //                },
-            //                Meeting = new
-            //                {
-            //                    Role = "role",
-            //                    InMeeting = true
-            //                }
-            //            }
-            //        }
-            //    }),
-            //};
+        //var activity = new Activity
+        //{
+        //    ChannelId = Channels.Msteams,
+        //    Type = ActivityTypes.Event,
+        //    Name = "application/vnd.microsoft.meetingParticipantJoin",
+        //    Value = JsonSerializer.SerializeToElement(details)
+        //};
 
 
-            //Value = JObject.Parse(@"{
-            //    Members: [
-            //        {
-            //            User: 
-            //            {
-            //                Id: 'id', 
-            //                Name: 'name'
-            //            }, 
-            //            Meeting: 
-            //            {
-            //                Role: 'role', 
-            //                InMeeting: true
-            //            }
-            //        }
-            //    ]
-            //}"),
-            //
+        //var activity = new Activity
+        //{
+        //    ChannelId = Channels.Msteams,
+        //    Type = ActivityTypes.Event,
+        //    Name = "application/vnd.microsoft.meetingParticipantJoin",                
+        //    Value = JsonSerializer.SerializeToElement( new
+        //    {                    
+        //        Members = new[]
+        //        {
+        //            new
+        //            {
+        //                User = new
+        //                {
+        //                    Id = "id",
+        //                    Name = "name"
+        //                },
+        //                Meeting = new
+        //                {
+        //                    Role = "role",
+        //                    InMeeting = true
+        //                }
+        //            }
+        //        }
+        //    }),
+        //};
 
-            //var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-            //// Act
-            //var bot = new TestActivityHandler();
-            //await bot.OnTurnAsync(turnContext);
+        //Value = JObject.Parse(@"{
+        //    Members: [
+        //        {
+        //            User: 
+        //            {
+        //                Id: 'id', 
+        //                Name: 'name'
+        //            }, 
+        //            Meeting: 
+        //            {
+        //                Role: 'role', 
+        //                InMeeting: true
+        //            }
+        //        }
+        //    ]
+        //}"),
+        //
 
-            //// Assert
-            //Assert.Equal(2, bot.Record.Count);
-            //Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-            //Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
-            //Assert.NotNull(_activitiesToSend);
-            //Assert.Single(_activitiesToSend);
-            //Assert.Equal("id", _activitiesToSend[0].Text);
+        //var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+        //// Act
+        //var bot = new TestActivityHandler();
+        //await bot.OnTurnAsync(turnContext);
+
+        //// Assert
+        //Assert.Equal(2, bot.Record.Count);
+        //Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+        //Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
+        //Assert.NotNull(_activitiesToSend);
+        //Assert.Single(_activitiesToSend);
+        //Assert.Equal("id", _activitiesToSend[0].Text);
         //}
 
         //[Fact]
