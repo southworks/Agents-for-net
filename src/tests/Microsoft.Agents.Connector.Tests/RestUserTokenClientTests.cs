@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Core.Connector.Tests
+namespace Microsoft.Agents.Connector.Tests
 {
         public class RestUserTokenClientTests
         {

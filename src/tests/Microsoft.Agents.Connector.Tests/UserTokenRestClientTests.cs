@@ -14,7 +14,7 @@ using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Agents.Core.Connector.Tests
+namespace Microsoft.Agents.Connector.Tests
 {
     public class UserTokenRestClientTests
     {

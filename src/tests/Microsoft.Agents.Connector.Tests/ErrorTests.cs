@@ -5,7 +5,7 @@ using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
 using Xunit;
 
-namespace Microsoft.Agents.Core.Connector.Tests
+namespace Microsoft.Agents.Connector.Tests
 {
     public class ErrorTests
     {

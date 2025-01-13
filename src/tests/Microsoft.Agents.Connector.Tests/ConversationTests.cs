@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Xunit;
 
-namespace Microsoft.Agents.Core.Connector.Tests
+namespace Microsoft.Agents.Connector.Tests
 {
     public class ConversationTests
     {
