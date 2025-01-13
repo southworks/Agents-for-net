@@ -15,7 +15,7 @@ using Microsoft.Agents.Core.Serialization;
 using Moq;
 using Xunit;
 
-namespace Microsoft.Agents.Core.Connector.Tests
+namespace Microsoft.Agents.Connector.Tests
 {
     public class ConnectorClientTests
     {

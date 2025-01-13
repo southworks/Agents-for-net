@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Connector.Teams
         /// Gets a reference to the TeamsConnectorClient.
         /// </summary>
         /// <value>The TeamsConnectorClient.</value>
-        public RestTeamsConnectorClient Client { get; private set; }
+        public RestTeamsConnectorClient Client { get; internal set; }
 
         /// <inheritdoc/>
         public async Task<ConversationList> FetchChannelListAsync(string teamId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default)
@@ -294,6 +294,11 @@ namespace Microsoft.Agents.Connector.Teams
                     case 200:
                     case 201:
                         {
+                            if (typeof(T) == typeof(string))
+                            {
+                                var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                                return ProtocolJsonSerializer.ToObject<T>(responseContent);
+                            }
                             return ProtocolJsonSerializer.ToObject<T>(httpResponse.Content.ReadAsStream(cancellationToken));
                         }
                     case 429:
