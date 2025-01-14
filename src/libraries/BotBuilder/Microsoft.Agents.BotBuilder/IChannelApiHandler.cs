@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ namespace Microsoft.Agents.BotBuilder
     /// and handling replies from another bot when DeliveryMode is `normal`, or the 
     /// other bot is using the other ChannelAPI operations.
     /// </remarks>
-    public interface IChannelApiHandler : IChannelResponseHandler
+    public interface IChannelApiHandler
     {
         /// <summary>
         /// SendToConversation() API.
