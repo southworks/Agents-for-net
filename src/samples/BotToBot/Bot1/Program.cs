@@ -20,7 +20,7 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 builder.AddBot<Bot1>();
 
 // Add ChannelHost to enable calling other Agents
-builder.AddChannelHost((sp) => sp.GetService<Bot1>());
+builder.AddChannelHost<Bot1>();
 
 var app = builder.Build();
 

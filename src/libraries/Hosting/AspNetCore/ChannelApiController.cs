@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -22,8 +21,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// </remarks>
     /// <param name="handler">A <see cref="IChannelResponseHandler"/> that will handle the incoming request.</param>
     // Note: this class is marked as abstract to prevent the ASP runtime from registering it as a controller.
-    [ChannelResponseExceptionFilter]
-    public abstract class ChannelApiController(IChannelApiHandler handler) : ChannelResponseController(handler)
+    [ChannelServiceExceptionFilterAttribute]
+    public class ChannelApiController(IChannelApiHandler handler) : Controller
     {
         private readonly IChannelApiHandler _handler = handler;
 
@@ -226,6 +225,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var claimsIdentity = User?.Identity as ClaimsIdentity;
             var result = await _handler.OnUploadAttachmentAsync(claimsIdentity, conversationId, attachmentUpload).ConfigureAwait(false);
             return new JsonResult(result);
+        }
+
+        protected async Task<Activity> GetActivityAsync()
+        {
+            return await HttpHelper.ReadRequestAsync<Activity>(Request).ConfigureAwait(false);
         }
     }
 }

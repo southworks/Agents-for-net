@@ -66,8 +66,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        public static IHostApplicationBuilder AddChannelHost<TService>(this IHostApplicationBuilder builder, Func<IServiceProvider, TService> responseHandlerFactory = null, string httpBotClientName = "HttpBotClient")
-            where TService : class, IChannelResponseHandler
+        public static IHostApplicationBuilder AddChannelHost<THandler>(this IHostApplicationBuilder builder, string httpBotClientName = "HttpBotClient")
+            where THandler : class, IChannelApiHandler
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
 
@@ -89,14 +89,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add bot callback handler.
             // This is the object that handles callback endpoints for bot responses.
-            if (responseHandlerFactory != null)
-            {
-                builder.Services.AddTransient(typeof(IChannelResponseHandler), responseHandlerFactory);
-            }
-            else
-            {
-                builder.Services.AddTransient<IChannelResponseHandler, TService>();
-            }
+            builder.Services.AddTransient<THandler>();
+            builder.Services.AddTransient<IChannelApiHandler>((sp) => sp.GetService<THandler>());
 
             return builder;
         }
