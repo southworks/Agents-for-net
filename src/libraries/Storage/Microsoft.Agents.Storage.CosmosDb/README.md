@@ -29,5 +29,5 @@ builder.Services.AddSingleton<IStorage>((sp) => new CosmosDbPartitionedStorage(
     builder.Configuration.GetSection(nameof(CosmosDbPartitionedStorageOptions))
         .Get<CosmosDbPartitionedStorageOptions>()));
 ```
-> CosmosDbPartitionedStorageOptions.AuthKey or CosmosDbPartitionedStorageOptions.TokenCredential defined.
+> CosmosDbPartitionedStorageOptions.AuthKey or CosmosDbPartitionedStorageOptions.TokenCredential should be defined.
 
