@@ -242,6 +242,14 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task WriteAsync_ShouldThrowOnNullStoreItemChanges()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, CancellationToken.None));
+        }
+
+        [Fact]
         public async Task DeleteAsyncValidation()
         {
             InitStorage();
@@ -413,6 +421,34 @@ namespace Microsoft.Agents.Storage.Tests
 
             Assert.Empty(items);
             _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ReadAsync_ShouldReturnWrittenStoreItem()
+        {
+            InitStorage();
+
+            var key = "key1";
+
+            var changes = new Dictionary<string, StoreItem>
+            {
+                { key, new StoreItem() }
+            };
+
+            await _storage.WriteAsync(changes, CancellationToken.None);
+
+            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes("{\"ETag\":\"*\", \"$type\": \"Microsoft.Agents.Storage.Tests.StoreItem\", \"$typeAssembly\": \"Microsoft.Agents.Storage.Tests\"}"));
+            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
+            var response = new Mock<Response<BlobDownloadInfo>>();
+
+            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
+            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
+
+            var readStoreItems = new Dictionary<string, StoreItem>(await _storage.ReadAsync<StoreItem>([key], CancellationToken.None));
+
+            Assert.Single(readStoreItems);
+            Assert.IsAssignableFrom<StoreItem>(readStoreItems[key]);
+            _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
