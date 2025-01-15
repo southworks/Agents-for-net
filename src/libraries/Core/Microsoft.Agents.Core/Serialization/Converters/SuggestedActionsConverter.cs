@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization.Converters;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 
-namespace Microsoft.Agents.Core.Teams.Serialization.Converters
+namespace Microsoft.Agents.Core.Serialization.Converters
 {
     // This class is used to convert the 'SuggestedActions' property of type SuggestedActions for Teams.
     internal class SuggestedActionsConverter : ConnectorConverter<SuggestedActions>
