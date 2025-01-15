@@ -12,6 +12,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Agents.Storage.CosmosDb;
 using Moq;
 using Xunit;
+using static Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage;
 
 namespace Microsoft.Agents.Storage.Tests
 {
@@ -254,6 +255,28 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task ReadAsync_ShouldReturnStoreItem()
+        {
+            InitStorage();
+
+            var resource = new DocumentStoreItem
+            {
+                RealId = "RealId",
+                ETag = "ETag1",
+                Document = (JsonObject)JsonObject.Parse("{ \"ETag\":\"ETag2\" }")
+            };
+            var itemResponse = new DocumentStoreItemResponseMock(resource);
+
+            _container.Setup(e => e.ReadItemAsync<DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(itemResponse);
+
+            var items = await _storage.ReadAsync<DocumentStoreItem>(["key"]);
+
+            Assert.Single(items);
+            _container.Verify(e => e.ReadItemAsync<DocumentStoreItem>(It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task WriteAsyncValidation()
         {
             InitStorage();
@@ -382,6 +405,66 @@ namespace Microsoft.Agents.Storage.Tests
 
             await Assert.ThrowsAsync<CosmosException>(() => _storage.WriteAsync(changes));
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldCallUpsertItemAsync()
+        {
+            InitStorage();
+
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
+
+            var changes = new Dictionary<string, DocumentStoreItem>
+            {
+                { "key1", new DocumentStoreItem() },
+                { "key2", new DocumentStoreItem { ETag = "*" } },
+                { "key3", new DocumentStoreItem { ETag = "ETag" } },
+            };
+
+            await _storage.WriteAsync(changes);
+
+            _container.Verify(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldThrowOnNullStoreItemChanges()
+        {
+            InitStorage();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<DocumentStoreItem>(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task WriteAsync_ShouldInitializeNullClient()
+        {
+            var partitionKey = "/id";
+            var containerProperties = new ContainerProperties("id", partitionKey);
+            var containerResponse = new Mock<ContainerResponse>();
+
+            containerResponse.SetupGet(e => e.Resource)
+                .Returns(containerProperties);
+            _container.Setup(e => e.ReadContainerAsync(It.IsAny<ContainerRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(containerResponse.Object);
+
+            var options = new CosmosDbPartitionedStorageOptions
+            {
+                CosmosDbEndpoint = "CosmosDbEndpoint",
+                AuthKey = "AuthKey",
+                DatabaseId = "DatabaseId",
+                ContainerId = "ContainerId",
+            };
+            _storage = new CosmosDbPartitionedStorage(null, options);
+
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()));
+
+            var changes = new Dictionary<string, DocumentStoreItem>
+            {
+                { "key1", new DocumentStoreItem() },
+            };
+
+            await _storage.WriteAsync(changes);
+
+            _container.Verify(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
 
         /*
