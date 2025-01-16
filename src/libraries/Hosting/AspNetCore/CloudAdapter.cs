@@ -111,7 +111,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot
-                        // Process the inbound activity with the bot
                         var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
 
                         // Write the response, potentially serializing the InvokeResponse
