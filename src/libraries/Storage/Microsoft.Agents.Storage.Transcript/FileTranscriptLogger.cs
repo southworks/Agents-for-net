@@ -215,6 +215,7 @@ namespace Microsoft.Agents.Storage.Transcript
 
                     var json = JsonSerializer.Serialize(transcript, ProtocolJsonSerializer.SerializationOptions);
                     using var stream = File.OpenWrite(transcriptFile);
+                    stream.SetLength(0);
                     using var writer = new StreamWriter(stream);
                     await writer.WriteAsync(json).ConfigureAwait(false);
                     return;
