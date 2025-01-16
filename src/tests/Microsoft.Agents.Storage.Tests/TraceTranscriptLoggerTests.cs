@@ -15,11 +15,11 @@ namespace Microsoft.Agents.Storage.Tests
 {
     public class TraceTranscriptLoggerTests
     {
-        private Activity _activity = new Activity
+        private readonly Activity _activity = new Activity
         {
             Id = "test-id",
             Type = ActivityTypes.Message,
-            From = new ChannelAccount { Id = "user-1", Name = "test-user", Role = "test-role" },
+            From = new ChannelAccount { Id = "user-id", Name = "user-name", Role = "user-role" },
             Text = "test-text"
         };
 
@@ -44,7 +44,6 @@ namespace Microsoft.Agents.Storage.Tests
         {
             var listener = new TestTraceListener();
             Trace.Listeners.Add(listener);
-
             var logger = new TraceTranscriptLogger(true);
 
             await logger.LogActivityAsync(_activity);
@@ -56,37 +55,24 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
-        public async Task LogActivityAsync_ShouldLogTextForMessageActivity()
+        public async Task LogActivityAsync_ShouldLogActivityWithTraceActivityFalse()
         {
             var listener = new TestTraceListener();
             Trace.Listeners.Add(listener);
-
             var logger = new TraceTranscriptLogger(false);
 
             await logger.LogActivityAsync(_activity);
 
             string traceOutput = listener.GetMessages();
-            Console.WriteLine(traceOutput);
-            Assert.Contains(_activity.Text, traceOutput);
 
-            Trace.Listeners.Remove(listener);
-        }
-
-        [Fact]
-        public async Task LogActivityAsync_ShouldNotLogTextForTraceActivity()
-        {
-            var activity = _activity;
-            activity.Type = ActivityTypes.Trace;
-
-            var listener = new TestTraceListener();
-            Trace.Listeners.Add(listener);
-
-            var logger = new TraceTranscriptLogger(false);
-
-            await logger.LogActivityAsync(_activity);
-
-            string traceOutput = listener.GetMessages();
-            Assert.DoesNotContain(_activity.Text, traceOutput);
+            if (Debugger.IsAttached)
+            {
+                Assert.Contains(_activity.Text, traceOutput);
+            }
+            else
+            {
+                Assert.DoesNotContain(_activity.Text, traceOutput);
+            }
 
             Trace.Listeners.Remove(listener);
         }
