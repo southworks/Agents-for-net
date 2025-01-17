@@ -6,10 +6,12 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage.Transcript;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Activity = Microsoft.Agents.Core.Models.Activity;
 
 namespace Microsoft.Agents.Storage.Tests
 {
@@ -146,6 +148,31 @@ namespace Microsoft.Agents.Storage.Tests
             {
                 Assert.Equal(ProtocolJsonSerializer.ToJson(activities[indexActivity++]), ProtocolJsonSerializer.ToJson(result));
             }
+        }
+
+        public async Task LogActivitiesShouldCatchException()
+        {
+            string expectedError = "Try 3 - Failed to log activity because: System.InvalidOperationException";
+            string conversationId = "LogActivitiesShouldCatchException";
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "test",
+                From = new ChannelAccount { Id = "User-1" },
+                Conversation = new ConversationAccount(id: conversationId),
+                ChannelData = new MemoryStream() // unsupported type to cause serialization to fail
+            };
+
+            var listener = new TestTraceListener();
+            Trace.Listeners.Add(listener);            
+
+            await Store.LogActivityAsync(activity);
+
+            string traceOutput = listener.GetMessages();
+            Assert.Contains(expectedError, traceOutput);
+
+            Trace.Listeners.Remove(listener);
         }
 
         public async Task DeleteTranscript()
