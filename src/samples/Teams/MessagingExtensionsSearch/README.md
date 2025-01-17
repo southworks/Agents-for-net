@@ -109,9 +109,9 @@ In Teams, the command bar is located at the top of the window. When you at menti
   ![Search Query Results ](Images/6.SearchQueryResult-2.png)
 
 There is a secondary, drill down, event illustrated in this sample: clicking on the results from the initial query will result in the bot receiving another event.
-![Search-Result-ME ](Images/4.QueryResults.png)
+  ![Search-Result-ME ](Images/4.QueryResults.png)
 
-![Selected-Item-ME ](Images/5.SentSelectedPackage.png)
+  ![Selected-Item-ME ](Images/5.SentSelectedPackage.png)
 
 > NOTE: Search-based Messaging Extensions: Work from the compose box or the "…" menu in the messaging extension area, not the search bar at the top of Teams.
 
