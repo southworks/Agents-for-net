@@ -44,7 +44,7 @@ This sample is intended to introduce you to:
         "Audiences": [
           "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
         ],
-       "TenantId": "{{TenantId}}" // This is the Tenant ID used for token validation. 
+       "TenantId": "00000000-0000-0000-0000-000000000000" // This is the Tenant ID used for token validation. 
       },
 
       "Connections": {
