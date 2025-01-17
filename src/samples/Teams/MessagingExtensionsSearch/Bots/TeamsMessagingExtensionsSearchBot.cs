@@ -14,6 +14,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Protocols.Serializer;
+using System;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -32,7 +33,7 @@ namespace Microsoft.Agents.Samples.Bots
 
             if (turnContext.Activity.Value != null)
             {
-                text = query?.Parameters?[0]?.Value as string ?? string.Empty;
+                text = query?.Parameters?[0]?.Value.ToString() ?? string.Empty;
 
                 switch (text)
                 {
@@ -52,16 +53,29 @@ namespace Microsoft.Agents.Samples.Bots
 
             var packages = await FindPackages(text);
 
+            // Provide a default icon URL
+            var defaultIconUrl = "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.3/icon";
+
             // We take every row of the results and wrap them in cards wrapped in MessagingExtensionAttachment objects.
             // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItemAsync event back on this bot.
             var attachments = packages.Select(package =>
             {
-                var cardValue = $"{{\"packageId\": \"{package.Item1}\", \"version\": \"{package.Item2}\", \"description\": \"{package.Item3}\", \"projectUrl\": \"{package.Item4}\", \"iconUrl\": \"{package.Item5}\"}}";
-                var previewCard = new ThumbnailCard { Title = package.Item1, Tap = new CardAction { Type = "invoke", Value = cardValue } };
-                if (!string.IsNullOrEmpty(package.Item5))
+                // Check if package.Item5 (icon URL) is valid and accessible; otherwise, use the default icon URL
+                var iconUrl = !string.IsNullOrEmpty(package.Item5) && Uri.IsWellFormedUriString(package.Item5, UriKind.Absolute)
+                    ? package.Item5
+                    : defaultIconUrl;
+
+                var cardValue = $"{{\"packageId\": \"{package.Item1}\", \"version\": \"{package.Item2}\", \"description\": \"{package.Item3}\", \"projectUrl\": \"{package.Item4}\", \"iconUrl\": \"{iconUrl}\"}}";
+
+                var previewCard = new ThumbnailCard
                 {
-                    previewCard.Images = new List<CardImage>() { new CardImage(package.Item5, "Icon") };
-                }
+                    Title = package.Item1,
+                    Tap = new CardAction { Type = "invoke", Value = cardValue },
+                    Images = new List<CardImage>
+                    {
+                    new CardImage(iconUrl, "Icon")
+                    }
+                };
 
                 var attachment = new MessagingExtensionAttachment
                 {
