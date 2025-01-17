@@ -6,7 +6,6 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage.Transcript;
 using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Activity = Microsoft.Agents.Core.Models.Activity;
@@ -75,31 +74,6 @@ namespace Microsoft.Agents.Storage.Tests
             }
 
             Trace.Listeners.Remove(listener);
-        }
-
-        public class TestTraceListener : TraceListener
-        {
-            private readonly StringBuilder _messages = new StringBuilder();
-
-            public override void Write(string message)
-            {
-                _messages.Append(message);
-            }
-
-            public override void WriteLine(string message)
-            {
-                _messages.AppendLine(message);
-            }
-
-            public string GetMessages()
-            {
-                return _messages.ToString();
-            }
-
-            public void Clear()
-            {
-                _messages.Clear();
-            }
         }
     }
 }
