@@ -24,6 +24,13 @@ This Agent Sample is intended to introduce you the basics of integrating Semanti
 
     1. Configure your AI service settings. The sample provides configuration placeholders for using Azure OpenAI or OpenAI, but others can be used as well.
     1. With Azure OpenAI:
+        1. With Crendtial Free (Keyless):
+        
+           This is a secure way to authenticate to Azure resources without needing to store credentials in your code. Your Azure user account is assigned the "Cognitive Services OpenAI User" role, which allows you to access the OpenAI resource.
+           Follow this guide [Role-based access control for Azure resources](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control) to assign the "Cognitive Services OpenAI User" role to your Azure user account and Managed Identities.    
+           
+           Then you just need to configure Azure OpenAI Endpoint and DeploymentName in the appsettings.json file
+        
         1. With dotnet user-secrets (for running locally)
             1. From a terminal or command prompt, navigate to the root of the sample project.
             1. Run the following commands to set the Azure OpenAI settings:
@@ -85,9 +92,11 @@ If you type a message and hit enter, or the send arrow, you should receive a mes
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
-      "Audiences": [
-        "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-      ]
+      "TokenValidation": {
+        "Audiences": [
+          "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+        ]
+      },
 
       "Connections": {
           "BotServiceConnection": {

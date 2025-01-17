@@ -20,9 +20,15 @@
   <ItemGroup>
     <PackageReference Include="Moq" />
     <PackageReference Include="xunit.extensibility.core" />
+	  <PackageReference Include="xunit" />
+	  <PackageReference Include="xunit.runner.visualstudio">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\BotBuilder\BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
+    <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
   </ItemGroup>
 </Project>

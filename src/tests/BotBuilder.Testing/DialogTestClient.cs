@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Testing
 {
@@ -40,9 +41,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
 
             AddUserMiddlewares(middlewares);
 
-            var dialogState = ConversationState.CreateProperty<DialogState>("DialogState");
-
-            _callback = GetDefaultCallback(targetDialog, initialDialogOptions, dialogState);
+            _callback = GetDefaultCallback(targetDialog, initialDialogOptions);
         }
 
         /// <summary>
@@ -60,9 +59,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
 
             AddUserMiddlewares(middlewares);
 
-            var dialogState = ConversationState.CreateProperty<DialogState>("DialogState");
-
-            _callback = GetDefaultCallback(targetDialog, initialDialogOptions, dialogState);
+            _callback = GetDefaultCallback(targetDialog, initialDialogOptions);
         }
 
         /// <summary>
@@ -127,11 +124,11 @@ namespace Microsoft.Agents.BotBuilder.Testing
             return (T)_testAdapter.GetNextReply();
         }
 
-        private BotCallbackHandler GetDefaultCallback(Dialog targetDialog, object initialDialogOptions, IStatePropertyAccessor<DialogState> dialogState) =>
+        private BotCallbackHandler GetDefaultCallback(Dialog targetDialog, object initialDialogOptions) =>
             async (turnContext, cancellationToken) =>
             {
                 // Ensure dialog state is created and pass it to DialogSet.
-                await dialogState.GetAsync(turnContext, () => new DialogState(), cancellationToken).ConfigureAwait(false);
+                var dialogState = await ConversationState.GetPropertyAsync(turnContext, "DialogState", () => new DialogState(), cancellationToken).ConfigureAwait(false);
                 var dialogs = new DialogSet(dialogState);
                 dialogs.Add(targetDialog);
 

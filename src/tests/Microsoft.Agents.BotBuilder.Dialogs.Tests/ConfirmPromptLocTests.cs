@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
 using Microsoft.Agents.BotBuilder.Dialogs.Prompts;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Recognizers.Text;
 using Xunit;
 using static Microsoft.Agents.BotBuilder.Dialogs.Prompts.PromptCultureModels;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -202,13 +203,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ConfirmPrompt_Locale_Override_ChoiceDefaults(string defaultLocale, string prompt, string utterance, string expectedResponse)
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
-
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
 
             var culture = new PromptCultureModel()
             {
@@ -225,12 +222,15 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 { culture.Locale, (new Choice(culture.YesInLanguage), new Choice(culture.NoInLanguage), new ChoiceFactoryOptions(culture.Separator, culture.InlineOr, culture.InlineOrMore, true)) },
             };
 
-            // Prompt should default to English if locale is a non-supported value
-            dialogs.Add(new ConfirmPrompt("ConfirmPrompt", customDict, null, defaultLocale));
-
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
                 turnContext.Activity.Locale = culture.Locale;
+
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+
+                // Prompt should default to English if locale is a non-supported value
+                dialogs.Add(new ConfirmPrompt("ConfirmPrompt", customDict, null, defaultLocale));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
@@ -261,20 +261,19 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         private async Task ConfirmPrompt_Locale_Impl(string activityLocale, string defaultLocale, string prompt, string utterance, string expectedResponse)
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(ConfirmPrompt_Locale_Impl)))
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
-            // Prompt should default to English if locale is a non-supported value
-            dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: defaultLocale));
-
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
                 turnContext.Activity.Locale = activityLocale;
+
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+
+                // Prompt should default to English if locale is a non-supported value
+                dialogs.Add(new ConfirmPrompt("ConfirmPrompt", defaultLocale: defaultLocale));
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 

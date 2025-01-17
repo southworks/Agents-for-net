@@ -2,14 +2,16 @@
 // Licensed under the MIT License.
 
 using WeatherBot;
-using Microsoft.Agents.Hosting.Setup;
-using Microsoft.Agents.Protocols.Primitives;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
 using WeatherBot.Agents;
+using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
+using Azure.Identity;
+using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Samples;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +32,13 @@ if (builder.Configuration.GetSection("AIServices").GetValue<bool>("UseAzureOpenA
     builder.Services.AddAzureOpenAIChatCompletion(
         deploymentName: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("DeploymentName"),
         endpoint: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("Endpoint"),
-        apiKey: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("ApiKey"));
+        //apiKey: builder.Configuration.GetSection("AIServices:AzureOpenAI").GetValue<string>("ApiKey"));
+
+        //Use the Azure CLI (for local) or Managed Identity (for Azure running app) to authenticate to the Azure OpenAI service
+        credentials: new ChainedTokenCredential(
+           new AzureCliCredential(),
+           new ManagedIdentityCredential()
+        ));
 }
 else
 {
@@ -42,7 +50,11 @@ else
 // Register the WeatherForecastAgent
 builder.Services.AddTransient<WeatherForecastAgent>();
 
-builder.AddBot<IBot, MyBot>();
+// Add AspNet token validation
+builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+
+// Add basic bot functionality
+builder.AddBot<MyBot>();
 
 var app = builder.Build();
 

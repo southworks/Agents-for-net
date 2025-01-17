@@ -1,13 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Microsoft.Agents.Protocols.Connector;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Protocols.Serializer;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -362,6 +362,30 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(resultingText, outboundJson);
         }
 
+        [Fact]
+        public void EmptyListDoesntSerialzie()
+        {
+            var activity = new Activity()
+            {
+                MembersAdded = [],
+                MembersRemoved = [],
+                ReactionsAdded = [],
+                ReactionsRemoved = [],
+                Attachments = [],
+                Entities = [],
+                ListenFor = [],
+                TextHighlights = [],
+                SuggestedActions = new SuggestedActions()
+            };
+
+            // We'll add a single item to SuggestedActions.To.  It should serialize but
+            // not the other Actions List.
+            activity.SuggestedActions.To.Add("test");
+
+            var json = ProtocolJsonSerializer.ToJson(activity);
+            var expected = "{\"suggestedActions\":{\"to\":[\"test\"]}}";
+            Assert.Equal(expected, json);
+        }
 
 
         private Activity RoundTrip(Activity outActivity)

@@ -3,10 +3,11 @@
 
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Agents.Protocols.Primitives;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -16,14 +17,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task PromptValidatorContextEnd()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
-
-            var dialogs = new DialogSet(dialogState);
-
-            dialogs.Add(new TextPrompt("namePrompt", (promptContext, cancellationToken) => Task.FromResult(true)));
 
             var steps = new WaterfallStep[]
             {
@@ -38,13 +34,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };
-            dialogs.Add(new WaterfallDialog(
-                "nameDialog",
-                steps));
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+
+                    dialogs.Add(new TextPrompt("namePrompt", (promptContext, cancellationToken) => Task.FromResult(true)));
+                    dialogs.Add(new WaterfallDialog("nameDialog", steps));
+                    
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
+
                     await dc.ContinueDialogAsync(cancellationToken);
                     if (!turnContext.Responded)
                     {
@@ -66,15 +66,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task PromptValidatorContextRetryEnd()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             // Create TextPrompt with dialogId "namePrompt" and custom validator
-            dialogs.Add(new TextPrompt("namePrompt", async (promptContext, cancellationToken) =>
+            var textPrompt = new TextPrompt("namePrompt", async (promptContext, cancellationToken) =>
             {
                 var result = promptContext.Recognized.Value;
                 if (result.Length > 3)
@@ -87,7 +84,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 }
 
                 return false;
-            }));
+            });
 
             var steps = new WaterfallStep[]
             {
@@ -102,12 +99,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };
-            dialogs.Add(new WaterfallDialog(
+            var waterfallDialog = new WaterfallDialog(
                 "nameDialog",
-                steps));
+                steps);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+
+                    dialogs.Add(textPrompt);
+                    dialogs.Add(waterfallDialog);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
                     await dc.ContinueDialogAsync(cancellationToken);
                     if (!turnContext.Responded)
@@ -128,15 +131,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task PromptValidatorNumberOfAttempts()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter()
                 .Use(new AutoSaveStateMiddleware(convoState));
 
-            var dialogs = new DialogSet(dialogState);
-
             // Create TextPrompt with dialogId "namePrompt" and custom validator
-            dialogs.Add(new TextPrompt("namePrompt", async (promptContext, cancellationToken) =>
+            var textPrompt = new TextPrompt("namePrompt", async (promptContext, cancellationToken) =>
             {
                 var result = promptContext.Recognized.Value;
                 if (result.Length > 3)
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 await promptContext.Context.SendActivityAsync(reply, cancellationToken);
 
                 return false;
-            }));
+            });
 
             var steps = new WaterfallStep[]
             {
@@ -165,12 +165,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
                 },
             };
-            dialogs.Add(new WaterfallDialog(
+            var waterfallDialog = new WaterfallDialog(
                 "nameDialog",
-                steps));
+                steps);
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
                 {
+                    var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                    var dialogs = new DialogSet(dialogState);
+
+                    dialogs.Add(textPrompt);
+                    dialogs.Add(waterfallDialog);
+
                     var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
                     await dc.ContinueDialogAsync(cancellationToken);
                     if (!turnContext.Responded)

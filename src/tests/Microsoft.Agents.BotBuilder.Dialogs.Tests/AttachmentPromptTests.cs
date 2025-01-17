@@ -4,12 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
+using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Memory;
-using Microsoft.Agents.Memory.Transcript;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.Storage;
+using Microsoft.Agents.Storage.Transcript;
+using Microsoft.Agents.Core.Models;
 using Xunit;
+using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -31,18 +32,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task BasicAttachmentPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(BasicAttachmentPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
             // Create and add attachment prompt to DialogSet.
             var attachmentPrompt = new AttachmentPrompt("AttachmentPrompt");
-            dialogs.Add(attachmentPrompt);
 
             // Create mock attachment for testing.
             var attachment = new Attachment { Content = "some content", ContentType = "text/plain" };
@@ -52,6 +48,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(attachmentPrompt);
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
                 var results = await dc.ContinueDialogAsync();
@@ -78,16 +78,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task RetryAttachmentPrompt()
         {
             var convoState = new ConversationState(new MemoryStorage());
-            var dialogState = convoState.CreateProperty<DialogState>("dialogState");
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(nameof(RetryAttachmentPrompt)))
                 .Use(new AutoSaveStateMiddleware(convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
-
-            // Create new DialogSet.
-            var dialogs = new DialogSet(dialogState);
-
-            dialogs.Add(new AttachmentPrompt("AttachmentPrompt"));
 
             // Create mock attachment for testing.
             var attachment = new Attachment { Content = "some content", ContentType = "text/plain" };
@@ -97,6 +91,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                var dialogState = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                var dialogs = new DialogSet(dialogState);
+                dialogs.Add(new AttachmentPrompt("AttachmentPrompt"));
+
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)

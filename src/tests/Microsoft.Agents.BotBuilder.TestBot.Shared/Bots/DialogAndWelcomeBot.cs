@@ -6,8 +6,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.BotBuilder.Dialogs.State;
-using Microsoft.Agents.Protocols.Primitives;
+using Microsoft.Agents.State;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
@@ -31,7 +32,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
                     var welcomeCard = CreateAdaptiveCardAttachment();
                     var response = CreateResponse(turnContext.Activity, welcomeCard);
                     await turnContext.SendActivityAsync(response, cancellationToken);
-                    await Dialog.Run(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+                    await Dialog.Run(turnContext, ConversationState, cancellationToken);
                 }
             }
         }
