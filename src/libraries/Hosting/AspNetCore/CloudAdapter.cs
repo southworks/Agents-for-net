@@ -42,10 +42,19 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
-            bool async = true) : base(channelServiceClientFactory, logger)
+            bool async = true,
+            params Core.Interfaces.IMiddleware[] middlewares) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;
+
+            if (middlewares != null)
+            {
+                foreach (var middleware in middlewares)
+                {
+                    Use(middleware);
+                }
+            }
 
             OnTurnError = async (turnContext, exception) =>
             {
