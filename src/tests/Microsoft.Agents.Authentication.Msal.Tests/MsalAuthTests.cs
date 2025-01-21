@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using System;
@@ -71,7 +72,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             };
             mockOptions.Setup(x => x.Value).Returns(returnedOptions);
 
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(mockOptions.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
 
             var msal = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
 
