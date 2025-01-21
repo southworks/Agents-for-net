@@ -43,6 +43,12 @@ namespace BotConversationSsoQuickstart.Bots
             await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
         }
 
+        protected override async Task OnTurnBeginAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await _conversationState.LoadAsync(turnContext, false, cancellationToken);
+            await _userState.LoadAsync(turnContext, false, cancellationToken);
+        }
+
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             // Save any state changes that might have occurred during the turn.

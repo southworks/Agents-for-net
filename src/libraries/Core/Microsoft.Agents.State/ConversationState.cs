@@ -8,17 +8,17 @@ using System;
 namespace Microsoft.Agents.State
 {
     /// <summary>
-    /// Defines a state management object for conversation state.
+    /// Defines a state keyed to a conversation.
     /// </summary>
     /// <remarks>
     /// Conversation state is available in any turn in a specific conversation, regardless of user,
     /// such as in a group conversation.
-    /// </remarks>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="ConversationState"/> class.
+    /// 
+    /// This implementation should NOT be used as a singleton.  This includes registering as singleton
+    /// in DI.
     /// </remarks>
     /// <param name="storage">The storage layer to use.</param>
-    public class ConversationState(IStorage storage) : BotState(storage, nameof(ConversationState))
+    public class ConversationState(IStorage storage) : BotState(storage, "conversation")
     {
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.

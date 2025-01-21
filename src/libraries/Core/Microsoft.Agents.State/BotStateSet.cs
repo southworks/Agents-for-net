@@ -15,6 +15,8 @@ namespace Microsoft.Agents.State
     /// </summary>
     public class BotStateSet
     {
+        private IDictionary<string, BotState> _scopes { get; set; } = new Dictionary<string, BotState>();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BotStateSet"/> class.
         /// </summary>
@@ -23,26 +25,45 @@ namespace Microsoft.Agents.State
         {
             foreach (var botState in botStates)
             {
-                BotStates.Add(botState.ContextServiceKey, botState);
+                _scopes.Add(botState.ContextServiceKey, botState);
             }
         }
 
-        /// <summary>
-        /// Gets or sets the BotStates list for the BotStateSet.
-        /// </summary>
-        /// <value>The BotState objects managed by this class.</value>
-        public IDictionary<string, BotState> BotStates { get; set; } = new Dictionary<string, BotState>();
+        public T GetValue<T>(ITurnContext turnContext, string name, Func<T> defaultValueFactory)
+        {
+            var (scope, property) = GetScopeAndPath(name);
+            return GetScope(scope).GetValue(property, defaultValueFactory);
+        }
 
-        /// <summary>
-        /// Adds a bot state object to the set.
-        /// </summary>
-        /// <param name="botState">The bot state object to add.</param>
-        /// <returns>The updated <see cref="BotStateSet"/>, so you can fluently call <see cref="Add(BotState)"/> multiple times.</returns>
+        public void SetValue(ITurnContext turnContext, string name, object value)
+        {
+            var (scope, property) = GetScopeAndPath(name);
+            GetScope(scope).SetValue(property, value);
+        }
+
+        public BotState GetScope(string scope)
+        {
+            if (!_scopes.TryGetValue(scope, out BotState value))
+            {
+                throw new ArgumentException($"Scope '{scope}' not found");
+            }
+            return value;
+        }
+
+        private (string, string) GetScopeAndPath(string name)
+        {
+            var scopeEnd = name.IndexOf('.');
+            if (scopeEnd == -1)
+            {
+                throw new ArgumentException("Path must include the state scope name");
+            }
+            return (name.Substring(0, scopeEnd), name.Substring(scopeEnd + 1));
+        }
+
         public BotStateSet Add(BotState botState)
         {
             ArgumentNullException.ThrowIfNull(botState);
-
-            BotStates.Add(botState.ContextServiceKey, botState);
+            _scopes.Add(botState.ContextServiceKey, botState);
             return this;
         }
 
@@ -56,7 +77,7 @@ namespace Microsoft.Agents.State
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task LoadAllAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            var tasks = BotStates.Select(bs => bs.Value.LoadAsync(turnContext, force, cancellationToken)).ToList();
+            var tasks = _scopes.Select(bs => bs.Value.LoadAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
@@ -70,7 +91,7 @@ namespace Microsoft.Agents.State
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SaveAllChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
-            var tasks = BotStates.Select(bs => bs.Value.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
+            var tasks = _scopes.Select(kv => kv.Value.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
     }

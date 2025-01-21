@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using Microsoft.VisualBasic;
 using Moq;
 using Xunit;
 
@@ -25,8 +27,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context);
+
             // Act
-            await Assert.ThrowsAsync<ArgumentException>(() => userState.GetPropertyAsync<string>(context, string.Empty, () => string.Empty, default));
+            Assert.Throws<ArgumentException>(() => userState.GetValue<string>(string.Empty, () => string.Empty));
         }
 
         [Fact]
@@ -37,8 +41,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context);
+
             // Act
-            await Assert.ThrowsAsync<ArgumentNullException>(() => userState.GetPropertyAsync<string>(context, null, () => string.Empty, default));
+            Assert.Throws<ArgumentNullException>(() => userState.GetValue<string>(null, () => string.Empty));
         }
 
         [Fact]
@@ -75,24 +81,27 @@ namespace Microsoft.Agents.State.Tests
 
             // Arrange
             var userState = new UserState(mock.Object);
+
             var context = TestUtilities.CreateEmptyContext();
+
+            await userState.LoadAsync(context, false);
 
             // Act
             Assert.Equal(0, storeCount);
             await userState.SaveChangesAsync(context);
-            await userState.SetPropertyAsync(context, "propertyA", "hello", default);
+            userState.SetValue("propertyA", "hello");
             Assert.Equal(1, readCount);       // Initial save bumps count
             Assert.Equal(0, storeCount);       // Initial save bumps count
-            await userState.SetPropertyAsync(context, "propertyA", "there", default);
+            userState.SetValue("propertyA", "there");
             Assert.Equal(0, storeCount);       // Set on property should not bump
             await userState.SaveChangesAsync(context);
             Assert.Equal(1, storeCount);       // Explicit save should bump
-            var valueA = await userState.GetPropertyAsync(context, "propertyA", () => string.Empty, default);
+            var valueA = userState.GetValue("propertyA", () => string.Empty);
             Assert.Equal("there", valueA);
             Assert.Equal(1, storeCount);       // Gets should not bump
             await userState.SaveChangesAsync(context);
             Assert.Equal(1, storeCount);
-            await userState.DeletePropertyAsync(context, "propertyA", default);   // Delete alone no bump
+            userState.DeleteValue("propertyA");   // Delete alone no bump
             Assert.Equal(1, storeCount);
             await userState.SaveChangesAsync(context);  // Save when dirty should bump
             Assert.Equal(2, storeCount);
@@ -110,8 +119,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            await userState.SetPropertyAsync(context, "propertyA", "hello", default);
+            userState.SetValue("propertyA", "hello");
         }
 
         [Fact]
@@ -135,8 +146,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            var valueA = await userState.GetPropertyAsync(context, "propertyA", () => "Default!", default);
+            var valueA = userState.GetValue("propertyA", () => "Default!");
             Assert.Equal("Default!", valueA);
         }
 
@@ -148,8 +161,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            var valueA = await userState.GetPropertyAsync<string>(context, "propertyA", null, default);
+            var valueA = userState.GetValue<string>("propertyA");
 
             // Assert
             Assert.Null(valueA);
@@ -163,8 +178,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            var value = await userState.GetPropertyAsync<TestPocoState>(context, "test", null, default);
+            var value = userState.GetValue<TestPocoState>("test");
 
             // Assert
             Assert.Null(value);
@@ -178,8 +195,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            var value = await userState.GetPropertyAsync<bool>(context, "test", null, default);
+            var value = userState.GetValue<bool>("test", null);
 
             // Assert
             Assert.False(value);
@@ -193,8 +212,10 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
-            var value = await userState.GetPropertyAsync<int>(context, "test", null, default);
+            var value = userState.GetValue<int>("test", null);
 
             // Assert
             Assert.Equal(0, value);
@@ -210,11 +231,11 @@ namespace Microsoft.Agents.State.Tests
 
             // Act
             await userState.LoadAsync(context);
-            await userState.SetPropertyAsync(context, "property-a", "hello", default);
-            await userState.SetPropertyAsync(context, "property-b", "world", default);
+            userState.SetValue("property-a", "hello");
+            userState.SetValue("property-b", "world");
             await userState.SaveChangesAsync(context);
 
-            await userState.SetPropertyAsync(context, "property-a", "hello2", default);
+            userState.SetValue("property-a", "hello2");
         }
 
         [Fact]
@@ -227,13 +248,13 @@ namespace Microsoft.Agents.State.Tests
 
             // Act
             await userState.LoadAsync(context);
-            await userState.SetPropertyAsync(context, "property-a", "hello", default);
-            await userState.SetPropertyAsync(context, "property-b", "world", default);
+            userState.SetValue("property-a", "hello");
+            userState.SetValue("property-b", "world");
             await userState.SaveChangesAsync(context);
 
-            await userState.SetPropertyAsync(context, "property-a", "hello2", default);
+            userState.SetValue("property-a", "hello2");
             await userState.SaveChangesAsync(context);
-            var valueA = await userState.GetPropertyAsync<string>(context, "property-a", null, default);
+            var valueA = userState.GetValue<string>("property-a");
             Assert.Equal("hello2", valueA);
         }
 
@@ -247,8 +268,8 @@ namespace Microsoft.Agents.State.Tests
 
             // Act
             await userState.LoadAsync(context);
-            await userState.SetPropertyAsync(context, "property-a", "hello", default);
-            await userState.SetPropertyAsync(context, "property-b", "world", default);
+            userState.SetValue("property-a", "hello");
+            userState.SetValue("property-b", "world");
             await userState.SaveChangesAsync(context);
 
             // Assert
@@ -268,9 +289,9 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
 
             await userState.LoadAsync(context);
-            await userState.SetPropertyAsync(context, "property-a", "hello", default);
-            await userState.SetPropertyAsync(context, "property-b", "world", default);
-            await userState.SetPropertyAsync(context, "property-c", "test", default);
+            userState.SetValue("property-a", "hello");
+            userState.SetValue("property-b", "world");
+            userState.SetValue("property-c", "test");
             await userState.SaveChangesAsync(context);
 
             // Assert
@@ -282,8 +303,8 @@ namespace Microsoft.Agents.State.Tests
             var userState2 = new UserState(new MemoryStorage(dictionary: dictionary));
 
             await userState2.LoadAsync(context);
-            await userState2.SetPropertyAsync(context, "property-a", "hello-2", default);
-            await userState2.SetPropertyAsync(context, "property-b", "world-2", default);
+            userState2.SetValue("property-a", "hello-2");
+            userState2.SetValue("property-b", "world-2");
             await userState2.SaveChangesAsync(context);
 
             // Assert 2
@@ -304,8 +325,8 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(new MemoryStorage(dictionary: dictionary));
 
             await userState.LoadAsync(context);
-            await userState.SetPropertyAsync(context, "property-a", "hello", default);
-            await userState.SetPropertyAsync(context, "property-b", "world", default);
+            userState.SetValue("property-a", "hello");
+            userState.SetValue("property-b", "world");
             await userState.SaveChangesAsync(context);
 
             // Assert
@@ -317,8 +338,8 @@ namespace Microsoft.Agents.State.Tests
             var userState2 = new UserState(new MemoryStorage(dictionary: dictionary));
 
             await userState2.LoadAsync(context);
-            await userState2.SetPropertyAsync(context, "property-a", "hello-2", default);
-            await userState2.DeletePropertyAsync(context, "property-b", default);
+            userState2.SetValue("property-a", "hello-2");
+            userState2.DeleteValue("property-b");
             await userState2.SaveChangesAsync(context);
 
             // Assert 2
@@ -353,7 +374,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                 {
-                    var state = await userState.GetPropertyAsync(context, "test", () => new TestState(), default);
+                    await userState.LoadAsync(context, false);
+                    var state = userState.GetValue("test", () => new TestState());
                     Assert.NotNull(state);
                     switch (context.Activity.Text)
                     {
@@ -381,7 +403,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var testPocoState = await userState.GetPropertyAsync(context, "testPoco", () => new TestPocoState(), cancellationToken);
+                        await userState.LoadAsync(context, false, cancellationToken);
+                        var testPocoState = userState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(userState);
                         switch (context.Activity.Text)
                         {
@@ -411,7 +434,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var conversationState = await userState.GetPropertyAsync(context, "test", () => new TestState(), cancellationToken);
+                        await userState.LoadAsync(context, false, cancellationToken);
+                        var conversationState = userState.GetValue("test", () => new TestState());
                         Assert.NotNull(conversationState);
                         switch (context.Activity.Text)
                         {
@@ -440,7 +464,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var conversationState = await userState.GetPropertyAsync(context, "testPoco", () => new TestPocoState(), cancellationToken);
+                        await userState.LoadAsync(context, false, cancellationToken);
+                        var conversationState = userState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(conversationState);
                         switch (context.Activity.Text)
                         {
@@ -469,7 +494,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var conversationState = await privateConversationState.GetPropertyAsync(context, "testPoco", () => new TestPocoState(), cancellationToken);
+                        await privateConversationState.LoadAsync(context, false);
+                        var conversationState = privateConversationState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(conversationState);
                         switch (context.Activity.Text)
                         {
@@ -498,7 +524,8 @@ namespace Microsoft.Agents.State.Tests
 
             await new TestFlow(adapter, async (context, cancellationToken) =>
                     {
-                        var test = await customState.GetPropertyAsync(context, "test", () => new TestPocoState(), cancellationToken);
+                        await customState.LoadAsync(context, false, cancellationToken);
+                        var test = customState.GetValue("test", () => new TestPocoState());
                         switch (context.Activity.Text)
                         {
                             case "set value":
@@ -526,7 +553,8 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var conversation = await convoState.GetPropertyAsync(context, "typed", () => new TypedObject(), cancellationToken);
+                        await convoState.LoadAsync(context, false, cancellationToken);
+                        var conversation = convoState.GetValue("typed", () => new TypedObject());
                         Assert.NotNull(conversation);
                         switch (context.Activity.Text)
                         {
@@ -558,7 +586,7 @@ namespace Microsoft.Agents.State.Tests
                         // read initial state object
                         await botStateManager.LoadAsync(context);
 
-                        var customState = await botStateManager.GetPropertyAsync(context, "test", () => new CustomState(), cancellationToken);
+                        var customState = botStateManager.GetValue("test", () => new CustomState());
 
                         // this should be a 'new CustomState' as nothing is currently stored in storage
                         Assert.NotNull(customState);
@@ -574,7 +602,7 @@ namespace Microsoft.Agents.State.Tests
                         // read into context again
                         await botStateManager.LoadAsync(context, force: true);
 
-                        customState = await botStateManager.GetPropertyAsync(context, "test", () => new CustomState(), cancellationToken);
+                        customState = botStateManager.GetValue("test", () => new CustomState());
 
                         // check object read from value has the correct value for CustomString
                         Assert.Equal("test", customState.CustomString);
@@ -587,31 +615,35 @@ namespace Microsoft.Agents.State.Tests
         public async Task UserState_BadFromThrows()
         {
             var dictionary = new Dictionary<string, JsonObject>();
-            var userState = new UserState(new MemoryStorage(dictionary: dictionary));
+            var botState = new UserState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
             context.Activity.From = null;
-            await Assert.ThrowsAsync<InvalidOperationException>(() => userState.GetPropertyAsync<TestPocoState>(context, "test", null, default));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => botState.LoadAsync(context, false));
         }
 
         [Fact]
         public async Task ConversationState_BadConverationThrows()
         {
             var dictionary = new Dictionary<string, JsonObject>();
-            var userState = new ConversationState(new MemoryStorage(dictionary: dictionary));
+            var botState = new ConversationState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
+
             context.Activity.Conversation = null;
-            await Assert.ThrowsAsync<InvalidOperationException>(() => userState.GetPropertyAsync<TestPocoState>(context, "test", null, default));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => botState.LoadAsync(context, false));
         }
 
         [Fact]
         public async Task PrivateConversationState_BadActivityFromThrows()
         {
             var dictionary = new Dictionary<string, JsonObject>();
-            var userState = new PrivateConversationState(new MemoryStorage(dictionary: dictionary));
+            var botState = new PrivateConversationState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
+
             context.Activity.Conversation = null;
             context.Activity.From = null;
-            await Assert.ThrowsAsync<InvalidOperationException>(() => userState.GetPropertyAsync<TestPocoState>(context, "test", null, default));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => botState.LoadAsync(context, false));
         }
 
         [Fact]
@@ -620,8 +652,10 @@ namespace Microsoft.Agents.State.Tests
             var dictionary = new Dictionary<string, JsonObject>();
             var userState = new PrivateConversationState(new MemoryStorage(dictionary: dictionary));
             var context = TestUtilities.CreateEmptyContext();
+
             context.Activity.Conversation = null;
-            await Assert.ThrowsAsync<InvalidOperationException>(() => userState.GetPropertyAsync<TestPocoState>(context, "test", null, default));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => userState.LoadAsync(context, false));
         }
 
         [Fact]
@@ -634,26 +668,32 @@ namespace Microsoft.Agents.State.Tests
 
             // Turn 0
             var botState1 = new ConversationState(storage);
-            (await botState1
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState(), default)).Value = "test-value";
+            await botState1.LoadAsync(turnContext, false); 
+            var value1 = botState1
+                .GetValue("test-name", () => new TestPocoState());
+            value1.Value = "test-value";
+            //await botState1.SetValue(turnContext, "test-name", value1, default);
             await botState1.SaveChangesAsync(turnContext);
 
             // Turn 1
             var botState2 = new ConversationState(storage);
-            var value1 = (await botState2
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState { Value = "default-value" }, default)).Value;
+            await botState2.LoadAsync(turnContext, false);
+            value1 = botState2
+                .GetValue("test-name", () => new TestPocoState { Value = "default-value" });
 
-            Assert.Equal("test-value", value1);
+            Assert.Equal("test-value", value1.Value);
 
             // Turn 2
             var botState3 = new ConversationState(storage);
-            await botState3.ClearStateAsync(turnContext);
+            await botState3.LoadAsync(turnContext, false);
+            botState3.ClearState();
             await botState3.SaveChangesAsync(turnContext);
 
             // Turn 3
             var botState4 = new ConversationState(storage);
-            var value2 = (await botState4
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState { Value = "default-value" }, default)).Value;
+            await botState4.LoadAsync(turnContext, false);
+            var value2 = (botState4
+                .GetValue("test-name", () => new TestPocoState { Value = "default-value" })).Value;
 
             Assert.Equal("default-value", value2);
         }
@@ -668,25 +708,30 @@ namespace Microsoft.Agents.State.Tests
 
             // Turn 0
             var botState1 = new ConversationState(storage);
-            (await botState1
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState(), default)).Value = "test-value";
+            await botState1.LoadAsync(turnContext, false);
+
+            (botState1
+                .GetValue("test-name", () => new TestPocoState())).Value = "test-value";
             await botState1.SaveChangesAsync(turnContext);
 
             // Turn 1
             var botState2 = new ConversationState(storage);
-            var value1 = (await botState2
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState { Value = "default-value" }, default)).Value;
+            await botState2.LoadAsync(turnContext, false);
+            var value1 = (botState2
+                .GetValue("test-name", () => new TestPocoState { Value = "default-value" })).Value;
 
             Assert.Equal("test-value", value1);
 
             // Turn 2
             var botState3 = new ConversationState(storage);
+            await botState3.LoadAsync(turnContext, false);
             await botState3.DeleteStateAsync(turnContext);
 
             // Turn 3
             var botState4 = new ConversationState(storage);
-            var value2 = (await botState4
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState { Value = "default-value" }, default)).Value;
+            await botState4.LoadAsync(turnContext, false);
+            var value2 = (botState4
+                .GetValue("test-name", () => new TestPocoState { Value = "default-value" })).Value;
 
             Assert.Equal("default-value", value2);
         }
@@ -703,10 +748,11 @@ namespace Microsoft.Agents.State.Tests
             // because TestBotState has a context service key
             // that is different from the name of its type
             var botState = new TestBotState(storage);
-            (await botState
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState(), default)).Value = "test-value";
+            await botState.LoadAsync(turnContext, false);
+            (botState
+                .GetValue("test-name", () => new TestPocoState())).Value = "test-value";
 
-            var json = JsonObject.Create(botState.Get(turnContext));
+            var json = JsonObject.Create(botState.Get());
 
             Assert.Equal("test-value", json["test-name"]["value"].ToString());
         }
@@ -719,15 +765,16 @@ namespace Microsoft.Agents.State.Tests
 
             var storage = new MemoryStorage(dictionary: new Dictionary<string, JsonObject>());
             var botState = new TestBotState(storage);
+            await botState.LoadAsync(turnContext, false);
 
-            (await botState
-                .GetPropertyAsync(turnContext, "test-name", () => new TestPocoState(), default)).Value = "test-value";
+            (botState
+                .GetValue("test-name", () => new TestPocoState())).Value = "test-value";
 
-            var cache = botState.GetCachedState(turnContext);
+            var cache = botState.GetCachedState();
 
             Assert.NotNull(cache);
 
-            Assert.Same(cache, botState.GetCachedState(turnContext));
+            Assert.Same(cache, botState.GetCachedState());
         }
 
         [Fact]
@@ -759,9 +806,11 @@ namespace Microsoft.Agents.State.Tests
             var userState = new UserState(mock.Object);
             var context = TestUtilities.CreateEmptyContext();
 
+            await userState.LoadAsync(context, false);
+
             // Act
             // Set initial value and save
-            await userState.SetPropertyAsync(context, "propertyA", "test", default);
+            userState.SetValue("propertyA", "test");
             await userState.SaveChangesAsync(context);
 
             // Assert

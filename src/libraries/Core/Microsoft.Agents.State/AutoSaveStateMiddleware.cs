@@ -17,12 +17,26 @@ namespace Microsoft.Agents.State
     /// </remarks>
     public class AutoSaveStateMiddleware : IMiddleware
     {
+        private readonly bool _autoLoad;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AutoSaveStateMiddleware"/> class.
         /// </summary>
         /// <param name="botStates">initial list of <see cref="BotState"/> objects to manage.</param>
         public AutoSaveStateMiddleware(params BotState[] botStates)
         {
+            _autoLoad = false;
+            BotStateSet = new BotStateSet(botStates);
+        }
+
+        /// <summary>
+        /// Allows for optionally auto-loading BotState at turn start.
+        /// </summary>
+        /// <param name="autoLoad"></param>
+        /// <param name="botStates"></param>
+        public AutoSaveStateMiddleware(bool autoLoad, params BotState[] botStates)
+        {
+            _autoLoad = autoLoad;
             BotStateSet = new BotStateSet(botStates);
         }
 
@@ -67,7 +81,15 @@ namespace Microsoft.Agents.State
         /// <remarks>This middleware persists state after the bot logic completes and before the turn ends.</remarks>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken))
         {
+            // before turn
+            if (_autoLoad)
+            {
+                await BotStateSet.LoadAllAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
+            }
+
             await next(cancellationToken).ConfigureAwait(false);
+
+            // after turn
             await BotStateSet.SaveAllChangesAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
         }
     }

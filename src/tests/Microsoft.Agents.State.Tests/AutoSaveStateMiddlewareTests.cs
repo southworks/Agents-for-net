@@ -4,12 +4,11 @@
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.BotBuilder.Tests
+namespace Microsoft.Agents.State.Tests
 {
     public class AutoSaveStateMiddlewareTests
     {
@@ -21,15 +20,15 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var convState = new ConversationState(storage);
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation("AutoSaveStateMiddleware_DualReadWrite"))
-                .Use(new AutoSaveStateMiddleware(userState, convState));
+                .Use(new AutoSaveStateMiddleware(true, userState, convState));
 
             const int USER_INITITAL_COUNT = 100;
             const int CONVERSATION_INITIAL_COUNT = 10;
             BotCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from hSet
-                var userCount = await userState.GetPropertyAsync(context, "userCount", () => USER_INITITAL_COUNT, cancellationToken).ConfigureAwait(false);
-                var convCount = await convState.GetPropertyAsync(context, "convCount", () => CONVERSATION_INITIAL_COUNT, cancellationToken).ConfigureAwait(false);
+                var userCount = userState.GetValue("userCount", () => USER_INITITAL_COUNT);
+                var convCount = convState.GetValue("convCount", () => CONVERSATION_INITIAL_COUNT);
 
                 // System.Diagnostics.Debug.WriteLine($"{context.Activity.Id} UserCount({context.Activity.From.Id}):{userCount} convCount({context.Activity.Conversation.Id}):{convCount}");
                 if (context.Activity.Type == ActivityTypes.Message)
@@ -46,11 +45,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
                 // increment userCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 userCount++;
-                await userState.SetPropertyAsync(context, "userCount", userCount, cancellationToken);
+                userState.SetValue("userCount", userCount);
 
                 // increment convCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 convCount++;
-                await convState.SetPropertyAsync(context, "convCount", convCount, cancellationToken);
+                convState.SetValue("convCount", convCount);
             };
 
             await new TestFlow(adapter, botLogic)
@@ -63,6 +62,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
                     .AssertReply((CONVERSATION_INITIAL_COUNT + 3).ToString())
                 .StartTestAsync();
 
+
+            // Reuse storage with a different conversation
+            userState = new UserState(storage);
+            convState = new ConversationState(storage);
+
             // new adapter on new conversation
             adapter = new TestAdapter(new ConversationReference
             {
@@ -72,7 +76,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 Bot = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
-                .Use(new AutoSaveStateMiddleware(userState, convState));
+                .Use(new AutoSaveStateMiddleware(true, userState, convState));
 
             await new TestFlow(adapter, botLogic)
                 .Send("get userCount")
@@ -90,9 +94,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var convState = new ConversationState(storage);
             var userState = new UserState(storage);
 
-            var bss = new AutoSaveStateMiddleware()
-                .Add(userState)
-                .Add(convState);
+            var bss = new AutoSaveStateMiddleware(true, convState, userState);
             var adapter = new TestAdapter(TestAdapter.CreateConversation("AutoSaveStateMiddleware_Chain"))
                 .Use(bss);
 
@@ -101,8 +103,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
             BotCallbackHandler botLogic = async (context, cancellationToken) =>
             {
                 // get userCount and convCount from botStateSet
-                var userCount = await userState.GetPropertyAsync(context, "userCount", () => USER_INITITAL_COUNT, cancellationToken).ConfigureAwait(false);
-                var convCount = await convState.GetPropertyAsync(context, "convCount", () => CONVERSATION_INITIAL_COUNT, cancellationToken).ConfigureAwait(false);
+                var userCount = userState.GetValue("userCount", () => USER_INITITAL_COUNT);
+                var convCount = convState.GetValue("convCount", () => CONVERSATION_INITIAL_COUNT);
 
                 if (context.Activity.Type == ActivityTypes.Message)
                 {
@@ -118,11 +120,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
                 // increment userCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 userCount++;
-                await userState.SetPropertyAsync(context, "userCount", userCount, cancellationToken);
+                userState.SetValue("userCount", userCount);
 
                 // increment convCount and set property using accessor.  To be saved later by AutoSaveStateMiddleware
                 convCount++;
-                await convState.SetPropertyAsync(context, "convCount", convCount, cancellationToken);
+                convState.SetValue("convCount", convCount);
             };
 
             await new TestFlow(adapter, botLogic)
@@ -136,9 +138,10 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 .StartTestAsync();
 
             // new adapter on new conversation
-            var bss2 = new AutoSaveStateMiddleware()
-                .Add(userState)
-                .Add(convState);
+            // Reuse storage with a different conversation
+            userState = new UserState(storage);
+            convState = new ConversationState(storage);
+            bss = new AutoSaveStateMiddleware(true, convState, userState);
 
             adapter = new TestAdapter(new ConversationReference
             {
@@ -148,7 +151,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 Bot = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
-                .Use(bss2);
+                .Use(bss);
 
             await new TestFlow(adapter, botLogic)
                 .Send("get userCount")

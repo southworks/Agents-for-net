@@ -9,7 +9,7 @@ using System.Text.Json.Nodes;
 using Xunit;
 using Xunit.Sdk;
 
-namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
+namespace Microsoft.Agents.State.Tests
 {
     public class ObjectPathTests
     {

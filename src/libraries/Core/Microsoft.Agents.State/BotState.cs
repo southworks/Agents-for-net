@@ -31,6 +31,7 @@ namespace Microsoft.Agents.State
     {
         private readonly string _contextServiceKey;
         private readonly IStorage _storage;
+        private CachedBotState _cachedBotState; 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BotState"/> class.
@@ -71,43 +72,45 @@ namespace Microsoft.Agents.State
         /// <summary>
         /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
         /// </summary>
-        /// <param name="turnContext">The turn context.</param>
         /// <param name="name">value.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task DeletePropertyAsync(ITurnContext turnContext, string name, CancellationToken cancellationToken)
+        public void DeleteValue(string name)
         {
-            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-            await DeletePropertyValueAsync(turnContext, name, cancellationToken).ConfigureAwait(false);
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+            }
+
+            DeletePropertyValue(name);
         }
 
         /// <summary>
         /// Get the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="name">value.</param>
         /// <param name="defaultValueFactory">Defines the default value.
         /// Invoked when no value been set for the requested state property.
         /// If defaultValueFactory is defined as null in that case, the method returns null and</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<T> GetPropertyAsync<T>(ITurnContext turnContext, string name, Func<T> defaultValueFactory, CancellationToken cancellationToken)
+        public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
-            T result = default;
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+            }
 
-            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            T result = default;
 
             try
             {
                 // if T is a value type, lookup up will throw key not found if not found, but as perf
                 // optimization it will return null if not found for types which are not value types (string and object).
-                result = await GetPropertyValueAsync<T>(turnContext, name, cancellationToken).ConfigureAwait(false);
+                result = GetPropertyValue<T>(name);
 
                 if (result == null && defaultValueFactory != null)
                 {
                     // use default Value Factory and save default value for any further calls
                     result = defaultValueFactory();
-                    await SetPropertyAsync(turnContext, name, result, cancellationToken).ConfigureAwait(false);
+                    SetValue(name, result);
                 }
             }
             catch (KeyNotFoundException)
@@ -116,7 +119,7 @@ namespace Microsoft.Agents.State
                 {
                     // use default Value Factory and save default value for any further calls
                     result = defaultValueFactory();
-                    await SetPropertyAsync(turnContext, name, result, cancellationToken).ConfigureAwait(false);
+                    SetValue(name, result);
                 }
             }
 
@@ -126,21 +129,34 @@ namespace Microsoft.Agents.State
         /// <summary>
         /// Set the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
         /// </summary>
-        /// <param name="turnContext">turn context.</param>
         /// <param name="name">value.</param>
         /// <param name="value">value.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SetPropertyAsync<T>(ITurnContext turnContext, string name, T value, CancellationToken cancellationToken)
+        public void SetValue<T>(string name, T value)
         {
-            await LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-            await SetPropertyValueAsync(turnContext, name, value, cancellationToken).ConfigureAwait(false);
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+            }
+
+            SetPropertyValue(name, value);
         }
 
+        /// <summary>
+        /// True if state has been loaded.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsLoaded()
+        {
+            return _cachedBotState != null;
+        }
 
         /// <summary>
         /// Populates the state cache for this <see cref="BotState"/> from the storage layer.
         /// </summary>
+        /// <remarks>
+        /// LoadAsync loads State for the specified turn.
+        /// </remarks>
         /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="force">Optional, <c>true</c> to overwrite any existing state cache;
         /// or <c>false</c> to load state from storage only if the cache doesn't already exist.</param>
@@ -152,26 +168,26 @@ namespace Microsoft.Agents.State
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
-            var cachedState = GetCachedState(turnContext);
             var storageKey = GetStorageKey(turnContext);
-            if (force || cachedState == null || cachedState.State == null)
+
+            if (ShouldLoad(storageKey, force))
             {
                 var items = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
                 items.TryGetValue(storageKey, out object val);
 
                 if (val is IDictionary<string, object> asDictionary)
                 {
-                    turnContext.TurnState[_contextServiceKey] = new CachedBotState(asDictionary);
+                    _cachedBotState = new CachedBotState(storageKey, asDictionary);
                 }
                 else if (val is JsonObject || val is JsonElement)
                 {
                     // If types are not used by storage serialization, try deserializing to object
-                    turnContext.TurnState[_contextServiceKey] = new CachedBotState(ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(val));
+                    _cachedBotState = new CachedBotState(storageKey, ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(val));
                 }
                 else if (val == null)
                 {
                     // This is the case where the dictionary did not exist in the store.
-                    turnContext.TurnState[_contextServiceKey] = new CachedBotState();
+                    _cachedBotState = new CachedBotState(storageKey);
                 }
                 else
                 {
@@ -179,6 +195,16 @@ namespace Microsoft.Agents.State
                     throw new InvalidOperationException("Data is not in the correct format for BotState.");
                 }
             }
+        }
+
+        private bool ShouldLoad(string storageKey, bool force)
+        {
+            if (_cachedBotState != null && _cachedBotState.Key != storageKey)
+            {
+                throw new InvalidOperationException($"BotState '{GetType().Name}' is being used by multiple conversations. Verify \"AddTransient\" DI registration.");
+            }
+
+            return force || _cachedBotState == null || _cachedBotState.State == null;
         }
 
         /// <summary>
@@ -195,7 +221,7 @@ namespace Microsoft.Agents.State
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
-            var cachedState = GetCachedState(turnContext);
+            var cachedState = GetCachedState();
             if (cachedState != null && (force || cachedState.IsChanged()))
             {
                 var key = GetStorageKey(turnContext);
@@ -212,23 +238,20 @@ namespace Microsoft.Agents.State
         /// <summary>
         /// Clears the state cache for this <see cref="BotState"/>.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>This method clears the state cache in the turn context. Call
         /// <see cref="SaveChangesAsync(ITurnContext, bool, CancellationToken)"/> to persist this
         /// change in the storage layer.
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        public virtual Task ClearStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public virtual void ClearState()
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+            }
 
             // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
-            turnContext.TurnState[_contextServiceKey] = new CachedBotState { Hash = string.Empty };
-
-            return Task.CompletedTask;
+            _cachedBotState = new CachedBotState(_cachedBotState.Key) { Hash = string.Empty };
         }
 
         /// <summary>
@@ -241,12 +264,9 @@ namespace Microsoft.Agents.State
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
         public virtual async Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-
-            var cachedState = GetCachedState(turnContext);
-            if (cachedState != null)
+            if (_cachedBotState != null)
             {
-                turnContext.TurnState.Remove(_contextServiceKey);
+                ClearState();
             }
 
             var storageKey = GetStorageKey(turnContext);
@@ -256,14 +276,10 @@ namespace Microsoft.Agents.State
         /// <summary>
         /// Gets a copy of the raw cached data for this <see cref="BotState"/> from the turn context.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <returns>A JSON representation of the cached state.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        internal JsonElement Get(ITurnContext turnContext)
+        internal JsonElement Get()
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-
-            var cachedState = GetCachedState(turnContext);
+            var cachedState = GetCachedState();
             return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
         }
 
@@ -271,14 +287,10 @@ namespace Microsoft.Agents.State
         /// Gets the cached bot state instance that wraps the raw cached data for this <see cref="BotState"/>
         /// from the turn context.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <returns>The cached bot state instance.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
-        internal CachedBotState GetCachedState(ITurnContext turnContext)
+        internal CachedBotState GetCachedState()
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
-
-            return turnContext.TurnState.Get<CachedBotState>(_contextServiceKey);
+            return _cachedBotState;
         }
 
         /// <summary>
@@ -292,89 +304,45 @@ namespace Microsoft.Agents.State
         /// Gets the value of a property from the state cache for this <see cref="BotState"/>.
         /// </summary>
         /// <typeparam name="T">The value type of the property.</typeparam>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="propertyName">The name of the property.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
-        /// <paramref name="propertyName"/> is <c>null</c>.</exception>
 #pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
-        protected Task<T> GetPropertyValueAsync<T>(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default)
+        protected T GetPropertyValue<T>(string propertyName)
 #pragma warning restore CA1801 // Review unused parameters
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
-            var cachedState = GetCachedState(turnContext);
-
-            if (cachedState.State.TryGetValue(propertyName, out object result))
-            {
-                if (result is T t)
-                {
-                    return Task.FromResult(t);
-                }
-
-                if (result == null)
-                {
-                    return Task.FromResult(default(T));
-                }
-
-                // If types are not used by storage serialization try to convert the object to the type expected
-                // using the serializer.
-                var converted = ProtocolJsonSerializer.ToObject<T>(result);
-                cachedState.State[propertyName] = converted;
-                return Task.FromResult(converted);
-            }
-
-            if (typeof(T).IsValueType)
-            {
-                throw new KeyNotFoundException(propertyName);
-            }
-
-            return Task.FromResult(default(T));
+            var cachedState = GetCachedState();
+            return ObjectPath.GetPathValue<T>(cachedState.State, propertyName, true);
         }
 
         /// <summary>
         /// Deletes a property from the state cache for this <see cref="BotState"/>.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="propertyName">The name of the property.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
-        /// <paramref name="propertyName"/> is <c>null</c>.</exception>
-        protected Task DeletePropertyValueAsync(ITurnContext turnContext, string propertyName, CancellationToken cancellationToken = default)
+        protected void DeletePropertyValue(string propertyName)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
-            var cachedState = GetCachedState(turnContext);
+            var cachedState = GetCachedState();
             cachedState.State.Remove(propertyName);
-            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Sets the value of a property in the state cache for this <see cref="BotState"/>.
         /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="propertyName">The name of the property to set.</param>
         /// <param name="value">The value to set on the property.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> or
-        /// <paramref name="propertyName"/> is <c>null</c>.</exception>
-        protected Task SetPropertyValueAsync(ITurnContext turnContext, string propertyName, object value, CancellationToken cancellationToken = default)
+        protected void SetPropertyValue(string propertyName, object value)
         {
-            ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
-            var cachedState = GetCachedState(turnContext);
-            cachedState.State[propertyName] = value;
-            return Task.CompletedTask;
+            var cachedState = GetCachedState();
+            //cachedState.State[propertyName] = value;
+            ObjectPath.SetPathValue(cachedState.State, propertyName, value, false);
         }
 
         /// <summary>
@@ -385,11 +353,13 @@ namespace Microsoft.Agents.State
             /// <summary>
             /// Initializes a new instance of the <see cref="CachedBotState"/> class.
             /// </summary>
+            /// <param name="key">Unique state key.  Typically the storage key.</param>
             /// <param name="state">Initial state for the <see cref="CachedBotState"/>.</param>
-            public CachedBotState(IDictionary<string, object> state = null)
+            public CachedBotState(string key, IDictionary<string, object> state = null)
             {
                 State = state ?? new Dictionary<string, object>();
                 Hash = ComputeHash(State);
+                Key = key;
             }
 
             /// <summary>
@@ -403,6 +373,8 @@ namespace Microsoft.Agents.State
 #pragma warning restore CA2227 // Collection properties should be read only
 
             internal string Hash { get; set; }
+
+            internal string Key { get; set; }
 
             internal static string ComputeHash(object obj)
             {
@@ -451,7 +423,7 @@ namespace Microsoft.Agents.State
             public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken)
             {
                 await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-                await _botState.DeletePropertyValueAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
+                _botState.DeleteValue(Name);
             }
 
             /// <summary>
@@ -474,7 +446,7 @@ namespace Microsoft.Agents.State
                 {
                     // if T is a value type, lookup up will throw key not found if not found, but as perf
                     // optimization it will return null if not found for types which are not value types (string and object).
-                    result = await _botState.GetPropertyValueAsync<T>(turnContext, Name, cancellationToken).ConfigureAwait(false);
+                    result = _botState.GetValue<T>(Name, defaultValueFactory);
 
                     if (result == null && defaultValueFactory != null)
                     {
@@ -506,7 +478,7 @@ namespace Microsoft.Agents.State
             public async Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken)
             {
                 await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-                await _botState.SetPropertyValueAsync(turnContext, Name, value, cancellationToken).ConfigureAwait(false);
+                _botState.SetValue(Name, value);
             }
         }
         #endregion

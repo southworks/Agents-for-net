@@ -33,6 +33,12 @@ namespace TeamsAuth.Bots
             await Dialog.RunAsync(turnContext, ConversationState, cancellationToken);
         }
 
+        protected override async Task OnTurnBeginAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await ConversationState.LoadAsync(turnContext, false, cancellationToken);
+            await UserState.LoadAsync(turnContext, false, cancellationToken);
+        }
+
         protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             // Save any state changes that might have occurred during the turn.
