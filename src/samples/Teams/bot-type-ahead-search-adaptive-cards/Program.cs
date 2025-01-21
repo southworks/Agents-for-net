@@ -35,7 +35,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 builder.Services.AddSingleton<ConversationState>();
 
 // Add the Bot,  this is the primary worker for the bot. 
-builder.AddBot<IBot>();
+builder.AddBot<ActivityBot>();
 
 var app = builder.Build();
 
