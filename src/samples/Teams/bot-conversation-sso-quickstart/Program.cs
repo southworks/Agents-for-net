@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,11 +32,14 @@ builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter>();
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Create the User state. (Used in this bot's Dialog implementation.)
-builder.Services.AddTransient<UserState>();
-
-// Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddTransient<ConversationState>();
+builder.Services.AddTransient<IMiddleware[]>((sp) =>
+{
+    return 
+    [
+        new AutoSaveStateMiddleware(true, new ConversationState(sp.GetService<IStorage>())),
+        new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
+    ];
+});
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<MainDialog>();

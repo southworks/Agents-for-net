@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Storage;
+using Microsoft.Agents.State;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -20,33 +20,19 @@ namespace AuthenticationBot
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
         private readonly OAuthFlow _flow;
-        private readonly IStorage _storage;
-        private FlowState _state;
+        private readonly PrivateConversationState _botState;
 
-        public AuthBot(IConfiguration configuration, IStorage storage, ILogger<AuthBot> logger)
+        public AuthBot(IConfiguration configuration, PrivateConversationState conversationState, ILogger<AuthBot> logger)
         {
             _logger = logger ?? NullLogger<AuthBot>.Instance;
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _botState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
             _flow = new OAuthFlow("Sign In", "Please sign in", _configuration["ConnectionName"], 30000, null);
-        }
-
-        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            // Read OAuthFlow state for this conversation
-            var stateKey = GetStorageKey(turnContext);
-            var items = await _storage.ReadAsync([stateKey], cancellationToken);
-            _state = items.TryGetValue(stateKey, out object value) ? (FlowState)value : new FlowState();
-
-            await base.OnTurnAsync(turnContext, cancellationToken);
-
-            // Store any changes to the OAuthFlow state after the turn is complete.
-            items[stateKey] = _state;
-            await _storage.WriteAsync(items, cancellationToken);
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
+            // Display a welcome message
             foreach (var member in turnContext.Activity.MembersAdded)
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
@@ -69,7 +55,8 @@ namespace AuthenticationBot
             {
                 TokenResponse tokenResponse;
 
-                if (!_state.FlowStarted)
+                var state = _botState.GetValue("flowState", () => new FlowState());
+                if (!state.FlowStarted)
                 {
                     tokenResponse = await _flow.BeginFlowAsync(turnContext, null, cancellationToken);
 
@@ -78,8 +65,8 @@ namespace AuthenticationBot
                     {
                         var expires = DateTime.UtcNow.AddMilliseconds(_flow.Timeout ?? TimeSpan.FromMinutes(15).TotalMilliseconds);
 
-                        _state.FlowStarted = true;
-                        _state.FlowExpires = expires;
+                        state.FlowStarted = true;
+                        state.FlowExpires = expires;
                     }
                     else
                     {
@@ -120,9 +107,11 @@ namespace AuthenticationBot
         {
             TokenResponse tokenResponse = null;
 
+            var state = _botState.GetValue("flowState", () => new FlowState());
+
             try
             {
-                tokenResponse = await _flow.ContinueFlowAsync(turnContext, _state.FlowExpires, cancellationToken);
+                tokenResponse = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken);
                 if (tokenResponse != null)
                 {
                     await turnContext.SendActivityAsync(MessageFactory.Text("You are now logged in."), cancellationToken);
@@ -137,15 +126,8 @@ namespace AuthenticationBot
                 await turnContext.SendActivityAsync(MessageFactory.Text("You did not respond in time.  Please try again."), cancellationToken);
             }
 
-            _state.FlowStarted = false;
+            state.FlowStarted = false;
             return tokenResponse;
-        }
-
-        private static string GetStorageKey(ITurnContext turnContext)
-        {
-            var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
-            var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
-            return $"{channelId}/conversations/{conversationId}/flowState";
         }
     }
 
