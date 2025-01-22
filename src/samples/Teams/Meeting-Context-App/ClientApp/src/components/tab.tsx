@@ -7,10 +7,13 @@ import './tab.css'
 const Tab = () => {
 
     React.useEffect(() => {
-        app.initialize();
-        meeting.getMeetingDetails((error, meetingDetails: any) => {
-            console.log(JSON.stringify(meetingDetails));
-            setTabContext(meetingDetails);
+        app.initialize().then(() => {
+            meeting.getMeetingDetails((error, meetingDetails: any) => {
+                console.log(JSON.stringify(meetingDetails));
+                setTabContext(meetingDetails);
+            });
+        }).catch(err => {
+            console.error("SDK Initialization failed:", err);
         });
     }, [])
 

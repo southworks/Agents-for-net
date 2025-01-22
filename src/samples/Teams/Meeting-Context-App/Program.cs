@@ -30,7 +30,9 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
     app.UseDeveloperExceptionPage();
+    app.MapControllers().AllowAnonymous();
 }
 
 app.UseDefaultFiles()
