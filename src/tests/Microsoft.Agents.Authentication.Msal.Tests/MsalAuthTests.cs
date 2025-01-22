@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         }
 
         [Fact]
-        public async Task GetAccessTokenAsync_ShouldReturnToken()
+        public async Task GetAccessTokenAsync_ShouldReturnTokenForClientCredentials()
         {
             IList<string> Scopes = new List<string> { "https://api.botframework.com/.default" };
             string resourceUrl = "https://test.url";
@@ -76,6 +76,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(mockOptions.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
 
             var msal = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
