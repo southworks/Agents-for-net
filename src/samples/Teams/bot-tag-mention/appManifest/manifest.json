@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "1.0.0",
+  "id": "8b124165-64ea-40d9-81fc-a188e4819487",
+  "developer": {
+    "name": "Tag Mention Bot",
+    "websiteUrl": "https://www.microsoft.com",
+    "privacyUrl": "https://www.teams.com/privacy",
+    "termsOfUseUrl": "https://www.teams.com/termsofuser"
+  },
+  "icons": {
+    "outline": "icon-outline.png",
+    "color": "icon-color.png"
+  },
+  "name": {
+    "short": "Tag-Cplt-3",
+    "full": "Tag Mention Bot"
+  },
+  "description": {
+    "short": "This sample app demonstrates the use of tag mention funtionality in teams scope.",
+    "full": "This sample app demonstrates the use of tag mention funtionality in teams scope using Bot Framework."
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "8b124165-64ea-40d9-81fc-a188e4819487",
+      "scopes": [
+        "team",
+        "personal"
+      ],
+      "isNotificationOnly": false,
+      "supportsCalling": false,
+      "supportsVideo": false,
+      "supportsFiles": false
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [ "d159-2401-4900-675e-70d8-d088-bc5e-630e-5507.ngrok-free.app" ],
+  "webApplicationInfo": {
+    "id": "8b124165-64ea-40d9-81fc-a188e4819487",
+    "resource": "api://botid-8b124165-64ea-40d9-81fc-a188e4819487"
+  }
+}
