@@ -4,16 +4,17 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace TagMentionBot.Dialogs
 {
@@ -59,9 +60,11 @@ namespace TagMentionBot.Dialogs
         // Sends tag mention adaptive card.
         private async Task<ResourceResponse> TagMentionAdaptivecard(WaterfallStepContext stepContext, CancellationToken cancellationToken, string tagName, string tagId)
         {
-            var adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
-            var templateJSON = File.ReadAllText(adaptiveCardTemplate);
-            AdaptiveCardTemplate template = new AdaptiveCardTemplate(templateJSON);
+            //var adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
+            string[] path = { ".", "Resources", "UserMentionCardTemplate.json" };
+            var adaptiveCardJson = System.IO.File.ReadAllText(Path.Combine(path));
+            // var templateJSON = File.ReadAllText(path);
+            AdaptiveCardTemplate template = new AdaptiveCardTemplate(adaptiveCardJson);
             var memberData = new
             {
                 tagId = tagId,
@@ -69,12 +72,18 @@ namespace TagMentionBot.Dialogs
             };
 
             string cardJSON = template.Expand(memberData);
-            var adaptiveCardAttachment = new Attachment
+            //AdaptiveCardParseResult result = AdaptiveCard.FromJson(cardJSON);
+
+            // Get card from result
+            //AdaptiveCard card = result.Card;
+
+            var adaptiveCardAttachment = new Attachment()
             {
                 ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = JsonConvert.DeserializeObject(cardJSON),
+                Content = cardJSON
             };
 
+            //return adaptiveCardAttachment;
             return await stepContext.Context.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
 
@@ -99,7 +108,13 @@ namespace TagMentionBot.Dialogs
                         if (stepContext.Context.Activity.Text.Trim().ToLower().Contains("<at>"))
                         {
                             var tagName = stepContext.Context.Activity.Text.Replace("<at>", string.Empty).Replace("</at>", string.Empty).Trim();
-                            var tagID = stepContext.Context.Activity.Entities[1].Properties["mentioned"].ToString();
+                            var mentionedEntity = stepContext.Context.Activity.Entities.FirstOrDefault(e => e.Type == "mention");
+                            var mention = mentionedEntity as Mention;
+                            var tagID = mention.Mentioned.Id;
+
+                            //string[] path = { ".", "Resources", "UserMentionCardTemplate.json" };
+                            //var adaptiveCardForPersonalScope = GetFirstOptionsAdaptiveCard(path, turnContext.Activity.From.Name);
+                            //await stepContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardForPersonalScope), cancellationToken);
                             await TagMentionAdaptivecard(stepContext, cancellationToken, tagName, tagID);
 
                         }
@@ -120,7 +135,7 @@ namespace TagMentionBot.Dialogs
                             var result = await client.GetTag(teamDetails.AadGroupId);
                             foreach (var tagDetails in result.CurrentPage)
                             {
-                                if (tagDetails.DisplayName == stepContext.Context.Activity.Text.Trim().ToLower())
+                                if (tagDetails.DisplayName.ToLower() == stepContext.Context.Activity.Text.Trim().ToLower())
                                 {
                                     tagExists = true;
                                     await TagMentionAdaptivecard(stepContext, cancellationToken, tagDetails.DisplayName, tagDetails.Id);

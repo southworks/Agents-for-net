@@ -18,20 +18,12 @@ namespace TagMentionBot.Bots
     // each with dependency on distinct IBot types, this way ASP Dependency Injection can glue everything together without ambiguity.
     // The ConversationState is used by the Dialog system. The UserState isn't, however, it might have been used in a Dialog implementation,
     // and the requirement is that all BotState objects are saved at the end of a turn.
-    public class DialogBot<T> : TeamsActivityHandler where T : Dialog
+    public class DialogBot<T>(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) : TeamsActivityHandler where T : Dialog
     {
-        protected readonly BotState _conversationState;
-        protected readonly Dialog _dialog;
-        protected readonly ILogger _logger;
-        protected readonly BotState _userState;
-
-        public DialogBot(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger)
-        {
-            _conversationState = conversationState;
-            _userState = userState;
-            _dialog = dialog;
-            _logger = logger;
-        }
+        protected readonly BotState _conversationState = conversationState;
+        protected readonly Dialog _dialog = dialog;
+        protected readonly ILogger _logger = logger;
+        protected readonly BotState _userState = userState;
 
         /// <summary>
         /// Handles an incoming activity.

@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
   "manifestVersion": "1.19",
   "version": "1.0.0",
-  "id": "8b124165-64ea-40d9-81fc-a188e4819487",
+  "id": "<<AAD_APP_CLIENT_ID>>",
   "developer": {
     "name": "Tag Mention Bot",
     "websiteUrl": "https://www.microsoft.com",
@@ -14,7 +14,7 @@
     "color": "icon-color.png"
   },
   "name": {
-    "short": "Tag-Cplt-3",
+    "short": "Tag Mention Bot",
     "full": "Tag Mention Bot"
   },
   "description": {
@@ -24,7 +24,7 @@
   "accentColor": "#FFFFFF",
   "bots": [
     {
-      "botId": "8b124165-64ea-40d9-81fc-a188e4819487",
+      "botId": "<<AAD_APP_CLIENT_ID>>",
       "scopes": [
         "team",
         "personal"
@@ -39,9 +39,12 @@
     "identity",
     "messageTeamMembers"
   ],
-  "validDomains": [ "d159-2401-4900-675e-70d8-d088-bc5e-630e-5507.ngrok-free.app" ],
+  "validDomains": [
+    "<<BOT_DOMAIN>>",
+    "token.botframework.com"
+  ],
   "webApplicationInfo": {
-    "id": "8b124165-64ea-40d9-81fc-a188e4819487",
-    "resource": "api://botid-8b124165-64ea-40d9-81fc-a188e4819487"
+    "id": "<<AAD_APP_CLIENT_ID>>",
+    "resource": "api://botid-<<AAD_APP_CLIENT_ID>>"
   }
 }

@@ -11,15 +11,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Storage;
+using System.Net.Http;
 
 namespace TagMentionBot
 {
     public class TeamsSSOAdapter : CloudAdapter
     {
         public TeamsSSOAdapter(
-            IChannelServiceClientFactory channelServiceClientFactory, 
-            IActivityTaskQueue activityTaskQueue,
             IConfiguration configuration,
+            IChannelServiceClientFactory channelServiceClientFactory,
+            IHttpClientFactory httpClientFactory,
+            IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
