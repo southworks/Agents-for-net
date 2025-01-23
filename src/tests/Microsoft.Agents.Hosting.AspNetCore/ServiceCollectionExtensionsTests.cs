@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
@@ -61,6 +63,28 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(IBotHttpAdapter),
                 typeof(IChannelAdapter),
                 typeof(ActivityHandler), // Type passed to AddBot.
+            };
+
+            Assert.Equal(expected, services);
+        }
+
+        [Fact]
+        public void AddChannelHost_ShouldSetServices()
+        {
+            var builder = new Mock<IHostApplicationBuilder>();
+            builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
+            ServiceCollectionExtensions.AddChannelHost<IChannelApiHandler>(builder.Object);
+
+            var services = builder.Object.Services
+                .Select(e => e.ImplementationType ?? e.ServiceType)
+                .ToList();
+            var expected = new List<Type>{
+                typeof(IChannelHost),
+                typeof(IChannelFactory),
+                typeof(MemoryStorage),
+                typeof(ConversationIdFactory),
+                typeof(IChannelApiHandler), // Type passed to AddChannelHost.
+                typeof(IChannelApiHandler)
             };
 
             Assert.Equal(expected, services);

@@ -14,7 +14,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundActivityService.Tests
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
 {
     public class HostedActivityServiceTests
     {
@@ -59,33 +59,27 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundActivityService.Tests
             var adapter = new TestAdapter();
             var queue = new ActivityTaskQueue();
 
-            new HostedActivityService(config, bot, adapter, queue, null);
+            _ = new HostedActivityService(config, bot, adapter, queue, null);
         }
 
         [Fact]
         public async Task ExecuteAsync_ShouldProcessQueuedActivity()
         {
-            var config = new ConfigurationBuilder().Build();
-            var bot = new ActivityHandler();
-            var adapter = new Mock<IChannelAdapter>();
-            adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new InvokeResponse())
-                .Verifiable(Times.Once);
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var logger = loggerFactory.CreateLogger<HostedActivityService>();
-
+            var record = UseRecord();
             var claims = new ClaimsIdentity();
             var activity = new Activity();
-            var queue = new ActivityTaskQueue();
-            queue.QueueBackgroundActivity(claims, activity);
-
-            var service = new HostedActivityService(config, bot, adapter.Object, queue, logger);
-
             var source = new CancellationTokenSource();
-            // Start and stop the service, waiting for the activity to be processed.
-            await service.StartAsync(source.Token).ContinueWith(async e => {
-                await service.StopAsync(source.Token);
-                Mock.Verify(adapter);
+
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new InvokeResponse())
+                .Verifiable(Times.Once);
+
+            record.Queue.QueueBackgroundActivity(claims, activity);
+            await record.Service.StartAsync(source.Token).ContinueWith(async e =>
+            {
+                // Start and stop the service, waiting for the activity to be processed.
+                await record.Service.StopAsync(source.Token);
+                record.VerifyMocks();
             });
         }
 
@@ -93,56 +87,70 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundActivityService.Tests
         [Fact]
         public async Task ExecuteAsync_ShouldLogErrorWhenProcessingQueuedActivity()
         {
-            var config = new ConfigurationBuilder().Build();
-            var bot = new ActivityHandler();
-            var adapter = new Mock<IChannelAdapter>();
-            adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+            var record = UseRecord();
+            var claims = new ClaimsIdentity();
+            var activity = new Activity();
+            var source = new CancellationTokenSource();
+
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception())
                 .Verifiable(Times.Once);
-            var logger = new Mock<ILogger<HostedActivityService>>();
-            logger.Setup(e => e.Log(LogLevel.Error,
+            record.Logger.Setup(e => e.Log(LogLevel.Error,
                     It.IsAny<EventId>(),
                     It.IsAny<It.IsAnyType>(),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()))
                 .Verifiable(Times.Once);
 
-            var claims = new ClaimsIdentity();
-            var activity = new Activity();
-            var queue = new ActivityTaskQueue();
-            queue.QueueBackgroundActivity(claims, activity);
-
-            var service = new HostedActivityService(config, bot, adapter.Object, queue, logger.Object);
-
-            var source = new CancellationTokenSource();
-            // Start and stop the service, waiting for the activity to be processed.
-            await service.StartAsync(source.Token).ContinueWith(async e => {
-                await service.StopAsync(source.Token);
-                Mock.Verify(adapter, logger);
+            record.Queue.QueueBackgroundActivity(claims, activity);
+            await record.Service.StartAsync(source.Token).ContinueWith(async e =>
+            {
+                // Start and stop the service, waiting for the activity to be processed.
+                await record.Service.StopAsync(source.Token);
+                record.VerifyMocks();
             });
         }
 
         [Fact]
         public void ExecuteAsync_ShouldCancelBackgroundProcess()
         {
-            var config = new ConfigurationBuilder().Build();
-            var bot = new ActivityHandler();
-            var adapter = new Mock<IChannelAdapter>();
-            adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
+            var record = UseRecord();
+            var source = new CancellationTokenSource();
+
+            record.Adapter.Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new InvokeResponse())
                 .Verifiable(Times.Never);
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var logger = loggerFactory.CreateLogger<HostedActivityService>();
-            var queue = new ActivityTaskQueue();
 
-            var service = new HostedActivityService(config, bot, adapter.Object, queue, logger);
-
-            var source = new CancellationTokenSource();
             source.Cancel();
-            var task = service.StartAsync(source.Token);
+            var task = record.Service.StartAsync(source.Token);
 
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
-            Mock.Verify(adapter);
+            record.VerifyMocks();
+        }
+
+        private static Record UseRecord()
+        {
+            var config = new ConfigurationBuilder().Build();
+            var queue = new ActivityTaskQueue();
+            var bot = new Mock<ActivityHandler>();
+            var adapter = new Mock<IChannelAdapter>();
+            var logger = new Mock<ILogger<HostedActivityService>>();
+
+            var service = new HostedActivityService(config, bot.Object, adapter.Object, queue, logger.Object);
+            return new(service, queue, bot, adapter, logger);
+        }
+
+        private record Record(
+            HostedActivityService Service,
+            ActivityTaskQueue Queue,
+            Mock<ActivityHandler> Bot,
+            Mock<IChannelAdapter> Adapter,
+            Mock<ILogger<HostedActivityService>> Logger)
+        {
+            public void VerifyMocks()
+            {
+                Mock.Verify(Bot, Adapter, Logger);
+            }
         }
     }
 }

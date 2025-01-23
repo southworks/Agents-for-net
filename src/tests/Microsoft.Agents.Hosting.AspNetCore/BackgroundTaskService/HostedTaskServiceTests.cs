@@ -10,7 +10,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundTaskService.Tests
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
 {
     public class HostedTaskServiceTests
     {
@@ -34,30 +34,27 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundTaskService.Tests
             var config = new ConfigurationBuilder().Build();
             var queue = new BackgroundTaskQueue();
 
-            new HostedTaskService(config, queue, null);
+            _ = new HostedTaskService(config, queue, null);
         }
 
         [Fact]
         public async Task ExecuteAsync_ShouldProcessQueuedActivity()
         {
-            var config = new ConfigurationBuilder().Build();
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var logger = loggerFactory.CreateLogger<HostedTaskService>();
-
-            var queue = new BackgroundTaskQueue();
+            var record = UseRecord();
             var callback = new Mock<Func<CancellationToken, Task>>();
+            var source = new CancellationTokenSource();
+
             callback.Setup(c => c(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable(Times.Once);
-            queue.QueueBackgroundWorkItem(callback.Object);
 
-            var service = new HostedTaskService(config, queue, logger);
-
-            var source = new CancellationTokenSource();
-            // Start and stop the service, waiting for the activity to be processed.
-            await service.StartAsync(source.Token).ContinueWith(async e => {
-                await service.StopAsync(source.Token);
+            record.Queue.QueueBackgroundWorkItem(callback.Object);
+            await record.Service.StartAsync(source.Token).ContinueWith(async e =>
+            {
+                // Start and stop the service, waiting for the activity to be processed.
+                await record.Service.StopAsync(source.Token);
                 Mock.Verify(callback);
+                record.VerifyMocks();
             });
         }
 
@@ -65,54 +62,70 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundTaskService.Tests
         [Fact]
         public async Task ExecuteAsync_ShouldLogErrorWhenProcessingQueuedActivity()
         {
-            var config = new ConfigurationBuilder().Build();
-            var logger = new Mock<ILogger<HostedTaskService>>();
-            logger.Setup(e => e.Log(LogLevel.Error,
+            var record = UseRecord();
+            var callback = new Mock<Func<CancellationToken, Task>>();
+            var source = new CancellationTokenSource();
+
+            record.Logger.Setup(e => e.Log(
+                    LogLevel.Error,
                     It.IsAny<EventId>(),
                     It.IsAny<It.IsAnyType>(),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()))
                 .Verifiable(Times.Once);
-
-            var queue = new BackgroundTaskQueue();
-            var callback = new Mock<Func<CancellationToken, Task>>();
             callback.Setup(c => c(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception())
                 .Verifiable(Times.Once);
-            queue.QueueBackgroundWorkItem(callback.Object);
 
-            var service = new HostedTaskService(config, queue, logger.Object);
-
-            var source = new CancellationTokenSource();
-            // Start and stop the service, waiting for the activity to be processed.
-            await service.StartAsync(source.Token).ContinueWith(async e => {
-                await service.StopAsync(source.Token);
-                Mock.Verify(callback, logger);
+            record.Queue.QueueBackgroundWorkItem(callback.Object);
+            await record.Service.StartAsync(source.Token).ContinueWith(async e =>
+            {
+                // Start and stop the service, waiting for the activity to be processed.
+                await record.Service.StopAsync(source.Token);
+                record.VerifyMocks();
             });
         }
 
         [Fact]
         public void ExecuteAsync_ShouldCancelBackgroundProcess()
         {
-            var config = new ConfigurationBuilder().Build();
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var logger = loggerFactory.CreateLogger<HostedTaskService>();
-
-            var queue = new BackgroundTaskQueue();
+            var record = UseRecord();
             var callback = new Mock<Func<CancellationToken, Task>>();
+            var queue = new BackgroundTaskQueue();
+            var source = new CancellationTokenSource();
+
             callback.Setup(c => c(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable(Times.Never);
-            queue.QueueBackgroundWorkItem(callback.Object);
 
-            var service = new HostedTaskService(config, queue, logger);
-
-            var source = new CancellationTokenSource();
+            record.Queue.QueueBackgroundWorkItem(callback.Object);
             source.Cancel();
-            var task = service.StartAsync(source.Token);
+            var task = record.Service.StartAsync(source.Token);
 
             Assert.Equal(TaskStatus.RanToCompletion, task.Status);
             Mock.Verify(callback);
+            record.VerifyMocks();
+        }
+
+        private static Record UseRecord()
+        {
+            var config = new ConfigurationBuilder().Build();
+            var queue = new BackgroundTaskQueue();
+            var logger = new Mock<ILogger<HostedTaskService>>();
+
+            var service = new HostedTaskService(config, queue, logger.Object);
+            return new(service, queue, logger);
+        }
+
+        private record Record(
+            HostedTaskService Service,
+            BackgroundTaskQueue Queue,
+            Mock<ILogger<HostedTaskService>> Logger)
+        {
+            public void VerifyMocks()
+            {
+                Mock.Verify(Logger);
+            }
         }
     }
 }

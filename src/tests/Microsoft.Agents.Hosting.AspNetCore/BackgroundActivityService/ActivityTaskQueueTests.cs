@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundActivityService.Tests
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
 {
     public class ActivityTaskQueueTests
     {
@@ -19,7 +19,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundActivityService.Tests
             var activity = new Activity();
 
             queue.QueueBackgroundActivity(claims, activity);
-
             var waited = await queue.WaitForActivityAsync(CancellationToken.None);
 
             Assert.Equal(claims, waited.ClaimsIdentity);

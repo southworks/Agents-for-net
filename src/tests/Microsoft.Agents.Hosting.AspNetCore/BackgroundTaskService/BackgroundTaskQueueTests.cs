@@ -6,7 +6,7 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundTaskService.Tests
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
 {
     public class BackgroundTaskQueueTests
     {
