@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
             configSettings = new Dictionary<string, string> {
                 { "Connections:Settings:ClientId", "test-client-id" },
                 { "Connections:Settings:ClientSecret", "test-client-secret" },
-                { "Connections:Settings:CertificateThumbPrint", "test-thumbprint" },
+                { "Connections:Settings:CertThumbprint", "test-thumbprint" },
                 { "Connections:Settings:CertificateSubjectName", "test-subject-name" },
                 { "Connections:Settings:Authority", "test-authority" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         public void ValidateConfiguration_ShouldThrowOnNullCertificateThumbPrintForCertificateType()
         {
             configSettings.Add("Connections:Settings:AuthType", "Certificate");
-            configSettings.Remove("Connections:Settings:CertificateThumbPrint");
+            configSettings.Remove("Connections:Settings:CertThumbprint");
 
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configSettings)
