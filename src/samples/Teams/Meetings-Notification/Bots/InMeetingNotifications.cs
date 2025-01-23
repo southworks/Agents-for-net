@@ -1,5 +1,4 @@
-﻿// <copyright file="InMeetingNotificationsBot.cs" company="Microsoft">
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 // </copyright>
 
@@ -7,15 +6,10 @@ using AdaptiveCards;
 using AdaptiveCards.Templating;
 using InMeetingNotificationsBot.Models;
 using Microsoft.Extensions.Configuration;
-//using System.Text.Json;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -23,6 +17,7 @@ using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Core.Serialization;
 
 
 namespace InMeetingNotificationsBot.Bots
@@ -31,19 +26,17 @@ namespace InMeetingNotificationsBot.Bots
     {
         private readonly IConfiguration _config;
         private readonly MeetingAgenda _agenda;
-        private IHttpClientFactory _httpClientFactory;
 
-        public InMeetingNotifications(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+        public InMeetingNotifications(IConfiguration configuration)
         {
             _config = configuration;
-            _httpClientFactory = httpClientFactory;
             _agenda = new MeetingAgenda
             {
                 AgendaItems = new List<AgendaItem>()
                 {
-                     new AgendaItem { Topic = "Approve 5% dividend payment to shareholders" , Id = 1 },
-                     new AgendaItem { Topic = "Increase research budget by 10%" , Id = 2},
-                     new AgendaItem { Topic = "Continue with WFH for next 3 months" , Id = 3}
+                     new AgendaItem { Topic = "Approve 5% dividend payment to shareholders" , Id = "1" },
+                     new AgendaItem { Topic = "Increase research budget by 10%" , Id = "2"},
+                     new AgendaItem { Topic = "Continue with WFH for next 3 months" , Id = "3"}
                 },
             };
         }
@@ -63,7 +56,7 @@ namespace InMeetingNotificationsBot.Bots
 
                 if (turnContext.Activity.Text.Trim() == "SendTargetedNotification")
                 {
-                    var meetingPartipantsList = new List<ParticipantDetail>();
+                    var meetingParticipantsList = new List<ParticipantDetail>();
 
                     // Get the list of members that are part of meeting group.
                     var participants = await TeamsInfo.GetPagedMembersAsync(turnContext);
@@ -72,19 +65,19 @@ namespace InMeetingNotificationsBot.Bots
 
                     foreach (var member in participants.Members)
                     {
-                        TeamsMeetingParticipant participantDetails = await TeamsInfo.GetMeetingParticipantAsync(turnContext, meetingId, member.AadObjectId, _config["TenandId"]).ConfigureAwait(false);
+                        TeamsMeetingParticipant participantDetails = await TeamsInfo.GetMeetingParticipantAsync(turnContext, meetingId, member.AadObjectId, _config["TenantId"], cancellationToken).ConfigureAwait(false);
 
                         // Select only those members that present when meeting is started.
                         if (participantDetails.Meeting.InMeeting == true)
                         {
                             var meetingParticipant = new ParticipantDetail() { Id = member.Id, Name = member.GivenName };
-                            meetingPartipantsList.Add(meetingParticipant);
+                            meetingParticipantsList.Add(meetingParticipant);
                         }
                     }
 
                     var meetingNotificationDetails = new MeetingNotification
                     {
-                        ParticipantDetails = meetingPartipantsList
+                        ParticipantDetails = meetingParticipantsList
                     };
 
                     // Send and adaptive card to user to select members for sending targeted notifications.
@@ -94,11 +87,11 @@ namespace InMeetingNotificationsBot.Bots
                 else if (turnContext.Activity.Text.Trim() == "SendInMeetingNotification")
                 {
                     Attachment adaptiveCardAttachment = GetAdaptiveCardAttachment("AgendaCard.json", _agenda);
-                    await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment));
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
                 }
                 else
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Please type `SendTargetedNotification` or `SendInMeetingNotification` to send In-meeting notifications."));
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Please type `SendTargetedNotification` or `SendInMeetingNotification` to send In-meeting notifications."), cancellationToken);
                 }
             }
             else
@@ -116,16 +109,16 @@ namespace InMeetingNotificationsBot.Bots
         /// <returns>A task that represents the work queued to execute.</returns>
         private async Task HandleActions(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
-            var action = JsonConvert.DeserializeObject<ActionBase>(turnContext.Activity.Value.ToString());
-            Console.WriteLine(turnContext.Activity.Value.ToString());
+            var action = ProtocolJsonSerializer.ToObject<ActionBase>(turnContext.Activity.Value);
             switch (action.Type)
             {
                 case "PushAgenda":
-                    var pushAgendaAction = JsonConvert.DeserializeObject<PushAgendaAction>(turnContext.Activity.Value.ToString());
-                    var agendaItem = _agenda.AgendaItems.First(a => a.Id.ToString() == pushAgendaAction.Choice.ToString());
+                    var pushAgendaAction = ProtocolJsonSerializer.ToObject<PushAgendaAction>(turnContext.Activity.Value);
+                    var agendaItem = _agenda.AgendaItems.First(a => a.Id == pushAgendaAction.Choice);
                     Console.WriteLine(pushAgendaAction);
                     Attachment adaptiveCardAttachment = GetAdaptiveCardAttachment("QuestionTemplate.json", agendaItem);
                     var activity = MessageFactory.Attachment(adaptiveCardAttachment);
+                    var appId = _config["Connections:BotConnection:Settings:ClientId"];
 
                     activity.ChannelData = new
                     {
@@ -142,28 +135,28 @@ namespace InMeetingNotificationsBot.Bots
                         Notification = new
                         {
                             AlertInMeeting = true,
-                            ExternalResourceUrl = $"https://teams.microsoft.com/l/bubble/{_config["MicrosoftAppId"]}?url=" +
+                            ExternalResourceUrl = $"https://teams.microsoft.com/l/bubble/{appId}?url=" +
                                                   HttpUtility.UrlEncode($"{_config["BaseUrl"]}/InMeetingNotificationPage?topic={agendaItem.Topic}") +
-                                                  $"&height=270&width=250&title=InMeetingNotification&completionBotId={_config["MicrosoftAppId"]}"
+                                                  $"&height=270&width=250&title=InMeetingNotification&completionBotId={appId}"
                         }
                     };
-                    await turnContext.SendActivityAsync(activity);
+                    await turnContext.SendActivityAsync(activity, cancellationToken);
                     break;
                 case "SubmitFeedback":
-                    var submitFeedback = JsonConvert.DeserializeObject<SubmitFeedbackAction>(turnContext.Activity.Value.ToString());
+                    var submitFeedback = ProtocolJsonSerializer.ToObject<SubmitFeedbackAction>(turnContext.Activity.Value);
                     var item = _agenda.AgendaItems.First(a => a.Id.ToString() == submitFeedback.Choice.ToString());
-                    await turnContext.SendActivityAsync($"{turnContext.Activity.From.Name} voted **{submitFeedback.Feedback}** for '{item.Topic}'");
+                    await turnContext.SendActivityAsync($"{turnContext.Activity.From.Name} voted **{submitFeedback.Feedback}** for '{item.Topic}'", cancellationToken: cancellationToken);
                     break;
                 case "SendTargetedMeetingNotification":
                     try
                     {
-                        var actionSet = JsonConvert.DeserializeObject<ActionBase>(turnContext.Activity.Value.ToString());
+                        var actionSet = ProtocolJsonSerializer.ToObject<ActionBase>(turnContext.Activity.Value);
                         var selectedMembers = actionSet.Choice;
                         var pageUrl = _config["BaseUrl"] + "/SendNotificationPage";
                         var meetingId = turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of a MS Teams Meeting.");
                         TargetedMeetingNotification notification = GetTargetedMeetingNotification(selectedMembers.ToString().Split(',').ToList(), pageUrl);
 
-                        await TeamsInfo.SendMeetingNotificationAsync(turnContext, notification, meetingId);
+                        var response = await TeamsInfo.SendMeetingNotificationAsync(turnContext, notification, meetingId, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -205,8 +198,8 @@ namespace InMeetingNotificationsBot.Bots
         /// <returns>A task that represents the work queued to execute.</returns>
         protected override async Task<TaskModuleResponse> OnTeamsTaskModuleSubmitAsync(ITurnContext<IInvokeActivity> turnContext, TaskModuleRequest taskModuleRequest, CancellationToken cancellationToken)
         {
-            var submitFeedback = JsonConvert.DeserializeObject<SubmitFeedbackAction>(taskModuleRequest.Data.ToString());
-            await turnContext.SendActivityAsync($"{turnContext.Activity.From.Name} voted **{submitFeedback.Feedback}** for '{submitFeedback.Topic}'");
+            var submitFeedback = ProtocolJsonSerializer.ToObject<SubmitFeedbackAction>(taskModuleRequest.Data);
+            await turnContext.SendActivityAsync($"{turnContext.Activity.From.Name} voted **{submitFeedback.Feedback}** for '{submitFeedback.Topic}'", cancellationToken: cancellationToken);
 
             return null;
         }

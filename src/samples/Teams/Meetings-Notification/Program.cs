@@ -12,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+builder.Services.AddMvc();
+builder.Services.AddRazorPages();
 
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
@@ -26,10 +28,18 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => "Microsoft Copilot SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
+    app.MapRazorPages();
+    app.MapControllerRoute(
+       name: "default",
+       pattern: "{controller=Home}/{action=CustomForm}/{id?}");
 }
 else
 {
     app.MapControllers();
 }
+
+app.MapControllerRoute(
+   name: "default",
+   pattern: "{controller=Home}/{action=CustomForm}/{id?}");
 
 app.Run();

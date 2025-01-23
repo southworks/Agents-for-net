@@ -10,7 +10,5 @@ namespace InMeetingNotificationsBot.Models
     {
         public string Topic { get; set; }
         public string Feedback { get; set; }
-
-        public int Choice { get; set; }
     }
 }

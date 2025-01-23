@@ -8,6 +8,5 @@ namespace InMeetingNotificationsBot.Models
 {
     public class PushAgendaAction : ActionBase
     {
-        public string Choice { get; set; }
     }
 }
