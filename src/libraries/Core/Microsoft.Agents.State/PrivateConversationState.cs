@@ -18,8 +18,10 @@ namespace Microsoft.Agents.State
     /// in DI.
     /// </remarks>
     /// <param name="storage">The storage layer to use.</param>
-    public class PrivateConversationState(IStorage storage) : BotState(storage, nameof(PrivateConversationState))
+    public class PrivateConversationState(IStorage storage) : BotState(storage, ScopeName)
     {
+        public static readonly string ScopeName = "private";
+
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

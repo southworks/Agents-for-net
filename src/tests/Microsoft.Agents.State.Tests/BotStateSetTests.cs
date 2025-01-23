@@ -15,17 +15,10 @@ namespace Microsoft.Agents.State.Tests
         public void TurnState_Properties()
         {
             var storage = new MemoryStorage();
+            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
 
-            // setup userstate
-            var userState = new UserState(storage);
-
-            // setup convState
-            var convState = new ConversationState(storage);
-
-            var turnState = new BotStateSet(userState, convState);
-
-            Assert.IsType<UserState>(turnState.GetScope(userState.ContextServiceKey));
-            Assert.IsType<ConversationState>(turnState.GetScope(convState.ContextServiceKey));
+            Assert.IsType<UserState>(turnState.GetScope(UserState.ScopeName));
+            Assert.IsType<ConversationState>(turnState.GetScope(ConversationState.ScopeName));
         }
 
         [Fact]
@@ -35,45 +28,55 @@ namespace Microsoft.Agents.State.Tests
 
             var turnContext = TestUtilities.CreateEmptyContext();
             {
-                // setup userstate
-                var userState = new UserState(storage);
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                await turnState.LoadStateAsync(turnContext, false);
 
-                // setup convState
-                var convState = new ConversationState(storage);
-
-                var turnState = new BotStateSet(userState, convState);
-                await turnState.LoadAllAsync(turnContext, false);
-
-                var userCount = turnState.GetValue(turnContext, "user.userCount", () => 0);
+                var userCount = turnState.GetValue("user.userCount", () => 0);
                 Assert.Equal(0, userCount);
-                var convCount = turnState.GetValue(turnContext, "conversation.convCount", () => 0);
+                var convCount = turnState.GetValue("conversation.convCount", () => 0);
                 Assert.Equal(0, convCount);
 
-                turnState.SetValue(turnContext, "user.userCount", 10);
-                turnState.SetValue(turnContext, "conversation.convCount", 20);
+                turnState.SetValue("user.userCount", 10);
+                turnState.SetValue("conversation.convCount", 20);
 
-                Assert.Equal(10, turnState.GetValue(turnContext, "user.userCount", () => 0));
-                Assert.Equal(20, turnState.GetValue(turnContext, "conversation.convCount", () => 0));
+                Assert.Equal(10, turnState.GetValue("user.userCount", () => 0));
+                Assert.Equal(20, turnState.GetValue("conversation.convCount", () => 0));
 
-                await turnState.SaveAllChangesAsync(turnContext, false);
+                await turnState.SaveStateAsync(turnContext, false);
             }
 
             {
-                // setup userstate
-                var userState = new UserState(storage);
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
 
-                // setup convState
-                var convState = new ConversationState(storage);
+                await turnState.LoadStateAsync(turnContext);
 
-                var turnState = new BotStateSet(userState, convState);
-
-                await turnState.LoadAllAsync(turnContext);
-
-                var userCount = turnState.GetValue(turnContext, "user.userCount", () => 0);
+                var userCount = turnState.GetValue("user.userCount", () => 0);
                 Assert.Equal(10, userCount);
-                var convCount = turnState.GetValue(turnContext, "conversation.convCount", () => 0);
+                var convCount = turnState.GetValue("conversation.convCount", () => 0);
                 Assert.Equal(20, convCount);
             }
+        }
+
+        [Fact]
+        public void TurnState_TempState()
+        {
+            var turnState = new BotStateSet(new TempState());
+
+            // Get should create property
+            var count = turnState.Temp.GetValue("count", () => 1);
+            Assert.Equal(1, count);
+
+            // Get via path
+            count = turnState.GetValue<int>("temp.count");
+            Assert.Equal(1, count);
+
+            turnState.Temp.SetValue("count", 2);
+            count = turnState.GetValue<int>("temp.count");
+            Assert.Equal(2, count);
+
+            turnState.Temp.AuthScope = "botscope";
+            Assert.Equal("botscope", turnState.Temp.AuthScope);
+            Assert.Equal("botscope", turnState.Temp.GetValue<string>(TempState.AuthScopeKey));
         }
 
         [Fact]
@@ -112,67 +115,64 @@ namespace Microsoft.Agents.State.Tests
 
             var turnContext = TestUtilities.CreateEmptyContext();
             {
-                var userState = new UserState(storage);
-                var convState = new ConversationState(storage);
-                var turnState = new BotStateSet(userState, convState);
-
-                await turnState.LoadAllAsync(turnContext, false);
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                await turnState.LoadStateAsync(turnContext, false);
 
                 // Add a couple array elements
-                turnState.SetValue(turnContext, "conversation.x.a[1]", "yabba");
-                turnState.SetValue(turnContext, "conversation.x.a[0]", "dabba");
+                turnState.SetValue("conversation.x.a[1]", "yabba");
+                turnState.SetValue("conversation.x.a[0]", "dabba");
 
-                Assert.Equal("dabba", turnState.GetValue(turnContext, "conversation.x.a[0]", () => string.Empty));
-                Assert.Equal("yabba", turnState.GetValue(turnContext, "conversation.x.a[1]", () => string.Empty));
+                Assert.Equal("dabba", turnState.GetValue("conversation.x.a[0]", () => string.Empty));
+                Assert.Equal("yabba", turnState.GetValue("conversation.x.a[1]", () => string.Empty));
 
                 // Verify array
-                var array = turnState.GetValue(turnContext, "conversation.x.a", () => Array.Empty<string>());
+                var array = turnState.GetValue("conversation.x.a", () => Array.Empty<string>());
                 Assert.IsAssignableFrom<Array>(array);
                 Assert.Equal(2, array.Length);
                 Assert.Equal("dabba", array[0]);
                 Assert.Equal("yabba", array[1]);
 
                 // Anonymous type access
-                turnState.SetValue(turnContext, "user.test", test);
+                turnState.SetValue("user.test", test);
 
-                Assert.Equal("FirstName", turnState.GetValue(turnContext, "user.test.bar.strIndex", () => string.Empty));
-                Assert.Equal("Rex", turnState.GetValue(turnContext, "user.test.options.Nicknames[1]", () => string.Empty));
-                Assert.Equal(2, turnState.GetValue(turnContext, "user.test.bar.numbers[1]", () => -1));
+                Assert.Equal("FirstName", turnState.GetValue("user.test.bar.strIndex", () => string.Empty));
+                Assert.Equal("Rex", turnState.GetValue("user.test.options.Nicknames[1]", () => string.Empty));
+                Assert.Equal(2, turnState.GetValue("user.test.bar.numbers[1]", () => -1));
 
                 // Anonymous types are read only
-                Assert.Throws<ArgumentException>(() => turnState.SetValue(turnContext, "user.test.bar.strIndex", "NewFirstName"));
+                Assert.Throws<ArgumentException>(() => turnState.SetValue("user.test.bar.strIndex", "NewFirstName"));
 
                 // Don't support growing native arrays yet
-                Assert.Throws<ArgumentException>(() => turnState.SetValue(turnContext, "user.test.bar.numbers[10]", 10));
+                Assert.Throws<ArgumentException>(() => turnState.SetValue("user.test.bar.numbers[10]", 10));
 
                 // But it can grow lists
-                turnState.SetValue(turnContext, "user.test.options.Nicknames[5]", "John");
-                Assert.Equal("John", turnState.GetValue(turnContext, "user.test.options.Nicknames[5]", () => string.Empty));
+                turnState.SetValue("user.test.options.Nicknames[5]", "John");
+                Assert.Equal("John", turnState.GetValue("user.test.options.Nicknames[5]", () => string.Empty));
 
                 // Can set poco
                 var poco = new TestPocoState()
                 {
                     Value = "firstValue"
                 };
-                turnState.SetValue(turnContext, "user.poco", poco);
-                Assert.Equal("firstValue", turnState.GetValue(turnContext, "user.poco.Value", () => string.Empty));
+                turnState.SetValue("user.poco", poco);
+                Assert.Equal("firstValue", turnState.GetValue("user.poco.Value", () => string.Empty));
 
                 // Get poco object
-                var pocoOut = turnState.GetValue(turnContext, "user.poco", () => new TestPocoState());
+                var pocoOut = turnState.GetValue("user.poco", () => new TestPocoState());
                 Assert.Equal("firstValue", pocoOut.Value);
 
                 // Can set poco field
-                turnState.SetValue(turnContext, "user.poco.Value", "secondValue");
-                Assert.Equal("secondValue", turnState.GetValue(turnContext, "user.poco.Value", () => string.Empty));
+                turnState.SetValue("user.poco.Value", "secondValue");
+                Assert.Equal("secondValue", turnState.GetValue("user.poco.Value", () => string.Empty));
 
                 // List
-                turnState.SetValue(turnContext, "conversation.chatHistory", new List<string>());
-                var chatHistory = turnState.GetValue(turnContext, "conversation.chatHistory", () => new List<string>());
+                turnState.SetValue("conversation.chatHistory", new List<string>());
+                var chatHistory = turnState.GetValue("conversation.chatHistory", () => new List<string>());
                 chatHistory.Add("Hello");
                 chatHistory.Add("Howdy");
 
-                Assert.Equal("Hello", turnState.GetValue(turnContext, "conversation.chatHistory[0]", () => string.Empty));
-                Assert.Equal("Howdy", turnState.GetValue(turnContext, "conversation.chatHistory[1]", () => string.Empty));
+                Assert.Equal("Hello", turnState.GetValue("conversation.chatHistory[0]", () => string.Empty));
+                Assert.Equal("Howdy", turnState.GetValue("conversation.chatHistory[1]", () => string.Empty));
             }
         }
          
@@ -180,30 +180,22 @@ namespace Microsoft.Agents.State.Tests
         public async Task TurnState_ReturnsDefaultForNullValueType()
         {
             var storage = new MemoryStorage();
-
             var turnContext = TestUtilities.CreateEmptyContext();
+            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+            await turnState.LoadStateAsync(turnContext, false);
 
-            // setup userstate
-            var userState = new UserState(storage);
-
-            // setup convState
-            var convState = new ConversationState(storage);
-
-            var turnState = new BotStateSet(userState, convState);
-            await turnState.LoadAllAsync(turnContext, false);
-
-            var userObject = turnState.GetValue<string>(turnContext, "user.userStateObject", () => null);
+            var userObject = turnState.GetValue<string>("user.userStateObject");
             Assert.Null(userObject);
 
             // Ensure we also get null on second attempt
-            userObject = turnState.GetValue<string>(turnContext, "user.userStateObject", () => null);
+            userObject = turnState.GetValue<string>("user.userStateObject");
             Assert.Null(userObject);
 
-            var convObject = turnState.GetValue<string>(turnContext, "conversation.convStateObject", () => null);
+            var convObject = turnState.GetValue<string>("conversation.convStateObject");
             Assert.Null(convObject);
 
             // Ensure we also get null on second attempt
-            convObject = turnState.GetValue<string>(turnContext, "conversation.convStateObject", () => null);
+            convObject = turnState.GetValue<string>("conversation.convStateObject");
             Assert.Null(convObject);
         }
 
@@ -221,7 +213,7 @@ namespace Microsoft.Agents.State.Tests
             var turnState = new BotStateSet(userState, convState);
 
             var context = TestUtilities.CreateEmptyContext();
-            await turnState.LoadAllAsync(context);
+            await turnState.LoadStateAsync(context);
 
             var userCount = userState.GetValue("userCount", () => 0);
             Assert.Equal(0, userCount);
@@ -231,7 +223,7 @@ namespace Microsoft.Agents.State.Tests
             userState.SetValue("userCount", 10);
             convState.SetValue("convCount", 20);
 
-            await turnState.SaveAllChangesAsync(context);
+            await turnState.SaveStateAsync(context);
 
             userCount = userState.GetValue("userCount", () => 0);
             Assert.Equal(10, userCount);

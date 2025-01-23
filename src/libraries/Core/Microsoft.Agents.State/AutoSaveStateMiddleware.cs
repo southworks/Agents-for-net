@@ -84,13 +84,13 @@ namespace Microsoft.Agents.State
             // before turn
             if (_autoLoad)
             {
-                await BotStateSet.LoadAllAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
+                await BotStateSet.LoadStateAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
             }
 
             await next(cancellationToken).ConfigureAwait(false);
 
             // after turn
-            await BotStateSet.SaveAllChangesAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await BotStateSet.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
         }
     }
 }

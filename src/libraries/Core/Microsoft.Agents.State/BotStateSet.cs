@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,55 +16,86 @@ namespace Microsoft.Agents.State
     /// </summary>
     public class BotStateSet
     {
-        private IDictionary<string, BotState> _scopes { get; set; } = new Dictionary<string, BotState>();
+        private readonly Dictionary<string, IBotState> _scopes = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BotStateSet"/> class.
         /// </summary>
         /// <param name="botStates">initial list of <see cref="BotState"/> objects to manage.</param>
-        public BotStateSet(params BotState[] botStates)
+        public BotStateSet(params IBotState[] botStates)
         {
             foreach (var botState in botStates)
             {
-                _scopes.Add(botState.ContextServiceKey, botState);
+                _scopes.Add(botState.Name, botState);
             }
         }
 
-        public T GetValue<T>(ITurnContext turnContext, string name, Func<T> defaultValueFactory)
+        /// <summary>
+        /// Creates BotStateSet with default ConversationState and UserState
+        /// </summary>
+        /// <param name="storage"></param>
+        /// <param name="botStates">Additional list of BotState objects to manage.</param>
+        public BotStateSet(IStorage storage, params IBotState[] botStates)
+        {
+            _scopes.Add(ConversationState.ScopeName, new ConversationState(storage));
+            _scopes.Add(UserState.ScopeName, new UserState(storage));
+            _scopes.Add(TempState.ScopeName, new TempState());
+
+            foreach (var botState in botStates)
+            {
+                _scopes[botState.Name] = botState;
+            }
+        }
+
+        public ConversationState Conversation => GetScope<ConversationState>();
+        public UserState User => GetScope<UserState>();
+        public PrivateConversationState Private => GetScope<PrivateConversationState>();
+        public TempState Temp => GetScope<TempState>();
+
+        public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
             var (scope, property) = GetScopeAndPath(name);
             return GetScope(scope).GetValue(property, defaultValueFactory);
         }
 
-        public void SetValue(ITurnContext turnContext, string name, object value)
+        public void SetValue(string name, object value)
         {
             var (scope, property) = GetScopeAndPath(name);
             GetScope(scope).SetValue(property, value);
         }
 
-        public BotState GetScope(string scope)
+        public void DeleteValue(string name)
         {
-            if (!_scopes.TryGetValue(scope, out BotState value))
+            var (scope, property) = GetScopeAndPath(name);
+            GetScope(scope).DeleteValue(property);
+        }
+
+        public IBotState GetScope(string scope)
+        {
+            if (!_scopes.TryGetValue(scope, out IBotState value))
             {
                 throw new ArgumentException($"Scope '{scope}' not found");
             }
             return value;
         }
 
-        private (string, string) GetScopeAndPath(string name)
+        public T GetScope<T>()
         {
-            var scopeEnd = name.IndexOf('.');
-            if (scopeEnd == -1)
+            foreach (var scope in _scopes)
             {
-                throw new ArgumentException("Path must include the state scope name");
+                if (scope.Value is T botState)
+                {
+                    return botState;
+                }
             }
-            return (name.Substring(0, scopeEnd), name.Substring(scopeEnd + 1));
+
+            throw new ArgumentException($"Scope '{nameof(T)}' not found");
         }
 
-        public BotStateSet Add(BotState botState)
+        public BotStateSet Add(IBotState botState)
         {
             ArgumentNullException.ThrowIfNull(botState);
-            _scopes.Add(botState.ContextServiceKey, botState);
+            _scopes.Add(botState.Name, botState);
             return this;
         }
 
@@ -75,10 +107,15 @@ namespace Microsoft.Agents.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task LoadAllAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
+        public async Task LoadStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             var tasks = _scopes.Select(bs => bs.Value.LoadAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        public void ClearState(string scope)
+        {
+            GetScope(scope).ClearState();
         }
 
         /// <summary>
@@ -89,10 +126,20 @@ namespace Microsoft.Agents.State
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task SaveAllChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
+        public async Task SaveStateAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             var tasks = _scopes.Select(kv => kv.Value.SaveChangesAsync(turnContext, force, cancellationToken)).ToList();
             await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        private static (string, string) GetScopeAndPath(string name)
+        {
+            var scopeEnd = name.IndexOf('.');
+            if (scopeEnd == -1)
+            {
+                throw new ArgumentException("Path must include the state scope name");
+            }
+            return (name.Substring(0, scopeEnd), name.Substring(scopeEnd + 1));
         }
     }
 }

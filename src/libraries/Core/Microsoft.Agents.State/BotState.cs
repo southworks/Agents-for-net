@@ -20,39 +20,38 @@ namespace Microsoft.Agents.State
     /// <remarks>
     /// Each state management object defines a scope for a storage layer.
     ///
-    /// State properties are created within a state management scope, and the Bot Framework
+    /// State properties are created within a state management scope, and the Agents SDK
     /// defines these scopes:
     /// <see cref="ConversationState"/>, <see cref="UserState"/>, and <see cref="PrivateConversationState"/>.
     ///
     /// You can define additional scopes for your bot.
     /// </remarks>
     /// <seealso cref="IStorage"/>
-    public abstract class BotState : IPropertyManager
+    public abstract class BotState : IPropertyManager, IBotState
     {
-        private readonly string _contextServiceKey;
         private readonly IStorage _storage;
-        private CachedBotState _cachedBotState; 
+        private CachedBotState _cachedBotState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BotState"/> class.
         /// </summary>
         /// <param name="storage">The storage layer this state management object will use to store
         /// and retrieve state.</param>
-        /// <param name="contextServiceKey">The key for the state cache for this <see cref="BotState"/>.</param>
+        /// <param name="stateName">The key for the state cache for this <see cref="BotState"/>.</param>
         /// <remarks>This constructor creates a state management object and associated scope.
         /// The object uses <paramref name="storage"/> to persist state property values.
-        /// The object uses the <paramref name="contextServiceKey"/> to cache state within the context for each turn.
+        /// The object uses the <paramref name="stateName"/> to cache state within the context for each turn.
         /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="storage"/> or <paramref name="contextServiceKey"/>
+        /// <exception cref="ArgumentNullException"><paramref name="storage"/> or <paramref name="stateName"/>
         /// is <c>null</c>.</exception>
         /// <seealso cref="ITurnContext"/>
-        public BotState(IStorage storage, string contextServiceKey)
+        public BotState(IStorage storage, string stateName)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            _contextServiceKey = contextServiceKey ?? throw new ArgumentNullException(nameof(contextServiceKey));
+            Name = stateName ?? throw new ArgumentNullException(nameof(stateName));
         }
 
-        public string ContextServiceKey {  get { return _contextServiceKey; } }
+        public string Name { get; private set; }
 
         /// <summary>
         /// Creates a named state property within the scope of a <see cref="BotState"/> and returns
@@ -62,7 +61,7 @@ namespace Microsoft.Agents.State
         /// <param name="name">The name of the property.</param>
         /// <returns>An accessor for the property.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
-        [Obsolete("Use BotState.GetPropertyAsync")]
+        [Obsolete("Use BotState.GetValue and BotState.SetValue")]
         public IStatePropertyAccessor<T> CreateProperty<T>(string name)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -78,7 +77,7 @@ namespace Microsoft.Agents.State
         {
             if (!IsLoaded())
             {
-                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+                throw new InvalidOperationException($"{Name} is not loaded");
             }
 
             DeletePropertyValue(name);
@@ -95,7 +94,7 @@ namespace Microsoft.Agents.State
         {
             if (!IsLoaded())
             {
-                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+                throw new InvalidOperationException($"{Name} is not loaded");
             }
 
             T result = default;
@@ -136,7 +135,7 @@ namespace Microsoft.Agents.State
         {
             if (!IsLoaded())
             {
-                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+                throw new InvalidOperationException($"{Name} is not loaded");
             }
 
             SetPropertyValue(name, value);
@@ -181,7 +180,6 @@ namespace Microsoft.Agents.State
                 }
                 else if (val is JsonObject || val is JsonElement)
                 {
-                    // If types are not used by storage serialization, try deserializing to object
                     _cachedBotState = new CachedBotState(storageKey, ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(val));
                 }
                 else if (val == null)
@@ -199,12 +197,13 @@ namespace Microsoft.Agents.State
 
         private bool ShouldLoad(string storageKey, bool force)
         {
-            if (_cachedBotState != null && _cachedBotState.Key != storageKey)
+            var cachedState = GetCachedState();
+            if (cachedState != null && cachedState.Key != storageKey)
             {
                 throw new InvalidOperationException($"BotState '{GetType().Name}' is being used by multiple conversations. Verify \"AddTransient\" DI registration.");
             }
 
-            return force || _cachedBotState == null || _cachedBotState.State == null;
+            return force || cachedState == null || cachedState.State == null;
         }
 
         /// <summary>
@@ -247,11 +246,11 @@ namespace Microsoft.Agents.State
         {
             if (!IsLoaded())
             {
-                throw new InvalidOperationException($"{_contextServiceKey} is not loaded");
+                throw new InvalidOperationException($"{Name} is not loaded");
             }
 
             // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
-            _cachedBotState = new CachedBotState(_cachedBotState.Key) { Hash = string.Empty };
+            GetCachedState().Clear();
         }
 
         /// <summary>
@@ -264,7 +263,7 @@ namespace Microsoft.Agents.State
         /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
         public virtual async Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            if (_cachedBotState != null)
+            if (IsLoaded())
             {
                 ClearState();
             }
@@ -385,6 +384,12 @@ namespace Microsoft.Agents.State
             {
                 return Hash != ComputeHash(State);
             }
+
+            internal void Clear()
+            {
+                State = new Dictionary<string, object>();
+                Hash = string.Empty;
+            }
         }
 
         #region Obsolete BotStatePropertyAccessor
@@ -439,7 +444,7 @@ namespace Microsoft.Agents.State
             public async Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory, CancellationToken cancellationToken)
             {
                 T result = default(T);
-                
+
                 await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
 
                 try

@@ -32,7 +32,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 builder.Services.AddTransient<PrivateConversationState>();
 
-builder.Services.AddTransient<IMiddleware[]>((sp) =>
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
 {
     return 
     [

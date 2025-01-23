@@ -48,6 +48,31 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
+        public void State_WithDefaultBotState()
+        {
+            var storage = new MemoryStorage();
+
+            var turnState = new BotStateSet(storage);
+
+            Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
+            Assert.IsAssignableFrom<UserState>(turnState.User);
+            Assert.IsAssignableFrom<TempState>(turnState.Temp);
+            Assert.Throws<ArgumentException>(() => turnState.Private);
+
+            turnState = new BotStateSet(storage, new PrivateConversationState(storage));
+            Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
+            Assert.IsAssignableFrom<UserState>(turnState.User);
+            Assert.IsAssignableFrom<TempState>(turnState.Temp);
+            Assert.IsAssignableFrom<PrivateConversationState>(turnState.GetScope<PrivateConversationState>());
+
+            turnState = new BotStateSet(new UserState(storage), new ConversationState(storage), new TempState());
+            Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
+            Assert.IsAssignableFrom<UserState>(turnState.User);
+            Assert.IsAssignableFrom<TempState>(turnState.Temp);
+            Assert.Throws<ArgumentException>(() => turnState.Private);
+        }
+
+        [Fact]
         public async Task State_WriteAsyncStoreItem()
         {
             var dictionary = new Dictionary<string, JsonObject>();
@@ -581,12 +606,12 @@ namespace Microsoft.Agents.State.Tests
                 adapter,
                 async (context, cancellationToken) =>
                     {
-                        var botStateManager = new TestBotState(new MemoryStorage());
+                        var testState = new TestBotState(new MemoryStorage());
 
                         // read initial state object
-                        await botStateManager.LoadAsync(context);
+                        await testState.LoadAsync(context);
 
-                        var customState = botStateManager.GetValue("test", () => new CustomState());
+                        var customState = testState.GetValue("test", () => new CustomState());
 
                         // this should be a 'new CustomState' as nothing is currently stored in storage
                         Assert.NotNull(customState);
@@ -595,14 +620,14 @@ namespace Microsoft.Agents.State.Tests
 
                         // amend property and write to storage
                         customState.CustomString = "test";
-                        await botStateManager.SaveChangesAsync(context);
+                        await testState.SaveChangesAsync(context, false, cancellationToken);
 
                         customState.CustomString = "asdfsadf";
 
                         // read into context again
-                        await botStateManager.LoadAsync(context, force: true);
+                        await testState.LoadAsync(context, force: true, cancellationToken);
 
-                        customState = botStateManager.GetValue("test", () => new CustomState());
+                        customState = testState.GetValue("test", () => new CustomState());
 
                         // check object read from value has the correct value for CustomString
                         Assert.Equal("test", customState.CustomString);
