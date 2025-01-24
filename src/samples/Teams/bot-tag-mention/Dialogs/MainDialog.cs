@@ -1,6 +1,5 @@
-﻿// <copyright file="MainDialog.cs" company="Microsoft">
-// Copyright (c) Microsoft. All rights reserved.
-// </copyright>
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using System;
 using System.IO;
@@ -8,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
@@ -58,12 +56,11 @@ namespace TagMentionBot.Dialogs
         }
 
         // Sends tag mention adaptive card.
-        private async Task<ResourceResponse> TagMentionAdaptivecard(WaterfallStepContext stepContext, CancellationToken cancellationToken, string tagName, string tagId)
+        private async Task<ResourceResponse> TagMentionAdaptiveCard(WaterfallStepContext stepContext, string tagName, string tagId, CancellationToken cancellationToken)
         {
-            //var adaptiveCardTemplate = Path.Combine(".", "Resources", "UserMentionCardTemplate.json");
             string[] path = { ".", "Resources", "UserMentionCardTemplate.json" };
             var adaptiveCardJson = System.IO.File.ReadAllText(Path.Combine(path));
-            // var templateJSON = File.ReadAllText(path);
+
             AdaptiveCardTemplate template = new AdaptiveCardTemplate(adaptiveCardJson);
             var memberData = new
             {
@@ -71,19 +68,12 @@ namespace TagMentionBot.Dialogs
                 tagName = tagName
             };
 
-            string cardJSON = template.Expand(memberData);
-            //AdaptiveCardParseResult result = AdaptiveCard.FromJson(cardJSON);
-
-            // Get card from result
-            //AdaptiveCard card = result.Card;
-
             var adaptiveCardAttachment = new Attachment()
             {
                 ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = cardJSON
+                Content = template.Expand(memberData)
             };
 
-            //return adaptiveCardAttachment;
             return await stepContext.Context.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
 
@@ -105,7 +95,7 @@ namespace TagMentionBot.Dialogs
                     try
                     {
                         stepContext.Context.Activity.RemoveRecipientMention();
-                        if (stepContext.Context.Activity.Text.Trim().ToLower().Contains("<at>"))
+                        if (stepContext.Context.Activity.Text.Trim().Contains("<at>", StringComparison.CurrentCultureIgnoreCase))
                         {
                             var tagName = stepContext.Context.Activity.Text.Replace("<at>", string.Empty).Replace("</at>", string.Empty).Trim();
                             var mentionedEntity = stepContext.Context.Activity.Entities.FirstOrDefault(e => e.Type == "mention");
@@ -115,13 +105,14 @@ namespace TagMentionBot.Dialogs
                             //string[] path = { ".", "Resources", "UserMentionCardTemplate.json" };
                             //var adaptiveCardForPersonalScope = GetFirstOptionsAdaptiveCard(path, turnContext.Activity.From.Name);
                             //await stepContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardForPersonalScope), cancellationToken);
-                            await TagMentionAdaptivecard(stepContext, cancellationToken, tagName, tagID);
+                            await TagMentionAdaptiveCard(stepContext, tagName, tagID, cancellationToken);
 
                         }
-                        else if (stepContext.Context.Activity.Text.Trim().ToLower() != "")
+                        else if (!string.IsNullOrEmpty(stepContext.Context.Activity.Text))
                         {
                             SimpleGraphClient client = null;
                             TeamDetails teamDetails = null;
+
                             try
                             {
                                 // Pull in the data from the Microsoft Graph.
@@ -132,16 +123,18 @@ namespace TagMentionBot.Dialogs
                             {
                                 await stepContext.Context.SendActivityAsync("You don't have Graph API permissions to fetch tag's information. Please use this command to mention a tag: \"`@<Bot-name>  @<your-tag>`\" to experience tag mention using bot.");
                             }
+
                             var result = await client.GetTag(teamDetails.AadGroupId);
                             foreach (var tagDetails in result.CurrentPage)
                             {
-                                if (tagDetails.DisplayName.ToLower() == stepContext.Context.Activity.Text.Trim().ToLower())
+                                if (tagDetails.DisplayName.Equals(stepContext.Context.Activity.Text.Trim(), StringComparison.CurrentCultureIgnoreCase))
                                 {
                                     tagExists = true;
-                                    await TagMentionAdaptivecard(stepContext, cancellationToken, tagDetails.DisplayName, tagDetails.Id);
+                                    await TagMentionAdaptiveCard(stepContext, tagDetails.DisplayName, tagDetails.Id, cancellationToken);
                                     break;
                                 }
                             }
+
                             if (!tagExists)
                             {
                                 await stepContext.Context.SendActivityAsync("Provided tag name is not available in this team. Please try with another tag name or create a new tag.");
@@ -149,13 +142,13 @@ namespace TagMentionBot.Dialogs
                         }
                         else
                         {
-                            await stepContext.Context.SendActivityAsync("Please provide a tag name while mentioning the bot as \"`@<Bot-name> <your-tag-name>`\" or mention a tag as \"`@<Bot-name> @<your-tag>`\"");
+                            await stepContext.Context.SendActivityAsync("Please provide a tag name while mentioning the bot as `@<Bot-name> <your-tag-name>` or mention a tag as `@<Bot-name> @<your-tag>`");
                         }
 
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Error occurred while processing your request.", ex.Message);
+                        _logger.LogError(ex, "Error occurred while processing your request.");
                     }
                 }
                 else

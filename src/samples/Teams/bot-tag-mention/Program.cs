@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using TagMentionBot;
 using TagMentionBot.Bots;
 using TagMentionBot.Dialogs;
 using Microsoft.Agents.State;
@@ -12,6 +11,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder.Teams;
+using Microsoft.Agents.Core.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,12 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsConversationBot<MainDialog>, TeamsSSOAdapter>();
+builder.AddBot<TeamsTagMentionBot<MainDialog>>();
+
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
+{
+    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
+});
 
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();

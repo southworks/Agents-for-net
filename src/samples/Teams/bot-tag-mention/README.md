@@ -85,6 +85,7 @@ If you do not have permission to upload custom apps (sideloading), Teams Toolkit
 -  �Select Microsoft Graph -\>�Delegated permissions.
     - `TeamworkTag.Read` 
     - `TeamworkTag.ReadWrite`
+    - `TeamSettings.ReadWrite.All`
 -   Click on Add permissions. Please make sure to grant the admin consent for the required permissions.
 13. Navigate to **Authentication**
     If an app hasn't been granted IT admin consent, users will have to provide consent the first time they use an app.

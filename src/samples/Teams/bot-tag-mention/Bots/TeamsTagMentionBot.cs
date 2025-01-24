@@ -9,20 +9,13 @@ using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams;
 using Microsoft.Extensions.Logging;
 
 namespace TagMentionBot.Bots
 {
-    public class TeamsConversationBot<T> : DialogBot<T> where T : Dialog
+    public class TeamsTagMentionBot<T>(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger) 
+        : DialogBot<T>(conversationState, userState, dialog, logger) where T : Dialog
     {
-        private string _appId;
-        private string _appPassword;
-
-        public TeamsConversationBot(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger)
-                    : base(conversationState, userState, dialog, logger)
-        {
-        }
 
         /// <summary>
         /// Called when a new user is joins the team, or when the application is first installed
@@ -53,11 +46,13 @@ namespace TagMentionBot.Bots
         {
             if (turnContext.Activity.Conversation.ConversationType == "channel")
             {
-                await turnContext.SendActivityAsync($"Welcome to Tag mention Teams bot app. Please follow the below commands for mentioning the tags: \r\n\r\n\r\n1. Command: \"`@<Bot-name> <your-tag-name>`\" - It will work only if you have Graph API permissions to fetch the tags and bot will mention the tag accordingly in team's channel scope.\r\n\r\n\r\n2. Command \"`@<Bot-name> @<your-tag>`\" - It will work without Graph API permissions but you need to provide the tag as command to experience tag mention using bot.");
+                await turnContext.SendActivityAsync(
+                    $"Welcome to Tag mention Teams bot app. Please follow the below commands for mentioning the tags: \r\n\r\n\r\n1. Command: \"`@<Bot-name> <your-tag-name>`\" - It will work only if you have Graph API permissions to fetch the tags and bot will mention the tag accordingly in team's channel scope.\r\n\r\n\r\n2. Command \"`@<Bot-name> @<your-tag>`\" - It will work without Graph API permissions but you need to provide the tag as command to experience tag mention using bot.",
+                    cancellationToken: cancellationToken);
             }
             else
             {
-                await turnContext.SendActivityAsync("Welcome to Tag mention demo bot. Type anything to get logged in. Type 'logout' to sign-out");
+                await turnContext.SendActivityAsync("Welcome to Tag mention demo bot. Type anything to get logged in. Type 'logout' to sign-out", cancellationToken: cancellationToken);
             }
         }
 
