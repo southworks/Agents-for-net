@@ -63,7 +63,7 @@
   ],
   "webApplicationInfo": {
     "id": "{{AAD_APP_ID}}",
-    "resource": "https://RscBasedStoreApp"
+    "resource": "api://{{AAD_APP_ID}}"
   },
   "authorization": {
     "permissions": {
