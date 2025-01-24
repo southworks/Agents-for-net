@@ -38,14 +38,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         [Fact]
         public void GetCertificate_ShouldReturnCertificate()
         {
+            CleanUpStore("SelfSignedCert");
+            
             var testCertificate = CreateSelfSignedCertificate("SelfSignedCert");
 
-            using (X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser))
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(testCertificate);
-                store.Close();
-            }
+            SaveCertificate(testCertificate);
 
             var thumbprint = testCertificate.Thumbprint;
 
@@ -70,13 +67,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var certificate = provider.GetCertificate();
 
             Assert.Equal(testCertificate, certificate);
-
-            using (X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser))
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Remove(testCertificate);
-                store.Close();
-            }
         }
 
         [Fact]
@@ -92,14 +82,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         [Fact]
         public void GetCertificate_ShouldReturnCertificateSubjectName()
         {
+            CleanUpStore("test-cert");
+
             var testCertificate = CreateSelfSignedCertificate("test-cert");
 
-            using (X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser))
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(testCertificate);
-                store.Close();
-            }
+            SaveCertificate(testCertificate);
 
             var settings = new Dictionary<string, string> {
                 { "Connections:Settings:AuthType", "CertificateSubjectName" },
@@ -122,13 +109,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var certificate = provider.GetCertificate();
 
             Assert.Equal(testCertificate, certificate);
-
-            using (X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser))
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Remove(testCertificate);
-                store.Close();
-            }
         }
 
         [Fact]
@@ -209,7 +189,18 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             Assert.Equal(StoreName.TrustedPeople, storeName);
         }
 
-        public static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
+        private static void CleanUpStore(string subjectName)
+        {
+            using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadWrite);
+            var certificates = store.Certificates.Find(X509FindType.FindBySubjectName, subjectName, false);
+            foreach (var cert in certificates)
+            {
+                store.Remove(cert);
+            }
+        }
+
+        private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
         {
             using var rsa = RSA.Create(2048);
             var request = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -221,6 +212,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var certificate = request.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(1));
 
             return certificate;
+        }
+
+        private static void SaveCertificate(X509Certificate2 certificate)
+        {
+            using X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadWrite);
+            store.Add(certificate);
+            store.Close();
         }
     }
 }
