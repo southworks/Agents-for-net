@@ -22,16 +22,16 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 builder.AddBot<InMeetingNotifications>();
 
 var app = builder.Build();
+app.MapRazorPages();
+app.MapControllerRoute(
+   name: "default",
+   pattern: "{controller=Home}/{action=CustomForm}/{id?}");
 
 if (app.Environment.IsDevelopment())
 {
     app.MapGet("/", () => "Microsoft Copilot SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
-    app.MapRazorPages();
-    app.MapControllerRoute(
-       name: "default",
-       pattern: "{controller=Home}/{action=CustomForm}/{id?}");
 }
 else
 {
