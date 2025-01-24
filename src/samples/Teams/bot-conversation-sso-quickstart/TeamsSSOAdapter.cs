@@ -19,7 +19,7 @@ namespace BotConversationSsoQuickstart
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger,
             ConversationState conversationState,
-            params IMiddleware[] middlewares)
+            IMiddleware[] middlewares = null)
             : base(channelServiceClientFactory, activityTaskQueue, logger, middlewares: middlewares)
         {
             OnTurnError = async (turnContext, exception) =>

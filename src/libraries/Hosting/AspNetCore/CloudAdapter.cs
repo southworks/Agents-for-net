@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             bool async = true,
-            params Core.Interfaces.IMiddleware[] middlewares) : base(channelServiceClientFactory, logger)
+            Core.Interfaces.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;
