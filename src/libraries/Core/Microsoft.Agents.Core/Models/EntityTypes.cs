@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Core.Models
         public const string Mention = "mention";
         public const string Place = "Place";
         public const string Thing = "Thing";
-        public const string GeoCoordinates = "GetCoordinates";
+        public const string GeoCoordinates = "GeoCoordinates";
         public const string StreamInfo = "streaminfo";
     }
 }
