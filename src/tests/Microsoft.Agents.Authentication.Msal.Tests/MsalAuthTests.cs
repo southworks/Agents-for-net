@@ -1,24 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Castle.Core.Logging;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
-using Microsoft.IdentityModel.LoggingExtensions;
 using Moq;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -41,27 +38,15 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             .AddInMemoryCollection(configSettings)
             .Build();
 
-        //private readonly Mock<IServiceProvider> _serviceProviderMock;
-        //private readonly Mock<IConfigurationSection> _configurationSectionMock;
-        //private static readonly Mock<ILogger<MsalAuth>> loggerMock;
         private readonly Mock<ICertificateProvider> _certificateProviderMock;
         private readonly Mock<IConfidentialClientApplication> _confidentialClientMock;
         private readonly Mock<IManagedIdentityApplication> _managedIdentityClientMock;
-        //private readonly MsalAuth _msalAuth;
 
         public MsalAuthTests()
         {
-            //_serviceProviderMock = new Mock<IServiceProvider>();
-            //_configurationSectionMock = new Mock<IConfigurationSection>();
-            //_loggerMock = new Mock<ILogger<MsalAuth>>();
             _certificateProviderMock = new Mock<ICertificateProvider>();
             _confidentialClientMock = new Mock<IConfidentialClientApplication>();
             _managedIdentityClientMock = new Mock<IManagedIdentityApplication>();
-
-            //_serviceProviderMock.Setup(sp => sp.GetService(typeof(ILogger<MsalAuth>))).Returns(_loggerMock.Object);
-            //_serviceProviderMock.Setup(sp => sp.GetService(typeof(ICertificateProvider))).Returns(_certificateProviderMock.Object);
-
-            //_msalAuth = new MsalAuth(_serviceProviderMock.Object, _configurationSectionMock.Object);
         }
 
 
@@ -92,34 +77,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
             await Assert.ThrowsAsync<ArgumentException>(() => msal.GetAccessTokenAsync(null, [], false));
         }
-
-        //[Fact]
-        //public async Task GetAccessTokenAsync_ShouldReturnTokenForClientCredentials()
-        //{
-        //    IList<string> Scopes = new List<string> { "https://api.botframework.com/.default" };
-        //    string resourceUrl = "https://test.url";
-
-        //    var mockOptions = new Mock<IOptions<MsalAuthConfigurationOptions>>();
-
-        //    var returnedOptions = new MsalAuthConfigurationOptions
-        //    {
-        //        MSALEnabledLogPII = false
-        //    };
-        //    mockOptions.Setup(x => x.Value).Returns(returnedOptions);
-
-        //    var logger = new Mock<ILogger<MsalAuth>>();
-
-        //    var service = new Mock<IServiceProvider>();
-        //    service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(mockOptions.Object);
-        //    service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
-        //    service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
-
-        //    var msal = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
-
-        //    var token = await msal.GetAccessTokenAsync(resourceUrl, Scopes, false);
-
-        //    Assert.NotNull(token);
-        //}
 
         [Fact]
         public async Task GetAccessTokenAsync_ShouldReturnTokenFromCache()
@@ -189,7 +146,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var resourceUrl = "https://example.com";
             var scopes = new List<string> { "scope1" };
             var newToken = "new_token";
-            var newAuthResult = new AuthenticationResult(newToken, false, null, DateTimeOffset.UtcNow.AddMinutes(5), DateTimeOffset.UtcNow.AddMinutes(5), null, null, null, null, Guid.NewGuid());
+            //var newAuthResult = new AuthenticationResult(newToken, false, null, DateTimeOffset.UtcNow.AddMinutes(5), DateTimeOffset.UtcNow.AddMinutes(5), null, null, null, null, Guid.NewGuid());
 
             var mockOptions = new Mock<IOptions<MsalAuthConfigurationOptions>>();
 
@@ -215,24 +172,26 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         }
 
         [Fact]
-        public async Task GetAccessTokenAsync_ShouldReturnTokenForManagedIdentity()
+        public async Task GetAccessTokenAsync_ShouldReturnTokenForCertificate()
         {
+            var newToken = "new_token";
+            //var scopes = new List<string>() { "{instance}", "scope1" }.ToString();
             var configSettings = new Dictionary<string, string> {
-                { "Connections:BotServiceConnection:Settings:AuthType", "UserManagedIdentity" },
+                { "Connections:BotServiceConnection:Settings:AuthType", "Certificate" },
                 { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-                { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+                { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "https://botframework/test.com" },
+                { "Connections:BotServiceConnection:Settings:CertThumbprint", "thumbprint" },
+                { "Connections:BotServiceConnection:Settings:Scopes:scope1", "{instance}" }
+
             };
             var SettingsSection = "Connections:BotServiceConnection:Settings";
 
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configSettings)
                 .Build();
-        
-            var resourceUrl = "https://example.com";
-            var scopes = new List<string> { "scope1" };
-            var newToken = "new_token";
-            var newAuthResult = new AuthenticationResult(newToken, false, null, DateTimeOffset.UtcNow.AddMinutes(5), DateTimeOffset.UtcNow.AddMinutes(5), null, null, null, null, Guid.NewGuid());
 
+            var resourceUrl = "https://example.com";
+            //var scopes = new List<string> { "scope1" };
             var mockOptions = new Mock<IOptions<MsalAuthConfigurationOptions>>();
 
             var returnedOptions = new MsalAuthConfigurationOptions
@@ -243,17 +202,93 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
-            var service = new Mock<IServiceProvider>();
+            var mockCertificate = new Mock<ICertificateProvider>();
+            mockCertificate.Setup(x => x.GetCertificate()).Returns(CreateSelfSignedCertificate("test"));
 
+            var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(mockOptions.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
             service.Setup(sp => sp.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+            service.Setup(sp => sp.GetService(typeof(ICertificateProvider))).Returns(mockCertificate.Object);
 
             var msalAuth = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
 
-            var result = await msalAuth.GetAccessTokenAsync(resourceUrl, scopes, true);
+            var result = await msalAuth.GetAccessTokenAsync(resourceUrl, [], true);
 
             Assert.Equal(newToken, result);
+        }
+
+        //[Fact]
+        //public async Task GetAccessTokenAsync_ShouldReturnTokenForManagedIdentity()
+        //{
+        //    var configSettings = new Dictionary<string, string> {
+        //        { "Connections:BotServiceConnection:Settings:AuthType", "SystemManagedIdentity" },
+        //        { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
+        //        { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+        //    };
+        //    var SettingsSection = "Connections:BotServiceConnection:Settings";
+
+        //    IConfiguration configuration = new ConfigurationBuilder()
+        //        .AddInMemoryCollection(configSettings)
+        //        .Build();
+        
+        //    var resourceUrl = "https://example.com";
+        //    var scopes = new List<string> { "scope1" };
+        //    var newToken = "new_token";
+        //    //var newAuthResult = new AuthenticationResult(newToken, false, new Guid().ToString(), DateTimeOffset.UtcNow.AddMinutes(5), DateTimeOffset.UtcNow.AddMinutes(5), "tenant-id", null, "token-id", [], Guid.NewGuid());
+
+        //    var mockOptions = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+        //    var returnedOptions = new MsalAuthConfigurationOptions
+        //    {
+        //        MSALEnabledLogPII = false
+        //    };
+        //    mockOptions.Setup(x => x.Value).Returns(returnedOptions);
+
+        //    var logger = new Mock<ILogger<MsalAuth>>();
+
+        //    var service = new Mock<IServiceProvider>();
+
+        //    service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(mockOptions.Object);
+        //    service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
+        //    service.Setup(sp => sp.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+        //    service.Setup(sp => sp.GetService(typeof(IManagedIdentityApplication))).Returns(new TestManagedIdentityApplication());
+
+        //    var msalAuth = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
+
+        //    var result = await msalAuth.GetAccessTokenAsync(resourceUrl, scopes, true);
+
+        //    Assert.Equal(newToken, result);
+        //}
+
+
+        private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
+        {
+            using var rsa = RSA.Create(2048);
+            var request = new CertificateRequest($"CN={subjectName}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+            request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
+            request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, false));
+            request.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
+
+            var certificate = request.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(1));
+
+            return certificate;
+        }
+
+        private class TestManagedIdentityApplication : IManagedIdentityApplication
+        {
+            public AcquireTokenForManagedIdentityParameterBuilder AcquireTokenForManagedIdentity(string resource)
+            {
+                var mockBuilder = new Mock<AcquireTokenForManagedIdentityParameterBuilder>();
+                var expectedToken = "mocked_token";
+
+                mockBuilder
+                    .Setup(builder => builder.ExecuteAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new AuthenticationResult(expectedToken, false, null, DateTimeOffset.Now, DateTimeOffset.Now.AddHours(1), null, null, null, null, new Guid()));
+
+                return mockBuilder.Object;
+            }
         }
 
         private class TestHttpClientFactory : IHttpClientFactory
@@ -262,6 +297,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 var response = new
                 {
+                    Headers = new { UserAgent = "user-agent" },
                     Access_token = "new_token", //"MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
                     Token_type = "Bearer",
                     Expires_in = 3600,

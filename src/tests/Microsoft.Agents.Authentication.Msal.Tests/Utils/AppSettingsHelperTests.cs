@@ -14,12 +14,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
     [CollectionDefinition("SequentialTests", DisableParallelization = true)]
     public class AppSettingsHelperTests
     {
+        private static readonly Mock<ILogger> _logger = new Mock<ILogger>();
+
         [Fact]
         public void GetAppSetting_ShouldReturnDefaultValueOnMissingConfig()
         {
             var defaultSetting = 3;
 
-            var setting = AppSettingsHelper.GetAppSetting("testSetting1", defaultSetting);
+            var setting = AppSettingsHelper.GetAppSetting("testSetting1", defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
         }
@@ -32,7 +34,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting2", customSetting.ToString());
 
-            var setting = AppSettingsHelper.GetAppSetting("testSetting2", defaultSetting);
+            var setting = AppSettingsHelper.GetAppSetting("testSetting2", defaultSetting, _logger.Object);
 
             Assert.Equal(customSetting, setting);
         }
@@ -42,12 +44,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var customSetting = new ChannelAccount() { Id = "test-id" };
             var defaultSetting = new ConversationAccount() { Name = "test-name" };
+            _logger.Invocations.Clear();
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting3", customSetting.ToString());
 
-            var setting = AppSettingsHelper.GetAppSetting("testSetting3", defaultSetting);
+            var setting = AppSettingsHelper.GetAppSetting("testSetting3", defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
+            Assert.Single(_logger.Invocations);
         }
 
         [Fact]
@@ -55,7 +59,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var defaultSetting = new TimeSpan(0, 0, 0, 45);
             
-            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting4", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting);
+            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting4", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
         }
@@ -68,19 +72,19 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting5", customSetting.ToString());
 
-            var settingMillisec = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Milliseconds, defaultSetting);
+            var settingMillisec = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Milliseconds, defaultSetting, _logger.Object);
             Assert.Equal(TimeSpan.FromMilliseconds(1), settingMillisec);
 
-            var settingSeconds = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting);
+            var settingSeconds = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting, _logger.Object);
             Assert.Equal(TimeSpan.FromSeconds(1), settingSeconds);
 
-            var settingMinutes = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Minutes, defaultSetting);
+            var settingMinutes = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Minutes, defaultSetting, _logger.Object);
             Assert.Equal(TimeSpan.FromMinutes(1), settingMinutes);
 
-            var settingHours = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Hours, defaultSetting);
+            var settingHours = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Hours, defaultSetting, _logger.Object);
             Assert.Equal(TimeSpan.FromHours(1), settingHours);
 
-            var settingDays = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Days, defaultSetting);
+            var settingDays = AppSettingsHelper.GetAppSettingTimeSpan("testSetting5", AppSettingsHelper.TimeSpanFromKey.Days, defaultSetting, _logger.Object);
             Assert.Equal(TimeSpan.FromDays(1), settingDays);
         }
 
@@ -89,12 +93,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var customSetting = "two";
             var defaultSetting = new TimeSpan(0, 0, 0, 45);
+            _logger.Invocations.Clear();
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting6", customSetting);
 
-            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting6", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting);
+            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting6", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
+            Assert.Single(_logger.Invocations);
         }
 
         [Fact]
@@ -102,12 +108,14 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var customSetting = new ChannelAccount() { Id = "test-id" };
             var defaultSetting = new TimeSpan(0, 0, 0, 45);
+            _logger.Invocations.Clear();
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting7", customSetting.ToString());
 
-            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting7", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting);
+            var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting7", AppSettingsHelper.TimeSpanFromKey.Seconds, defaultSetting, _logger.Object);
 
             Assert.Equal(defaultSetting, setting);
+            Assert.Single(_logger.Invocations);
         }
 
         [Fact]
@@ -115,14 +123,24 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         {
             var customSetting = new ChannelAccount() { Id = "test-id" };
             var defaultSetting = new TimeSpan(2, 0, 0, 0);
+            _logger.Invocations.Clear();
+
+            // We mock the logger to force an exception and test the catch
             var logger = new Mock<ILogger>();
-            logger.Setup(x => x.LogWarning(It.IsAny<string>(), It.IsAny<object[]>())).Throws(new Exception());
+            logger.SetupSequence(x => x.Log(LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()))
+            .Throws(new Exception())
+            .Pass();
 
             System.Configuration.ConfigurationManager.AppSettings.Set("testSetting8", customSetting.ToString());
 
             var setting = AppSettingsHelper.GetAppSettingTimeSpan("testSetting8", AppSettingsHelper.TimeSpanFromKey.Days, defaultSetting, logger.Object);
 
             Assert.Equal(defaultSetting, setting);
+            Assert.Equal(2, logger.Invocations.Count);
         }
     }
 }
