@@ -11,6 +11,13 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// An informative update.
         /// </summary>
+        /// <remarks>
+        /// Informative messages
+        ///    Can be sent in any order
+        ///    Text is in Activity.Text
+        ///    TextFormat can be supplied
+        ///    Increments the streamSequence
+        /// </remarks>
         Informative,
 
         /// <summary>
@@ -19,7 +26,7 @@ namespace Microsoft.Agents.Core.Models
         Streaming,
 
         /// <summary>
-        /// The final message.
+        /// The final message.  Only on final "message" Activity.
         /// </summary>
         Final
     }
