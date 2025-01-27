@@ -83,7 +83,9 @@ namespace TagMentionBot.Dialogs
             var tokenResponse = (TokenResponse)stepContext.Result;
             if (stepContext.Context.Activity.Conversation.ConversationType == "personal" && tokenResponse?.Token != null)
             {
-                await stepContext.Context.SendActivityAsync("You have successfully logged in. Please install the app in the team scope to use the Tag mention functionality.");
+                await stepContext.Context.SendActivityAsync(
+                    "You have successfully logged in. Please install the app in the team scope to use the Tag mention functionality.",
+                    cancellationToken: cancellationToken);
             }
             else
             {
@@ -98,15 +100,13 @@ namespace TagMentionBot.Dialogs
                         if (stepContext.Context.Activity.Text.Trim().Contains("<at>", StringComparison.CurrentCultureIgnoreCase))
                         {
                             var tagName = stepContext.Context.Activity.Text.Replace("<at>", string.Empty).Replace("</at>", string.Empty).Trim();
-                            var mentionedEntity = stepContext.Context.Activity.Entities.FirstOrDefault(e => e.Type == "mention");
-                            var mention = mentionedEntity as Mention;
-                            var tagID = mention.Mentioned.Id;
+                            var mentionedEntity = stepContext.Context.Activity.GetMentions().FirstOrDefault(m => string.Equals(m.Text, stepContext.Context.Activity.Text, StringComparison.OrdinalIgnoreCase));
+                            if (mentionedEntity != null)
+                            {
+                                var tagID = mentionedEntity.Mentioned.Id;
 
-                            //string[] path = { ".", "Resources", "UserMentionCardTemplate.json" };
-                            //var adaptiveCardForPersonalScope = GetFirstOptionsAdaptiveCard(path, turnContext.Activity.From.Name);
-                            //await stepContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardForPersonalScope), cancellationToken);
-                            await TagMentionAdaptiveCard(stepContext, tagName, tagID, cancellationToken);
-
+                                await TagMentionAdaptiveCard(stepContext, tagName, tagID, cancellationToken);
+                            }
                         }
                         else if (!string.IsNullOrEmpty(stepContext.Context.Activity.Text))
                         {
@@ -121,7 +121,9 @@ namespace TagMentionBot.Dialogs
                             }
                             catch (Exception ex)
                             {
-                                await stepContext.Context.SendActivityAsync("You don't have Graph API permissions to fetch tag's information. Please use this command to mention a tag: \"`@<Bot-name>  @<your-tag>`\" to experience tag mention using bot.");
+                                await stepContext.Context.SendActivityAsync(
+                                    "You don't have Graph API permissions to fetch tag's information. Please use this command to mention a tag: \"`@<Bot-name>  @<your-tag>`\" to experience tag mention using bot.",
+                                    cancellationToken: cancellationToken);
                             }
 
                             var result = await client.GetTag(teamDetails.AadGroupId);
@@ -137,12 +139,16 @@ namespace TagMentionBot.Dialogs
 
                             if (!tagExists)
                             {
-                                await stepContext.Context.SendActivityAsync("Provided tag name is not available in this team. Please try with another tag name or create a new tag.");
+                                await stepContext.Context.SendActivityAsync(
+                                    "Provided tag name is not available in this team. Please try with another tag name or create a new tag.",
+                                    cancellationToken: cancellationToken);
                             }
                         }
                         else
                         {
-                            await stepContext.Context.SendActivityAsync("Please provide a tag name while mentioning the bot as `@<Bot-name> <your-tag-name>` or mention a tag as `@<Bot-name> @<your-tag>`");
+                            await stepContext.Context.SendActivityAsync(
+                                "Please provide a tag name while mentioning the bot as `@<Bot-name> <your-tag-name>` or mention a tag as `@<Bot-name> @<your-tag>`",
+                                cancellationToken: cancellationToken);
                         }
 
                     }
