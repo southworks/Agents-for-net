@@ -17,24 +17,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
         [Fact]
         public void Constructor_ShouldThrowWithNullConfig()
         {
-            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(null, null, null));
+            var queue = new BackgroundTaskQueue();
+            var logger = new Mock<ILogger<HostedTaskService>>();
+
+            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(null, queue, logger.Object));
         }
 
         [Fact]
         public void Constructor_ShouldThrowWithNullTaskQueue()
         {
             var config = new ConfigurationBuilder().Build();
+            var logger = new Mock<ILogger<HostedTaskService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(config, null, null));
+            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(config, null, logger.Object));
         }
 
         [Fact]
-        public void Constructor_ShouldInstantiateNullLogger()
+        public async Task Constructor_ShouldInstantiateNullLogger()
         {
             var config = new ConfigurationBuilder().Build();
             var queue = new BackgroundTaskQueue();
 
-            _ = new HostedTaskService(config, queue, null);
+            try
+            {
+                var service = new HostedTaskService(config, queue, null);
+                await service.StopAsync(CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                Assert.Fail("NullLogger wasn't instantiated.");
+            }
         }
 
         [Fact]

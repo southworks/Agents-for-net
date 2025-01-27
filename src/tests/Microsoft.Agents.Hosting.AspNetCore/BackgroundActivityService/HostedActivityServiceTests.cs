@@ -21,15 +21,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
         [Fact]
         public void Constructor_ShouldThrowWithNullConfig()
         {
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, null, null, null, null));
+            var bot = new ActivityHandler();
+            var adapter = new TestAdapter();
+            var queue = new ActivityTaskQueue();
+            var logger = new Mock<ILogger<HostedActivityService>>();
+
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, bot, adapter, queue, logger.Object));
         }
 
         [Fact]
         public void Constructor_ShouldThrowWithNullBot()
         {
             var config = new ConfigurationBuilder().Build();
+            var adapter = new TestAdapter();
+            var queue = new ActivityTaskQueue();
+            var logger = new Mock<ILogger<HostedActivityService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, null, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, null, adapter, queue, logger.Object));
         }
 
         [Fact]
@@ -37,8 +45,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
         {
             var config = new ConfigurationBuilder().Build();
             var bot = new ActivityHandler();
+            var queue = new ActivityTaskQueue();
+            var logger = new Mock<ILogger<HostedActivityService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, bot, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, bot, null, queue, logger.Object));
         }
 
         [Fact]
@@ -47,19 +57,28 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
             var config = new ConfigurationBuilder().Build();
             var bot = new ActivityHandler();
             var adapter = new TestAdapter();
+            var logger = new Mock<ILogger<HostedActivityService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, bot, adapter, null, null));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(config, bot, adapter, null, logger.Object));
         }
 
         [Fact]
-        public void Constructor_ShouldInstantiateNullLogger()
+        public async Task Constructor_ShouldInstantiateNullLogger()
         {
             var config = new ConfigurationBuilder().Build();
             var bot = new ActivityHandler();
             var adapter = new TestAdapter();
             var queue = new ActivityTaskQueue();
 
-            _ = new HostedActivityService(config, bot, adapter, queue, null);
+            try
+            {
+                var service = new HostedActivityService(config, bot, adapter, queue, null);
+                await service.StopAsync(CancellationToken.None);
+            }
+            catch (Exception)
+            {
+                Assert.Fail("NullLogger wasn't instantiated.");
+            }
         }
 
         [Fact]

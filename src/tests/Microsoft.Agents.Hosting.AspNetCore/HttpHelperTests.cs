@@ -13,7 +13,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task WriteResponseAsync_ShouldThrowWithNullResponse()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => HttpHelper.WriteResponseAsync(null, null));
+            var response = new InvokeResponse();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => HttpHelper.WriteResponseAsync(null, response));
         }
 
         [Fact]

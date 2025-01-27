@@ -20,12 +20,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class ChannelApiControllerTests
     {
-        private static Activity Activity => new() { Id = "123", Text = "test" };
+        private static Activity _activity => new() { Id = "123", Text = "test" };
 
         [Fact]
         public async Task SendToConversationAsync_ShouldCallHandlerWithActivity()
         {
-            var record = UseRecord(Activity);
+            var record = UseRecord(_activity);
             var conversationId = Guid.NewGuid().ToString();
 
             record.Handler.Setup(e => e.OnSendToConversationAsync(
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ReplyToActivityAsync_ShouldCallHandlerWithActivity()
         {
-            var record = UseRecord(Activity);
+            var record = UseRecord(_activity);
             var conversationId = Guid.NewGuid().ToString();
 
             record.Handler.Setup(e => e.OnReplyToActivityAsync(
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .ReturnsAsync(new ResourceResponse(conversationId))
                 .Verifiable(Times.Once);
 
-            var result = await record.Controller.ReplyToActivityAsync(conversationId, Activity.Id) as JsonResult;
+            var result = await record.Controller.ReplyToActivityAsync(conversationId, _activity.Id) as JsonResult;
 
             Assert.Equal(conversationId, (result.Value as ResourceResponse).Id);
             record.VerifyMocks();
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task UpdateActivityAsync_ShouldCallHandlerWithActivity()
         {
-            var record = UseRecord(Activity);
+            var record = UseRecord(_activity);
             var conversationId = Guid.NewGuid().ToString();
 
             record.Handler.Setup(e => e.OnUpdateActivityAsync(
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .ReturnsAsync(new ResourceResponse(conversationId))
                 .Verifiable(Times.Once);
 
-            var result = await record.Controller.UpdateActivityAsync(conversationId, Activity.Id) as JsonResult;
+            var result = await record.Controller.UpdateActivityAsync(conversationId, _activity.Id) as JsonResult;
 
             Assert.Equal(conversationId, (result.Value as ResourceResponse).Id);
             record.VerifyMocks();

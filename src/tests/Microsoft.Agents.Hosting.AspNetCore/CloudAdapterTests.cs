@@ -67,8 +67,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         public async Task ProcessAsync_ShouldThrowWithNullHttpRequest()
         {
             var record = UseRecord();
+            var context = new DefaultHttpContext();
+            var bot = new ActivityHandler();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => record.Adapter.ProcessAsync(null, null, null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => record.Adapter.ProcessAsync(null, context.Response, bot, CancellationToken.None));
         }
 
         [Fact]
@@ -76,8 +78,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var record = UseRecord();
             var context = new DefaultHttpContext();
+            var bot = new ActivityHandler();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => record.Adapter.ProcessAsync(context.Request, null, null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => record.Adapter.ProcessAsync(context.Request, null, bot, CancellationToken.None));
         }
 
         [Fact]
@@ -141,7 +144,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
 
-            Assert.Equal(999, context.Response.StatusCode);
+            Assert.Equal(StatusCodes.Status511NetworkAuthenticationRequired, context.Response.StatusCode);
         }
 
         [Fact]
@@ -161,7 +164,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ShouldLogMissingActivity()
+        public async Task ProcessAsync_ShouldLogMissingConversationId()
         {
             var record = UseRecord();
             var context = CreateHttpContext(new(ActivityTypes.Message));
@@ -182,7 +185,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ShouldLogMissingConversationId()
+        public async Task ProcessAsync_ShouldLogMissingActivity()
         {
             var record = UseRecord();
             var context = CreateHttpContext();
@@ -244,7 +247,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
             {
-                return Task.FromResult(new InvokeResponse { Status = 999, Body = activity });
+                return Task.FromResult(new InvokeResponse { Status = StatusCodes.Status511NetworkAuthenticationRequired, Body = activity });
             }
         }
     }
