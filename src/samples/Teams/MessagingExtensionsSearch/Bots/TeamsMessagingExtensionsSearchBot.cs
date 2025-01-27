@@ -19,14 +19,9 @@ using Microsoft.Agents.Core.Interfaces;
 
 namespace MessagingExtensionsSearch.Bots
 {
-    public class TeamsMessagingExtensionsSearchBot : TeamsActivityHandler
+    public class TeamsMessagingExtensionsSearchBot(IConfiguration config) : TeamsActivityHandler
     {
-        public readonly string _baseUrl;
-        public TeamsMessagingExtensionsSearchBot(IConfiguration config)
-        {
-            _baseUrl = config["BaseUrl"];
-
-        }
+        public readonly string _baseUrl = config["BaseUrl"];
 
         protected override async Task<MessagingExtensionResponse> OnTeamsMessagingExtensionQueryAsync(ITurnContext<IInvokeActivity> turnContext, MessagingExtensionQuery query, CancellationToken cancellationToken)
         {
@@ -34,7 +29,7 @@ namespace MessagingExtensionsSearch.Bots
 
             if (turnContext.Activity.Value != null)
             {
-                text = query?.Parameters?[0]?.Value.ToString() ?? string.Empty;
+                text = query?.Parameters?[0]?.Value?.ToString() ?? string.Empty;
 
                 switch (text)
                 {
@@ -61,27 +56,18 @@ namespace MessagingExtensionsSearch.Bots
             // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItemAsync event back on this bot.
             var attachments = packages.Select(package =>
             {
-                // Check if package.Item5 (icon URL) is valid and accessible; otherwise, use the default icon URL
-                var iconUrl = !string.IsNullOrEmpty(package.Item5) && Uri.IsWellFormedUriString(package.Item5, UriKind.Absolute)
-                    ? package.Item5
-                    : defaultIconUrl;
-
-                var cardValue = $"{{\"packageId\": \"{package.Item1}\", \"version\": \"{package.Item2}\", \"description\": \"{package.Item3}\", \"projectUrl\": \"{package.Item4}\", \"iconUrl\": \"{iconUrl}\"}}";
-
-                var previewCard = new ThumbnailCard
+                var cardValue = $"{{\"packageId\": \"{package.Id}\", \"version\": \"{package.Version}\", \"description\": \"{PackageItem.NormalizeString(package.Description)}\", \"projectUrl\": \"{package.ProjectUrl}\", \"iconUrl\": \"{package.IconUrl}\"}}";
+                
+                var previewCard = new ThumbnailCard { Title = package.Id, Tap = new CardAction { Type = "invoke", Value = cardValue } };
+                if (!string.IsNullOrEmpty(package.IconUrl))
                 {
-                    Title = package.Item1,
-                    Tap = new CardAction { Type = "invoke", Value = cardValue },
-                    Images = new List<CardImage>
-                    {
-                    new CardImage(iconUrl, "Icon")
-                    }
-                };
+                    previewCard.Images = [new CardImage(package.IconUrl, "Icon")];
+                }
 
                 var attachment = new MessagingExtensionAttachment
                 {
                     ContentType = HeroCard.ContentType,
-                    Content = new HeroCard { Title = package.Item1 },
+                    Content = new HeroCard { Title = package.Id },
                     Preview = previewCard.ToAttachment()
                 };
 
@@ -103,7 +89,6 @@ namespace MessagingExtensionsSearch.Bots
         protected override Task<MessagingExtensionResponse> OnTeamsMessagingExtensionSelectItemAsync(ITurnContext<IInvokeActivity> turnContext, JsonElement query, CancellationToken cancellationToken)
         {
             // The Preview card's Tap should have a Value property assigned, this will be returned to the bot in this event. 
-            // var (packageId, version, description, projectUrl, iconUrl) =  query.ToObject<(string, string, string, string, string)>();
             string packageId = query.GetProperty("packageId").GetString();
             string version = query.GetProperty("version").GetString();
             string description = query.GetProperty("description").GetString();
@@ -117,16 +102,16 @@ namespace MessagingExtensionsSearch.Bots
             {
                 Title = $"{packageId}, {version}",
                 Subtitle = description,
-                Buttons = new List<CardAction>
-                    {
-                        new CardAction { Type = ActionTypes.OpenUrl, Title = "Nuget Package", Value = $"https://www.nuget.org/packages/{packageId}" },
+                Buttons =
+                    [
+                        new CardAction { Type = ActionTypes.OpenUrl, Title = "NuGet Package", Value = $"https://www.nuget.org/packages/{packageId}" },
                         new CardAction { Type = ActionTypes.OpenUrl, Title = "Project", Value = projectUrl },
-                    },
+                    ],
             };
 
             if (!string.IsNullOrEmpty(iconUrl))
             {
-                card.Images = new List<CardImage>() { new CardImage(iconUrl, "Icon") };
+                card.Images = [new CardImage(iconUrl, "Icon")];
             }
 
             var attachment = new MessagingExtensionAttachment
@@ -147,11 +132,17 @@ namespace MessagingExtensionsSearch.Bots
         }
 
         // Generate a set of substrings to illustrate the idea of a set of results coming back from a query. 
-        private async Task<IEnumerable<(string, string, string, string, string)>> FindPackages(string text)
+        private async Task<IEnumerable<PackageItem>> FindPackages(string text)
         {
             var obj = JsonObject.Parse(await (new HttpClient()).GetStringAsync($"https://azuresearch-usnc.nuget.org/query?q=id:{text}&prerelease=true"));
             var items = ProtocolJsonSerializer.ToObject<List<JsonObject>>(obj["data"]);
-            return items.Select(item => (item["id"].ToString(), item["version"].ToString(), item["description"].ToString(), item["projectUrl"]?.ToString(), item["iconUrl"]?.ToString()));
+            return items.Select(item => new PackageItem() 
+            { 
+                Id = item["id"].ToString(), 
+                Version = item["version"].ToString(), 
+                Description = item["description"].ToString(), 
+                ProjectUrl = item["projectUrl"]?.ToString(), 
+                IconUrl = item["iconUrl"]?.ToString() });
         }
 
         public MessagingExtensionResponse GetAdaptiveCard()
@@ -261,6 +252,24 @@ namespace MessagingExtensionsSearch.Bots
                     Attachments = attachments
                 }
             };
+        }
+    }
+
+    class PackageItem
+    {
+        public string Id;
+        public string Version;
+        public string Description;
+        public string ProjectUrl;
+        public string IconUrl;
+
+        public static string NormalizeString(string value)
+        {
+            return value
+                .Replace("\r\n", " ")
+                .Replace("\r", " ")
+                .Replace("\n", " ")
+                .Replace("\"", "\\\"");
         }
     }
 }
