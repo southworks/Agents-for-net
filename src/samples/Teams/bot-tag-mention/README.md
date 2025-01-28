@@ -29,6 +29,12 @@ This sample app demonstrates the use of tag mention funtionality in teams scope 
    - Provide connection Name : for eg `ssoconnection`
    - Select service provider ad `Azure Active Directory V2`
    - Complete the form as follows:
+       a. **Name:** Enter a name for the connection. You'll use this name in your bot in the appsettings.json file.
+       b. **Client id:** Enter the Application (client) ID that you recorded for your Azure identity provider app in the steps above.
+       c. **Client secret:** Enter the secret that you recorded for your Azure identity provider app in the steps above.
+       d. **Tenant ID**  Enter value as `common`.
+       e. **Token Exchange Url** Enter the url in format `api://<<bot-domain>>/botid-00000000-0000-0000-0000-000000000000`(Refer step 1.5)
+       f. Provide **Scopes** like "User.Read openid"
 
 1. Configuring the token connection in the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL Authentication provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
