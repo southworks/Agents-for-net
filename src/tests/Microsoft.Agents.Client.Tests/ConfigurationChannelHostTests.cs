@@ -15,111 +15,67 @@ namespace Microsoft.Agents.Client.Tests
     public class ConfigurationChannelHostTests
     {
         private readonly string _defaultChannel = "webchat";
+        private readonly Mock<IKeyedServiceProvider> _provider = new();
+        private readonly Mock<IConnections> _connections = new();
+        private readonly IConfigurationRoot _config = new ConfigurationBuilder().Build();
+        private readonly Mock<IChannelInfo> _channelInfo = new();
+        private readonly Mock<IChannelFactory> _channelFactory = new();
+        private readonly Mock<IAccessTokenProvider> _token = new();
+        private readonly Mock<IChannel> _channel = new();
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConfigSection()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new Mock<IConfiguration>();
-
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(provider.Object, connections.Object, config.Object, _defaultChannel, null));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel, null));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnEmptyConfigSection()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new Mock<IConfiguration>();
-
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(provider.Object, connections.Object, config.Object, _defaultChannel, string.Empty));
+            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel, string.Empty));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullServiceProvider()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new Mock<IConfiguration>();
-
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(null, connections.Object, config.Object, _defaultChannel));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(null, _connections.Object, _config, _defaultChannel));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConnections()
         {
-            var provider = new Mock<IServiceProvider>();
-            var config = new Mock<IConfiguration>();
-
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(provider.Object, null, config.Object, _defaultChannel));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_provider.Object, null, _config, _defaultChannel));
         }
 
         [Fact]
-        public void Constructor_ShouldSetChannel()
+        public void Constructor_ShouldSetProperties()
         {
             var botId = "bot1";
+            var appId = "123";
             var channel = "testing";
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
+            var endpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
                 {"ChannelHost:Channels:0:Id", botId},
-            };
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(sections)
-                .Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, channel);
-
-            Assert.Single(host.Channels);
-            Assert.Equal(botId, host.Channels[botId].Id);
-            Assert.Equal(channel, host.Channels[botId].ChannelFactory);
-        }
-
-        [Fact]
-        public void Constructor_ShouldSetHostEndpoint()
-        {
-            var endpoint = "http://localhost/";
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var sections = new Dictionary<string, string>{
                 {"ChannelHost:HostEndpoint", endpoint},
-            };
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(sections)
-                .Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-
-            Assert.Equal(endpoint, host.HostEndpoint.ToString());
-        }
-
-        [Fact]
-        public void Constructor_ShouldSetHostAppId()
-        {
-            var appId = "123";
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var sections = new Dictionary<string, string>{
                 {"ChannelHost:HostAppId", appId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, config, channel);
 
+            Assert.Single(host.Channels);
+            Assert.Equal(botId, host.Channels[botId].Id);
+            Assert.Equal(channel, host.Channels[botId].ChannelFactory);
+            Assert.Equal(endpoint, host.HostEndpoint.ToString());
             Assert.Equal(appId, host.HostAppId);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullName()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty ?? null));
         }
@@ -127,11 +83,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnEmptyName()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty));
         }
@@ -139,11 +91,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnUnknownChannel()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel("random"));
         }
@@ -151,11 +99,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnNullChannel()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
             host.Channels.Add(_defaultChannel, null);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
@@ -164,177 +108,136 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnNullChannelFactory()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns(() => null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(channelInfo);
+            Mock.Verify(_channelInfo);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnEmptyChannelFactory()
         {
-            var provider = new Mock<IServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns(string.Empty)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(channelInfo);
+            Mock.Verify(_channelInfo);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullKeyedService()
         {
-            var provider = new Mock<IKeyedServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns("factory")
                 .Verifiable(Times.Exactly(2));
-            provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
+            _provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
                 .Returns<object>(null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(provider);
+            Mock.Verify(_provider);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullChannelTokenProvider()
         {
-            var provider = new Mock<IKeyedServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-            var channelFactory = new Mock<IChannelFactory>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns("factory")
                 .Verifiable(Times.Exactly(2));
-            channelInfo.SetupGet(e => e.TokenProvider)
+            _channelInfo.SetupGet(e => e.TokenProvider)
                 .Returns(() => null)
                 .Verifiable(Times.Once);
-            provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
-                .Returns(channelFactory.Object)
+            _provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
+                .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentNullException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(channelInfo, provider);
+            Mock.Verify(_channelInfo, _provider);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnEmptyChannelTokenProvider()
         {
-            var provider = new Mock<IKeyedServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-            var channelFactory = new Mock<IChannelFactory>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns("factory")
                 .Verifiable(Times.Exactly(2));
-            channelInfo.SetupGet(e => e.TokenProvider)
+            _channelInfo.SetupGet(e => e.TokenProvider)
                 .Returns(string.Empty)
                 .Verifiable(Times.Once);
-            provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
-                .Returns(channelFactory.Object)
+            _provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
+                .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(channelInfo, provider);
+            Mock.Verify(_channelInfo, _provider);
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullConnection()
         {
-            var provider = new Mock<IKeyedServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-            var channelFactory = new Mock<IChannelFactory>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns("factory")
                 .Verifiable(Times.Exactly(2));
-            channelInfo.SetupGet(e => e.TokenProvider)
+            _channelInfo.SetupGet(e => e.TokenProvider)
                 .Returns("provider")
                 .Verifiable(Times.Exactly(2));
-            provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
-                .Returns(channelFactory.Object)
+            _provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
+                .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
-            connections.Setup(e => e.GetConnection(It.IsAny<string>()))
+            _connections.Setup(e => e.GetConnection(It.IsAny<string>()))
                 .Returns<IAccessTokenProvider>(null)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
 
             Assert.Throws<InvalidOperationException>(() => host.GetChannel(_defaultChannel));
-            Mock.Verify(channelInfo, provider, connections);
+            Mock.Verify(_channelInfo, _provider, _connections);
         }
 
         [Fact]
         public void GetChannel_ShouldReturnChannel()
         {
-            var provider = new Mock<IKeyedServiceProvider>();
-            var connections = new Mock<IConnections>();
-            var config = new ConfigurationBuilder().Build();
-            var channelInfo = new Mock<IChannelInfo>();
-            var channelFactory = new Mock<IChannelFactory>();
-            var token = new Mock<IAccessTokenProvider>();
-            var channel = new Mock<IChannel>();
-
-            channelInfo.SetupGet(e => e.ChannelFactory)
+            _channelInfo.SetupGet(e => e.ChannelFactory)
                 .Returns("factory")
                 .Verifiable(Times.Exactly(2));
-            channelInfo.SetupGet(e => e.TokenProvider)
+            _channelInfo.SetupGet(e => e.TokenProvider)
                 .Returns("provider")
                 .Verifiable(Times.Exactly(2));
-            provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
-                .Returns(channelFactory.Object)
+            _provider.Setup(e => e.GetKeyedService(It.IsAny<Type>(), It.IsAny<string>()))
+                .Returns(_channelFactory.Object)
                 .Verifiable(Times.Once);
-            connections.Setup(e => e.GetConnection(It.IsAny<string>()))
-                .Returns(token.Object)
+            _connections.Setup(e => e.GetConnection(It.IsAny<string>()))
+                .Returns(_token.Object)
                 .Verifiable(Times.Once);
-            channelFactory.Setup(e => e.CreateChannel(It.IsAny<IAccessTokenProvider>()))
-                .Returns(channel.Object)
+            _channelFactory.Setup(e => e.CreateChannel(It.IsAny<IAccessTokenProvider>()))
+                .Returns(_channel.Object)
                 .Verifiable(Times.Once);
 
-            var host = new ConfigurationChannelHost(provider.Object, connections.Object, config, _defaultChannel);
-            host.Channels.Add(_defaultChannel, channelInfo.Object);
+            var host = new ConfigurationChannelHost(_provider.Object, _connections.Object, _config, _defaultChannel);
+            host.Channels.Add(_defaultChannel, _channelInfo.Object);
             var result = host.GetChannel(_defaultChannel);
 
-            Assert.Equal(channel.Object, result);
-            Mock.Verify(channelInfo, provider, connections, channelFactory);
+            Assert.Equal(_channel.Object, result);
+            Mock.Verify(_channelInfo, _provider, _connections, _channelFactory);
         }
     }
 }

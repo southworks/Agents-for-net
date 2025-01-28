@@ -23,14 +23,15 @@ namespace Microsoft.Agents.Client.Tests
         private readonly Uri _serviceUrl = new("http://serviceUrl");
         private readonly string _conversationId = "conversationid";
         private readonly Activity _activity = new(conversation: new());
+        private readonly Mock<IAccessTokenProvider> _provider = new();
+        private readonly Mock<IHttpClientFactory> _factory = new();
+        private readonly Mock<ILogger> _logger = new();
+        private readonly Mock<HttpClient> _httpClient = new();
 
         [Fact]
         public async Task PostActivityAsync_ShouldThrowOnNullEndpoint()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var logger = new Mock<ILogger>();
-            var channel = new HttpBotChannel(provider.Object, factory.Object, logger.Object);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, _logger.Object);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 channel.PostActivityAsync(_toBotId, _toBotResource, null, _serviceUrl, _conversationId, _activity, CancellationToken.None));
@@ -39,10 +40,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public async Task PostActivityAsync_ShouldThrowOnNullServiceUrl()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var logger = new Mock<ILogger>();
-            var channel = new HttpBotChannel(provider.Object, factory.Object, logger.Object);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, _logger.Object);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 channel.PostActivityAsync(_toBotId, _toBotResource, _endpoint, null, _conversationId, _activity, CancellationToken.None));
@@ -51,10 +49,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public async Task PostActivityAsync_ShouldThrowOnNullConversationId()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var logger = new Mock<ILogger>();
-            var channel = new HttpBotChannel(provider.Object, factory.Object, logger.Object);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, _logger.Object);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 channel.PostActivityAsync(_toBotId, _toBotResource, _endpoint, _serviceUrl, null, _activity, CancellationToken.None));
@@ -63,10 +58,7 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public async Task PostActivityAsync_ShouldThrowOnNullActivity()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var logger = new Mock<ILogger>();
-            var channel = new HttpBotChannel(provider.Object, factory.Object, logger.Object);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, _logger.Object);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 channel.PostActivityAsync(_toBotId, _toBotResource, _endpoint, _serviceUrl, _conversationId, null, CancellationToken.None));
@@ -75,56 +67,50 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public async Task PostActivityAsync_ShouldReturnSuccessfulInvokeResponse()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var logger = new Mock<ILogger>();
             var httpClient = new Mock<HttpClient>();
             var content = "{\"text\": \"testing\"}";
             var message = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
 
-            provider.Setup(e => e.GetAccessTokenAsync(It.IsAny<string>(), It.Is<IList<string>>(e => e[0].StartsWith(_toBotId)), It.IsAny<bool>()))
+            _provider.Setup(e => e.GetAccessTokenAsync(It.IsAny<string>(), It.Is<IList<string>>(e => e[0].StartsWith(_toBotId)), It.IsAny<bool>()))
                 .ReturnsAsync("token")
                 .Verifiable(Times.Once);
-            factory.Setup(e => e.CreateClient(It.IsAny<string>()))
+            _factory.Setup(e => e.CreateClient(It.IsAny<string>()))
                 .Returns(httpClient.Object)
                 .Verifiable(Times.Once);
             httpClient.Setup(e => e.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(message)
                 .Verifiable(Times.Once);
 
-            var channel = new HttpBotChannel(provider.Object, factory.Object, logger.Object);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, _logger.Object);
             var response = await channel.PostActivityAsync(_toBotId, _toBotResource, _endpoint, _serviceUrl, _conversationId, _activity, CancellationToken.None);
 
             Assert.Equal((int)message.StatusCode, response.Status);
             Assert.Equal(content, response.Body.ToString());
-            Mock.Verify(provider, factory, httpClient);
+            Mock.Verify(_provider, _factory, httpClient);
         }
 
         [Fact]
         public async Task PostActivityAsync_ShouldReturnFailedInvokeResponse()
         {
-            var provider = new Mock<IAccessTokenProvider>();
-            var factory = new Mock<IHttpClientFactory>();
-            var httpClient = new Mock<HttpClient>();
             var content = "{\"text\": \"testing\"}";
             var message = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(content) };
 
-            provider.Setup(e => e.GetAccessTokenAsync(It.IsAny<string>(), It.Is<IList<string>>(e => e[0].StartsWith(_toBotId)), It.IsAny<bool>()))
+            _provider.Setup(e => e.GetAccessTokenAsync(It.IsAny<string>(), It.Is<IList<string>>(e => e[0].StartsWith(_toBotId)), It.IsAny<bool>()))
                 .ReturnsAsync("token")
                 .Verifiable(Times.Once);
-            factory.Setup(e => e.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient.Object)
+            _factory.Setup(e => e.CreateClient(It.IsAny<string>()))
+                .Returns(_httpClient.Object)
                 .Verifiable(Times.Once);
-            httpClient.Setup(e => e.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+            _httpClient.Setup(e => e.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(message)
                 .Verifiable(Times.Once);
 
-            var channel = new HttpBotChannel(provider.Object, factory.Object, null);
+            var channel = new HttpBotChannel(_provider.Object, _factory.Object, null);
             var response = await channel.PostActivityAsync(_toBotId, _toBotResource, _endpoint, _serviceUrl, _conversationId, _activity, CancellationToken.None);
 
             Assert.Equal((int)message.StatusCode, response.Status);
             Assert.Equal(content, response.Body.ToString());
-            Mock.Verify(provider, factory, httpClient);
+            Mock.Verify(_provider, _factory, _httpClient);
         }
     }
 }
