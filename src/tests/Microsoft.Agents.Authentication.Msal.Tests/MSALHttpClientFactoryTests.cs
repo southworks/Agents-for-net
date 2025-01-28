@@ -10,12 +10,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 {
     public class MSALHttpClientFactoryTests
     {
-        private readonly Mock<IServiceProvider> service = new Mock<IServiceProvider>();
+        private readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
 
         [Fact]
         public void Constructor_ShouldInstantiateCorrectly()
         {
-            var factory = new MSALHttpClientFactory(service.Object);
+            var factory = new MSALHttpClientFactory(_service.Object);
 
             Assert.NotNull(factory);
         }
@@ -23,9 +23,9 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public void GetHttpClient_ShouldThrowOnNullIHttpClientFactory()
         {
-            var factory = new MSALHttpClientFactory(service.Object);
+            var factory = new MSALHttpClientFactory(_service.Object);
             
-            Assert.Throws<InvalidOperationException>(() => factory.GetHttpClient());
+            Assert.Throws<InvalidOperationException>(factory.GetHttpClient);
         }
 
         [Fact]
@@ -33,9 +33,9 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         {
             var baseAddress = new Uri("https://botframework.com");
             
-            service.Setup(x => x.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+            _service.Setup(x => x.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
             
-            var factory = new MSALHttpClientFactory(service.Object);
+            var factory = new MSALHttpClientFactory(_service.Object);
             var client = factory.GetHttpClient();
 
             Assert.NotNull(client);

@@ -16,27 +16,29 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 {
     public class MSALHttpRetryHandlerHelperTests
     {
-        private readonly Mock<IOptions<MsalAuthConfigurationOptions>> Options;
-        private readonly Mock<IServiceProvider> Service = new Mock<IServiceProvider>();
-        private readonly MsalAuthConfigurationOptions ReturnedOptions = new MsalAuthConfigurationOptions
+        private readonly Mock<IOptions<MsalAuthConfigurationOptions>> _options;
+        private readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
+        private readonly MsalAuthConfigurationOptions _returnedOptions = new MsalAuthConfigurationOptions
         {
             MSALRetryCount = 4
         };
 
-        private readonly Mock<HttpMessageHandler> Handler = new Mock<HttpMessageHandler>();
+        private readonly Mock<HttpMessageHandler> _handler = new Mock<HttpMessageHandler>();
+
+        private const string RequestUri = "http://test.com";
 
         public MSALHttpRetryHandlerHelperTests()
         {
-            Options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
-            Options.Setup(x => x.Value).Returns(ReturnedOptions);
+            _options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+            _options.Setup(x => x.Value).Returns(_returnedOptions);
             
-            Service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(Options.Object);
+            _service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(_options.Object);
         }
 
         [Fact]
         public void Constructor_ShouldInstantiateCorrectly()
         {
-            var retryHelper = new MSALHttpRetryHandlerHelper(Service.Object);
+            var retryHelper = new MSALHttpRetryHandlerHelper(_service.Object);
 
             Assert.NotNull(retryHelper);
         }
@@ -44,87 +46,87 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public async Task SendAsync_ShouldReturnSuccessfulResponse()
         {
-            Handler.Protected()
+            _handler.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-            var retryHandler = new MSALHttpRetryHandlerHelper(Service.Object)
+            var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
-                InnerHandler = Handler.Object
+                InnerHandler = _handler.Object
             };
 
             var httpClient = new HttpClient(retryHandler);
 
-            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://test.com"));
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            _handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
         public async Task SendAsync_ShouldReturnSuccessfulResponseAfterRetries()
         {
-            Handler.Protected()
+            _handler.Protected()
                 .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-            var retryHandler = new MSALHttpRetryHandlerHelper(Service.Object)
+            var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
-                InnerHandler = Handler.Object
+                InnerHandler = _handler.Object
             };
 
             var httpClient = new HttpClient(retryHandler);
 
-            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://test.com"));
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            _handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
         public async Task SendAsync_ShouldReturnResponseOnNonRetryableFailure()
         {
-            Handler.Protected()
+            _handler.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-            var retryHandler = new MSALHttpRetryHandlerHelper(Service.Object)
+            var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
-                InnerHandler = Handler.Object
+                InnerHandler = _handler.Object
             };
 
             var httpClient = new HttpClient(retryHandler);
 
-            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://test.com"));
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            _handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
         public async Task SendAsync_ShouldReturnResponseAfterExhaustsAllRetries()
         {
-            Handler.Protected()
+            _handler.Protected()
                 .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
                 .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout));
 
-            var retryHandler = new MSALHttpRetryHandlerHelper(Service.Object)
+            var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
-                InnerHandler = Handler.Object
+                InnerHandler = _handler.Object
             };
 
             var httpClient = new HttpClient(retryHandler);
 
-            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://test.com"));
+            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
-            Handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            _handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
     }
 }

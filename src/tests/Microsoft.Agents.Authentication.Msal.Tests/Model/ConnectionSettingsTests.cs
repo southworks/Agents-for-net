@@ -5,26 +5,23 @@ using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Authentication.Msal.Tests.Model
 {
     public class ConnectionSettingsTests
     {
-        private Dictionary<string, string> configSettings;
+        private readonly Dictionary<string, string> _configSettings;
         private const string SettingsSection = "Connections:Settings";
 
         public ConnectionSettingsTests()
         {
-            configSettings = new Dictionary<string, string> {
+            _configSettings = new Dictionary<string, string> {
                 { "Connections:Settings:ClientId", "test-client-id" },
                 { "Connections:Settings:ClientSecret", "test-client-secret" },
                 { "Connections:Settings:CertThumbprint", "test-thumbprint" },
                 { "Connections:Settings:CertificateSubjectName", "test-subject-name" },
-                { "Connections:Settings:Authority", "test-authority" },
+                { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
             };            
         }
@@ -33,7 +30,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         public void ConnectionSettings_ShouldDefaultToClientSecretType()
         {
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             var settings = new ConnectionSettings(configuration.GetSection(SettingsSection));
@@ -44,11 +41,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullClientIdForCertificateType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "Certificate");
-            configSettings.Remove("Connections:Settings:ClientId");
+            _configSettings.Add("Connections:Settings:AuthType", "Certificate");
+            _configSettings.Remove("Connections:Settings:ClientId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -57,11 +54,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullCertificateThumbPrintForCertificateType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "Certificate");
-            configSettings.Remove("Connections:Settings:CertThumbprint");
+            _configSettings.Add("Connections:Settings:AuthType", "Certificate");
+            _configSettings.Remove("Connections:Settings:CertThumbprint");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -70,12 +67,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullAuthorityForCertificateType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "Certificate");
-            configSettings.Remove("Connections:Settings:Authority");
-            configSettings.Remove("Connections:Settings:TenantId");
+            _configSettings.Add("Connections:Settings:AuthType", "Certificate");
+            _configSettings.Remove("Connections:Settings:AuthorityEndpoint");
+            _configSettings.Remove("Connections:Settings:TenantId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -84,11 +81,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullClientIdForCertificateSubjectNameType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
-            configSettings.Remove("Connections:Settings:ClientId");
+            _configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
+            _configSettings.Remove("Connections:Settings:ClientId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -97,11 +94,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullCertificateSubjectNameForCertificateSubjectNameType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
-            configSettings.Remove("Connections:Settings:CertificateSubjectName");
+            _configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
+            _configSettings.Remove("Connections:Settings:CertificateSubjectName");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -110,12 +107,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullAuthorityForCertificateSubjectNameType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
-            configSettings.Remove("Connections:Settings:Authority");
-            configSettings.Remove("Connections:Settings:TenantId");
+            _configSettings.Add("Connections:Settings:AuthType", "CertificateSubjectName");
+            _configSettings.Remove("Connections:Settings:AuthorityEndpoint");
+            _configSettings.Remove("Connections:Settings:TenantId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -124,11 +121,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullClientIdForClientSecretType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
-            configSettings.Remove("Connections:Settings:ClientId");
+            _configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
+            _configSettings.Remove("Connections:Settings:ClientId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -137,11 +134,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullClientSecretForClientSecretType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
-            configSettings.Remove("Connections:Settings:ClientSecret");
+            _configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
+            _configSettings.Remove("Connections:Settings:ClientSecret");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -150,12 +147,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullAuthorityForClientSecretType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
-            configSettings.Remove("Connections:Settings:Authority");
-            configSettings.Remove("Connections:Settings:TenantId");
+            _configSettings.Add("Connections:Settings:AuthType", "ClientSecret");
+            _configSettings.Remove("Connections:Settings:AuthorityEndpoint");
+            _configSettings.Remove("Connections:Settings:TenantId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
@@ -164,11 +161,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         [Fact]
         public void ValidateConfiguration_ShouldThrowOnNullClientIdForUserManagedIdentityType()
         {
-            configSettings.Add("Connections:Settings:AuthType", "UserManagedIdentity");
-            configSettings.Remove("Connections:Settings:ClientId");
+            _configSettings.Add("Connections:Settings:AuthType", "UserManagedIdentity");
+            _configSettings.Remove("Connections:Settings:ClientId");
 
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(configSettings)
+                .AddInMemoryCollection(_configSettings)
                 .Build();
 
             Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));

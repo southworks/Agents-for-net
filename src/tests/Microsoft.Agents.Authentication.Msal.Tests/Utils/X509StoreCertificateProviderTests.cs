@@ -18,22 +18,22 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
     {
         private const string SettingsSection = "Connections:Settings";
         
-        private static readonly Dictionary<string, string> ConfigSettings = new Dictionary<string, string> {
+        private static readonly Dictionary<string, string> _configSettings = new Dictionary<string, string> {
             { "Connections:Settings:AuthType", "Certificate" },
             { "Connections:Settings:ClientId", "test-client-id" },
-            { "Connections:Settings:AuthorityEndpoint", "test-authority" },
+            { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
             { "Connections:Settings:TenantId", "test-tenant-id" },
             { "Connections:Settings:CertificateStoreName", "My" },
             { "Connections:Settings:CertThumbprint", "test-thumbprint" },
         };
 
-        private static readonly IConfiguration Configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(ConfigSettings)
+        private static readonly IConfiguration _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(_configSettings)
             .Build();
 
-        private readonly Mock<ILogger<MsalAuth>> Logger = new Mock<ILogger<MsalAuth>>();
+        private readonly Mock<ILogger<MsalAuth>> _logger = new Mock<ILogger<MsalAuth>>();
 
-        private readonly ConnectionSettings ConnectionSettings = new ConnectionSettings(Configuration.GetSection(SettingsSection));
+        private readonly ConnectionSettings _connectionSettings = new ConnectionSettings(_configuration.GetSection(SettingsSection));
 
         [Fact]
         public void GetCertificate_ShouldReturnCertificate()
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var settings = new Dictionary<string, string> {
                 { "Connections:Settings:AuthType", "Certificate" },
                 { "Connections:Settings:ClientId", "test-client-id" },
-                { "Connections:Settings:AuthorityEndpoint", "test-authority" },
+                { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
                 { "Connections:Settings:CertificateStoreName", "My" },
                 { "Connections:Settings:CertThumbprint", thumbprint },
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             var connectionSettings = new ConnectionSettings(configuration.GetSection(SettingsSection));
 
-            var provider = new X509StoreCertificateProvider(connectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(connectionSettings, _logger.Object);
 
             var certificate = provider.GetCertificate();
 
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         [Fact]
         public void GetCertificate_ShouldReturnNullForCertificateNotFound()
         {
-            var provider = new X509StoreCertificateProvider(ConnectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
             var certificate = provider.GetCertificate();
 
@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var settings = new Dictionary<string, string> {
                 { "Connections:Settings:AuthType", "CertificateSubjectName" },
                 { "Connections:Settings:ClientId", "test-client-id" },
-                { "Connections:Settings:AuthorityEndpoint", "test-authority" },
+                { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
                 { "Connections:Settings:CertificateStoreName", "My" },
                 { "Connections:Settings:ValidCertificateOnly", "false" },
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             var connectionSettings = new ConnectionSettings(configuration.GetSection(SettingsSection));
 
-            var provider = new X509StoreCertificateProvider(connectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(connectionSettings, _logger.Object);
 
             var certificate = provider.GetCertificate();
 
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             var settings = new Dictionary<string, string> {
                 { "Connections:Settings:AuthType", "CertificateSubjectName" },
                 { "Connections:Settings:ClientId", "test-client-id" },
-                { "Connections:Settings:AuthorityEndpoint", "test-authority" },
+                { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
                 { "Connections:Settings:CertSubjectName", "NotFound" }
             };
@@ -128,7 +128,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             var connectionSettings = new ConnectionSettings(configuration.GetSection(SettingsSection));
 
-            var provider = new X509StoreCertificateProvider(connectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(connectionSettings, _logger.Object);
 
             var certificate = provider.GetCertificate();
 
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
 
             var connectionSettings = new ConnectionSettings(config.GetSection(SettingsSection));
 
-            var provider = new X509StoreCertificateProvider(connectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(connectionSettings, _logger.Object);
 
             var certificate = provider.GetCertificate();
 
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         public void GetStoreName_ShouldReturnDefaultOnInvalidName()
         {
 
-            var provider = new X509StoreCertificateProvider(ConnectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
             var storeName = provider.GetStoreName("test-name");
 
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         [Fact]
         public void GetStoreName_ShouldReturnDefaultOnNullName()
         {
-            var provider = new X509StoreCertificateProvider(ConnectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
             var storeName = provider.GetStoreName(null);
 
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
         [Fact]
         public void GetStoreName_ShouldReturnProvidedName()
         {
-            var provider = new X509StoreCertificateProvider(ConnectionSettings, Logger.Object);
+            var provider = new X509StoreCertificateProvider(_connectionSettings, _logger.Object);
 
             var storeName = provider.GetStoreName(StoreName.TrustedPeople.ToString());
 
