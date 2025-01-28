@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 {
     public class MSALHttpClientFactoryTests
     {
-        private readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
+        private readonly Mock<IServiceProvider> _service = new();
 
         [Fact]
         public void Constructor_ShouldInstantiateCorrectly()
@@ -33,13 +33,16 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         {
             var baseAddress = new Uri("https://botframework.com");
             
-            _service.Setup(x => x.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+            _service.Setup(x => x.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory())
+                .Verifiable(Times.Once);
             
             var factory = new MSALHttpClientFactory(_service.Object);
             var client = factory.GetHttpClient();
 
             Assert.NotNull(client);
             Assert.Equal(baseAddress, client.BaseAddress);
+            Mock.Verify(_service);
         }
 
         private class TestHttpClient : HttpClient

@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
     {
         private const string SettingsSection = "Connections:Settings";
         
-        private static readonly Dictionary<string, string> _configSettings = new Dictionary<string, string> {
+        private static readonly Dictionary<string, string> _configSettings = new() {
             { "Connections:Settings:AuthType", "Certificate" },
             { "Connections:Settings:ClientId", "test-client-id" },
             { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
@@ -31,9 +31,9 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
             .AddInMemoryCollection(_configSettings)
             .Build();
 
-        private readonly Mock<ILogger<MsalAuth>> _logger = new Mock<ILogger<MsalAuth>>();
+        private readonly Mock<ILogger<MsalAuth>> _logger = new();
 
-        private readonly ConnectionSettings _connectionSettings = new ConnectionSettings(_configuration.GetSection(SettingsSection));
+        private readonly ConnectionSettings _connectionSettings = new(_configuration.GetSection(SettingsSection));
 
         [Fact]
         public void GetCertificate_ShouldReturnCertificate()

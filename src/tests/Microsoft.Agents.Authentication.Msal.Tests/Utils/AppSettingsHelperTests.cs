@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Utils
     [Collection(nameof(SequentialTests))]
     public class AppSettingsHelperTests
     {
-        private static readonly Mock<ILogger> _logger = new Mock<ILogger>();
+        private static readonly Mock<ILogger> _logger = new();
 
         [Fact]
         public void GetAppSetting_ShouldReturnDefaultValueOnMissingConfig()

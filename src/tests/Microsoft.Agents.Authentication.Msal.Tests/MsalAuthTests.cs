@@ -106,14 +106,20 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions);
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
-            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
-            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
-            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory())
+                .Verifiable(Times.Exactly(2));
 
             var msalAuth = new MsalAuth(service.Object, _configuration.GetSection(SettingsSection));
             
@@ -124,6 +130,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var result = await msalAuth.GetAccessTokenAsync(ResourceUrl, _scopes);
 
             Assert.Equal(newToken, result);
+            Mock.Verify(options, service);
         }
 
         [Fact]
@@ -137,20 +144,27 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions);
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var service = new Mock<IServiceProvider>();
-            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
-            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
-            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory())
+                .Verifiable(Times.Once);
 
             var msalAuth = new MsalAuth(service.Object, _configuration.GetSection(SettingsSection));
 
             var result = await msalAuth.GetAccessTokenAsync(ResourceUrl, _scopes, true);
 
             Assert.Equal(token, result);
+            Mock.Verify(options, service);
         }
 
         [Fact]
@@ -176,24 +190,35 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             {
                 MSALEnabledLogPII = false
             };
-            options.Setup(x => x.Value).Returns(returnedOptions);
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
 
             var logger = new Mock<ILogger<MsalAuth>>();
 
             var certificate = new Mock<ICertificateProvider>();
-            certificate.Setup(x => x.GetCertificate()).Returns(CreateSelfSignedCertificate("test"));
+            certificate.Setup(x => x.GetCertificate())
+                .Returns(CreateSelfSignedCertificate("test"))
+                .Verifiable(Times.Once); ;
 
             var service = new Mock<IServiceProvider>();
-            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
-            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
-            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory))).Returns(new TestHttpClientFactory());
-            service.Setup(sp => sp.GetService(typeof(ICertificateProvider))).Returns(certificate.Object);
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2)); ;
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once); ;
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory())
+                .Verifiable(Times.Exactly(2)); ;
+            service.Setup(sp => sp.GetService(typeof(ICertificateProvider)))
+                .Returns(certificate.Object)
+                .Verifiable(Times.Once);
 
             var msalAuth = new MsalAuth(service.Object, configuration.GetSection(SettingsSection));
 
             var result = await msalAuth.GetAccessTokenAsync(ResourceUrl, [], true);
 
             Assert.Equal(token, result);
+            Mock.Verify(options, service, certificate);
         }
 
         private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)

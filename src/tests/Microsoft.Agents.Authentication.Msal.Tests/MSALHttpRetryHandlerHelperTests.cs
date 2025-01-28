@@ -17,22 +17,26 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
     public class MSALHttpRetryHandlerHelperTests
     {
         private readonly Mock<IOptions<MsalAuthConfigurationOptions>> _options;
-        private readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
-        private readonly MsalAuthConfigurationOptions _returnedOptions = new MsalAuthConfigurationOptions
+        private readonly Mock<IServiceProvider> _service = new();
+        private readonly MsalAuthConfigurationOptions _returnedOptions = new()
         {
             MSALRetryCount = 4
         };
 
-        private readonly Mock<HttpMessageHandler> _handler = new Mock<HttpMessageHandler>();
+        private readonly Mock<HttpMessageHandler> _handler = new();
 
         private const string RequestUri = "http://test.com";
 
         public MSALHttpRetryHandlerHelperTests()
         {
             _options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
-            _options.Setup(x => x.Value).Returns(_returnedOptions);
+            _options.Setup(x => x.Value)
+                .Returns(_returnedOptions)
+                .Verifiable(Times.Once);
             
-            _service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(_options.Object);
+            _service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(_options.Object)
+                .Verifiable(Times.Once);
         }
 
         [Fact]
@@ -41,6 +45,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var retryHelper = new MSALHttpRetryHandlerHelper(_service.Object);
 
             Assert.NotNull(retryHelper);
+            Mock.Verify(_service);
         }
 
         [Fact]
@@ -48,7 +53,8 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         {
             _handler.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK))
+                .Verifiable(Times.Once);
 
             var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
@@ -60,7 +66,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            _handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            Mock.Verify(_handler); // "SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
@@ -91,7 +97,8 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         {
             _handler.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest));
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest))
+                .Verifiable(Times.Once);
 
             var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
@@ -103,7 +110,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            _handler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            Mock.Verify(_handler);
         }
 
         [Fact]
