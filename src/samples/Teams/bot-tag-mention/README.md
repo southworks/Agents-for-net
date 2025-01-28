@@ -44,10 +44,14 @@ This sample app demonstrates the use of tag mention funtionality in teams scope 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "ConnectionName": "", 
+
+
       "TokenValidation": {
         "Audiences": [
           "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-        ]
+        ],
+       "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
       },
 
       "Connections": {
@@ -61,16 +65,15 @@ This sample app demonstrates the use of tag mention funtionality in teams scope 
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
-              ],
-              "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+              ]
           }
       }
       ```
 
       1. Set the **ClientId** to the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
-      1. Set the **Audience** to the AppId of the bot identity.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
+      1. Set the **TokenValidation:Audiences** with the AppId of the bot identity.
       1. Set the **ConnectionName** to the connection name created earlier under bot Oauth settings.
     
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
