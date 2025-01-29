@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -13,7 +16,7 @@ using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Samples.Bots
+namespace TypeaheadSearch.Bots
 {
     /// <summary>
     /// Bot Activity handler class.
@@ -76,7 +79,7 @@ namespace Microsoft.Agents.Samples.Bots
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and welcome! With this sample you can see the functionality of static, dynamic and dependant dropdown search in adaptive card."), cancellationToken);
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and welcome! With this sample you can see the functionality of static, dynamic and dependent dropdown search in adaptive card."), cancellationToken);
                 }
             }
         }
@@ -99,7 +102,7 @@ namespace Microsoft.Agents.Samples.Bots
                 var searchData = JsonSerializer.Deserialize<DynamicSearchCard>(turnContext.Activity.Value.ToString());
 
                 // Fetch package data from the external API
-                var packageResult = JsonSerializer.Deserialize<JsonElement>(await (new HttpClient()).GetStringAsync($"https://azuresearch-usnc.nuget.org/query?q=id:{searchData.queryText}&prerelease=true"));
+                var packageResult = JsonSerializer.Deserialize<JsonElement>(await new HttpClient().GetStringAsync($"https://azuresearch-usnc.nuget.org/query?q=id:{searchData.queryText}&prerelease=true", cancellationToken));
 
                 // Check if a country was specified in the dropdown data
                 if (dropdownCard.data.choiceSelect != "")

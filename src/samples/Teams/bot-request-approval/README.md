@@ -1,10 +1,6 @@
 # Bot request approval
 This sample demonstrates a Teams bot that facilitates task approval requests within group chats. Users can submit requests via Adaptive Cards, which managers can then approve or reject directly in the chat. Other group members can view request details, while only requesters and managers have access to actionable options. The sample supports Azure and includes comprehensive setup guidance, leveraging .NET Core and the Teams Toolkit for Visual Studio.
 
-## Included Features
-* Bots
-* Adaptive Cards
-
 # Interaction with app
 
 ![Preview Image](BotRequestApproval/Images/Preview.gif)
@@ -23,17 +19,15 @@ This sample shows a feature where:
 
 ## Prerequisites
 
-- [.NET Core SDK](https://dotnet.microsoft.com/download) version 6.0
+- [.NET Core SDK](https://dotnet.microsoft.com/download) version 8.0
 
   determine dotnet version
   ```bash
   dotnet --version
   ```
-- [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) or [Ngrok](https://ngrok.com/download) (For local environment testing) latest version (any other tunneling software can also be used)
+- [dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
   
 - [Teams](https://teams.microsoft.com) Microsoft Teams is installed and you have an account
-
-- [Teams Toolkit for Visual Studio](https://learn.microsoft.com/en-us/microsoftteams/platform/toolkit/toolkit-v4/install-teams-toolkit-vs?pivots=visual-studio-v17-7)
 
 ## Running this sample
 
@@ -50,7 +44,10 @@ This sample shows a feature where:
 
       ```json
       "TokenValidation": {
-        "Audience": "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+        "Audiences": [
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
+        ],
+		"TenantId": "{{TenantId}}"
       },
 
       "Connections": {
@@ -60,7 +57,7 @@ This sample shows a feature where:
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+              "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
@@ -69,9 +66,9 @@ This sample shows a feature where:
       }
       ```
 
-      1. Set the **ClientId** to the AppId of the bot identity.
+      1. Replace all **{{ClientId}}** with the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **Audience** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.

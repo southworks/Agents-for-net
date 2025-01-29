@@ -19,22 +19,18 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
 ## Prerequisites
 
 - Microsoft Teams is installed and you have an account (not a guest account)
--  .[NET 6.0](https://dotnet.microsoft.com/download) SDK.
+-  .[NET 8.0](https://dotnet.microsoft.com/download) SDK.
     ```bash
         # determine dotnet version
         dotnet --version
     ```
--  [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) or [ngrok](https://ngrok.com/download) latest version or equivalent tunneling solution
--  [M365 developer account](https://docs.microsoft.com/microsoftteams/platform/concepts/build-and-test/prepare-your-o365-tenant) or access to a Teams account with the appropriate permissions to install an app.
--  [Teams Toolkit for Visual Studio](https://learn.microsoft.com/en-us/microsoftteams/platform/toolkit/toolkit-v4/install-teams-toolkit-vs?pivots=visual-studio-v17-7)
+-  [dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
 
 ## Running this sample
 
 1. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
    - Be sure to add the Teams Channel
    - Record the Application ID, the Tenant ID, and the Client Secret for use below
-
-1. [Add OAuth to your bot](https://aka.ms/AgentsSDK-AddAuth)
 
 1. Configuring the token connection in the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL Authentication provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
@@ -46,8 +42,9 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
       ```json
       "TokenValidation": {
         "Audiences": [
-          "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
-        ]
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
+        ],
+		"TenantId": "{{TenantId}}"
       },
 
       "Connections": {
@@ -57,24 +54,21 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+              "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
-              ],
-              "TenantId": "{{TenantId}}" // This is the Tenant ID used for the Connection. 
+              ]
           }
       }
       ```
 
-      1. Set the **ClientId** to the AppId of the bot identity.
+      1. Replace all **{{ClientId}}** with the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **Audience** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
-
-1. Set "ConnectionName" in the `appsettings.json`. The Microsoft Entra ID ConnectionName from the OAuth Connection Settings on the Azure Bot.
 
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder

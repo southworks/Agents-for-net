@@ -1,19 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-//
-// Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.15.2
 
-using System.Text.Json;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Teams.Models;
 
-namespace MeetingContext.Bots
+namespace MeetingContextApp.Bots
 {
     public class MeetingContextBot : TeamsActivityHandler
     {
-        public const string commandString = "Please use one of these two commands: **Meeting Context** or **Participant Context**";
+        public const string CommandString = "Please use one of these two commands: **Meeting Context** or **Participant Context**";
         
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
@@ -22,40 +19,38 @@ namespace MeetingContext.Bots
                 var text = turnContext.Activity.RemoveRecipientMention();
                 if (text.ToLower().Contains("participant context"))
                 {
-                    var channelDataObject = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(turnContext.Activity.ChannelData));
+                    var channelDataObject = turnContext.Activity.GetChannelData<TeamsChannelData>();
 
-                    var tenantId = channelDataObject.GetProperty("tenant").GetProperty("id").GetString();
-                    var meetingId = channelDataObject.GetProperty("meeting").GetProperty("id").GetString();
+                    var tenantId = channelDataObject.Tenant.Id;
+                    var meetingId = channelDataObject.Meeting.Id;
                     var participantId = turnContext.Activity.From.AadObjectId;
 
                     // GetMeetingParticipant
-                    TeamsMeetingParticipant participantDetails = await TeamsInfo.GetMeetingParticipantAsync(turnContext, meetingId, participantId, tenantId).ConfigureAwait(false);
+                    TeamsMeetingParticipant participantDetails = await TeamsInfo.GetMeetingParticipantAsync(turnContext, meetingId, participantId, tenantId, cancellationToken: cancellationToken);
 
-                    var formattedString = this.GetFormattedSerializeObject(participantDetails);
+                    var formattedString = GetFormattedSerializeObject(participantDetails);
 
                     await turnContext.SendActivityAsync(MessageFactory.Text(formattedString), cancellationToken);
                 }
                 else if (text.ToLower().Contains("meeting context"))
                 {
-                    MeetingInfo meetingInfo = await TeamsInfo.GetMeetingInfoAsync(turnContext);
+                    MeetingInfo meetingInfo = await TeamsInfo.GetMeetingInfoAsync(turnContext, cancellationToken: cancellationToken);
 
-                    var formattedString = this.GetFormattedSerializeObject(meetingInfo);
+                    var formattedString = GetFormattedSerializeObject(meetingInfo);
 
                     await turnContext.SendActivityAsync(MessageFactory.Text(formattedString), cancellationToken);
                 }
                 else
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text(commandString), cancellationToken);
+                    await turnContext.SendActivityAsync(MessageFactory.Text(CommandString), cancellationToken);
                 }
             }
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
-            var welcomeText = "Hello and Welcome!";
-
-            await turnContext.SendActivityAsync(MessageFactory.Text(welcomeText), cancellationToken);
-            await turnContext.SendActivityAsync(MessageFactory.Text(commandString), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text(CommandString), cancellationToken);
         }
 
         /// <summary>
@@ -63,7 +58,7 @@ namespace MeetingContext.Bots
         /// </summary>
         /// <param name="obj">Incoming object needs to be formatted.</param>
         /// <returns>Formatted string.</returns>
-        private string GetFormattedSerializeObject (object obj)
+        private static string GetFormattedSerializeObject (object obj)
         {
             var formattedString = "";
             foreach (var meetingDetails in obj.GetType().GetProperties())

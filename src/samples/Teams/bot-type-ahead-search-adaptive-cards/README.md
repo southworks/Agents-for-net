@@ -17,13 +17,13 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
 
 ## Prerequisites
 
-- [.NET Core SDK](https://dotnet.microsoft.com/download) version 6.0
+- [.NET Core SDK](https://dotnet.microsoft.com/download) version 8.0
 
   determine dotnet version
   ```bash
   dotnet --version
   ```
-- [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) or [Ngrok](https://ngrok.com/download) (For local environment testing) latest version (any other tunneling software can also be used)  
+- [dev tunnels](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) 
  
 - [Teams](https://teams.microsoft.com) Microsoft Teams is installed and you have an account
 
@@ -42,7 +42,10 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
 
       ```json
       "TokenValidation": {
-        "Audience": "00000000-0000-0000-0000-000000000000" // this is the Client ID used for the Azure Bot
+        "Audiences": [
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
+        ],
+		"TenantId": "{{TenantId}}"
       },
 
       "Connections": {
@@ -52,7 +55,7 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
           "Settings": {
               "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
               "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
+              "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
               "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
               "Scopes": [
                 "https://api.botframework.com/.default"
@@ -61,9 +64,9 @@ Please find below demo manifest which is deployed on Microsoft Azure and you can
       }
       ```
 
-      1. Set the **ClientId** to the AppId of the bot identity.
+      1. Replace all **{{ClientId}}** with the AppId of the bot identity.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
-      1. Set the **TenantId** to the Tenant Id where your application is registered.
+      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **Audience** to the AppId of the bot identity.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
