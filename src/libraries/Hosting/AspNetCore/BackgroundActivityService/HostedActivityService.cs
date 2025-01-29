@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
 
-            _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds");
+            _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds", 60);
             _activityQueue = activityTaskQueue;
             _bot = bot;
             _adapter = adapter;
