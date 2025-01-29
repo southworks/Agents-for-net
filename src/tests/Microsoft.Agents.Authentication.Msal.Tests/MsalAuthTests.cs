@@ -197,18 +197,18 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var certificate = new Mock<ICertificateProvider>();
             certificate.Setup(x => x.GetCertificate())
                 .Returns(CreateSelfSignedCertificate("test"))
-                .Verifiable(Times.Once); ;
+                .Verifiable(Times.Once);
 
             var service = new Mock<IServiceProvider>();
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
                 .Returns(options.Object)
-                .Verifiable(Times.Exactly(2)); ;
+                .Verifiable(Times.Exactly(2));
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
                 .Returns(logger.Object)
-                .Verifiable(Times.Once); ;
+                .Verifiable(Times.Once);
             service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
                 .Returns(new TestHttpClientFactory())
-                .Verifiable(Times.Exactly(2)); ;
+                .Verifiable(Times.Exactly(2));
             service.Setup(sp => sp.GetService(typeof(ICertificateProvider)))
                 .Returns(certificate.Object)
                 .Verifiable(Times.Once);

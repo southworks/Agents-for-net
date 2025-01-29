@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Mock.Verify(_handler); // "SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            Mock.Verify(_handler);
         }
 
         [Fact]
