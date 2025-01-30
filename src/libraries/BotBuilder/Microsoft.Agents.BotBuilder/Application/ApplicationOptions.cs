@@ -14,22 +14,6 @@ namespace Microsoft.Teams.AI
         where TState : TurnState, new()
     {
         /// <summary>
-        /// Optional. Teams Bot adapter being used.
-        /// </summary>
-        /// <remarks>
-        /// If using the <see cref="ApplicationOptions{TState}.LongRunningMessages"/> option, calling the <see cref="CloudAdapterBase.ContinueConversationAsync(string, Bot.Schema.Activity, BotCallbackHandler, CancellationToken)"/> method, or configuring user authentication, this property is required.
-        /// </remarks>
-        public ChannelAdapter? Adapter { get; set; }
-
-        /// <summary>
-        /// Optional. Application ID of the bot.
-        /// </summary>
-        /// <remarks>
-        /// If using the <see cref="ApplicationOptions{TState}.LongRunningMessages"/> option, calling the <see cref="CloudAdapterBase.ContinueConversationAsync(string, Bot.Schema.Activity, BotCallbackHandler, CancellationToken)"/> method, or configuring user authentication, this property is required.
-        /// </remarks>
-        public string? BotAppId { get; set; }
-
-        /// <summary>
         /// Optional. Storage provider to use for the application.
         /// </summary>
         public IStorage? Storage { get; set; }

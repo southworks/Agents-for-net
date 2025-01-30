@@ -8,17 +8,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.State
 {
-    public interface IBotState
+    public interface IBotState : IMemory
     {
         string Name { get; }
 
         void ClearState();
         Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
-        void DeleteValue(string name);
-        T GetValue<T>(string name, Func<T> defaultValueFactory = null);
         bool IsLoaded();
         Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
-        void SetValue<T>(string name, T value);
     }
 }

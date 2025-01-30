@@ -19,14 +19,6 @@ namespace Microsoft.Teams.AI
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    /// <remarks>
-    /// The Application object replaces the traditional ActivityHandler that a bot would use. It supports
-    /// a simpler fluent style of authoring bots versus the inheritance based approach used by the
-    /// ActivityHandler class.
-    ///
-    /// Additionally, it has built-in support for calling into the SDK's AI system and can be used to create
-    /// bots that leverage Large Language Models (LLM) and other AI capabilities.
-    /// </remarks>
     /// <typeparam name="TState">Type of the turnState. This allows for strongly typed access to the turn turnState.</typeparam>
     public class Application<TState> : IBot
         where TState : TurnState, new()
@@ -34,7 +26,6 @@ namespace Microsoft.Teams.AI
         private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
         private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
 
-        private readonly ChannelAdapter? _adapter;
         //TODO
         //private readonly AuthenticationManager<TState>? _authentication;
 
@@ -54,6 +45,7 @@ namespace Microsoft.Teams.AI
         /// Creates a new Application instance.
         /// </summary>
         /// <param name="options">Optional. Options used to configure the application.</param>
+        /// <param name="state"></param>
         public Application(ApplicationOptions<TState> options)
         {
             Verify.ParamNotNull(options);
@@ -63,11 +55,6 @@ namespace Microsoft.Teams.AI
             if (Options.TurnStateFactory == null)
             {
                 this.Options.TurnStateFactory = () => new TState();
-            }
-
-            if (Options.Adapter != null)
-            {
-                _adapter = Options.Adapter;
             }
 
             AdaptiveCards = new AdaptiveCards<TState>(this);
@@ -137,22 +124,6 @@ namespace Microsoft.Teams.AI
             }
         }
         */
-
-        /// <summary>
-        /// Fluent interface for accessing the bot adapter used to configure the application.
-        /// </summary>
-        public ChannelAdapter Adapter
-        {
-            get
-            {
-                if (_adapter == null)
-                {
-                    throw new ArgumentException("The Application.Adapter property is unavailable because it was not configured.");
-                }
-
-                return _adapter;
-            }
-        }
 
         /// <summary>
         /// The application's configured options.
@@ -1023,7 +994,6 @@ namespace Microsoft.Teams.AI
                     }
                 }
                 await turnState!.SaveStateAsync(turnContext, storage);
-
             }
             finally
             {

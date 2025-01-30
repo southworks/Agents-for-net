@@ -27,7 +27,7 @@ namespace Microsoft.Agents.State
     /// You can define additional scopes for your bot.
     /// </remarks>
     /// <seealso cref="IStorage"/>
-    public abstract class BotState : IPropertyManager, IBotState
+    public abstract class BotState : IBotState
     {
         private readonly IStorage _storage;
         private CachedBotState _cachedBotState;
@@ -54,21 +54,6 @@ namespace Microsoft.Agents.State
         public string Name { get; private set; }
 
         /// <summary>
-        /// Creates a named state property within the scope of a <see cref="BotState"/> and returns
-        /// an accessor for the property.
-        /// </summary>
-        /// <typeparam name="T">The value type of the property.</typeparam>
-        /// <param name="name">The name of the property.</param>
-        /// <returns>An accessor for the property.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
-        [Obsolete("Use BotState.GetValue and BotState.SetValue")]
-        public IStatePropertyAccessor<T> CreateProperty<T>(string name)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(name);
-            return new BotStatePropertyAccessor<T>(this, name);
-        }
-
-        /// <summary>
         /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
         /// </summary>
         /// <param name="name">value.</param>
@@ -81,6 +66,17 @@ namespace Microsoft.Agents.State
             }
 
             DeletePropertyValue(name);
+        }
+
+        public bool HasValue(string name)
+        {
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{Name} is not loaded");
+            }
+
+            var cachedState = GetCachedState();
+            return ObjectPath.HasValue(cachedState.State, name);
         }
 
         /// <summary>
@@ -303,45 +299,45 @@ namespace Microsoft.Agents.State
         /// Gets the value of a property from the state cache for this <see cref="BotState"/>.
         /// </summary>
         /// <typeparam name="T">The value type of the property.</typeparam>
-        /// <param name="propertyName">The name of the property.</param>
+        /// <param name="path">The path to the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
 #pragma warning disable CA1801 // Review unused parameters (we can't change this without breaking binary compat)
-        protected T GetPropertyValue<T>(string propertyName)
+        protected T GetPropertyValue<T>(string path)
 #pragma warning restore CA1801 // Review unused parameters
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
             var cachedState = GetCachedState();
-            return ObjectPath.GetPathValue<T>(cachedState.State, propertyName, true);
+            return ObjectPath.GetPathValue<T>(cachedState.State, path, true);
         }
 
         /// <summary>
         /// Deletes a property from the state cache for this <see cref="BotState"/>.
         /// </summary>
-        /// <param name="propertyName">The name of the property.</param>
+        /// <param name="path">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        protected void DeletePropertyValue(string propertyName)
+        protected void DeletePropertyValue(string path)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
             var cachedState = GetCachedState();
-            cachedState.State.Remove(propertyName);
+            cachedState.State.Remove(path);
         }
 
         /// <summary>
         /// Sets the value of a property in the state cache for this <see cref="BotState"/>.
         /// </summary>
-        /// <param name="propertyName">The name of the property to set.</param>
+        /// <param name="path">The name of the property to set.</param>
         /// <param name="value">The value to set on the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        protected void SetPropertyValue(string propertyName, object value)
+        protected void SetPropertyValue(string path, object value)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
             var cachedState = GetCachedState();
             //cachedState.State[propertyName] = value;
-            ObjectPath.SetPathValue(cachedState.State, propertyName, value, false);
+            ObjectPath.SetPathValue(cachedState.State, path, value, false);
         }
 
         /// <summary>
@@ -391,101 +387,5 @@ namespace Microsoft.Agents.State
                 Hash = string.Empty;
             }
         }
-
-        #region Obsolete BotStatePropertyAccessor
-        /// <summary>
-        /// Implements an <see cref="IStatePropertyAccessor{T}"/> for a property container.
-        /// Note the semantics of this accessor are intended to be lazy, this means the Get, Set and Delete
-        /// methods will first call LoadAsync. This will be a no-op if the data is already loaded.
-        /// The implication is you can just use this accessor in the application code directly without first calling LoadAsync
-        /// this approach works with the AutoSaveStateMiddleware which will save as needed at the end of a turn.
-        /// </summary>
-        /// <typeparam name="T">type of value the propertyAccessor accesses.</typeparam>
-        private class BotStatePropertyAccessor<T> : IStatePropertyAccessor<T>
-        {
-            private BotState _botState;
-
-            public BotStatePropertyAccessor(BotState botState, string name)
-            {
-                _botState = botState;
-                Name = name;
-            }
-
-            /// <summary>
-            /// Gets name of the property.
-            /// </summary>
-            /// <value>
-            /// name of the property.
-            /// </value>
-            public string Name { get; private set; }
-
-            /// <summary>
-            /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-            /// </summary>
-            /// <param name="turnContext">The turn context.</param>
-            /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-            public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-            {
-                await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-                _botState.DeleteValue(Name);
-            }
-
-            /// <summary>
-            /// Get the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-            /// </summary>
-            /// <param name="turnContext">The context object for this turn.</param>
-            /// <param name="defaultValueFactory">Defines the default value.
-            /// Invoked when no value been set for the requested state property.
-            /// If defaultValueFactory is defined as null in that case, the method returns null and
-            /// <see cref="SetAsync(ITurnContext, T, CancellationToken)">SetAsync</see> is not called.</param>
-            /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-            public async Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory, CancellationToken cancellationToken)
-            {
-                T result = default(T);
-
-                await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-
-                try
-                {
-                    // if T is a value type, lookup up will throw key not found if not found, but as perf
-                    // optimization it will return null if not found for types which are not value types (string and object).
-                    result = _botState.GetValue<T>(Name, defaultValueFactory);
-
-                    if (result == null && defaultValueFactory != null)
-                    {
-                        // use default Value Factory and save default value for any further calls
-                        result = defaultValueFactory();
-                        await SetAsync(turnContext, result, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                catch (KeyNotFoundException)
-                {
-                    if (defaultValueFactory != null)
-                    {
-                        // use default Value Factory and save default value for any further calls
-                        result = defaultValueFactory();
-                        await SetAsync(turnContext, result, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-
-                return result;
-            }
-
-            /// <summary>
-            /// Set the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-            /// </summary>
-            /// <param name="turnContext">turn context.</param>
-            /// <param name="value">value.</param>
-            /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-            public async Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken)
-            {
-                await _botState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
-                _botState.SetValue(Name, value);
-            }
-        }
-        #endregion
     }
 }
