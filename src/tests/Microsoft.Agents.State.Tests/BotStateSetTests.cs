@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Storage;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -10,104 +12,195 @@ namespace Microsoft.Agents.State.Tests
     public class BotStateSetTests
     {
         [Fact]
-        public void BotStateSet_Properties()
+        public void TurnState_Properties()
         {
             var storage = new MemoryStorage();
+            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
 
-            // setup userstate
-            var userState = new UserState(storage);
-
-            // setup convState
-            var convState = new ConversationState(storage);
-
-            var stateSet = new BotStateSet(userState, convState);
-
-            Assert.Equal(2, stateSet.BotStates.Count);
-
-            Assert.IsType<UserState>(stateSet.BotStates[nameof(UserState)]);
-            Assert.IsType<ConversationState>(stateSet.BotStates[nameof(ConversationState)]);
+            Assert.IsType<UserState>(turnState.GetScope(UserState.ScopeName));
+            Assert.IsType<ConversationState>(turnState.GetScope(ConversationState.ScopeName));
         }
 
         [Fact]
-        public async Task BotStateSet_LoadAsync()
+        public async Task TurnState_LoadAsync()
         {
             var storage = new MemoryStorage();
 
             var turnContext = TestUtilities.CreateEmptyContext();
             {
-                // setup userstate
-                var userState = new UserState(storage);
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                await turnState.LoadStateAsync(turnContext, false);
 
-                // setup convState
-                var convState = new ConversationState(storage);
-
-                var stateSet = new BotStateSet(userState, convState);
-
-                Assert.Equal(2, stateSet.BotStates.Count);
-
-                var userCount = await userState.GetPropertyAsync(turnContext, "userCount", () => 0, default);
+                var userCount = turnState.GetValue("user.userCount", () => 0);
                 Assert.Equal(0, userCount);
-                var convCount = await convState.GetPropertyAsync(turnContext, "convCount", () => 0, default);
+                var convCount = turnState.GetValue("conversation.convCount", () => 0);
                 Assert.Equal(0, convCount);
 
-                await userState.SetPropertyAsync(turnContext, "userCount", 10, default);
-                await convState.SetPropertyAsync(turnContext, "convCount", 20, default);
+                turnState.SetValue("user.userCount", 10);
+                turnState.SetValue("conversation.convCount", 20);
 
-                await stateSet.SaveAllChangesAsync(turnContext);
+                Assert.Equal(10, turnState.GetValue("user.userCount", () => 0));
+                Assert.Equal(20, turnState.GetValue("conversation.convCount", () => 0));
+
+                await turnState.SaveStateAsync(turnContext, false);
             }
 
             {
-                // setup userstate
-                var userState = new UserState(storage);
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
 
-                // setup convState
-                var convState = new ConversationState(storage);
+                await turnState.LoadStateAsync(turnContext);
 
-                var stateSet = new BotStateSet(userState, convState);
-
-                await stateSet.LoadAllAsync(turnContext);
-
-                var userCount = await userState.GetPropertyAsync(turnContext, "userCount", () => 0, default);
+                var userCount = turnState.GetValue("user.userCount", () => 0);
                 Assert.Equal(10, userCount);
-                var convCount = await convState.GetPropertyAsync(turnContext, "convCount", () => 0, default);
+                var convCount = turnState.GetValue("conversation.convCount", () => 0);
                 Assert.Equal(20, convCount);
             }
         }
 
         [Fact]
-        public async Task BotStateSet_ReturnsDefaultForNullValueType()
+        public void TurnState_TempState()
         {
+            var turnState = new BotStateSet(new TempState());
+
+            // Get should create property
+            var count = turnState.Temp.GetValue("count", () => 1);
+            Assert.Equal(1, count);
+
+            // Get via path
+            count = turnState.GetValue<int>("temp.count");
+            Assert.Equal(1, count);
+
+            turnState.Temp.SetValue("count", 2);
+            count = turnState.GetValue<int>("temp.count");
+            Assert.Equal(2, count);
+
+            turnState.Temp.AuthScope = "botscope";
+            Assert.Equal("botscope", turnState.Temp.AuthScope);
+            Assert.Equal("botscope", turnState.Temp.GetValue<string>(TempState.AuthScopeKey));
+        }
+
+        [Fact]
+        public async Task TurnState_DottedProperties()
+        {
+            var test = new
+            {
+                test = "test",
+
+                options = new
+                {
+                    Age = 15,
+                    FirstName = "joe",
+                    LastName = "blow",
+                    Bool = false,
+                    Nicknames = new List<string>( [ "Tom", "Rex" ] )
+                },
+
+                bar = new
+                {
+                    numIndex = 2,
+                    strIndex = "FirstName",
+                    objIndex = "options",
+                    options = new Options()
+                    {
+                        Age = 1,
+                        FirstName = "joe",
+                        LastName = "blow",
+                        Bool = false,
+                    },
+                    numbers = new int[] { 1, 2, 3, 4, 5 }
+                },
+            };
+
             var storage = new MemoryStorage();
 
             var turnContext = TestUtilities.CreateEmptyContext();
+            {
+                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                await turnState.LoadStateAsync(turnContext, false);
 
-            // setup userstate
-            var userState = new UserState(storage);
+                // Add a couple array elements
+                turnState.SetValue("conversation.x.a[1]", "yabba");
+                turnState.SetValue("conversation.x.a[0]", "dabba");
 
-            // setup convState
-            var convState = new ConversationState(storage);
+                Assert.Equal("dabba", turnState.GetValue("conversation.x.a[0]", () => string.Empty));
+                Assert.Equal("yabba", turnState.GetValue("conversation.x.a[1]", () => string.Empty));
 
-            var stateSet = new BotStateSet(userState, convState);
+                // Verify array
+                var array = turnState.GetValue("conversation.x.a", () => Array.Empty<string>());
+                Assert.IsAssignableFrom<Array>(array);
+                Assert.Equal(2, array.Length);
+                Assert.Equal("dabba", array[0]);
+                Assert.Equal("yabba", array[1]);
 
-            Assert.Equal(2, stateSet.BotStates.Count);
+                // Anonymous type access
+                turnState.SetValue("user.test", test);
 
-            var userObject = await userState.GetPropertyAsync<string>(turnContext, "userStateObject", () => null, default);
+                Assert.Equal("FirstName", turnState.GetValue("user.test.bar.strIndex", () => string.Empty));
+                Assert.Equal("Rex", turnState.GetValue("user.test.options.Nicknames[1]", () => string.Empty));
+                Assert.Equal(2, turnState.GetValue("user.test.bar.numbers[1]", () => -1));
+
+                // Anonymous types are read only
+                Assert.Throws<ArgumentException>(() => turnState.SetValue("user.test.bar.strIndex", "NewFirstName"));
+
+                // Don't support growing native arrays yet
+                Assert.Throws<ArgumentException>(() => turnState.SetValue("user.test.bar.numbers[10]", 10));
+
+                // But it can grow lists
+                turnState.SetValue("user.test.options.Nicknames[5]", "John");
+                Assert.Equal("John", turnState.GetValue("user.test.options.Nicknames[5]", () => string.Empty));
+
+                // Can set poco
+                var poco = new TestPocoState()
+                {
+                    Value = "firstValue"
+                };
+                turnState.SetValue("user.poco", poco);
+                Assert.Equal("firstValue", turnState.GetValue("user.poco.Value", () => string.Empty));
+
+                // Get poco object
+                var pocoOut = turnState.GetValue("user.poco", () => new TestPocoState());
+                Assert.Equal("firstValue", pocoOut.Value);
+
+                // Can set poco field
+                turnState.SetValue("user.poco.Value", "secondValue");
+                Assert.Equal("secondValue", turnState.GetValue("user.poco.Value", () => string.Empty));
+
+                // List
+                turnState.SetValue("conversation.chatHistory", new List<string>());
+                var chatHistory = turnState.GetValue("conversation.chatHistory", () => new List<string>());
+                chatHistory.Add("Hello");
+                chatHistory.Add("Howdy");
+
+                Assert.Equal("Hello", turnState.GetValue("conversation.chatHistory[0]", () => string.Empty));
+                Assert.Equal("Howdy", turnState.GetValue("conversation.chatHistory[1]", () => string.Empty));
+            }
+        }
+         
+        [Fact]
+        public async Task TurnState_ReturnsDefaultForNullValueType()
+        {
+            var storage = new MemoryStorage();
+            var turnContext = TestUtilities.CreateEmptyContext();
+            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+            await turnState.LoadStateAsync(turnContext, false);
+
+            var userObject = turnState.GetValue<string>("user.userStateObject");
             Assert.Null(userObject);
 
             // Ensure we also get null on second attempt
-            userObject = await userState.GetPropertyAsync<string>(turnContext, "userStateObject", () => null, default);
+            userObject = turnState.GetValue<string>("user.userStateObject");
             Assert.Null(userObject);
 
-            var convObject = await convState.GetPropertyAsync<string>(turnContext, "convStateObject", () => null, default);
+            var convObject = turnState.GetValue<string>("conversation.convStateObject");
             Assert.Null(convObject);
 
             // Ensure we also get null on second attempt
-            convObject = await convState.GetPropertyAsync<string>(turnContext, "convStateObject", () => null, default);
+            convObject = turnState.GetValue<string>("conversation.convStateObject");
             Assert.Null(convObject);
         }
 
         [Fact]
-        public async Task BotStateSet_SaveAsync()
+        public async Task TurnState_SaveAsync()
         {
             var storage = new MemoryStorage();
 
@@ -117,26 +210,25 @@ namespace Microsoft.Agents.State.Tests
             // setup convState
             var convState = new ConversationState(storage);
 
-            var stateSet = new BotStateSet(userState, convState);
+            var turnState = new BotStateSet(userState, convState);
 
-            Assert.Equal(2, stateSet.BotStates.Count);
             var context = TestUtilities.CreateEmptyContext();
-            await stateSet.LoadAllAsync(context);
+            await turnState.LoadStateAsync(context);
 
-            var userCount = await userState.GetPropertyAsync(context, "userCount", () => 0, default);
+            var userCount = userState.GetValue("userCount", () => 0);
             Assert.Equal(0, userCount);
-            var convCount = await convState.GetPropertyAsync(context, "convCount", () => 0, default);
+            var convCount = convState.GetValue("convCount", () => 0);
             Assert.Equal(0, convCount);
 
-            await userState.SetPropertyAsync(context, "userCount", 10, default);
-            await convState.SetPropertyAsync(context, "convCount", 20, default);
+            userState.SetValue("userCount", 10);
+            convState.SetValue("convCount", 20);
 
-            await stateSet.SaveAllChangesAsync(context);
+            await turnState.SaveStateAsync(context);
 
-            userCount = await userState.GetPropertyAsync(context, "userCount", () => 0, default);
+            userCount = userState.GetValue("userCount", () => 0);
             Assert.Equal(10, userCount);
 
-            convCount = await convState.GetPropertyAsync(context, "convCount", () => 0, default);
+            convCount = convState.GetValue("convCount", () => 0);
             Assert.Equal(20, convCount);
         }
 

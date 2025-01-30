@@ -41,11 +41,5 @@ namespace BotConversationSsoQuickstart.Bots
             _logger.LogInformation("Running dialog with Message Activity.");
             await _dialog.RunAsync(turnContext, _conversationState, cancellationToken);
         }
-
-        protected override async Task OnTurnEndAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            // Save any state changes that might have occurred during the turn.
-            await _conversationState.SaveChangesAsync(turnContext, false, cancellationToken);
-        }
     }
 }

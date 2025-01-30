@@ -41,10 +41,10 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 /* END COSMOSDB STORAGE */
 
 // Create the User state. (Used in this bot's Dialog implementation.)
-builder.Services.AddSingleton<UserState>();
+builder.Services.AddTransient<UserState>();
 
 // Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<ConversationState>();
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<MainDialog>();

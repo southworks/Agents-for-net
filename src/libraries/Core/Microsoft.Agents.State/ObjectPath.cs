@@ -43,10 +43,11 @@ namespace Microsoft.Agents.State
         /// <typeparam name="T">type to return.</typeparam>
         /// <param name="obj">object to start with.</param>
         /// <param name="path">path to evaluate.</param>
+        /// <param name="set">Set path value with result if true.</param>
         /// <returns>value or default(T).</returns>
-        public static T GetPathValue<T>(object obj, string path)
+        public static T GetPathValue<T>(object obj, string path, bool set = false)
         {
-            if (TryGetPathValue<T>(obj, path, out var value))
+            if (TryGetPathValue<T>(obj, path, out var value, set))
             {
                 return value;
             }
@@ -61,10 +62,11 @@ namespace Microsoft.Agents.State
         /// <param name="obj">object to start with.</param>
         /// <param name="path">path to evaluate.</param>
         /// <param name="defaultValue">default value to use if any part of the path is missing.</param>
+        /// <param name="set">Set path value with result if true.</param>
         /// <returns>value or default(T).</returns>
-        public static T GetPathValue<T>(object obj, string path, T defaultValue)
+        public static T GetPathValue<T>(object obj, string path, T defaultValue, bool set = false)
         {
-            if (TryGetPathValue<T>(obj, path, out var value))
+            if (TryGetPathValue<T>(obj, path, out var value, set))
             {
                 return value;
             }
@@ -79,8 +81,9 @@ namespace Microsoft.Agents.State
         /// <param name="obj">object to start with.</param>
         /// <param name="path">path to evaluate.</param>
         /// <param name="value">value for the path.</param>
+        /// <param name="convertedSet">If the value was converted, set the path value with the converted value.</param>
         /// <returns>true if successful.</returns>
-        public static bool TryGetPathValue<T>(object obj, string path, out T value)
+        public static bool TryGetPathValue<T>(object obj, string path, out T value, bool convertedSet = false)
         {
             value = default;
 
@@ -124,6 +127,10 @@ namespace Microsoft.Agents.State
             try
             {
                 value = MapValueTo<T>(result);
+                if (convertedSet && value.GetType() != result.GetType())
+                {
+                    SetPathValueInner(segments, obj, value, false);
+                }
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception)
@@ -149,6 +156,11 @@ namespace Microsoft.Agents.State
                 return;
             }
 
+            SetPathValueInner(segments, obj, value, json);
+        }
+
+        private static void SetPathValueInner(List<object> segments, object obj, object value, bool json = true)
+        {
             dynamic current = obj;
             for (var i = 0; i < segments.Count - 1; i++)
             {
@@ -173,21 +185,21 @@ namespace Microsoft.Agents.State
                 }
                 else
                 {
-                    var ssegment = segment as string;
-                    next = GetObjectProperty(current, ssegment);
+                    var strSegment = segment as string;
+                    next = GetObjectProperty(current, strSegment);
                     if (next == null)
                     {
                         // Create object or array base on next segment
                         var nextSegment = segments[i + 1];
-                        if (nextSegment is string snext)
+                        if (nextSegment is string)
                         {
-                            SetObjectSegment(current, ssegment, new JsonObject());
-                            next = GetObjectProperty(current, ssegment);
+                            SetObjectSegment(current, strSegment, new JsonObject(), json);
+                            next = GetObjectProperty(current, strSegment);
                         }
                         else
                         {
-                            SetObjectSegment(current, ssegment, new JsonArray());
-                            next = GetObjectProperty(current, ssegment);
+                            SetObjectSegment(current, strSegment, new JsonArray(), json);
+                            next = GetObjectProperty(current, strSegment);
                         }
                     }
                 }
@@ -430,7 +442,8 @@ namespace Microsoft.Agents.State
         {
             if (val is JsonElement)
             {
-                return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(val));
+                T result = ProtocolJsonSerializer.ToObject<T>(val);
+                return result;
             }
 
             if (typeof(T) == typeof(object))
@@ -468,9 +481,9 @@ namespace Microsoft.Agents.State
                 return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(val, _serializerOptions), _serializerOptions);
             }
 
-            if (val is T)
+            if (val is T t)
             {
-                return (T)val;
+                return t;
             }
 
             if (val is short || val is int || val is long ||
@@ -621,7 +634,7 @@ namespace Microsoft.Agents.State
             return false;
         }
 
-        private static bool ResolveSegments(dynamic current, List<object> segments, out dynamic result)
+        private static bool ResolveSegments(dynamic current, List<object> segments, out object result)
         {
             result = current;
             foreach (var segment in segments)
@@ -696,13 +709,39 @@ namespace Microsoft.Agents.State
             val = GetNormalizedValue(value, json);
             if (segment is int index)
             {
-                var jar = obj as JsonArray;
-                for (var i = jar.Count; i <= index; i++)
+                if (obj is JsonArray jarray)
                 {
-                    jar.Add(null);
-                }
+                    // grow array if required
+                    var jar = obj as JsonArray;
+                    for (var i = jar.Count; i <= index; i++)
+                    {
+                        jar.Add(null);
+                    }
 
-                jar[index] = JsonSerializer.SerializeToNode(val);
+                    jar[index] = JsonSerializer.SerializeToNode(val);
+                }
+                else if (obj is Array array)
+                {
+                    if (index >= array.Length)
+                    {
+                        // TODO
+                        throw new ArgumentException("Cannot grow arrays yet");
+                    }
+
+                    array.SetValue(value, index);
+                }
+                else if (obj is IList list)
+                {
+                    if (index >= list.Count)
+                    {
+                        for (var i = list.Count; i <= index; i++)
+                        {
+                            list.Add(null);
+                        }
+                    }
+
+                    list[index] = value;
+                }
                 return;
             }
 
@@ -711,7 +750,7 @@ namespace Microsoft.Agents.State
             {
                 // For case insensitive key
                 var key = dict.Keys.Where(k => string.Equals(k, property, StringComparison.OrdinalIgnoreCase)).FirstOrDefault() ?? property;
-                dict[key] = val;
+                dict[key] = value;
                 return;
             }
 
@@ -726,7 +765,10 @@ namespace Microsoft.Agents.State
             var prop = obj.GetType().GetProperty(property);
             if (prop != null)
             {
-                prop.SetValue(obj, val);
+                if (prop.GetValue(obj) != value)
+                {
+                    prop.SetValue(obj, value);
+                }
             }
         }
 
@@ -741,9 +783,9 @@ namespace Microsoft.Agents.State
             object val;
             if (json)
             {
-                if (value is JsonNode)
+                if (value is JsonNode node)
                 {
-                    val = ((JsonNode)value).DeepClone();
+                    val = node.DeepClone();
                 }
                 else if (value is JsonElement)
                 {

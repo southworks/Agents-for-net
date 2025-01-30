@@ -142,6 +142,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             using (var turnContext = new TurnContext(adapter.Object, activity))
             {
+                await conversationState.LoadAsync(turnContext, false);
                 turnContext.TurnState.Add(telemetryClientMock.Object);
 
                 await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
@@ -174,6 +175,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             return new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+
                 if (testCase != FlowTestCase.RootBotOnly)
                 {
                     // Create a skill ClaimsIdentity and put it in TurnState so SkillValidation.IsSkillClaim() returns true.

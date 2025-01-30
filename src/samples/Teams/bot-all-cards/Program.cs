@@ -33,10 +33,10 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 builder.Services.AddSingleton<UserState>();
 
 // Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<ConversationState>();
 
 // The Dialog that will be run by the bot.
-builder.Services.AddSingleton<MainDialog>();
+builder.Services.AddTransient<MainDialog>();
 
 var app = builder.Build();
 

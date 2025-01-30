@@ -27,16 +27,19 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 // Add basic bot functionality
 builder.AddBot<AuthBot>();
 
-builder.Services.AddSingleton<IMiddleware[]>((sp) =>
-{
-    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
-});
-
 // Add IStorage for turn state persistence
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Create the Conversation state.
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<PrivateConversationState>();
+
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
+{
+    return 
+    [
+        new AutoSaveStateMiddleware(true, new PrivateConversationState(sp.GetService<IStorage>())),
+        new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
+    ];
+});
 
 var app = builder.Build();
 

@@ -28,6 +28,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
@@ -52,6 +53,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
             })
             .Send("hello")
@@ -79,6 +81,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
             {
+                await conversationState.LoadAsync(turnContext, false, cancellationToken);
                 await dialog.RunAsync(turnContext, conversationState, cancellationToken);
 
                 Assert.NotNull(dialog.TelemetryClient);

@@ -32,7 +32,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
 
                 var childComponent = new ComponentDialog("childComponent");
@@ -96,7 +97,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
 
                 dialogs.Add(CreateWaterfall());
@@ -202,7 +204,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
 
                 dialogs.Add(new TestComponentDialog());
@@ -241,7 +244,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
 
                 dialogs.Add(new TestNestedComponentDialog());
@@ -333,7 +337,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
                 dialogs.Add(parentComponent);
 
@@ -366,7 +371,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             var testFlow = new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
-                var state = await convoState.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+                await convoState.LoadAsync(turnContext, false, cancellationToken);
+                var state = convoState.GetValue<DialogState>("DialogState", () => new DialogState());
                 var dialogs = new DialogSet(state);
 
                 dialogs.Add(new CancelledComponentDialog(waterfallDialog));

@@ -8,18 +8,20 @@ using System;
 namespace Microsoft.Agents.State
 {
     /// <summary>
-    /// Defines a state management object for user state.
+    /// Defines a state keyed to a user.
     /// </summary>
     /// <remarks>
-    /// User state is available in any turn that the bot is conversing with that user on that
-    /// channel, regardless of the conversation.
-    /// </remarks>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="UserState"/> class.
+    /// Conversation state is available in any turn in a specific conversation, regardless of user,
+    /// such as in a group conversation.
+    /// 
+    /// This implementation should NOT be used as a singleton.  This includes registering as singleton
+    /// in DI.
     /// </remarks>
     /// <param name="storage">The storage layer to use.</param>
-    public class UserState(IStorage storage) : BotState(storage, nameof(UserState))
+    public class UserState(IStorage storage) : BotState(storage, ScopeName)
     {
+        public static readonly string ScopeName = "user";
+
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

@@ -37,7 +37,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task RunAsync(this Dialog dialog, ITurnContext turnContext, BotState state, CancellationToken cancellationToken)
         {
-            var dialogState = await state.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken);
+            var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
 
             // look for the IBotTelemetryClient on the TurnState, if not there take it from the Dialog, if not there fall back to the "null" default

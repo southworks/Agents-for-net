@@ -14,7 +14,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared
     {
         public static async Task Run(this Dialog dialog, ITurnContext turnContext, BotState state, CancellationToken cancellationToken)
         {
-            var dialogState = await state.GetPropertyAsync<DialogState>(turnContext, "DialogState", () => new DialogState(), cancellationToken).ConfigureAwait(false);
+            var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
             dialogSet.Add(dialog);
 

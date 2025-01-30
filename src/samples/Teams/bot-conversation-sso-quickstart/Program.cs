@@ -29,16 +29,17 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 // Add basic bot functionality
 builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter>();
 
-builder.Services.AddSingleton<IMiddleware[]>((sp) =>
-{
-    return [new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])];
-});
-
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Create the Conversation state.
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<IMiddleware[]>((sp) =>
+{
+    return 
+    [
+        new AutoSaveStateMiddleware(true, new ConversationState(sp.GetService<IStorage>())),
+        new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
+    ];
+});
 
 // The Dialog that will be run by the bot.
 builder.Services.AddSingleton<MainDialog>();

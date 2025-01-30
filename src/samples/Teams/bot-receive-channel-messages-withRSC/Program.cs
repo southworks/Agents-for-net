@@ -29,10 +29,10 @@ builder.AddBot<ActivityBot>();
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Create the User state. (Used in this bot's Dialog implementation.)
-builder.Services.AddSingleton<UserState>();
+builder.Services.AddTransient<UserState>();
 
 // Create the Conversation state. (Used by the Dialog system itself.)
-builder.Services.AddSingleton<ConversationState>();
+builder.Services.AddTransient<ConversationState>();
 
 var app = builder.Build();
 

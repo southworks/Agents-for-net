@@ -8,17 +8,20 @@ using System;
 namespace Microsoft.Agents.State
 {
     /// <summary>
-    /// Defines a state management object for private conversation state.
+    /// Defines a state keyed to a conversation and user.
     /// </summary>
     /// <remarks>
-    /// Private conversation state is scoped to both the specific conversation and to that specific user.
-    /// </remarks>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="PrivateConversationState"/> class.
+    /// Conversation state is available in any turn in a specific conversation, regardless of user,
+    /// such as in a group conversation.
+    /// 
+    /// This implementation should NOT be used as a singleton.  This includes registering as singleton
+    /// in DI.
     /// </remarks>
     /// <param name="storage">The storage layer to use.</param>
-    public class PrivateConversationState(IStorage storage) : BotState(storage, nameof(PrivateConversationState))
+    public class PrivateConversationState(IStorage storage) : BotState(storage, ScopeName)
     {
+        public static readonly string ScopeName = "private";
+
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.
         /// </summary>

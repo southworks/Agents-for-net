@@ -120,7 +120,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs
             if ((bool)stepContext.Result)
             {
                 // Get the current profile object from user state.
-                var userProfile = await _userState.GetPropertyAsync<UserProfile>(stepContext.Context, "UserProfile", () => new UserProfile(), cancellationToken);
+                var userProfile = _userState.GetValue<UserProfile>("UserProfile", () => new UserProfile());
 
                 userProfile.Transport = (string)stepContext.Values["transport"];
                 userProfile.Name = (string)stepContext.Values["name"];
