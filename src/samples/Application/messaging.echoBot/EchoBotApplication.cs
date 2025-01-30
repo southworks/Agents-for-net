@@ -12,19 +12,19 @@ namespace EchoBot
     {
         public EchoBotApplication(ApplicationOptions<AppState> options) : base(options)
         {
-            OnConversationUpdate("membersAdded", MembersAddedHandler);
+            OnConversationUpdate("membersAdded", WelcomeMessageAsync);
 
             // Listen for user to say "/reset" and then delete conversation state
-            OnMessage("/reset", ResetMessageHandler);
+            OnMessage("/reset", DeleteStateHandlerAsync);
 
             // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-            OnActivity(ActivityTypes.Message, MessageHandler);
+            OnActivity(ActivityTypes.Message, MessageHandlerAsync);
         }
 
         /// <summary>
         /// Handles members added events.
         /// </summary>
-        public static async Task MembersAddedHandler(ITurnContext turnContext, TurnState turnState, CancellationToken cancellationToken)
+        public static async Task WelcomeMessageAsync(ITurnContext turnContext, TurnState turnState, CancellationToken cancellationToken)
         {
             foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
             {
@@ -38,7 +38,7 @@ namespace EchoBot
         /// <summary>
         /// Handles "/reset" message.
         /// </summary>
-        public static async Task ResetMessageHandler(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
+        public static async Task DeleteStateHandlerAsync(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
         {
             turnState.DeleteConversationState();
             await turnContext.SendActivityAsync("Ok I've deleted the current conversation state", cancellationToken: cancellationToken);
@@ -47,7 +47,7 @@ namespace EchoBot
         /// <summary>
         /// Handles messages except "/reset".
         /// </summary>
-        public static async Task MessageHandler(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
+        public static async Task MessageHandlerAsync(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
         {
             int count = turnState.Conversation.MessageCount;
 
