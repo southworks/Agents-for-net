@@ -13,7 +13,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Telemetry;
 using Microsoft.Recognizers.Text;
 using Xunit;
-using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -355,6 +354,49 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             .AssertReply("Parent called with: test")
             .AssertReply("Child finished.")
             .StartTestAsync();
+        }
+
+        [Fact]
+        public async Task BeginDialogAsync_ShouldThrowOnNullOptions()
+        {
+            var dialog = new ComponentDialog("dialogId");
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => dialog.BeginDialogAsync(null));
+        }
+
+        [Fact]
+        public async Task BeginDialogAsync_ShouldThrowOnOptionsCancellationToken()
+        {
+            var dialogContext = new DialogContext(new DialogSet(), new TurnContext(new TestAdapter(), new Activity()), new DialogState());
+            var dialog = new ComponentDialog("dialogId");
+
+            await Assert.ThrowsAsync<ArgumentException>(() => dialog.BeginDialogAsync(dialogContext, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ResumeDialogAsync_ShouldThrowOnResultCancellationToken()
+        {
+            var dialogContext = new DialogContext(new DialogSet(), new TurnContext(new TestAdapter(), new Activity()), new DialogState());
+            var dialog = new ComponentDialog("dialogId");
+
+            await Assert.ThrowsAsync<ArgumentException>(() => dialog.ResumeDialogAsync(dialogContext, DialogReason.BeginCalled, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ResumeDialogAsync_ShouldReturnEndOfTurn()
+        {
+            var state = new DialogState([
+                new DialogInstance { Id = "A1", State = new Dictionary<string, object> { { "dialogs", new DialogState() } } }
+            ]);
+            var dialogContext = new DialogContext(new DialogSet(), new TurnContext(new TestAdapter(), new Activity()), state);
+            var dialog = new ComponentDialog("dialogId");
+            dialog.AddDialog(new WaterfallDialog("A2"));
+            dialog.InitialDialogId = null;
+
+            var result = await dialog.ResumeDialogAsync(dialogContext, DialogReason.BeginCalled);
+
+            Assert.Equal(Dialog.EndOfTurn, result);
+            Assert.Equal("A2", dialog.InitialDialogId);
         }
 
         private static TestFlow CreateTestFlow(WaterfallDialog waterfallDialog)

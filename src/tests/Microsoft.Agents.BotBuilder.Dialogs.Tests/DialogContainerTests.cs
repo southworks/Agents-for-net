@@ -5,6 +5,11 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Telemetry;
+using Moq;
 using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
@@ -54,6 +59,73 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.NotNull(version7);
             Assert.Equal(version7, version6);
         }
+
+        [Fact]
+        public void FindDialog_ShouldReturnDialog()
+        {
+            var dialog = new WaterfallDialog("A");
+            var container = new TestContainer();
+
+            container.Dialogs.Add(dialog);
+            var actual = container.FindDialog("A", null);
+
+            Assert.Equal(dialog, actual);
+        }
+
+        [Fact]
+        public void FindDialog_ShouldReturnDialogFromDialogContext()
+        {
+            var dialog = new WaterfallDialog("A");
+            var container = new TestContainer();
+            var dialogSet = new DialogSet();
+            var dialogContext = new DialogContext(dialogSet, new TurnContext(new TestAdapter(), new Activity()), new DialogState());
+
+            dialogContext.Dialogs.Add(dialog);
+            var actual = container.FindDialog("A", dialogContext);
+
+            Assert.Equal(dialog, actual);
+        }
+
+        [Fact]
+        public async Task OnDialogEventAsync_ShouldTriggerUnhandledVersionChanged()
+        {
+            var container = new TestContainer();
+            var context = new Mock<ITurnContext>();
+            var state = new DialogState([
+                new DialogInstance { Id = "A" }
+            ]);
+
+            context.Setup(e => e.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceResponse())
+                .Verifiable(Times.Once);
+
+            var dialogContext = new DialogContext(new DialogSet(), context.Object, state);
+            var actual = await container.OnDialogEventAsync(dialogContext, new DialogEvent { Name = DialogEvents.VersionChanged }, CancellationToken.None);
+
+            Assert.False(actual);
+            Mock.Verify(context);
+        }
+
+        [Fact]
+        public async Task CheckForVersionChangeAsync_ShouldEmitVersionChangedEvent()
+        {
+            var container = new TestContainer();
+            var context = new Mock<ITurnContext>();
+            var state = new DialogState([
+                new DialogInstance { Id = "A", Version = "1" }
+            ]);
+            var dialog = new Mock<WaterfallDialog>("A");
+            var dialogContext = new DialogContext(new DialogSet(), context.Object, state);
+
+            dialog.Setup(e => e.OnDialogEventAsync(It.IsAny<DialogContext>(), It.IsAny<DialogEvent>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false)
+                .Verifiable(Times.Once);
+
+            dialogContext.Dialogs.Add(dialog.Object);
+            await container.CheckForVersionChangeAsync_Test(dialogContext);
+
+            Mock.Verify(dialog);
+        }
     }
 
     public class TestContainer : DialogContainer
@@ -68,6 +140,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public override DialogContext CreateChildContext(DialogContext dc)
         {
             return dc;
+        }
+
+        public Task CheckForVersionChangeAsync_Test(DialogContext dc)
+        {
+            return CheckForVersionChangeAsync(dc);
         }
 
         public string GetInternalVersion_Test()
