@@ -38,11 +38,14 @@ builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter, TeamsChannelServiceClientF
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
+// Create the Conversation state.
+builder.Services.AddSingleton<ConversationState>();
+
 builder.Services.AddTransient<IMiddleware[]>((sp) =>
 {
     return 
     [
-        new AutoSaveStateMiddleware(true, new ConversationState(sp.GetService<IStorage>())),
+        new AutoSaveStateMiddleware(true, sp.GetService<ConversationState>()),
         new TeamsSSOTokenExchangeMiddleware(sp.GetService<IStorage>(), builder.Configuration["ConnectionName"])
     ];
 });
