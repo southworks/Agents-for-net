@@ -45,18 +45,26 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public static IHostApplicationBuilder AddBot<TBot>(this IHostApplicationBuilder builder)
             where TBot : class, IBot
         {
-            return AddBot<TBot, CloudAdapter>(builder);
+            return AddBot<TBot, CloudAdapter, RestChannelServiceClientFactory>(builder);
         }
 
         public static IHostApplicationBuilder AddBot<TBot, TAdapter>(this IHostApplicationBuilder builder)
             where TBot : class, IBot
             where TAdapter : CloudAdapter
         {
+            return AddBot<TBot, TAdapter, RestChannelServiceClientFactory>(builder);
+        }
+
+        public static IHostApplicationBuilder AddBot<TBot, TAdapter, TClientFactory>(this IHostApplicationBuilder builder)
+            where TBot : class, IBot
+            where TAdapter : CloudAdapter
+            where TClientFactory : class, IChannelServiceClientFactory
+        {
             // Add Connections object to access configured token connections.
             builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
 
             // Add factory for ConnectorClient and UserTokenClient creation
-            builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            builder.Services.AddSingleton<IChannelServiceClientFactory, TClientFactory>();
 
             // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
             AddCloudAdapter<TAdapter>(builder.Services);

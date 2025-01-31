@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Teams.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -380,6 +378,8 @@ namespace Microsoft.Agents.Telemetry
 
         private static void PopulateAdditionalChannelProperties(IActivity activity, Dictionary<string, string> properties)
         {
+            // TODO
+            /*
             switch (activity.ChannelId)
             {
                 case Channels.Msteams:
@@ -395,6 +395,7 @@ namespace Microsoft.Agents.Telemetry
 
                     break;
             }
+            */
         }
     }
 }
