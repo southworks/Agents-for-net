@@ -1,10 +1,13 @@
-﻿using Microsoft.Teams.AI.State;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.BotBuilder.Application.State;
+using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Options for the <see cref="Application{TState}"/> class.
@@ -22,11 +25,6 @@ namespace Microsoft.Teams.AI
         /// Optional. Options used to customize the processing of Adaptive Card requests.
         /// </summary>
         public AdaptiveCardsOptions? AdaptiveCards { get; set; }
-
-        /// <summary>
-        /// Optional. Options used to customize the processing of Task Modules requests.
-        /// </summary>
-        public TaskModulesOptions? TaskModules { get; set; }
 
         /// <summary>
         /// Optional. Factory used to create a custom turn state instance.

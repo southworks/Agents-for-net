@@ -19,6 +19,7 @@ using Microsoft.Agents.State;
 using Microsoft.Agents.Telemetry;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

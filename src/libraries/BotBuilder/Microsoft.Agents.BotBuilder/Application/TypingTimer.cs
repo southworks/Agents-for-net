@@ -1,12 +1,14 @@
-﻿using Microsoft.Agents.Core.Interfaces;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.AI.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Encapsulates the logic for sending "typing" activity to the user.

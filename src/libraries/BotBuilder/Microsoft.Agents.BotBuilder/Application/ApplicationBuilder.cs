@@ -1,10 +1,13 @@
-﻿using Microsoft.Teams.AI.State;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.BotBuilder;
 using System;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.BotBuilder.Application.State;
+using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// A builder class for simplifying the creation of an Application instance.
@@ -59,17 +62,6 @@ namespace Microsoft.Teams.AI
         public ApplicationBuilder<TState> WithAdaptiveCardOptions(AdaptiveCardsOptions adaptiveCardOptions)
         {
             Options.AdaptiveCards = adaptiveCardOptions;
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the processing of Task Module requests.
-        /// </summary>
-        /// <param name="taskModulesOptions">The options for Task Modules.</param>
-        /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder<TState> WithTaskModuleOptions(TaskModulesOptions taskModulesOptions)
-        {
-            Options.TaskModules = taskModulesOptions;
             return this;
         }
 

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 
 namespace Microsoft.Agents.Teams.Tests
 {

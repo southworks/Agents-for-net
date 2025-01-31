@@ -7,9 +7,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Agents.Core.Serialization.Converters;
-using Microsoft.Agents.Core.SharePoint.Serialization.Converters;
-using Microsoft.Agents.Core.Teams.Models;
-using Microsoft.Agents.Core.Teams.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
 {
@@ -24,9 +21,7 @@ namespace Microsoft.Agents.Core.Serialization
         public static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
-                .ApplyCoreOptions()
-                .ApplyTeamsOptions()
-                .ApplySharepointOptions();
+                .ApplyCoreOptions();
 
             return options;
         }
@@ -57,30 +52,6 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
-
-            return options;
-        }
-
-        private static JsonSerializerOptions ApplyTeamsOptions(this JsonSerializerOptions options)
-        {
-            options.Converters.Add(new SurfaceConverter());
-            options.Converters.Add(new TabSubmitDataConverter());
-            options.Converters.Add(new TeamsChannelDataConverter());
-            options.Converters.Add(new MessagingExtensionActionResponseConverter());
-            options.Converters.Add(new TaskModuleResponseConverter());
-            options.Converters.Add(new TaskModuleResponseBaseConverter());
-            options.Converters.Add(new TaskModuleCardResponseConverter());
-            options.Converters.Add(new TaskModuleContinueResponseConverter());
-            options.Converters.Add(new TaskModuleMessageResponseConverter());
-            options.Converters.Add(new MessagingExtensionAttachmentConverter());
-
-            return options;
-        }
-
-        private static JsonSerializerOptions ApplySharepointOptions(this JsonSerializerOptions options)
-        {
-            options.Converters.Add(new AceDataConverter());
-            options.Converters.Add(new AceRequestConverter());
 
             return options;
         }

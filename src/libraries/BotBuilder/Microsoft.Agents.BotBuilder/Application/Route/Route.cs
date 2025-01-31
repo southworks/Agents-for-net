@@ -1,9 +1,12 @@
-﻿using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Teams.AI.State;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder.Application.State;
+using Microsoft.Agents.Core.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application.Route
 {
     /// <summary>
     /// Function for selecting whether a route handler should be triggered.

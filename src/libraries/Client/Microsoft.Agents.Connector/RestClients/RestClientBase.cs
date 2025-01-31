@@ -8,7 +8,7 @@ using System;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class RestClientBase(IHttpClientFactory httpClientFactory, string httpClientName, Func<Task<string>> tokenProviderFunction)
+    public class RestClientBase(IHttpClientFactory httpClientFactory, string httpClientName, Func<Task<string>> tokenProviderFunction)
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         private readonly Func<Task<string>> _tokenProviderFunction = tokenProviderFunction;

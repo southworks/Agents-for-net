@@ -11,7 +11,7 @@ using System.Xml;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.Core.Serialization;

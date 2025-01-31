@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Teams.AI.State
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.BotBuilder.Application.State
 {
     /// <summary>
     /// Represents a memory, a key-value store that can be used to store and retrieve values.

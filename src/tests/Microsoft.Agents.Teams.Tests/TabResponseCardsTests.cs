@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Xunit;
 using static Microsoft.Agents.Teams.Tests.TabsTestData;
 

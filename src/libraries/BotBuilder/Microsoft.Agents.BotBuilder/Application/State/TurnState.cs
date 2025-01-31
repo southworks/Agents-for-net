@@ -1,15 +1,16 @@
-﻿using Microsoft.Agents.Core.Interfaces;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder.Application.Exceptions;
+using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Storage;
-using Microsoft.Teams.AI.Exceptions;
-using Microsoft.Teams.AI.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI.State
+namespace Microsoft.Agents.BotBuilder.Application.State
 {
     /// <summary>
     /// Base class defining a collection of turn state scopes.

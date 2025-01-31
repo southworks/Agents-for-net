@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;

@@ -10,7 +10,7 @@ using Microsoft.Agents.Core.Models;
 using Xunit;
 using Microsoft.Agents.BotBuilder.SharePoint;
 using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Core.SharePoint.Models;
+using Microsoft.Agents.SharePoint.Models;
 
 namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 {

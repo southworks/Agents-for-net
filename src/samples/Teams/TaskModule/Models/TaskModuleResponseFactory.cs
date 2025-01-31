@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 
 namespace TaskModule.Models
 {

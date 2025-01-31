@@ -15,7 +15,7 @@ using System.Web;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Microsoft.Agents.Core.Serialization;
 
 

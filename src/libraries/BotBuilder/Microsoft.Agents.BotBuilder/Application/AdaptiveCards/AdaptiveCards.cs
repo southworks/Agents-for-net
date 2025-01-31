@@ -1,16 +1,18 @@
-﻿using Microsoft.Agents.BotBuilder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder.Application.Exceptions;
+using Microsoft.Agents.BotBuilder.Application.Route;
+using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Teams.AI.Exceptions;
-using Microsoft.Teams.AI.State;
-using Microsoft.Teams.AI.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
 {
     /// <summary>
     /// Constants for adaptive card invoke names
@@ -88,7 +90,7 @@ namespace Microsoft.Teams.AI
                 AdaptiveCardInvokeValue? invokeValue;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    || (invokeValue = ActivityUtilities.GetTypedValue<AdaptiveCardInvokeValue>(turnContext.Activity)) == null
+                    || (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) == null
                     || invokeValue.Action == null
                     || !string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE))
                 {
@@ -337,7 +339,7 @@ namespace Microsoft.Teams.AI
                 AdaptiveCardSearchInvokeValue? searchInvokeValue;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
-                    || (searchInvokeValue = ActivityUtilities.GetTypedValue<AdaptiveCardSearchInvokeValue>(turnContext.Activity)) == null)
+                    || (searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value)) == null)
                 {
                     throw new TeamsAIException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -408,7 +410,7 @@ namespace Microsoft.Teams.AI
                 return Task.FromResult(
                     string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    && (invokeValue = ActivityUtilities.GetTypedValue<AdaptiveCardInvokeValue>(turnContext.Activity)) != null
+                    && (invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value)) != null
                     && invokeValue.Action != null
                     && string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE)
                     && isMatch(invokeValue.Action.Verb));

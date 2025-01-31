@@ -1,7 +1,10 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System;
 using System.Net;
 
-namespace Microsoft.Teams.AI.Exceptions
+namespace Microsoft.Agents.BotBuilder.Application.Exceptions
 {
     /// <summary>
     /// A custom exception for invoke response errors.

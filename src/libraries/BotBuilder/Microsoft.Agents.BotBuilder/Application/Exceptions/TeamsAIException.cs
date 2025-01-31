@@ -1,7 +1,9 @@
-﻿
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System;
 
-namespace Microsoft.Teams.AI.Exceptions
+namespace Microsoft.Agents.BotBuilder.Application.Exceptions
 {
     /// <summary>
     /// Base exception for the TeamsAI library.

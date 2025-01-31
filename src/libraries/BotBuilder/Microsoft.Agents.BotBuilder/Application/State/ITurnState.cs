@@ -1,10 +1,12 @@
-﻿
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Storage;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI.State
+namespace Microsoft.Agents.BotBuilder.Application.State
 {
     /// <summary>
     /// The turn state interface.

@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.Client.Tests
 {

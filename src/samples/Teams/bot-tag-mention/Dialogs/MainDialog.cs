@@ -10,7 +10,7 @@ using AdaptiveCards.Templating;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

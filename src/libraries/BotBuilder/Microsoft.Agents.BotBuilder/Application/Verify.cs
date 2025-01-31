@@ -1,13 +1,15 @@
-﻿
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Microsoft.Teams.AI.Utilities
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Utility class for verifying arguments and local variables.
     /// </summary>
-    internal class Verify
+    public class Verify
     {
         /// <summary>
         /// Verifies that the argument is not null.

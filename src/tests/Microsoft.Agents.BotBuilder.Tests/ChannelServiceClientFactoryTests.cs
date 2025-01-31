@@ -11,7 +11,7 @@ using Microsoft.Agents.Authentication;
 using Moq;
 using System.Threading;
 using System.Net.Http;
-using Microsoft.Agents.Connector.Teams;
+using Microsoft.Agents.Teams.Connector;
 using Microsoft.Agents.Connector;
 
 namespace Microsoft.Agents.BotBuilder.Tests

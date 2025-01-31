@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http;
 using System.Text.Json;

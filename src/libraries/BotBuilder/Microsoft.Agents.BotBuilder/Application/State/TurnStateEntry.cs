@@ -1,8 +1,9 @@
-﻿using Microsoft.Teams.AI.Utilities;
-using System.Runtime.CompilerServices;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Text.Json;
 
-namespace Microsoft.Teams.AI.State
+namespace Microsoft.Agents.BotBuilder.Application.State
 {
     /// <summary>
     /// Accessor class for managing an individual state scope.

@@ -1,8 +1,9 @@
-﻿
-using Microsoft.Teams.AI.Application;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using System.Collections.Generic;
 
-namespace Microsoft.Teams.AI.State
+namespace Microsoft.Agents.BotBuilder.Application.State
 {
     /// <summary>
     /// Temporary state.
@@ -52,7 +53,6 @@ namespace Microsoft.Teams.AI.State
             this[ActionOutputsKey] = new Dictionary<string, string>();
             this[AuthTokenKey] = new Dictionary<string, string>();
             this[DuplicateTokenExchangeKey] = false;
-            this[InputFilesKey] = new List<InputFile>();
         }
 
         /// <summary>
@@ -99,15 +99,6 @@ namespace Microsoft.Teams.AI.State
         {
             get => Get<bool>(DuplicateTokenExchangeKey)!;
             set => Set(DuplicateTokenExchangeKey, value);
-        }
-
-        /// <summary>
-        /// Downloaded files passed by the user to the AI library
-        /// </summary>
-        public List<InputFile> InputFiles
-        {
-            get => Get<List<InputFile>>(InputFilesKey)!;
-            set => Set(InputFilesKey, value);
         }
     }
 }

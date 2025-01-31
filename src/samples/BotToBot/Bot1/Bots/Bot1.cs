@@ -17,6 +17,7 @@ using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.Samples.Bots
 {

@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Teams.AI
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
 {
     /// <summary>
     /// Options for AdaptiveCards class.

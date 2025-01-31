@@ -5,7 +5,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;

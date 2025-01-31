@@ -1,4 +1,4 @@
-﻿using Microsoft.Teams.AI.State;
+﻿using Microsoft.Agents.BotBuilder.Application.State;
 using System;
 
 namespace EchoBot.Model

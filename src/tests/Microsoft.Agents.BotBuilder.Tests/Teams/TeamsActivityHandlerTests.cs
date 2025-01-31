@@ -6,7 +6,7 @@ using Microsoft.Agents.Core.Models;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using System;
 using System.Globalization;
 

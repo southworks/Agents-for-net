@@ -1,20 +1,19 @@
-﻿using Microsoft.Agents.BotBuilder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
+using Microsoft.Agents.BotBuilder.Application.Route;
+using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Agents.Storage;
-using Microsoft.Teams.AI.Application;
-using Microsoft.Teams.AI.State;
-using Microsoft.Teams.AI.Utilities;
 using System;
 using System.Collections.Concurrent;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Teams.AI
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Application class for routing and processing incoming requests.
@@ -23,9 +22,6 @@ namespace Microsoft.Teams.AI
     public class Application<TState> : IBot
         where TState : TurnState, new()
     {
-        private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
-        private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
-
         //TODO
         //private readonly AuthenticationManager<TState>? _authentication;
 
@@ -58,9 +54,6 @@ namespace Microsoft.Teams.AI
             }
 
             AdaptiveCards = new AdaptiveCards<TState>(this);
-            Meetings = new Meetings<TState>(this);
-            MessageExtensions = new MessageExtensions<TState>(this);
-            TaskModules = new TaskModules<TState>(this);
 
             _routes = new ConcurrentQueue<Route<TState>>();
             _invokeRoutes = new ConcurrentQueue<Route<TState>>();
@@ -89,21 +82,6 @@ namespace Microsoft.Teams.AI
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCards<TState> AdaptiveCards { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Meetings' specific features.
-        /// </summary>
-        public Meetings<TState> Meetings { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Message Extensions' specific features.
-        /// </summary>
-        public MessageExtensions<TState> MessageExtensions { get; }
-
-        /// <summary>
-        /// Fluent interface for accessing Task Modules' specific features.
-        /// </summary>
-        public TaskModules<TState> TaskModules { get; }
 
         //TODO
         /*
@@ -246,28 +224,14 @@ namespace Microsoft.Teams.AI
         /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnConversationUpdate(string conversationUpdateEvent, RouteHandler<TState> handler)
+        public virtual Application<TState> OnConversationUpdate(string conversationUpdateEvent, RouteHandler<TState> handler)
         {
             Verify.ParamNotNull(conversationUpdateEvent);
             Verify.ParamNotNull(handler);
+
             RouteSelectorAsync routeSelector;
             switch (conversationUpdateEvent)
             {
-                case ConversationUpdateEvents.ChannelCreated:
-                case ConversationUpdateEvents.ChannelDeleted:
-                case ConversationUpdateEvents.ChannelRenamed:
-                case ConversationUpdateEvents.ChannelRestored:
-                {
-                    routeSelector = (context, _) => Task.FromResult
-                    (
-                        string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                        && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
-                        && context.Activity?.GetChannelData<TeamsChannelData>()?.Channel != null
-                        && context.Activity?.GetChannelData<TeamsChannelData>()?.Team != null
-                    );
-                    break;
-                }
                 case ConversationUpdateEvents.MembersAdded:
                 {
                     routeSelector = (context, _) => Task.FromResult
@@ -288,29 +252,11 @@ namespace Microsoft.Teams.AI
                     );
                     break;
                 }
-                case ConversationUpdateEvents.TeamRenamed:
-                case ConversationUpdateEvents.TeamDeleted:
-                case ConversationUpdateEvents.TeamHardDeleted:
-                case ConversationUpdateEvents.TeamArchived:
-                case ConversationUpdateEvents.TeamUnarchived:
-                case ConversationUpdateEvents.TeamRestored:
-                {
-                    routeSelector = (context, _) => Task.FromResult
-                    (
-                        string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                        && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
-                        && context.Activity?.GetChannelData<TeamsChannelData>()?.Team != null
-                    );
-                    break;
-                }
                 default:
                 {
                     routeSelector = (context, _) => Task.FromResult
                     (
-                        string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                        && string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(context.Activity?.GetChannelData<TeamsChannelData>()?.EventType, conversationUpdateEvent)
+                        string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
                     );
                     break;
                 }
@@ -447,69 +393,6 @@ namespace Microsoft.Teams.AI
         }
 
         /// <summary>
-        /// Handles message edit events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnMessageEdit(RouteHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
-            {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "editMessage"));
-            };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles message undo soft delete events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnMessageUndelete(RouteHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
-            {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
-            };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles message soft delete events.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnMessageDelete(RouteHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
-            {
-                TeamsChannelData teamsChannelData;
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageDelete, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams)
-                    && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
-                    && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
-            };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
-            return this;
-        }
-
-        /// <summary>
         /// Handles message reactions added events.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
@@ -546,158 +429,6 @@ namespace Microsoft.Teams.AI
         }
 
         /// <summary>
-        /// Handles read receipt events for messages sent by the bot in personal scope.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnTeamsReadReceipt(ReadReceiptHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.ChannelId, Channels.Msteams)
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
-            );
-            RouteHandler<TState> routeHandler = async (ITurnContext turnContext, TState turnState, CancellationToken cancellationToken) =>
-            {
-                ReadReceiptInfo readReceiptInfo = ActivityUtilities.GetTypedValue<ReadReceiptInfo>(turnContext.Activity) ?? new();
-                await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles config fetch events for Microsoft Teams.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnConfigFetch(ConfigHandlerAsync<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME)
-                && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams));
-            RouteHandler<TState> routeHandler = async (ITurnContext turnContext, TState turnState, CancellationToken cancellationToken) =>
-            {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
-                {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles config submit events for Microsoft Teams.
-        /// </summary>
-        /// <param name="handler">Function to call when the event is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnConfigSubmit(ConfigHandlerAsync<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME)
-                && string.Equals(turnContext.Activity.ChannelId, Channels.Msteams));
-            RouteHandler<TState> routeHandler = async (ITurnContext turnContext, TState turnState, CancellationToken cancellationToken) =>
-            {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
-                {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles when a file consent card is accepted by the user.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnFileConsentAccept(FileConsentHandler<TState> handler)
-            => OnFileConsent(handler, "accept");
-
-        /// <summary>
-        /// Handles when a file consent card is declined by the user.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnFileConsentDecline(FileConsentHandler<TState> handler)
-            => OnFileConsent(handler, "decline");
-
-        private Application<TState> OnFileConsent(FileConsentHandler<TState> handler, string fileConsentAction)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) =>
-            {
-                FileConsentCardResponse? fileConsentCardResponse;
-                return Task.FromResult
-                (
-                    string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(context.Activity?.Name, "fileConsent/invoke")
-                    && (fileConsentCardResponse = ActivityUtilities.GetTypedValue<FileConsentCardResponse>(context.Activity!)) != null
-                    && string.Equals(fileConsentCardResponse.Action, fileConsentAction)
-                );
-            };
-            RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                FileConsentCardResponse fileConsentCardResponse = ActivityUtilities.GetTypedValue<FileConsentCardResponse>(turnContext.Activity) ?? new();
-                await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
-                {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return this;
-        }
-
-        /// <summary>
-        /// Handles O365 Connector Card Action activities.
-        /// </summary>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public Application<TState> OnO365ConnectorCardAction(O365ConnectorCardActionHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
-            (
-                string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "actionableMessage/executeAction")
-            );
-            RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                O365ConnectorCardActionQuery query = ActivityUtilities.GetTypedValue<O365ConnectorCardActionQuery>(turnContext.Activity) ?? new();
-                await handler(turnContext, turnState, query, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
-                {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return this;
-        }
-
-        /// <summary>
         /// Handles handoff activities.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
@@ -722,47 +453,6 @@ namespace Microsoft.Teams.AI
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return this;
-        }
-
-        /// <summary>
-        /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
-        /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
-        /// </summary>
-        /// <param name="handler">Function to cal lwhen the route is triggered</param>
-        /// <returns></returns>
-        public Application<TState> OnFeedbackLoop(FeedbackLoopHandler<TState> handler)
-        {
-            Verify.ParamNotNull(handler);
-
-            RouteSelectorAsync routeSelector = (context, _) =>
-            {
-                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
-                string? actionName = jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
-                return Task.FromResult
-                (
-                    context.Activity.Type == ActivityTypes.Invoke
-                    && context.Activity.Name == "message/submitAction"
-                    && actionName == "feedback"
-                );
-            };
-
-            RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                FeedbackLoopData feedbackLoopData = ActivityUtilities.GetTypedValue<FeedbackLoopData>(turnContext.Activity)!;
-                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
-
-                await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
-
-                // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
-                {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
-                    await turnContext.SendActivityAsync(activity, cancellationToken);
-                }
-            };
-
             AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
             return this;
         }

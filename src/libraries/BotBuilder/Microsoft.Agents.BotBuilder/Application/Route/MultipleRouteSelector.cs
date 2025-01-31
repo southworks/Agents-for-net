@@ -1,6 +1,9 @@
-﻿using System.Text.RegularExpressions;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-namespace Microsoft.Teams.AI
+using System.Text.RegularExpressions;
+
+namespace Microsoft.Agents.BotBuilder.Application.Route
 {
     /// <summary>
     /// Combination of String, Regex, and RouteSelectorAsync selectors.

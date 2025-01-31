@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams.Models;
+using Microsoft.Agents.Teams.Models;
 using Xunit;
 
 namespace Microsoft.Agents.Teams.Tests

@@ -1,6 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-namespace Microsoft.Teams.AI.Exceptions
+using System;
+
+namespace Microsoft.Agents.BotBuilder.Application.Exceptions
 {
     /// <summary>
     /// Cause of user authentication exception.

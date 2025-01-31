@@ -1,8 +1,8 @@
 ﻿using EchoBot.Model;
+using Microsoft.Agents.BotBuilder.Application;
+using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.AI;
-using Microsoft.Teams.AI.State;
 using System.Threading;
 using System.Threading.Tasks;
 
