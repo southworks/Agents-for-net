@@ -12,11 +12,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Teams;
 using Microsoft.Agents.Teams.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Teams.Connector;
 
 
 namespace InMeetingNotificationsBot.Bots

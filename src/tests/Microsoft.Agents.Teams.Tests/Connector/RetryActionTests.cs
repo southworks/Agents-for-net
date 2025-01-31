@@ -6,7 +6,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.Connector.Tests.Teams
+namespace Microsoft.Agents.Teams.Tests
 {
     public class RetryActionTests
     {

@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using AuthenticationBot;
 using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.State;
+using Microsoft.Agents.Teams.Compat;
 
 var builder = WebApplication.CreateBuilder(args);
 

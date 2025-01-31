@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;

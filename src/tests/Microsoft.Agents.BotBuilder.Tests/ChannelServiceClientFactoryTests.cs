@@ -11,7 +11,6 @@ using Microsoft.Agents.Authentication;
 using Moq;
 using System.Threading;
 using System.Net.Http;
-using Microsoft.Agents.Teams.Connector;
 using Microsoft.Agents.Connector;
 
 namespace Microsoft.Agents.BotBuilder.Tests
@@ -94,7 +93,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
 
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", string.Empty, CancellationToken.None, useAnonymous: true);
-            Assert.IsType<RestTeamsConnectorClient>(connector);
+            Assert.IsType<RestConnectorClient>(connector);
 
             var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
@@ -155,7 +154,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
 
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
-            Assert.IsType<RestTeamsConnectorClient>(connector);
+            Assert.IsType<RestConnectorClient>(connector);
 
             var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);
@@ -193,7 +192,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections);
 
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
-            Assert.IsType<RestTeamsConnectorClient>(connector);
+            Assert.IsType<RestConnectorClient>(connector);
 
             var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestUserTokenClient>(tokeClient);

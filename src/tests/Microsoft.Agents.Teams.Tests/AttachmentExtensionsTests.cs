@@ -4,7 +4,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Teams;
 using Microsoft.Agents.Teams.Models;
 using Xunit;
 

@@ -8,8 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Teams.Compat;
 
 
 namespace PeoplePicker.Bots

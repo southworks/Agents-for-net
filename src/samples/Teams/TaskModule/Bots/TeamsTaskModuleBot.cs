@@ -7,13 +7,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Interfaces;
 using TaskModule.Models;
+using Microsoft.Agents.Teams.Compat;
 
 namespace TaskModule.Bots
 {

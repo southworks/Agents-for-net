@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PeoplePicker.Bots;
+using Microsoft.Agents.Teams;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,7 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<ActivityBot>();
+builder.AddBot<ActivityBot, CloudAdapter, TeamsChannelServiceClientFactory>();
 
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();

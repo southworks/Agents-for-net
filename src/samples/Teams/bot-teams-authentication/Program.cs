@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TeamsAuth.Bots;
 using TeamsAuth.Dialogs;
+using Microsoft.Agents.Teams;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsBot<MainDialog>>();
+builder.AddBot<TeamsBot<MainDialog>, CloudAdapter, TeamsChannelServiceClientFactory>();
 
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();

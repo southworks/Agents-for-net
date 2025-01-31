@@ -11,8 +11,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Teams;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsTagMentionBot<MainDialog>>();
+builder.AddBot<TeamsTagMentionBot<MainDialog>, CloudAdapter, TeamsChannelServiceClientFactory>();
 
 builder.Services.AddSingleton<IMiddleware[]>((sp) =>
 {

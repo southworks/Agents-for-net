@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Core.Models;
 using System;

@@ -5,7 +5,7 @@ using Microsoft.Agents.Teams.Connector;
 using System;
 using Xunit;
 
-namespace Microsoft.Agents.Connector.Tests.Teams
+namespace Microsoft.Agents.Teams.Tests
 {
     public class RetryParamTests
     {

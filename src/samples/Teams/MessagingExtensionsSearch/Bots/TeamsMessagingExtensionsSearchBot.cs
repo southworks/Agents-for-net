@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +14,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Teams.Compat;
 
 
 namespace MessagingExtensionsSearch.Bots
@@ -48,9 +48,6 @@ namespace MessagingExtensionsSearch.Bots
             }
 
             var packages = await FindPackages(text);
-
-            // Provide a default icon URL
-            var defaultIconUrl = "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.3/icon";
 
             // We take every row of the results and wrap them in cards wrapped in MessagingExtensionAttachment objects.
             // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItemAsync event back on this bot.

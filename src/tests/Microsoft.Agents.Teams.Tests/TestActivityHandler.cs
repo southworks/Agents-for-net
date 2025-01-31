@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Teams.Compat;
 using Microsoft.Agents.Teams.Models;
 using System.Collections.Generic;
 using System.Reflection;
@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.Tests.Teams
+namespace Microsoft.Agents.Teams.Tests
 {
     internal class TestActivityHandler : TeamsActivityHandler
     {

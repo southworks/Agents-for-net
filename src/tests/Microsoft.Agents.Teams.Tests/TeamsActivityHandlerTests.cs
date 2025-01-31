@@ -9,8 +9,9 @@ using Xunit;
 using Microsoft.Agents.Teams.Models;
 using System;
 using System.Globalization;
+using Microsoft.Agents.BotBuilder;
 
-namespace Microsoft.Agents.BotBuilder.Tests.Teams
+namespace Microsoft.Agents.Teams.Tests
 {
     public class TeamsActivityHandlerTests
     {

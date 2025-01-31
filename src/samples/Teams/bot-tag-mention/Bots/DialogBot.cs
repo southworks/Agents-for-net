@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder.Teams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Teams.Compat;
 
 namespace TagMentionBot.Bots
 {

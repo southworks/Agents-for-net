@@ -4,6 +4,7 @@
 using InMeetingNotificationsBot.Bots;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
+using Microsoft.Agents.Teams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +20,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<InMeetingNotifications>();
+builder.AddBot<InMeetingNotifications, CloudAdapter, TeamsChannelServiceClientFactory>();
 
 var app = builder.Build();
 app.MapRazorPages();
