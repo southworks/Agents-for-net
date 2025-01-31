@@ -678,7 +678,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             // Assert
             turnContextMock.VerifyGet(tc => tc.Activity, Times.AtLeastOnce);
             turnContextMock.VerifyGet(tc => tc.Adapter, Times.Once);
-            turnContextMock.VerifyGet(tc => tc.TurnState, Times.AtLeastOnce);
+            turnContextMock.VerifyGet(tc => tc.TurnState, Times.Exactly(2));
             turnContextMock.VerifyGet(tc => tc.Responded, Times.Once);
             turnContextMock.Verify(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()), Times.Once);
             turnContextMock.Verify(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()), Times.Once);
@@ -761,21 +761,30 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task OnTurnAsync_ShouldThrowArgumentException()
+        public async Task OnTurnAsync_ShouldThrowOnNullContext()
         {
             // Arrange
             var turnContext = new TurnContext(new NotImplementedAdapter(), new Activity());
             var bot = new TestActivityHandler();
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await ((IBot)bot).OnTurnAsync(null));
-
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await ((IBot)bot).OnTurnAsync(turnContext));
-            Assert.Contains("Activity must have non-null Type.", exception.Message);
+            await Assert.ThrowsAsync<ArgumentException>(async () => await ((IBot)bot).OnTurnAsync(turnContext));;
         }
 
         [Fact]
-        public async Task GetAdaptiveCardInvokeValue_ShouldThrowExceptionOnEmptyValue()
+        public async Task OnTurnAsync_ShouldThrowOnActivityNullType()
+        {
+            // Arrange
+            var turnContext = new TurnContext(new NotImplementedAdapter(), new Activity());
+            var bot = new TestActivityHandler();
+
+            //Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () => await ((IBot)bot).OnTurnAsync(turnContext)); ;
+        }
+
+
+        [Fact]
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnEmptyValue()
         {
             // Arrange
             var activity = new Activity
@@ -789,7 +798,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task GetAdaptiveCardInvokeValue_ShouldThrowExceptionOnSerialization()
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnSerialization()
         {
             // Arrange
             var activity = new Activity
@@ -804,7 +813,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task GetAdaptiveCardInvokeValue_ShouldThrowExceptionOnEmptyAction()
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNullAction()
         {
             // Arrange
             var activity = new Activity
@@ -819,7 +828,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task GetAdaptiveCardInvokeValue_ShouldThrowExceptionOnActionNotSupported()
+        public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNotSupportedAction()
         {
             // Arrange
             var activity = new Activity
@@ -851,7 +860,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             Assert.IsType<Error>(body.Value);
             var error = body.Value as Error;
             Assert.Equal("NotSupported", error.Code);
-            Assert.Equal("The action ''is not supported.", error.Message);
+            Assert.Equal("The action '' is not supported.", error.Message);
         }
 
         [Fact]

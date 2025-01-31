@@ -21,7 +21,6 @@
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.1.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.Fakes" Version="17.12.0" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />

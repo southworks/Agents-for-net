@@ -458,21 +458,21 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public void GetEnumerator_ShouldReturnMiddlewareList()
         {
-            var one = new CallMeMiddlware(() => { });
+            var callMeMiddleware = new CallMeMiddlware(() => { });
 
-            var two = new DoNotCallNextMiddleware(() => { });
+            var doNotCallNextMiddleware = new DoNotCallNextMiddleware(() => { });
 
-            var m = new MiddlewareSet();
-            m.Use(one);
-            m.Use(two);
+            var middlewareSet = new MiddlewareSet();
+            middlewareSet.Use(callMeMiddleware);
+            middlewareSet.Use(doNotCallNextMiddleware);
 
-            var enumerator = m.GetEnumerator();
-
-            Assert.True(enumerator.MoveNext()); 
-            Assert.Equal(one, enumerator.Current);
+            var enumerator = middlewareSet.GetEnumerator();
 
             Assert.True(enumerator.MoveNext()); 
-            Assert.Equal(two, enumerator.Current);
+            Assert.Equal(callMeMiddleware, enumerator.Current);
+
+            Assert.True(enumerator.MoveNext()); 
+            Assert.Equal(doNotCallNextMiddleware, enumerator.Current);
 
             Assert.False(enumerator.MoveNext()); // No more middlewares
         }

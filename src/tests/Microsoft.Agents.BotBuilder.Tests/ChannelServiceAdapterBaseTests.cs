@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Connector;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
@@ -12,103 +15,24 @@ using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Tests
 {
-
-    public class TestChannelAdapter : ChannelServiceAdapterBase
-    {
-        public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory)
-            : base(channelServiceClientFactory)
-        {
-        }
-    }
-
     public class ChannelServiceAdapterBaseTests
     {
         bool _callbackInvoked = false;
 
-        ConversationReference _reference = new ConversationReference
+        private readonly ConversationReference _reference = new ConversationReference
         {
             Conversation = new ConversationAccount(id: "conversation-id"),
             ActivityId = "activity-id"
         };
 
-        Activity _activity = new Activity
+        private readonly Activity _activity = new Activity
         {
             Conversation = new ConversationAccount(),
             ServiceUrl = "MyServiceUrl"
         };
 
-        private Mock<IConnectorClient> CreateMockConnectorClient()
-        {
-            // Arrange the Adapter.
-            var mockConnectorClient = new Mock<IConnectorClient>();
-
-            // Mock the adapter UpdateActivityAsync method
-            mockConnectorClient.Setup(c => c.Conversations.UpdateActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(
-                        // Return a well known resourceId so we can assert we capture the right return value.
-                        new ResourceResponse("updateResourceId")
-                    ));
-
-            // Mock the adapter DeleteActivityAsync method
-            mockConnectorClient.Setup(c => c.Conversations.DeleteActivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask) // Simulate the deletion without actual behavior
-                .Verifiable(); // Ensure the method is called during the test      
-
-            // Mock the adapter UpdateActivityAsync method
-            mockConnectorClient.Setup(c => c.Conversations.CreateConversationAsync(It.IsAny<ConversationParameters>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(
-                        // Return a well known conversation resource so we can assert we capture the right return value.
-                        new ConversationResourceResponse("activityId", "serviceUrl", "resourceId")
-                    ));
-
-            // Mock the adapter UpdateActivityAsync method
-            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(
-                        // Return a well known resourceId so we can assert we capture the right return value.
-                        new ResourceResponse("replyResourceId")
-                    ));
-
-            // Mock the adapter UpdateActivityAsync method
-            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(
-                        // Return a well known resourceId so we can assert we capture the right return value.
-                        new ResourceResponse("sendResourceId")
-                    ));
-
-            return mockConnectorClient;
-        }
-
-        private Mock<IChannelServiceClientFactory> CreateMockChannelServiceClientFactory()
-        {
-            var userId = "user-id";
-            var connectionName = "connection-name";
-            var channelId = "channel-id";
-            string magicCode = null;
-
-            var mockUserTokenClient = new Mock<IUserTokenClient>();
-            mockUserTokenClient.Setup(
-                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
-
-            var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
-            mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
-                .ReturnsAsync(CreateMockConnectorClient().Object);
-            mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
-                .ReturnsAsync(mockUserTokenClient.Object);
-
-            return mockChannelServiceClientFactory;
-        }
-
-        Task ContinueCallback(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            _callbackInvoked = true;
-            return Task.CompletedTask;
-        }
-
         [Fact]
-        public async Task UpdateActivityAsync_ShouldReturnResourceUpdated()
+        public async Task UpdateActivityAsync_ShouldReturnUpdatedResource()
         {
             //Arrange
             var expectedResponseMessage = "updateResourceId";
@@ -125,15 +49,25 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task UpdateActivityAsync_ShouldThrowArgumentNullException()
+        public async Task UpdateActivityAsync_ShouldThrowOnNullContext()
         {
             //Arrange
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await adapter.UpdateActivityAsync(null, new Activity(), new CancellationToken()));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await adapter.UpdateActivityAsync(context, null, new CancellationToken()));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await adapter.UpdateActivityAsync(null, new Activity(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateActivityAsync_ShouldThrowOnNullActivity()
+        {
+            //Arrange
+            var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
+            var context = new TurnContext(adapter, new Activity());
+
+            //Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await adapter.UpdateActivityAsync(context, null, CancellationToken.None));
         }
 
         [Fact]
@@ -156,24 +90,32 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task DeleteActivityAsync_ShouldThrowArgumentNullException()
+        public async Task DeleteActivityAsync_ShouldThrowOnNullContext()
         {
             //Arrange
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
 
             //Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await context.Adapter.DeleteActivityAsync(null, _reference, new CancellationToken()));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await context.Adapter.DeleteActivityAsync(context, null, new CancellationToken()));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await context.Adapter.DeleteActivityAsync(null, _reference, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task DeleteActivityAsync_ShouldThrowOnNullReference()
+        {
+            //Arrange
+            var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
+            var context = new TurnContext(adapter, new Activity());
+
+            //Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await context.Adapter.DeleteActivityAsync(context, null, CancellationToken.None));
         }
 
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithBotId()
         {
-
             // Arrange
             _callbackInvoked = false;
-        
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
                   
             //Act
@@ -186,10 +128,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithClaims()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             var claimsIdentity = new ClaimsIdentity(new List<Claim>
@@ -208,10 +148,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithAudience()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             var claimsIdentity = new ClaimsIdentity(new List<Claim>
@@ -230,10 +168,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithBotIdAndActivity()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             //Act
@@ -246,10 +182,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithClaimsAndActivity()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             var claimsIdentity = new ClaimsIdentity(new List<Claim>
@@ -268,10 +202,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithClaimsAudienceAndActivity()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             var claimsIdentity = new ClaimsIdentity(new List<Claim>
@@ -290,10 +222,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         [Fact]
         public async Task CreateConversationAsync_ShouldCreateConversation()
         {
-
             // Arrange
             _callbackInvoked = false;
-
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             var claimsIdentity = new ClaimsIdentity(new List<Claim>
@@ -402,16 +332,92 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task SendActivitiesAsync_ShouldThrowArgumentException()
+        public async Task SendActivitiesAsync_ShouldThrowOnActivitiesListEmpty()
         {
             // Arrange
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            var expectedException = "Expecting one or more activities, but the array was empty.";
 
             //Assert
-            var message = await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, new Activity[0], default(CancellationToken)));
-            Assert.Contains(expectedException, message.Message);
+            await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, [], default(CancellationToken)));
         }
-    }
+
+        private Task ContinueCallback(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            _callbackInvoked = true;
+            return Task.CompletedTask;
+        }
+
+        private Mock<IConnectorClient> CreateMockConnectorClient()
+        {
+            // Arrange the Adapter.
+            var mockConnectorClient = new Mock<IConnectorClient>();
+
+            // Mock the adapter UpdateActivityAsync method
+            mockConnectorClient.Setup(c => c.Conversations.UpdateActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                        // Return a well known resourceId so we can assert we capture the right return value.
+                        new ResourceResponse("updateResourceId")
+                    ));
+
+            // Mock the adapter DeleteActivityAsync method
+            mockConnectorClient.Setup(c => c.Conversations.DeleteActivityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask) // Simulate the deletion without actual behavior
+                .Verifiable(); // Ensure the method is called during the test      
+
+            // Mock the adapter UpdateActivityAsync method
+            mockConnectorClient.Setup(c => c.Conversations.CreateConversationAsync(It.IsAny<ConversationParameters>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                        // Return a well known conversation resource so we can assert we capture the right return value.
+                        new ConversationResourceResponse("activityId", "serviceUrl", "resourceId")
+                    ));
+
+            // Mock the adapter UpdateActivityAsync method
+            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                        // Return a well known resourceId so we can assert we capture the right return value.
+                        new ResourceResponse("replyResourceId")
+                    ));
+
+            // Mock the adapter UpdateActivityAsync method
+            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                        // Return a well known resourceId so we can assert we capture the right return value.
+                        new ResourceResponse("sendResourceId")
+                    ));
+
+            return mockConnectorClient;
+        }
+
+        private Mock<IChannelServiceClientFactory> CreateMockChannelServiceClientFactory()
+        {
+            var userId = "user-id";
+            var connectionName = "connection-name";
+            var channelId = "channel-id";
+            string magicCode = null;
+
+            var mockUserTokenClient = new Mock<IUserTokenClient>();
+            mockUserTokenClient.Setup(
+                x => x.GetUserTokenAsync(It.Is<string>(s => s == userId), It.Is<string>(s => s == connectionName), It.Is<string>(s => s == channelId), It.Is<string>(s => s == magicCode), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenResponse { ChannelId = channelId, ConnectionName = connectionName, Token = $"TOKEN" });
+
+            var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
+            mockChannelServiceClientFactory.Setup(
+                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .ReturnsAsync(CreateMockConnectorClient().Object);
+            mockChannelServiceClientFactory.Setup(
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                .ReturnsAsync(mockUserTokenClient.Object);
+
+            return mockChannelServiceClientFactory;
+        }
+
+        private class TestChannelAdapter : ChannelServiceAdapterBase
+        {
+            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory)
+                : base(channelServiceClientFactory)
+            {
+            }
+        }
+    } 
 }

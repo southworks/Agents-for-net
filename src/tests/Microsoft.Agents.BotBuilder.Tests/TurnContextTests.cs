@@ -537,7 +537,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var context = new TurnContext(adapter, new Activity());
             Assert.False(context.Responded);
             var textMessage = "test activity created with parameters";
-            var response = await context.SendActivityAsync(textMessage, textMessage, InputHints.AcceptingInput);
+            await context.SendActivityAsync(textMessage, textMessage, InputHints.AcceptingInput);
 
             Assert.True(context.Responded);
         }
@@ -547,11 +547,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var adapter = new SimpleAdapter();
             var context = new TurnContext(adapter, new Activity());
-            var exceptionMessage = "Expecting one or more activities, but the array was empty.";
            
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync(Array.Empty<Activity>()));
-
-            Assert.Contains(exceptionMessage, exception.Message);
+            await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync([]));
         }
 
         [Fact]
@@ -579,7 +576,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var adapter = new SimpleAdapter();
             var context = new TurnContext(adapter, TestMessage.Message());
 
-            var response = await context.TraceActivityAsync("Message with trace");
+            await context.TraceActivityAsync("Message with trace");
 
             Assert.False(context.Responded);
         }

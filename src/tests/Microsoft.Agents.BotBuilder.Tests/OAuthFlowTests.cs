@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Connector;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -12,13 +15,14 @@ namespace Microsoft.Agents.BotBuilder.Tests
     public class OAuthFlowTests
     {
         private readonly OAuthFlow _flow;
+
         public OAuthFlowTests()
         {
             _flow = new OAuthFlow("Test flow", "testing oauth flow", "connection name", 1000, null); ;
         }
 
         [Fact]
-        public async Task SignOutUserAsync_ShouldThrowNotSupportedException()
+        public async Task SignOutUserAsync_ShouldThrowOnNullUserTokenClient()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
             await Assert.ThrowsAsync<NotSupportedException>(async() => await _flow.SignOutUserAsync(context));
@@ -53,7 +57,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task ContinueFlowAsync_ShouldSentMessageWithNotFoundStatus()
+        public async Task ContinueFlowAsync_ShouldSendMessageWithNotFoundStatus()
         {
             //Arrange
             bool responsesSent = false;
@@ -89,7 +93,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task ContinueFlowAsync_ShouldSentMessageWithInternalServerErrorStatus()
+        public async Task ContinueFlowAsync_ShouldSendMessageWithInternalServerErrorStatus()
         {
             //Arrange
             bool responsesSent = false;
@@ -119,7 +123,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         }
 
         [Fact]
-        public async Task ContinueFlowAsync_ShouldSentMessageWithPreconditionFailedStatus()
+        public async Task ContinueFlowAsync_ShouldSendMessageWithPreconditionFailedStatus()
         {
             //Arrange
             bool responsesSent = false;
