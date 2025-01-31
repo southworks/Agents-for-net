@@ -18,6 +18,11 @@ namespace Microsoft.Agents.Core.Serialization
         public const string ApplicationJson = "application/json";
         public static JsonSerializerOptions SerializationOptions = CreateConnectorOptions();
 
+        static ProtocolJsonSerializer()
+        {
+            SerializationInitAttribute.InitSerialization();
+        }
+
         public static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()

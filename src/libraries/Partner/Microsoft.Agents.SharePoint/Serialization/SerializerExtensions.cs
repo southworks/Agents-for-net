@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Microsoft.Agents.SharePoint.Serialization
 {
-    public static class SerializerExtensions
+    internal static class SerializerExtensions
     {
         public static JsonSerializerOptions ApplySharePointOptions(this JsonSerializerOptions options)
         {

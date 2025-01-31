@@ -15,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Teams.Compat;
 using Microsoft.Agents.Teams;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Teams.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +26,6 @@ builder.Logging.AddDebug();
 
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
-
-// Add Teams serialization support
-ProtocolJsonSerializer.SerializationOptions.ApplyTeamsOptions();
 
 // Add basic bot functionality
 builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter, TeamsChannelServiceClientFactory>();
