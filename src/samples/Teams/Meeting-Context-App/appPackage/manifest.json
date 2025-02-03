@@ -22,20 +22,6 @@
     "full": "This sample demonstrates how to retrieve and display meeting context and participant details in Microsoft Teams using bot APIs."
   },
   "accentColor": "#5558AF",
-  "configurableTabs": [
-    {
-      "configurationUrl": "https://${{BOT_DOMAIN}}/configure",
-      "canUpdateConfiguration": true,
-      "scopes": [
-        "team",
-        "groupChat"
-      ],
-      "context": [
-        "meetingChatTab",
-        "meetingDetailsTab"
-      ]
-    }
-  ],
   "bots": [
     {
       "botId": "${{AAD_APP_CLIENT_ID}}",
