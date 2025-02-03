@@ -15,21 +15,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
     public class HostedTaskServiceTests
     {
         [Fact]
-        public void Constructor_ShouldThrowWithNullConfig()
-        {
-            var queue = new BackgroundTaskQueue();
-            var logger = new Mock<ILogger<HostedTaskService>>();
-
-            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(null, queue, logger.Object));
-        }
-
-        [Fact]
         public void Constructor_ShouldThrowWithNullTaskQueue()
         {
             var config = new ConfigurationBuilder().Build();
             var logger = new Mock<ILogger<HostedTaskService>>();
 
-            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(config, null, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedTaskService(null, logger.Object));
         }
 
         [Fact]
@@ -40,7 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
 
             try
             {
-                var service = new HostedTaskService(config, queue, null);
+                var service = new HostedTaskService(queue, null);
                 await service.StopAsync(CancellationToken.None);
             }
             catch (Exception)
@@ -125,7 +116,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
             var queue = new BackgroundTaskQueue();
             var logger = new Mock<ILogger<HostedTaskService>>();
 
-            var service = new HostedTaskService(config, queue, logger.Object);
+            var service = new HostedTaskService(queue, logger.Object);
             return new(service, queue, logger);
         }
 
