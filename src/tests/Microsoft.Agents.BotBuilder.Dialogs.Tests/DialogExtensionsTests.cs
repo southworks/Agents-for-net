@@ -150,6 +150,22 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal(telemetryClientMock.Object, dialog.TelemetryClient);
         }
 
+        [Fact]
+        public async Task InternalRunAsync_Should()
+        {
+            var context = new Mock<ITurnContext>();
+            var dialogContext = new Mock<DialogContext>(new DialogSet(), context.Object, new DialogState());
+
+            context.SetupGet(e => e.TurnState)
+                .Returns(new TurnContextStateCollection())
+                .Verifiable(Times.Exactly(2));
+            dialogContext.Setup(e => e.ContinueDialogAsync(It.IsAny<CancellationToken>()))
+                .Throws(new Exception("Should not be called"))
+                .Verifiable(Times.Once);
+
+            await DialogExtensions.InternalRunAsync(context.Object, "A", dialogContext.Object, CancellationToken.None);
+        }
+
         /// <summary>
         /// Creates a TestFlow instance with state data to recreate and assert the different test case.
         /// </summary>

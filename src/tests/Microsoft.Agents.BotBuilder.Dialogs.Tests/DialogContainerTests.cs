@@ -114,9 +114,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var state = new DialogState([
                 new DialogInstance { Id = "A", Version = "1" }
             ]);
-            var dialog = new Mock<WaterfallDialog>("A");
+            var dialog = new Mock<WaterfallDialog>("A", null);
             var dialogContext = new DialogContext(new DialogSet(), context.Object, state);
 
+            context.SetupGet(e => e.TurnState)
+                .Returns(new TurnContextStateCollection())
+                .Verifiable(Times.Once);
             dialog.Setup(e => e.OnDialogEventAsync(It.IsAny<DialogContext>(), It.IsAny<DialogEvent>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false)
                 .Verifiable(Times.Once);
