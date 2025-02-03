@@ -6,7 +6,7 @@ namespace Microsoft.Agents.BotBuilder.Application
     /// <summary>
     /// Conversation update events.
     /// </summary>
-    public static class ConversationUpdateEvents
+    public class ConversationUpdateEvents
     {
         /// <summary>
         /// MembersAdded event

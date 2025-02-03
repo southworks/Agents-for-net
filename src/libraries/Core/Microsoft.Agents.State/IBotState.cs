@@ -20,5 +20,6 @@ namespace Microsoft.Agents.State
         Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
         Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default);
         void SetValue<T>(string name, T value);
+        bool HasValue(string name);
     }
 }

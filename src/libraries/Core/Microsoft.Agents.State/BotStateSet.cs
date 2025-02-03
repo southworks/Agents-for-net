@@ -8,13 +8,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Microsoft.Agents.State
 {
     /// <summary>
     ///  Manages a collection of botState and provides ability to load and save in parallel.
     /// </summary>
-    public class BotStateSet
+    public class BotStateSet : ITurnState
     {
         private readonly Dictionary<string, IBotState> _scopes = [];
 
@@ -52,21 +53,27 @@ namespace Microsoft.Agents.State
         public PrivateConversationState Private => GetScope<PrivateConversationState>();
         public TempState Temp => GetScope<TempState>();
 
+        public bool HasValue(string path)
+        {
+            var (scope, property) = GetScopeAndPath(path);
+            return GetScope(scope).HasValue(property);
+        }
+
         public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
             var (scope, property) = GetScopeAndPath(name);
             return GetScope(scope).GetValue(property, defaultValueFactory);
         }
 
-        public void SetValue(string name, object value)
+        public void SetValue(string path, object value)
         {
-            var (scope, property) = GetScopeAndPath(name);
+            var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).SetValue(property, value);
         }
 
-        public void DeleteValue(string name)
+        public void DeleteValue(string path)
         {
-            var (scope, property) = GetScopeAndPath(name);
+            var (scope, property) = GetScopeAndPath(path);
             GetScope(scope).DeleteValue(property);
         }
 

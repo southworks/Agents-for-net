@@ -1,7 +1,5 @@
 ﻿using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Application;
-using Microsoft.Agents.BotBuilder.Application.Exceptions;
-using Microsoft.Agents.BotBuilder.Application.Route;
 using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
@@ -50,8 +48,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
 
             //TODO
             /*
-            Verify.ParamNotNull(verb);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verb);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
@@ -70,8 +68,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
 
             //TODO
             /*
-            Verify.ParamNotNull(verbPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verbPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
@@ -86,8 +84,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnFetch(RouteSelectorAsync routeSelector, FetchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteHandler<TState> routeHandler = async (ITurnContext turnContext, TState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
@@ -95,7 +93,7 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
                     || !string.Equals(turnContext.Activity.Name, FETCH_INVOKE_NAME)
                     || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
                 {
-                    throw new TeamsAIException($"Unexpected TaskModules.OnFetch() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected TaskModules.OnFetch() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 TaskModuleResponse result = await handler(turnContext, turnState, taskModuleAction.Value, cancellationToken);
@@ -120,8 +118,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnFetch(MultipleRouteSelector routeSelectors, FetchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
 
             if (routeSelectors.Strings != null)
             {
@@ -160,8 +158,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
 
             //TODO
             /*
-            Verify.ParamNotNull(verb);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verb);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
@@ -181,8 +179,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
 
             //TODO
             /*
-            Verify.ParamNotNull(verbPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verbPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
@@ -197,8 +195,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSubmit(RouteSelectorAsync routeSelector, SubmitHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteHandler<TState> routeHandler = async (ITurnContext turnContext, TState turnState, CancellationToken cancellationToken) =>
             {
                 TaskModuleAction? taskModuleAction;
@@ -206,7 +204,7 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
                     || !string.Equals(turnContext.Activity.Name, SUBMIT_INVOKE_NAME)
                     || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity)) == null)
                 {
-                    throw new TeamsAIException($"Unexpected TaskModules.OnSubmit() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected TaskModules.OnSubmit() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 TaskModuleResponse result = await handler(turnContext, turnState, taskModuleAction.Value, cancellationToken);
@@ -231,8 +229,8 @@ namespace Microsoft.Agents.Teams.Application.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSubmit(MultipleRouteSelector routeSelectors, SubmitHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
 
             if (routeSelectors.Strings != null)
             {

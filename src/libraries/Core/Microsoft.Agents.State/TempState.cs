@@ -2,10 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,10 +20,6 @@ namespace Microsoft.Agents.State
 
         public string Name => ScopeName;
 
-        public string AuthScope { get { return GetValue<string>(AuthScopeKey); } set { SetValue(AuthScopeKey, value); } }
-        public ClaimsIdentity BotIdentity { get { return GetValue<ClaimsIdentity>(BotIdentityKey); } set { SetValue(BotIdentityKey, value); } }
-        public IActivity InvokeResponse { get { return GetValue<IActivity>(InvokeResponseKey); } set { SetValue(InvokeResponseKey, value); } }
-
         public void ClearState()
         {
             _state.Clear();
@@ -37,9 +31,14 @@ namespace Microsoft.Agents.State
             return Task.CompletedTask;
         }
 
+        public bool HasValue(string name)
+        {
+            return ObjectPath.HasValue(_state, name);
+        }
+
         public void DeleteValue(string name)
         {
-            _state.Remove(name);
+            ObjectPath.RemovePathValue(_state, name);
         }
 
         public T GetValue<T>(string name, Func<T> defaultValueFactory = null)

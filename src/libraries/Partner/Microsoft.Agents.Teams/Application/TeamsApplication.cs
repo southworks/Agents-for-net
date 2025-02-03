@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.BotBuilder.Application;
-using Microsoft.Agents.BotBuilder.Application.Route;
 using Microsoft.Agents.Teams.Application.Meetings;
 using Microsoft.Agents.Teams.Application.MessageExtensions;
 using Microsoft.Agents.Teams.Application.TaskModules;
@@ -65,8 +64,8 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public override Application<TState> OnConversationUpdate(string conversationUpdateEvent, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(conversationUpdateEvent);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(conversationUpdateEvent);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector;
             switch (conversationUpdateEvent)
             {
@@ -143,7 +142,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessageEdit(RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -164,7 +163,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessageUndelete(RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -185,7 +184,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessageDelete(RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
@@ -206,7 +205,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnTeamsReadReceipt(ReadReceiptHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -229,7 +228,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnConfigFetch(ConfigHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME)
@@ -256,7 +255,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnConfigSubmit(ConfigHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME)
@@ -294,7 +293,7 @@ namespace Microsoft.Agents.Teams.Application
 
         private Application<TState> OnFileConsent(FileConsentHandler<TState> handler, string fileConsentAction)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) =>
             {
                 FileConsentCardResponse? fileConsentCardResponse;
@@ -329,7 +328,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnO365ConnectorCardAction(O365ConnectorCardActionHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -359,7 +358,7 @@ namespace Microsoft.Agents.Teams.Application
         /// <returns></returns>
         public Application<TState> OnFeedbackLoop(FeedbackLoopHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
 
             RouteSelectorAsync routeSelector = (context, _) =>
             {

@@ -331,8 +331,6 @@ namespace Microsoft.Agents.BotBuilder
             turnContext.TurnState.Add<IIdentity>(BotIdentityKey, claimsIdentity);
             turnContext.TurnState.Add(connectorClient);
             turnContext.TurnState.Add(userTokenClient);
-            turnContext.TurnState.Add(callback);
-            turnContext.TurnState.Add(ChannelServiceFactory);
             turnContext.TurnState.Set(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
 
             return turnContext;

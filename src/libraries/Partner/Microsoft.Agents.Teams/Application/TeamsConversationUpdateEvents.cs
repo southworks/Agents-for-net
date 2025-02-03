@@ -1,9 +1,11 @@
-﻿namespace Microsoft.Agents.Teams.Application
+﻿using Microsoft.Agents.BotBuilder.Application;
+
+namespace Microsoft.Agents.Teams.Application
 {
     /// <summary>
     /// Conversation update events.
     /// </summary>
-    public static class TeamsConversationUpdateEvents
+    public class TeamsConversationUpdateEvents : ConversationUpdateEvents
     {
         /// <summary>
         /// ChannelCreated event
@@ -24,16 +26,6 @@
         /// ChannelRestored event
         /// </summary>
         public const string ChannelRestored = "channelRestored";
-
-        /// <summary>
-        /// MembersAdded event
-        /// </summary>
-        public const string MembersAdded = "membersAdded";
-
-        /// <summary>
-        /// MembersRemoved event
-        /// </summary>
-        public const string MembersRemoved = "membersRemoved";
 
         /// <summary>
         /// TeamRenamed event

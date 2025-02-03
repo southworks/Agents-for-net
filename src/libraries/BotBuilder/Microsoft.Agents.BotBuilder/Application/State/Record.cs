@@ -22,7 +22,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <exception cref="InvalidCastException"></exception>
         public bool TryGetValue<T>(string key, out T value)
         {
-            Verify.ParamNotNull(key);
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
             if (base.TryGetValue(key, out object entry))
             {
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <returns>The value associated with the key</returns>
         public T? Get<T>(string key)
         {
-            Verify.ParamNotNull(key);
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
             if (TryGetValue(key, out T value))
             {
@@ -72,8 +72,8 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <param name="value">value associated with key</param>
         public void Set<T>(string key, T value)
         {
-            Verify.ParamNotNull(key);
-            Verify.ParamNotNull(value);
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+            ArgumentNullException.ThrowIfNull(value);
 
 #pragma warning disable CS8601 // Possible null reference assignment.
             this[key] = value;

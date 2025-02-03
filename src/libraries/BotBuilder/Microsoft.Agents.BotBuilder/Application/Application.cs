@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
-using Microsoft.Agents.BotBuilder.Application.Route;
 using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
@@ -28,9 +27,9 @@ namespace Microsoft.Agents.BotBuilder.Application
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
 
+        // TODO:  These really aren't queues, so why this type?
         private readonly ConcurrentQueue<Route<TState>> _invokeRoutes;
         private readonly ConcurrentQueue<Route<TState>> _routes;
-
         private readonly ConcurrentQueue<TurnEventHandlerAsync<TState>> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandlerAsync<TState>> _afterTurn;
 
@@ -44,7 +43,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <param name="state"></param>
         public Application(ApplicationOptions<TState> options)
         {
-            Verify.ParamNotNull(options);
+            ArgumentNullException.ThrowIfNull(options);
+
 
             Options = options;
 
@@ -126,8 +126,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> AddRoute(RouteSelectorAsync selector, RouteHandler<TState> handler, bool isInvokeRoute = false)
         {
-            Verify.ParamNotNull(selector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(selector);
+            ArgumentNullException.ThrowIfNull(handler);
             Route<TState> route = new(selector, handler, isInvokeRoute);
             if (isInvokeRoute)
             {
@@ -148,8 +148,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActivity(string type, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(type);
-            Verify.ParamNotNull(handler);
+            ArgumentException.ThrowIfNullOrWhiteSpace(type);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult(string.Equals(type, context.Activity?.Type, StringComparison.OrdinalIgnoreCase));
             OnActivity(routeSelector, handler);
             return this;
@@ -163,8 +163,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActivity(Regex typePattern, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(typePattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(typePattern);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type));
             OnActivity(routeSelector, handler);
             return this;
@@ -178,8 +178,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActivity(RouteSelectorAsync routeSelector, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             AddRoute(routeSelector, handler, isInvokeRoute: false);
             return this;
         }
@@ -192,8 +192,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActivity(MultipleRouteSelector routeSelectors, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
             if (routeSelectors.Strings != null)
             {
                 foreach (string type in routeSelectors.Strings)
@@ -226,8 +226,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public virtual Application<TState> OnConversationUpdate(string conversationUpdateEvent, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(conversationUpdateEvent);
-            Verify.ParamNotNull(handler);
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationUpdateEvent);
+            ArgumentNullException.ThrowIfNull(handler);
 
             RouteSelectorAsync routeSelector;
             switch (conversationUpdateEvent)
@@ -273,8 +273,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnConversationUpdate(string[] conversationUpdateEvents, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(conversationUpdateEvents);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(conversationUpdateEvents);
+            ArgumentNullException.ThrowIfNull(handler);
             foreach (string conversationUpdateEvent in conversationUpdateEvents)
             {
                 OnConversationUpdate(conversationUpdateEvent, handler);
@@ -297,8 +297,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessage(string text, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(text);
-            Verify.ParamNotNull(handler);
+            ArgumentException.ThrowIfNullOrWhiteSpace(text);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _)
                 => Task.FromResult
                 (
@@ -325,8 +325,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessage(Regex textPattern, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(textPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(textPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _)
                 => Task.FromResult
                 (
@@ -349,8 +349,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessage(RouteSelectorAsync routeSelector, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             AddRoute(routeSelector, handler, isInvokeRoute: false);
             return this;
         }
@@ -366,8 +366,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessage(MultipleRouteSelector routeSelectors, RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
             if (routeSelectors.Strings != null)
             {
                 foreach (string text in routeSelectors.Strings)
@@ -399,7 +399,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessageReactionsAdded(RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
@@ -417,7 +417,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnMessageReactionsRemoved(RouteHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.MessageReaction, StringComparison.OrdinalIgnoreCase)
@@ -435,7 +435,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnHandoff(HandoffHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
@@ -470,7 +470,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnBeforeTurn(TurnEventHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             _beforeTurn.Enqueue(handler);
             return this;
         }
@@ -485,7 +485,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnAfterTurn(TurnEventHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             _afterTurn.Enqueue(handler);
             return this;
         }
@@ -500,20 +500,8 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            if (turnContext == null)
-            {
-                throw new ArgumentNullException(nameof(turnContext));
-            }
-
-            if (turnContext.Activity == null)
-            {
-                throw new ArgumentException($"{nameof(turnContext)} must have non-null Activity.");
-            }
-
-            if (turnContext.Activity.Type == null)
-            {
-                throw new ArgumentException($"{nameof(turnContext)}.Activity must have non-null Type.");
-            }
+            ArgumentNullException.ThrowIfNull(turnContext);
+            ArgumentNullException.ThrowIfNull(turnContext.Activity);
 
             await _OnTurnAsync(turnContext, cancellationToken);
         }
@@ -575,6 +563,8 @@ namespace Microsoft.Agents.BotBuilder.Application
                 // Remove @mentions
                 if (Options.RemoveRecipientMention && ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
                 {
+                    // TODO: What about normalizing mentions?
+
                     turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
                 }
 
@@ -637,15 +627,18 @@ namespace Microsoft.Agents.BotBuilder.Application
                     }
                 }
 
+                /*
                 // Populate {{$temp.input}}
                 if ((turnState.Temp.Input == null || turnState.Temp.Input.Length == 0) && turnContext.Activity.Text != null)
                 {
                     // Use the received activity text
                     turnState.Temp.Input = turnContext.Activity.Text;
                 }
+                */
 
                 bool eventHandlerCalled = false;
 
+                // TODO: why is this needed?  Would not the selector be limiting to "Invoke" anyway, so iterating _routes would be the same thing.
                 // Run any RouteSelectors in this._invokeRoutes first if the incoming Teams activity.type is "Invoke".
                 // Invoke Activities from Teams need to be responded to in less than 5 seconds.
                 if (ActivityTypes.Invoke.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
@@ -683,6 +676,7 @@ namespace Microsoft.Agents.BotBuilder.Application
                         return;
                     }
                 }
+
                 await turnState!.SaveStateAsync(turnContext, storage);
             }
             finally

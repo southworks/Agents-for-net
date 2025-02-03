@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.Application.Exceptions;
-using Microsoft.Agents.BotBuilder.Application.Route;
 using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -55,8 +53,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionExecute(string verb, ActionExecuteHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(verb);
-            Verify.ParamNotNull(handler);
+            ArgumentException.ThrowIfNullOrWhiteSpace(verb);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
             return OnActionExecute(routeSelector, handler);
         }
@@ -69,8 +67,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionExecute(Regex verbPattern, ActionExecuteHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(verbPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verbPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
             return OnActionExecute(routeSelector, handler);
         }
@@ -83,8 +81,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionExecute(RouteSelectorAsync routeSelector, ActionExecuteHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardInvokeValue? invokeValue;
@@ -94,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
                     || invokeValue.Action == null
                     || !string.Equals(invokeValue.Action.Type, ACTION_EXECUTE_TYPE))
                 {
-                    throw new TeamsAIException($"Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 AdaptiveCardInvokeResponse adaptiveCardInvokeResponse = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
@@ -113,8 +111,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)
@@ -164,8 +162,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionSubmit(string verb, ActionSubmitHandler<TState> handler)
         {
-            Verify.ParamNotNull(verb);
-            Verify.ParamNotNull(handler);
+            ArgumentException.ThrowIfNullOrWhiteSpace(verb);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
             RouteSelectorAsync routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
             return OnActionSubmit(routeSelector, handler);
@@ -196,8 +194,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionSubmit(Regex verbPattern, ActionSubmitHandler<TState> handler)
         {
-            Verify.ParamNotNull(verbPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(verbPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
             RouteSelectorAsync routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
             return OnActionSubmit(routeSelector, handler);
@@ -228,15 +226,15 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionSubmit(RouteSelectorAsync routeSelector, ActionSubmitHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
                     || !string.IsNullOrEmpty(turnContext.Activity.Text)
                     || turnContext.Activity.Value == null)
                 {
-                    throw new TeamsAIException($"Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
@@ -270,8 +268,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnActionSubmit(MultipleRouteSelector routeSelectors, ActionSubmitHandler<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)
@@ -304,8 +302,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSearch(string dataset, SearchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(dataset);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(dataset);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
             return OnSearch(routeSelector, handler);
         }
@@ -318,8 +316,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSearch(Regex datasetPattern, SearchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(datasetPattern);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(datasetPattern);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
             return OnSearch(routeSelector, handler);
         }
@@ -332,8 +330,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSearch(RouteSelectorAsync routeSelector, SearchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelector);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteHandler<TState> routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
                 AdaptiveCardSearchInvokeValue? searchInvokeValue;
@@ -341,7 +339,7 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
                     || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
                     || (searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value)) == null)
                 {
-                    throw new TeamsAIException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
+                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
                 }
 
                 AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
@@ -376,8 +374,8 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnSearch(MultipleRouteSelector routeSelectors, SearchHandlerAsync<TState> handler)
         {
-            Verify.ParamNotNull(routeSelectors);
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(routeSelectors);
+            ArgumentNullException.ThrowIfNull(handler);
             if (routeSelectors.Strings != null)
             {
                 foreach (string verb in routeSelectors.Strings)

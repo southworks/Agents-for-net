@@ -6,7 +6,7 @@ using Microsoft.Agents.Core.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.Application.Route
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Function for selecting whether a route handler should be triggered.

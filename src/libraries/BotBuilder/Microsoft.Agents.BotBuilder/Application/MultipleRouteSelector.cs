@@ -3,7 +3,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace Microsoft.Agents.BotBuilder.Application.Route
+namespace Microsoft.Agents.BotBuilder.Application
 {
     /// <summary>
     /// Combination of String, Regex, and RouteSelectorAsync selectors.

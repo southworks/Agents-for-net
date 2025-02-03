@@ -1,5 +1,4 @@
 ﻿using Microsoft.Agents.BotBuilder.Application;
-using Microsoft.Agents.BotBuilder.Application.Route;
 using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -34,7 +33,7 @@ namespace Microsoft.Agents.Teams.Application.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnStart(MeetingStartHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -57,7 +56,7 @@ namespace Microsoft.Agents.Teams.Application.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnEnd(MeetingEndHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -80,7 +79,7 @@ namespace Microsoft.Agents.Teams.Application.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnParticipantsJoin(MeetingParticipantsEventHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
@@ -103,7 +102,7 @@ namespace Microsoft.Agents.Teams.Application.Meetings
         /// <returns>The application instance for chaining purposes.</returns>
         public Application<TState> OnParticipantsLeave(MeetingParticipantsEventHandler<TState> handler)
         {
-            Verify.ParamNotNull(handler);
+            ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)

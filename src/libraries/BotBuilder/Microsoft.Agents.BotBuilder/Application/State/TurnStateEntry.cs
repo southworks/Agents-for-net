@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Newtonsoft.Json.Linq;
+using System;
 using System.Text.Json;
 
 namespace Microsoft.Agents.BotBuilder.Application.State
@@ -21,7 +23,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <param name="storageKey">Storage key to use when persisting the state scope.</param>
         public TurnStateEntry(Record value, string? storageKey = null)
         {
-            Verify.ParamNotNull(value);
+            ArgumentNullException.ThrowIfNull(value);
             _value = value;
             StorageKey = storageKey;
             _hash = ComputeHash(value);
@@ -68,7 +70,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <param name="value">New value to replace the state scope with.</param>
         public void Replace(Record value)
         {
-            Verify.ParamNotNull(value);
+            ArgumentNullException.ThrowIfNull(value);
             _value = value;
         }
 
@@ -80,7 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <returns>Returns a Json object representation </returns>
         internal static string ComputeHash(object obj)
         {
-            Verify.ParamNotNull(obj);
+            ArgumentNullException.ThrowIfNull(obj);
 
             return JsonSerializer.Serialize(obj, _serializerOptions);
         }

@@ -68,6 +68,17 @@ namespace Microsoft.Agents.State
             return new BotStatePropertyAccessor<T>(this, name);
         }
 
+        public bool HasValue(string name)
+        {
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{Name} is not loaded");
+            }
+
+            var cachedState = GetCachedState();
+            return ObjectPath.HasValue(cachedState.State, name);
+        }
+
         /// <summary>
         /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
         /// </summary>

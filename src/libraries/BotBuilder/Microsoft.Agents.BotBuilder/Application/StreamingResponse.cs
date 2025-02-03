@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.Application.Exceptions;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -92,7 +91,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         {
             if (this._ended)
             {
-                throw new TeamsAIException("The stream has already ended.");
+                throw new InvalidOperationException("The stream has already ended.");
             }
 
             var activity = new Activity
@@ -121,7 +120,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         {
             if (this._ended)
             {
-                throw new TeamsAIException("The stream has already ended.");
+                throw new InvalidOperationException("The stream has already ended.");
             }
 
             Message += text;
@@ -173,7 +172,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         {
             if (this._ended)
             {
-                throw new TeamsAIException("The stream has already ended.");
+                throw new InvalidOperationException("The stream has already ended.");
             }
 
             this._ended = true;
@@ -200,7 +199,7 @@ namespace Microsoft.Agents.BotBuilder.Application
                 {
                     Exception ex = this._queueSync.Exception;
                     this._queueSync = null;
-                    throw new TeamsAIException($"Error occurred when sending activity while streaming", ex);
+                    throw new InvalidOperationException($"Error occurred when sending activity while streaming", ex);
                 }
             }
         }

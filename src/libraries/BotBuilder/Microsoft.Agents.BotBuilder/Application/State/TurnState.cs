@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.Application.Exceptions;
 using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Storage;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
             }
             set
             {
-                Verify.ParamNotNull(value);
+                ArgumentNullException.ThrowIfNull(value);
 
                 TurnStateEntry? scope = GetScope(CONVERSATION_SCOPE);
                 if (scope == null)
@@ -121,7 +121,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
             }
             set
             {
-                Verify.ParamNotNull(value);
+                ArgumentNullException.ThrowIfNull(value);
 
                 TurnStateEntry? scope = GetScope(USER_SCOPE);
                 if (scope == null)
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
             }
             set
             {
-                Verify.ParamNotNull(value);
+                ArgumentNullException.ThrowIfNull(value);
 
                 TurnStateEntry? scope = GetScope(TEMP_SCOPE);
                 if (scope == null)
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
                     catch (Exception ex)
                     {
                         this._loadingTask = null;
-                        throw new TeamsAIException($"Something went wrong when loading state: {ex.Message}", ex);
+                        throw new InvalidOperationException($"Something went wrong when loading state: {ex.Message}", ex);
                     }
                 });
             }
@@ -344,7 +344,7 @@ namespace Microsoft.Agents.BotBuilder.Application.State
         /// <param name="storage">Optional. Storage provider to save state scopes to.</param>
         public async Task SaveStateAsync(ITurnContext turnContext, IStorage? storage)
         {
-            Verify.ParamNotNull(turnContext);
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             // Check for existing load operation
             if (!this._isLoaded && this._loadingTask!.Result)
@@ -433,11 +433,11 @@ namespace Microsoft.Agents.BotBuilder.Application.State
             string conversationId = activity.Conversation.Id;
             string userId = activity.From.Id;
 
-            Verify.ParamNotNull(activity, "TurnContext.Activity");
-            Verify.ParamNotNull(channelId, "TurnContext.Activity.ChannelId");
-            Verify.ParamNotNull(botId, "TurnContext.Activity.Recipient.Id");
-            Verify.ParamNotNull(conversationId, "TurnContext.Activity.Conversation.Id");
-            Verify.ParamNotNull(userId, "TurnContext.Activity.From.Id");
+            ArgumentNullException.ThrowIfNull(activity, "TurnContext.Activity");
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelId, "TurnContext.Activity.ChannelId");
+            ArgumentException.ThrowIfNullOrWhiteSpace(botId, "TurnContext.Activity.Recipient.Id");
+            ArgumentException.ThrowIfNullOrWhiteSpace(conversationId, "TurnContext.Activity.Conversation.Id");
+            ArgumentException.ThrowIfNullOrWhiteSpace(userId, "TurnContext.Activity.From.Id");
 
             string conversationKey = $"{channelId}/${botId}/conversations/${conversationId}";
             string userKey = $"{channelId}/${botId}/users/${userId}";

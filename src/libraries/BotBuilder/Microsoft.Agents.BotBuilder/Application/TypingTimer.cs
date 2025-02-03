@@ -46,7 +46,7 @@ namespace Microsoft.Agents.BotBuilder.Application
         /// <returns>True if the timer was started, otherwise False.</returns>
         public bool Start(ITurnContext turnContext)
         {
-            Verify.ParamNotNull(turnContext);
+            ArgumentNullException.ThrowIfNull(turnContext);
 
             if (turnContext.Activity.Type != ActivityTypes.Message || IsRunning())
             {

@@ -49,10 +49,12 @@ namespace EchoBot
         /// </summary>
         public static async Task MessageHandlerAsync(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
         {
-            int count = turnState.Conversation.MessageCount;
+            //int count = turnState.Conversation.MessageCount;
+            int count = turnState.MessageCount();
 
             // Increment count state.
-            turnState.Conversation.MessageCount = ++count;
+            //turnState.Conversation.MessageCount = ++count;
+            turnState.MessageCount(++count);
 
             await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
         }
