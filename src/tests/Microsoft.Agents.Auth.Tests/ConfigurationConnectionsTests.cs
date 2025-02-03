@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public void GetProviderConstructor_ShouldThrowOnNullAssemblyNam()
+        public void GetProviderConstructor_ShouldThrowOnNullLoadContext()
         {
             //Assert
             Assert.Throws<ArgumentNullException>(() => new AssemblyLoader(null));
