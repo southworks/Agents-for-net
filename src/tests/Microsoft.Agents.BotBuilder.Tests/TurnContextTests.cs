@@ -563,7 +563,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 Text = "test",
             };
 
-            var response = await context.SendActivitiesAsync([message]);
+            await context.SendActivitiesAsync([message]);
 
             Assert.True(context.Responded);
             Assert.NotEmpty(context.BufferedReplyActivities);
