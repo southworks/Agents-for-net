@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Agents.Core.Serialization.Converters;
 using Microsoft.Agents.Core.SharePoint.Serialization.Converters;
-using Microsoft.Agents.Core.Teams.Models;
 using Microsoft.Agents.Core.Teams.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -57,6 +56,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
+            options.Converters.Add(new SearchInvokeValueConverter());
 
             return options;
         }
