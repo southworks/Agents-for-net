@@ -7,6 +7,10 @@ updates:
   directory: /
   schedule:
     interval: daily
+  labels:
+    - 'dependencies'
+  reviewers:
+    - 'microsoft/botframework-sdk'    
   groups:
     nerdbank-gitversioning:
       patterns:
@@ -19,3 +23,7 @@ updates:
   directory: /
   schedule:
     interval: daily
+  labels:
+    - 'dependencies'
+  reviewers:
+    - 'microsoft/botframework-sdk'      
