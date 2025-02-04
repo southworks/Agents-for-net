@@ -4,8 +4,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Compat;
-using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots

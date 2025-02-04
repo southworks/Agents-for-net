@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Core.Interfaces
+namespace Microsoft.Agents.BotBuilder
 {
     /// <summary>
     /// Represents a bot adapter that can connect a bot to a service endpoint.

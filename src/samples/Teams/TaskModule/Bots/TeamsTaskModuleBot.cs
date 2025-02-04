@@ -11,9 +11,9 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json.Nodes;
-using Microsoft.Agents.Core.Interfaces;
 using TaskModule.Models;
 using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.BotBuilder;
 
 namespace TaskModule.Bots
 {

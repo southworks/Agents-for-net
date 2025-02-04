@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Xunit;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.SharePoint.Models;
 using Microsoft.Agents.SharePoint;
 using Microsoft.Agents.SharePoint.Compat;

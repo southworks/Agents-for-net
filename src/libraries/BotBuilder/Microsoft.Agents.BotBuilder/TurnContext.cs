@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -35,13 +35,15 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name="adapter">The adapter creating the context.</param>
         /// <param name="activity">The incoming activity for the turn;
         /// or <c>null</c> for a turn for a proactive message.</param>
+        /// <param name="state"></param>
         /// <exception cref="ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by bot adapter implementations only.</remarks>
-        public TurnContext(IChannelAdapter adapter, IActivity activity)
+        public TurnContext(IChannelAdapter adapter, IActivity activity, ITurnState state = null)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
+            TurnState = state ?? (ITurnState) new TurnState();
         }
 
         /// <summary>
@@ -85,7 +87,7 @@ namespace Microsoft.Agents.BotBuilder
         /// Gets the services registered on this context object.
         /// </summary>
         /// <value>The services registered on this context object.</value>
-        public TurnContextStateCollection TurnState { get; } = [];
+        public ITurnState TurnState { get; }
 
         /// <summary>
         /// Gets the activity associated with this turn; or <c>null</c> when processing
@@ -272,7 +274,7 @@ namespace Microsoft.Agents.BotBuilder
                         // is not being sent through the adapter, where it would be added to TurnState.
                         if (activity.Type == ActivityTypes.InvokeResponse)
                         {
-                            TurnState.Add(ChannelAdapter.InvokeResponseKey, activity);
+                            TurnState.Temp.SetValue(ChannelAdapter.InvokeResponseKey, activity);
                         }
 
                         responses[index] = new ResourceResponse();
@@ -386,11 +388,6 @@ namespace Microsoft.Agents.BotBuilder
             if (_disposed)
             {
                 return;
-            }
-
-            if (disposing)
-            {
-                TurnState.Dispose();
             }
 
             _disposed = true;

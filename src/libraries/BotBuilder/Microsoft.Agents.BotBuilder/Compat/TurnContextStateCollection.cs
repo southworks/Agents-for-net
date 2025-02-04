@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Core.Interfaces
+namespace Microsoft.Agents.BotBuilder.Compat
 {
     /// <summary>
     /// Values persisted for the lifetime of the turn as part of the <see cref="ITurnContext"/>.

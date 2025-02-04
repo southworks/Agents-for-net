@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -119,7 +118,7 @@ namespace Microsoft.Agents.BotBuilder
         public static IUserTokenClient GetTokenClient(ITurnContext turnContext)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
-            var userTokenClient = turnContext.TurnState.Get<IUserTokenClient>();
+            var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
             if (userTokenClient != null)
             {
                 return userTokenClient;
@@ -220,9 +219,9 @@ namespace Microsoft.Agents.BotBuilder
             }
 
             // Add the login timeout specified in OAuthPromptSettings to TurnState so it can be referenced if polling is needed
-            if (!turnContext.TurnState.ContainsKey(OAuthTurnStateConstants.OAuthLoginTimeoutKey) && Timeout.HasValue)
+            if (!turnContext.TurnState.Temp.HasValue(OAuthTurnStateConstants.OAuthLoginTimeoutKey) && Timeout.HasValue)
             {
-                turnContext.TurnState.Add<object>(OAuthTurnStateConstants.OAuthLoginTimeoutKey, TimeSpan.FromMilliseconds(Timeout.Value));
+                turnContext.TurnState.Temp.SetValue(OAuthTurnStateConstants.OAuthLoginTimeoutKey, TimeSpan.FromMilliseconds(Timeout.Value));
             }
 
             // Set input hint

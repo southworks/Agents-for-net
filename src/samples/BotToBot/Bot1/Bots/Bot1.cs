@@ -13,7 +13,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
@@ -126,7 +125,7 @@ namespace Microsoft.Agents.Samples.Bots
             // Create a conversationId to interact with the skill and send the activity
             var options = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = turnContext.TurnState.Get<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = turnContext.TurnState.Temp.GetValue<string>(ChannelAdapter.OAuthScopeKey),
                 FromBotId = _channelHost.HostAppId,
                 Activity = turnContext.Activity,
                 Bot = targetChannel

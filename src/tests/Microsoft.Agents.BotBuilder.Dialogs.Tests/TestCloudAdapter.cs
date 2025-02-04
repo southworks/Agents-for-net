@@ -7,8 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             public IChannelAdapter Adapter => _innerTurnContext.Adapter;
 
-            public TurnContextStateCollection TurnState => _innerTurnContext.TurnState;
+            public ITurnState TurnState => _innerTurnContext.TurnState;
 
             public IActivity Activity => _innerTurnContext.Activity;
 

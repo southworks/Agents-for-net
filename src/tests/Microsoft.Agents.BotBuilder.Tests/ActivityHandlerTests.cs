@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -657,7 +657,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             //turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
             
-            turnContextMock.Setup(tc => tc.TurnState).Returns(new TurnContextStateCollection());
+            turnContextMock.Setup(tc => tc.TurnState).Returns((ITurnState) new TurnState());
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
             turnContextMock.Setup(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()));

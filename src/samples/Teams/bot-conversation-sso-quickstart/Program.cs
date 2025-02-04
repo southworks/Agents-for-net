@@ -4,7 +4,6 @@
 using BotConversationSsoQuickstart;
 using BotConversationSsoQuickstart.Bots;
 using BotConversationSsoQuickstart.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
@@ -12,9 +11,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Teams.Compat;
 using Microsoft.Agents.Teams;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
 
 var builder = WebApplication.CreateBuilder(args);
 

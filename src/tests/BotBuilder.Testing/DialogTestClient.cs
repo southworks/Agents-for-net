@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Testing
 {

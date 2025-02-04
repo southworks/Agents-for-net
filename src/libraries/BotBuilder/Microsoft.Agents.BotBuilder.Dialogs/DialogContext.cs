@@ -7,9 +7,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.State;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {
@@ -32,7 +32,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             Dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
             Context = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             Stack = state.DialogStack;
-            Services = new TurnContextStateCollection();
         }
 
         /// <summary>
@@ -48,15 +47,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             : this(dialogs, parentDialogContext.Context, state)
         {
             Parent = parentDialogContext ?? throw new ArgumentNullException(nameof(parentDialogContext));
-
-            if (Parent.Services != null)
-            {
-                // copy parent services into this dialogcontext.
-                foreach (var service in Parent.Services)
-                {
-                    Services[service.Key] = service.Value;
-                }
-            }
         }
 
         /// <summary>
@@ -252,9 +242,9 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             {
                 // if we are continuing and haven't emitted the activityReceived event, emit it
                 // NOTE: This is backward compatible way for activity received to be fired even if you have legacy dialog loop
-                if (!this.Context.TurnState.ContainsKey("activityReceivedEmitted"))
+                if (!Context.TurnState.Temp.HasValue("activityReceivedEmitted"))
                 {
-                    this.Context.TurnState["activityReceivedEmitted"] = true;
+                    Context.TurnState.Temp.SetValue("activityReceivedEmitted", true);
 
                     // Dispatch "activityReceived" event
                     // - This will queue up any interruptions.
@@ -484,7 +474,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 // End the current dialog and giving the reason.
                 await EndActiveDialogAsync(DialogReason.ReplaceCalled, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                ObjectPath.SetPathValue(this.Context.TurnState, "turn.__repeatDialogId", dialogId);
+                Context.TurnState.Temp.SetValue("turn.__repeatDialogId", dialogId);
 
                 // Start replacement dialog
                 return await BeginDialogAsync(dialogId, options, cancellationToken).ConfigureAwait(false);

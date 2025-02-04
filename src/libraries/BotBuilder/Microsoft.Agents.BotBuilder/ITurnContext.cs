@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Core.Interfaces
+namespace Microsoft.Agents.BotBuilder
 {
     /// <summary>
     /// A method that can participate in send activity events for the current turn.
@@ -112,7 +113,7 @@ namespace Microsoft.Agents.Core.Interfaces
         /// Gets the collection of values cached with the context object for the lifetime of the turn.
         /// </summary>
         /// <value>The collection of services registered on this context object.</value>
-        TurnContextStateCollection TurnState { get; }
+        ITurnState TurnState { get; }
 
         /// <summary>
         /// Gets the activity for this turn of the bot.

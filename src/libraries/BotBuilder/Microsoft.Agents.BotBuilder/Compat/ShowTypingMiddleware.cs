@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Concurrent;
@@ -83,7 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
 
         private static bool IsSkillBot(ITurnContext turnContext)
         {
-            return turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity
+            return turnContext.TurnState.Temp.GetValue<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity
                 && BotClaims.IsBotClaim(claimIdentity.Claims);
         }
 

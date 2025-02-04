@@ -1,8 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -29,8 +28,6 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <value>The inner context's activity.</value>
         T ITurnContext<T>.Activity => (T)_innerTurnContext.Activity;
 
-        public IConnectorClient Connector => TurnState.Get<IConnectorClient>();
-
         /// <summary>
         /// Gets the bot adapter that created this context object.
         /// </summary>
@@ -41,7 +38,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// Gets the collection of values cached with the context object for the lifetime of the turn.
         /// </summary>
         /// <value>The collection of services registered on this context object.</value>
-        public TurnContextStateCollection TurnState => _innerTurnContext.TurnState;
+        public ITurnState TurnState => _innerTurnContext.TurnState;
 
         /// <summary>
         /// Gets the activity for this turn of the bot.

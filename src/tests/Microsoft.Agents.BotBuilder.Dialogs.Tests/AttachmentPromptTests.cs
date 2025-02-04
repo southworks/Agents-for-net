@@ -4,13 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Agents.State;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.Core.Models;
 using Xunit;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

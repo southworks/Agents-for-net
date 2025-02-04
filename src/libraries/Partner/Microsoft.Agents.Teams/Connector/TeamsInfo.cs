@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Teams.Models;
@@ -450,7 +450,7 @@ namespace Microsoft.Agents.Teams.Connector
 
         private static IConnectorClient GetConnectorClient(ITurnContext turnContext)
         {
-            return turnContext.TurnState.Get<IConnectorClient>() ?? throw new InvalidOperationException("This method requires a connector client.");
+            return turnContext.TurnState.Temp.GetValue<IConnectorClient>() ?? throw new InvalidOperationException("This method requires a connector client.");
         }
 
         private static async Task<TeamsChannelAccount> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)

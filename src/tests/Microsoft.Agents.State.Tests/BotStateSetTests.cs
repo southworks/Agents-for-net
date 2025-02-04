@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
@@ -15,7 +18,7 @@ namespace Microsoft.Agents.State.Tests
         public void TurnState_Properties()
         {
             var storage = new MemoryStorage();
-            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+            var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
 
             Assert.IsType<UserState>(turnState.GetScope(UserState.ScopeName));
             Assert.IsType<ConversationState>(turnState.GetScope(ConversationState.ScopeName));
@@ -28,7 +31,7 @@ namespace Microsoft.Agents.State.Tests
 
             var turnContext = TestUtilities.CreateEmptyContext();
             {
-                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
                 await turnState.LoadStateAsync(turnContext, false);
 
                 var userCount = turnState.GetValue("user.userCount", () => 0);
@@ -46,7 +49,7 @@ namespace Microsoft.Agents.State.Tests
             }
 
             {
-                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
 
                 await turnState.LoadStateAsync(turnContext);
 
@@ -60,7 +63,7 @@ namespace Microsoft.Agents.State.Tests
         [Fact]
         public void TurnState_TempState()
         {
-            var turnState = new BotStateSet(new TempState());
+            var turnState = new TurnState(new TempState());
 
             // Get should create property
             var count = turnState.Temp.GetValue("count", () => 1);
@@ -74,9 +77,8 @@ namespace Microsoft.Agents.State.Tests
             count = turnState.GetValue<int>("temp.count");
             Assert.Equal(2, count);
 
-            turnState.Temp.AuthScope = "botscope";
-            Assert.Equal("botscope", turnState.Temp.AuthScope);
-            Assert.Equal("botscope", turnState.Temp.GetValue<string>(TempState.AuthScopeKey));
+            turnState.SetValue($"temp.{ChannelAdapter.OAuthScopeKey}", "botscope");
+            Assert.Equal("botscope", turnState.Temp.GetValue<string>(ChannelAdapter.OAuthScopeKey));
         }
 
         [Fact]
@@ -115,7 +117,7 @@ namespace Microsoft.Agents.State.Tests
 
             var turnContext = TestUtilities.CreateEmptyContext();
             {
-                var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+                var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
                 await turnState.LoadStateAsync(turnContext, false);
 
                 // Add a couple array elements
@@ -181,7 +183,7 @@ namespace Microsoft.Agents.State.Tests
         {
             var storage = new MemoryStorage();
             var turnContext = TestUtilities.CreateEmptyContext();
-            var turnState = new BotStateSet(new UserState(storage), new ConversationState(storage));
+            var turnState = new TurnState(new UserState(storage), new ConversationState(storage));
             await turnState.LoadStateAsync(turnContext, false);
 
             var userObject = turnState.GetValue<string>("user.userStateObject");
@@ -210,7 +212,7 @@ namespace Microsoft.Agents.State.Tests
             // setup convState
             var convState = new ConversationState(storage);
 
-            var turnState = new BotStateSet(userState, convState);
+            var turnState = new TurnState(userState, convState);
 
             var context = TestUtilities.CreateEmptyContext();
             await turnState.LoadStateAsync(context);

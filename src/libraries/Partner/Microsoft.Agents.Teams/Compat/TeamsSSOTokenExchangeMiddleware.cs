@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.Teams.Compat
 {
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Teams.Compat
 
             try
             {
-                var userTokenClient = turnContext.TurnState.Get<IUserTokenClient>();
+                var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
                 if (userTokenClient != null)
                 {
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(

@@ -2,7 +2,6 @@
 using Microsoft.Agents.BotBuilder.Application;
 using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
 using Microsoft.Agents.BotBuilder.Application.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Teams.Models;
@@ -110,7 +109,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionActionResponse result = await handler(turnContext, turnState, messagingExtensionAction.Data, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
@@ -207,7 +206,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionActionResponse result = await handler(turnContext, turnState, messagingExtensionAction.BotActivityPreview[0], cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
@@ -308,7 +307,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 await handler(turnContext, turnState, activityPreview, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new();
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
@@ -403,7 +402,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 TaskModuleResponse result = await handler(turnContext, turnState, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
@@ -504,7 +503,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionResult result = await handler(turnContext, turnState, query, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new()
                     {
@@ -577,7 +576,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionResult result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new()
                     {
@@ -610,7 +609,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionResult result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new()
                     {
@@ -648,7 +647,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionResult result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new()
                     {
@@ -683,7 +682,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 MessagingExtensionResult result = await handler(turnContext, turnState, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new()
                     {
@@ -718,7 +717,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
                     await turnContext.SendActivityAsync(activity, cancellationToken);
@@ -751,7 +750,7 @@ namespace Microsoft.Agents.Teams.Application.MessageExtensions
                 await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
                     await turnContext.SendActivityAsync(activity, cancellationToken);

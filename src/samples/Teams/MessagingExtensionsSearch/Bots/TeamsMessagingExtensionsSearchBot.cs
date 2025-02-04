@@ -13,8 +13,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.BotBuilder;
 
 
 namespace MessagingExtensionsSearch.Bots

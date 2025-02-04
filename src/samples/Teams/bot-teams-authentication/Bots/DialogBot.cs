@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.BotBuilder.Dialogs;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder;
 
 namespace TeamsAuth.Bots
 {

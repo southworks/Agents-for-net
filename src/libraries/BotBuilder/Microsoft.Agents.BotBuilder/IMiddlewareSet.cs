@@ -4,7 +4,7 @@
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Microsoft.Agents.Core.Interfaces
+namespace Microsoft.Agents.BotBuilder
 {
     public interface IMiddlewareSet
     {

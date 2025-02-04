@@ -1,17 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Client;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Connector;
-using Microsoft.Agents.Client;
-using Microsoft.Agents.Core.Interfaces;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
 {
@@ -311,7 +310,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// </remarks>
         private async Task<bool> InterceptOAuthCardsAsync(ITurnContext turnContext, IActivity activity, string connectionName, CancellationToken cancellationToken)
         {
-            var userTokenClient = turnContext.TurnState.Get<IUserTokenClient>();
+            var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
             if (string.IsNullOrWhiteSpace(connectionName) || userTokenClient == null)
             {
                 // The adapter may choose not to support token exchange, in which case we fallback to showing an oauth card to the user.
@@ -378,7 +377,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Create a conversationId to interact with the skill and send the activity
             var conversationIdFactoryOptions = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = context.TurnState.Get<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = context.TurnState.Temp.GetValue<string>(ChannelAdapter.OAuthScopeKey),
                 FromBotId = DialogOptions.BotId,
                 Activity = activity,
                 Bot = DialogOptions.Skill

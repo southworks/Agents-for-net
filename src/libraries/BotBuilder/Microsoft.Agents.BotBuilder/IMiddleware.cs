@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Core.Interfaces
+namespace Microsoft.Agents.BotBuilder
 {
     /// <summary>
     /// Encapsulates an asynchronous method that calls the next
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Core.Interfaces
         /// <seealso cref="ITurnContext"/>
         /// <seealso cref="Activity"/>
 #pragma warning disable CA1716 // Identifiers should not match keywords (we can't change this without breaking binary compat)
-        Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default(CancellationToken));
+        Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default);
 #pragma warning restore CA1716 // Identifiers should not match keywords
     }
 }

@@ -14,10 +14,10 @@ using Microsoft.Agents.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Teams.Compat;
 using Microsoft.Agents.Teams.Connector;
+using Microsoft.Agents.BotBuilder;
 
 namespace ConversationBot.Bots
 {

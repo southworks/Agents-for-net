@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.BotBuilder.Dialogs.Choices;
-using Microsoft.Agents.State;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Dialogs

@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
@@ -36,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var record = UseRecord();
 
-            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<Core.Interfaces.IMiddleware>);
+            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<BotBuilder.IMiddleware>);
         }
 
         [Fact]
@@ -220,7 +219,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var factory = new Mock<IChannelServiceClientFactory>();
             var queue = new Mock<IActivityTaskQueue>();
             var logger = new Mock<ILogger<IBotHttpAdapter>>();
-            var middleware = new Mock<Core.Interfaces.IMiddleware>();
+            var middleware = new Mock<BotBuilder.IMiddleware>();
 
             var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, true, middleware.Object);
             return new(adapter, factory, queue, logger);
@@ -243,8 +242,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 IActivityTaskQueue activityTaskQueue,
                 ILogger<IBotHttpAdapter> logger = null,
                 bool async = true,
-                params Core.Interfaces.IMiddleware[] middlewares)
-            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, async, middlewares)
+                params BotBuilder.IMiddleware[] middlewares)
+            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, null, logger, async, middlewares)
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
             {

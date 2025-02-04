@@ -1,7 +1,7 @@
 ﻿using EchoBot.Model;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Application;
 using Microsoft.Agents.BotBuilder.Application.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;

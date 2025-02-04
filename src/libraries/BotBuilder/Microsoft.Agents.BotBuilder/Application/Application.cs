@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.BotBuilder.Application.AdaptiveCards;
 using Microsoft.Agents.BotBuilder.Application.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
@@ -447,7 +446,7 @@ namespace Microsoft.Agents.BotBuilder.Application
                 await handler(turnContext, turnState, token, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
                     await turnContext.SendActivityAsync(activity, cancellationToken);

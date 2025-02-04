@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.State;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace BotAllCards.Bots
 {

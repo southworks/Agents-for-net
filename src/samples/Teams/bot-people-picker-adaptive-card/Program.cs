@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PeoplePicker.Bots;
 using Microsoft.Agents.Teams;
+using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);
 

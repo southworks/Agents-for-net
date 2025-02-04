@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.Application.State;
-using Microsoft.Agents.Core.Interfaces;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -41,9 +42,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
+            ITurnState state = null,
             ILogger<IBotHttpAdapter> logger = null,
             bool async = true,
-            Core.Interfaces.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, state, logger: logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;

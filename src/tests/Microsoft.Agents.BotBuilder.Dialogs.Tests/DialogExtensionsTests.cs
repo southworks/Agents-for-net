@@ -15,11 +15,10 @@ using Xunit;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Telemetry;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -144,7 +143,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             using (var turnContext = new TurnContext(adapter.Object, activity))
             {
                 await conversationState.LoadAsync(turnContext, false);
-                turnContext.TurnState.Add(telemetryClientMock.Object);
+                turnContext.TurnState.Temp.SetValue(telemetryClientMock.Object);
 
                 await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
             }
@@ -164,8 +163,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             var adapter = new TestAdapter(TestAdapter.CreateConversation(conversationId));
             adapter
-                .UseStorage(storage)
-                .UseBotState(userState, convoState)
+                //.UseStorage(storage)
+                //.UseBotState(userState, convoState)
                 .Use(new AutoSaveStateMiddleware(userState, convoState))
                 .Use(new TranscriptLoggerMiddleware(new TraceTranscriptLogger(traceActivity: false)));
 
@@ -185,20 +184,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _skillBotId));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _parentBotId));
-                    turnContext.TurnState.Add(ChannelAdapter.BotIdentityKey, claimsIdentity);
+                    turnContext.TurnState.Temp.SetValue(ChannelAdapter.BotIdentityKey, claimsIdentity);
 
                     if (testCase == FlowTestCase.RootBotConsumingSkill)
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.TurnState.Add(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.TurnState.Temp.SetValue(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)
                     {
                         // Simulate the SkillConversationReference with a parent Bot ID stored in TurnState.
                         // This emulates a response coming to a skill from another skill through SkillHandler. 
-                        turnContext.TurnState.Add(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
+                        turnContext.TurnState.Temp.SetValue(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
                     }
                 }
 

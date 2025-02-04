@@ -11,9 +11,9 @@ using System.Net;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.SharePoint.Compat;
+using Microsoft.Agents.BotBuilder;
 
 namespace Microsoft.Agents.SharePoint
 {
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.SharePoint
 
             try
             {
-                var userTokenClient = turnContext.TurnState.Get<IUserTokenClient>();
+                var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
                 if (userTokenClient != null)
                 {
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(

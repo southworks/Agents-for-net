@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
-using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Teams.Compat;
 using Microsoft.Agents.Teams.Models;

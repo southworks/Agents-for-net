@@ -3,7 +3,6 @@
 
 using BotAllCards.Bots;
 using BotAllCards.Dialogs;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Samples;
@@ -11,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);
 

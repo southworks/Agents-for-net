@@ -9,7 +9,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 
@@ -693,7 +692,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
         {
             var turnContext = new TurnContext(this, activity);
 
-            turnContext.TurnState.Add<IUserTokenClient>(this);
+            turnContext.TurnState.Temp.SetValue<IUserTokenClient>(this);
 
             return turnContext;
         }

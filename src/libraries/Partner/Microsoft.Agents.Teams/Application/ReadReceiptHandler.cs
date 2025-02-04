@@ -1,5 +1,5 @@
-﻿using Microsoft.Agents.BotBuilder.Application.State;
-using Microsoft.Agents.Core.Interfaces;
+﻿using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Application.State;
 using Microsoft.Agents.Teams.Models;
 using System.Threading;
 using System.Threading.Tasks;

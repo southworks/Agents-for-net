@@ -16,9 +16,9 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Storage;
 using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

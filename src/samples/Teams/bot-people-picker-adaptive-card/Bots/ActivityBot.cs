@@ -7,8 +7,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Teams.Compat;
 
 

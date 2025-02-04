@@ -7,15 +7,14 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core;
 using Microsoft.Recognizers.Text;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {

@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Telemetry;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Telemetry
+namespace Microsoft.Agents.BotBuilder.Compat
 {
     /// <summary>
     /// Uses a <see cref="IBotTelemetryClient"/> object to log incoming, outgoing, updated, or deleted message activities.

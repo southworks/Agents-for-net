@@ -7,8 +7,9 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.Testing;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.VisualBasic;
@@ -52,20 +53,20 @@ namespace Microsoft.Agents.State.Tests
         {
             var storage = new MemoryStorage();
 
-            var turnState = new BotStateSet(storage);
+            var turnState = new TurnState(storage);
 
             Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
             Assert.IsAssignableFrom<UserState>(turnState.User);
             Assert.IsAssignableFrom<TempState>(turnState.Temp);
             Assert.Throws<ArgumentException>(() => turnState.Private);
 
-            turnState = new BotStateSet(storage, new PrivateConversationState(storage));
+            turnState = new TurnState(storage, new PrivateConversationState(storage));
             Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
             Assert.IsAssignableFrom<UserState>(turnState.User);
             Assert.IsAssignableFrom<TempState>(turnState.Temp);
             Assert.IsAssignableFrom<PrivateConversationState>(turnState.GetScope<PrivateConversationState>());
 
-            turnState = new BotStateSet(new UserState(storage), new ConversationState(storage), new TempState());
+            turnState = new TurnState(new UserState(storage), new ConversationState(storage), new TempState());
             Assert.IsAssignableFrom<ConversationState>(turnState.Conversation);
             Assert.IsAssignableFrom<UserState>(turnState.User);
             Assert.IsAssignableFrom<TempState>(turnState.Temp);
@@ -380,7 +381,7 @@ namespace Microsoft.Agents.State.Tests
 
             await new TestFlow(adapter, (context, cancellationToken) =>
             {
-                var obj = context.TurnState.Get<UserState>();
+                var obj = context.TurnState.Temp.GetValue<UserState>();
                 Assert.Null(obj);
                 return Task.CompletedTask;
             })

@@ -8,7 +8,6 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
@@ -17,7 +16,7 @@ namespace Microsoft.Agents.BotBuilder.TestBot.Shared.Bots
     {
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
-            var claimsIdentity = turnContext.TurnState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) as ClaimsIdentity;
+            var claimsIdentity = turnContext.TurnState.Temp.GetValue<IIdentity>(ChannelAdapter.BotIdentityKey) as ClaimsIdentity;
 
             var botAppIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim);
 

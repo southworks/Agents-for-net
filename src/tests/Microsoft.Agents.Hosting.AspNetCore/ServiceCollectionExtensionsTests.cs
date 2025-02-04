@@ -8,7 +8,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;

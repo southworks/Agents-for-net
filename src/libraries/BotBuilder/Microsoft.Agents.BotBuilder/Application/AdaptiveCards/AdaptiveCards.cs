@@ -347,7 +347,7 @@ namespace Microsoft.Agents.BotBuilder.Application.AdaptiveCards
                 IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
 
                 // Check to see if an invoke response has already been added
-                if (turnContext.TurnState.Get<object>(ChannelAdapter.InvokeResponseKey) == null)
+                if (!turnContext.TurnState.Temp.HasValue(ChannelAdapter.InvokeResponseKey))
                 {
                     SearchInvokeResponse searchInvokeResponse = new()
                     {
