@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Authentication;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Authentication;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

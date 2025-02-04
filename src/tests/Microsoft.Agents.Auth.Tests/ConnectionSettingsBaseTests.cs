@@ -19,7 +19,9 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void Constructor_ShouldSetPropertiesWithDefaults()
         {
-            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+
+            Dictionary<string, string> configSettings = new()
+            {
                 { "Connections:Settings:Other", "other" }
             };
 
@@ -38,7 +40,8 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void Constructor_ShouldCorrectlySetProperties()
         {
-            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+            Dictionary<string, string> configSettings = new()
+            {
                 { "Connections:Settings:ClientId", ClientId },
                 { "Connections:Settings:AuthorityEndpoint", AuthorityEndpoint },
                 { "Connections:Settings:TenantId", TenantId },
