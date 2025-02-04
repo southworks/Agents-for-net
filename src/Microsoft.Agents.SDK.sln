@@ -128,7 +128,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InMeetingNotificationsBot",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TagMentionBot", "samples\Teams\bot-tag-mention\TagMentionBot.csproj", "{BC5EFA6C-7EB5-4803-B7C5-093892E9DBB8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Authentication.Msal.Tests", "tests\Microsoft.Agents.Authentication.Msal.Tests\Microsoft.Agents.Authentication.Msal.Tests.csproj", "{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotRequestApproval", "samples\Teams\bot-request-approval\BotRequestApproval.csproj", "{BF587311-1240-889C-E6AE-ED61A6ED2B37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeaheadSearch", "samples\Teams\bot-type-ahead-search-adaptive-cards\TypeaheadSearch.csproj", "{697C1093-D392-8ABC-2BC8-F955022B1853}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeetingContextApp", "samples\Teams\Meeting-Context-App\MeetingContextApp.csproj", "{153EA430-9914-18E7-409F-7292CB1914AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentication.Msal.Tests", "tests\Microsoft.Agents.Authentication.Msal.Tests\Microsoft.Agents.Authentication.Msal.Tests.csproj", "{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -336,6 +342,18 @@ Global
 		{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}.Release|Any CPU.Build.0 = Release|Any CPU
+    {BF587311-1240-889C-E6AE-ED61A6ED2B37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF587311-1240-889C-E6AE-ED61A6ED2B37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF587311-1240-889C-E6AE-ED61A6ED2B37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF587311-1240-889C-E6AE-ED61A6ED2B37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{697C1093-D392-8ABC-2BC8-F955022B1853}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{697C1093-D392-8ABC-2BC8-F955022B1853}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{697C1093-D392-8ABC-2BC8-F955022B1853}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{697C1093-D392-8ABC-2BC8-F955022B1853}.Release|Any CPU.Build.0 = Release|Any CPU
+		{153EA430-9914-18E7-409F-7292CB1914AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{153EA430-9914-18E7-409F-7292CB1914AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{153EA430-9914-18E7-409F-7292CB1914AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{153EA430-9914-18E7-409F-7292CB1914AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -399,7 +417,10 @@ Global
 		{7D1A1CE5-6D9B-4D31-AC77-C3B1787F575D} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{06E490F7-F0BB-E3C4-54FE-5210627292A1} = {183D0E91-B84E-46D7-B653-6D85B4CCF804}
 		{BC5EFA6C-7EB5-4803-B7C5-093892E9DBB8} = {183D0E91-B84E-46D7-B653-6D85B4CCF804}
-		{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+    {B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+    {BF587311-1240-889C-E6AE-ED61A6ED2B37} = {183D0E91-B84E-46D7-B653-6D85B4CCF804}
+		{697C1093-D392-8ABC-2BC8-F955022B1853} = {183D0E91-B84E-46D7-B653-6D85B4CCF804}
+		{153EA430-9914-18E7-409F-7292CB1914AB} = {183D0E91-B84E-46D7-B653-6D85B4CCF804}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

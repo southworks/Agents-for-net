@@ -49,9 +49,6 @@ namespace MessagingExtensionsSearch.Bots
 
             var packages = await FindPackages(text);
 
-            // Provide a default icon URL
-            var defaultIconUrl = "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.3/icon";
-
             // We take every row of the results and wrap them in cards wrapped in MessagingExtensionAttachment objects.
             // The Preview is optional, if it includes a Tap, that will trigger the OnTeamsMessagingExtensionSelectItemAsync event back on this bot.
             var attachments = packages.Select(package =>

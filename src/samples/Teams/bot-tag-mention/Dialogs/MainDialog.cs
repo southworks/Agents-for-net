@@ -119,7 +119,7 @@ namespace TagMentionBot.Dialogs
                                 client = new SimpleGraphClient(tokenResponse.Token); 
                                 teamDetails = await TeamsInfo.GetTeamDetailsAsync(stepContext.Context, stepContext.Context.Activity.TeamsGetTeamInfo().Id, cancellationToken);
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 await stepContext.Context.SendActivityAsync(
                                     "You don't have Graph API permissions to fetch tag's information. Please use this command to mention a tag: \"`@<Bot-name>  @<your-tag>`\" to experience tag mention using bot.",
