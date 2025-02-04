@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var logger = new Mock<ILogger<IBotHttpAdapter>>();
             var middleware = new Mock<Core.Interfaces.IMiddleware>();
 
-            var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, true, middleware.Object);
+            var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, middlewares: middleware.Object);
             return new(adapter, factory, queue, logger);
         }
 
@@ -241,9 +241,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 IChannelServiceClientFactory channelServiceClientFactory,
                 IActivityTaskQueue activityTaskQueue,
                 ILogger<IBotHttpAdapter> logger = null,
-                bool async = true,
                 params Core.Interfaces.IMiddleware[] middlewares)
-            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, async, middlewares)
+            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, null, middlewares)
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
             {
