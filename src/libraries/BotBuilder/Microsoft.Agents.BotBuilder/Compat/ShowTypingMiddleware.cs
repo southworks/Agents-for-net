@@ -166,15 +166,25 @@ namespace Microsoft.Agents.BotBuilder.Compat
             _tasks.TryRemove(turnContext.Activity.Conversation.Id, out _);
         }
 
+
+        private static bool IsSkillBot(ITurnContext turnContext)
+        {
+            return turnContext.StackState.Get<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity
+                && BotClaims.IsBotClaim(claimIdentity.Claims);
+        }
+
         /// <summary>
         /// Start a timer to periodically send the typing activity (bots running as skills should not send typing activity).
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
         private async Task ProcessTypingAsync(ITurnContext turnContext)
         {
-            // Override the typing background task.
-            await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);
-            StartTypingTask(turnContext);
+            if (!IsSkillBot(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
+            {
+                // Override the typing background task.
+                await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);
+                StartTypingTask(turnContext);
+            }
         }
     }
 }

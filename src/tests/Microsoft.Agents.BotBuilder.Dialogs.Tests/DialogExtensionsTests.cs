@@ -143,7 +143,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             using (var turnContext = new TurnContext(adapter.Object, activity))
             {
                 await conversationState.LoadAsync(turnContext, false);
-                turnContext.StackState.Set(telemetryClientMock.Object);
+                turnContext.Services.Set(telemetryClientMock.Object);
 
                 await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
             }

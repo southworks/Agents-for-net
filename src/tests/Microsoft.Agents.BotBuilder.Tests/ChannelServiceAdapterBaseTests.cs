@@ -38,7 +38,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
 
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            context.StackState.Set<IConnectorClient>(CreateMockConnectorClient().Object);
+            context.Services.Set<IConnectorClient>(CreateMockConnectorClient().Object);
 
             //Act
             var result = await context.Adapter.UpdateActivityAsync(context, new Activity(), default(CancellationToken));
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var connectorClient = CreateMockConnectorClient();
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            context.StackState.Set<IConnectorClient>(connectorClient.Object);
+            context.Services.Set<IConnectorClient>(connectorClient.Object);
 
             //Act
             await context.Adapter.DeleteActivityAsync(context, _reference, default(CancellationToken));
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var connectorClient = CreateMockConnectorClient();
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            context.StackState.Set<IConnectorClient>(connectorClient.Object);
+            context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
                 new Activity(type: ActivityTypes.Message, value: "reply activity", replyToId: "replyToId")
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var connectorClient = CreateMockConnectorClient();
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            context.StackState.Set<IConnectorClient>(connectorClient.Object);
+            context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
                 new Activity(type: ActivityTypes.Message, value: "message activity")

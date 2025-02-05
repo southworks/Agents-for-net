@@ -46,7 +46,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             mockUserTokenClient.Setup(
                 x => x.SignOutUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()));
 
-            context.TurnState.Add<IUserTokenClient>(mockUserTokenClient.Object);
+            context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
 
             //Act
             await _flow.SignOutUserAsync(context);
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 x => x.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((TokenResponse)null);
 
-            context.TurnState.Add<IUserTokenClient>(mockUserTokenClient.Object);
+            context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
 
             //Act
             var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1));

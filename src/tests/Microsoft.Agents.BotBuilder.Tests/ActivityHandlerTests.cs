@@ -654,12 +654,11 @@ namespace Microsoft.Agents.BotBuilder.Tests
             // Arrange
             var turnContextMock = new Mock<ITurnContext>();
             turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
-            //turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
-			turnContextMock.Object.Services.Set<IConnectorClient>(new Mock<IConnectorClient>().Object);
 
-            turnContextMock.Setup(tc => tc.TurnState).Returns(new TurnContextStateCollection());
-            turnContextMock.Object.TurnState.Add<IConnectorClient>(new Mock<IConnectorClient>().Object);
+            turnContextMock.Setup(tc => tc.StackState).Returns(new TurnContextStateCollection());
+            turnContextMock.Setup(tc => tc.Services).Returns(new TurnContextStateCollection());
+            turnContextMock.Object.Services.Set<IConnectorClient>(new Mock<IConnectorClient>().Object);
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
             turnContextMock.Setup(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()));
@@ -680,7 +679,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
             // Assert
             turnContextMock.VerifyGet(tc => tc.Activity, Times.AtLeastOnce);
             turnContextMock.VerifyGet(tc => tc.Adapter, Times.Once);
-            turnContextMock.VerifyGet(tc => tc.TurnState, Times.Exactly(2));
+            turnContextMock.VerifyGet(tc => tc.StackState, Times.Exactly(1));
+            turnContextMock.VerifyGet(tc => tc.Services, Times.Exactly(1));
             turnContextMock.VerifyGet(tc => tc.Responded, Times.Once);
             turnContextMock.Verify(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()), Times.Once);
             turnContextMock.Verify(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()), Times.Once);
@@ -693,7 +693,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             turnContextMock.Verify(tc => tc.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
 
             //Validate entities inheritated and managed by TypedTurnContext
-            Assert.NotNull(typedTurnContext.Connector);
+            Assert.NotNull(typedTurnContext.Services.Get<IConnectorClient>());
             Assert.NotNull(typedTurnContext.Activity);
         }
 

@@ -63,8 +63,8 @@ namespace Microsoft.Agents.BotBuilder
 
             // all properties should be copied over except for activity.
             Adapter = turnContext.Adapter;
-            StackState = new TurnContextStateCollection();
-            Services = new TurnContextStateCollection();
+            StackState = turnContext.StackState;
+            Services = turnContext.Services;
             Responded = turnContext.Responded;
 
             if (turnContext is TurnContext tc)
@@ -391,6 +391,12 @@ namespace Microsoft.Agents.BotBuilder
             if (_disposed)
             {
                 return;
+            }
+
+            if (disposing)
+            {
+                StackState.Dispose();
+                Services.Dispose();
             }
 
             _disposed = true;

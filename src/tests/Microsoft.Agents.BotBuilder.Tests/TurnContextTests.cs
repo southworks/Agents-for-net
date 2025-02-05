@@ -588,10 +588,12 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var activity = TestMessage.Message();
 
             // Create a custom disposable TurnContextStateCollection
-            var turnState = new CustomDisposableTurnContextStateCollection();
+            var stackState = new CustomDisposableTurnContextStateCollection();
+            var services = new CustomDisposableTurnContextStateCollection();
             var mockTurnContext = new Mock<ITurnContext>();
             mockTurnContext.Setup(tc => tc.Adapter).Returns(adapter);
-            mockTurnContext.Setup(tc => tc.TurnState).Returns(turnState);
+            mockTurnContext.Setup(tc => tc.StackState).Returns(stackState);
+            mockTurnContext.Setup(tc => tc.Services).Returns(services);
 
             var context = new TurnContext(mockTurnContext.Object, activity);
 
@@ -600,8 +602,10 @@ namespace Microsoft.Agents.BotBuilder.Tests
             context.Dispose();
 
             // Assert
-            Assert.True(turnState.IsDisposed, "TurnState.Dispose was not called.");
-            Assert.Equal(1, turnState.DisposeCallCount);
+            Assert.True(stackState.IsDisposed, "StackState.Dispose was not called.");
+            Assert.Equal(1, stackState.DisposeCallCount);
+            Assert.True(services.IsDisposed, "Services.Dispose was not called.");
+            Assert.Equal(1, services.DisposeCallCount);
         }
 
         private class CustomDisposableTurnContextStateCollection : TurnContextStateCollection, IDisposable
