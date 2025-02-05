@@ -139,11 +139,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 var (intent, score) = recognizerResult.Value.GetTopScoringIntent();
                 if (intent != NoneIntent)
                 {
-                    dynamic candidate = new JsonObject();
-                    candidate.id = recognizerResult.Key;
-                    candidate.intent = intent;
-                    candidate.score = score;
-                    candidate.result = JsonSerializer.SerializeToElement(recognizerResult.Value, ProtocolJsonSerializer.SerializationOptions);
+                    var candidate = new JsonObject
+                    {
+                        { "id", recognizerResult.Key },
+                        { "intent", intent },
+                        { "score", score },
+                        { "result", JsonSerializer.SerializeToNode(recognizerResult.Value, ProtocolJsonSerializer.SerializationOptions) }
+                    };
                     candidates.Add(candidate);
                 }
             }

@@ -1,16 +1,30 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#pragma warning disable SA1402 // File may only contain a single type
 
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
+using Moq;
 using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
     public class DialogContainerTests
     {
+
+        private readonly TestContainer _container = new();
+        private readonly Mock<ITurnContext> _context = new();
+        private readonly Mock<DialogContext> _dialogContext;
+        private readonly Mock<WaterfallDialog> _dialog = new("A", null);
+
+        public DialogContainerTests()
+        {
+            _dialogContext = new(new DialogSet(), _context.Object, new DialogState());
+        }
+
         [Fact]
         public void DialogContainer_GetVersion()
         {
@@ -54,6 +68,57 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.NotNull(version7);
             Assert.Equal(version7, version6);
         }
+
+        [Fact]
+        public void FindDialog_ShouldReturnDialog()
+        {
+            _container.Dialogs.Add(_dialog.Object);
+            var actual = _container.FindDialog("A", null);
+
+            Assert.Equal(_dialog.Object, actual);
+        }
+
+        [Fact]
+        public void FindDialog_ShouldReturnDialogFromDialogContext()
+        {
+            _dialogContext.Object.Dialogs.Add(_dialog.Object);
+            var actual = _container.FindDialog("A", _dialogContext.Object);
+
+            Assert.Equal(_dialog.Object, actual);
+        }
+
+        [Fact]
+        public async Task OnDialogEventAsync_ShouldTriggerUnhandledVersionChanged()
+        {
+            _dialogContext.Object.Stack.Add(new DialogInstance { Id = "A" });
+
+            _context.Setup(e => e.TraceActivityAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceResponse())
+                .Verifiable(Times.Once);
+
+            var actual = await _container.OnDialogEventAsync(_dialogContext.Object, new DialogEvent { Name = DialogEvents.VersionChanged }, CancellationToken.None);
+
+            Assert.False(actual);
+            Mock.Verify(_context);
+        }
+
+        [Fact]
+        public async Task CheckForVersionChangeAsync_ShouldEmitVersionChangedEvent()
+        {
+            _dialogContext.Object.Stack.Add(new DialogInstance { Id = "A", Version = "1" });
+
+            _context.SetupGet(e => e.TurnState)
+                .Returns([])
+                .Verifiable(Times.Once);
+            _dialog.Setup(e => e.OnDialogEventAsync(It.IsAny<DialogContext>(), It.IsAny<DialogEvent>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false)
+                .Verifiable(Times.Once);
+
+            _dialogContext.Object.Dialogs.Add(_dialog.Object);
+            await _container.CheckForVersionChangeAsync_Test(_dialogContext.Object);
+
+            Mock.Verify(_context, _dialog);
+        }
     }
 
     public class TestContainer : DialogContainer
@@ -68,6 +133,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public override DialogContext CreateChildContext(DialogContext dc)
         {
             return dc;
+        }
+
+        public Task CheckForVersionChangeAsync_Test(DialogContext dc)
+        {
+            return CheckForVersionChangeAsync(dc);
         }
 
         public string GetInternalVersion_Test()

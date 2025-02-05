@@ -18,12 +18,38 @@ using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Interfaces;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
     public class SkillDialogTests
     {
+        private readonly Mock<ITurnContext> _context = new();
+        private readonly Mock<IChannel> _channel = new();
+        private readonly DialogState _dialogState = new([
+            new DialogInstance {
+                Id = "A",
+                State = new Dictionary<string, object> {
+                    { "deliverymode", DeliveryModes.ExpectReplies},
+                    { "Microsoft.Agents.BotBuilder.Dialogs.SkillDialog.SkillConversationId", "conversationId"}
+                }
+            }
+        ]);
+        private readonly Mock<DialogContext> _dialogContext;
+        private readonly MockSkillDialog _dialog;
+
+        public SkillDialogTests()
+        {
+            _dialogContext = new(new DialogSet(), _context.Object, _dialogState);
+            _dialog = new(new SkillDialogOptions()
+            {
+                SkillClient = _channel.Object,
+                ConversationState = new ConversationState(new MemoryStorage()),
+                ConversationIdFactory = new SimpleConversationIdFactory(),
+                Skill = new TestBotInfo()
+            });
+        }
+
         [Fact]
         public void ConstructorValidationTests()
         {
@@ -78,7 +104,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState);
 
             Assert.Equal(0, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
-            
+
             // Send something to the dialog to start it
             await client.SendActivityAsync<Activity>("irrelevant");
 
@@ -403,6 +429,99 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal(1, (dialogOptions.ConversationIdFactory as SimpleConversationIdFactory).CreateCount);
         }
 
+        [Fact]
+        public async Task ContinueDialogAsync_ShouldReturnEndOfTurnOnValidateActivity()
+        {
+            _context.SetupGet(e => e.Activity)
+                .Returns(new Activity { Text = "shouldNotValidate" })
+                .Verifiable(Times.Exactly(1));
+
+            var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
+
+            Assert.Equal(Dialog.EndOfTurn, result);
+            Mock.Verify(_context);
+        }
+
+        [Fact]
+        public async Task ContinueDialogAsync_ShouldSendInvokeActivity()
+        {
+            var resultInvoke = new InvokeResponse { Status = 200, Body = "testing" };
+            var activity = new Activity { Type = ActivityTypes.InvokeResponse, Value = JsonSerializer.Serialize(resultInvoke) };
+
+            _context.SetupGet(e => e.Activity)
+                .Returns(activity)
+                .Verifiable(Times.Exactly(3));
+            _context.SetupGet(e => e.TurnState)
+                .Returns([])
+                .Verifiable(Times.Exactly(2));
+
+            MockSendToSkillAsync(activity);
+
+            var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
+
+            Assert.Equal(DialogTurnStatus.Waiting, result.Status);
+            Assert.Equal(resultInvoke.Status, (activity.Value as InvokeResponse).Status);
+            Assert.Equal(resultInvoke.Body, (activity.Value as InvokeResponse).Body.ToString());
+            Mock.Verify(_context, _channel);
+        }
+
+        [Fact]
+        public async Task ContinueDialogAsync_ShouldReturnEndOfDialog()
+        {
+            var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "EOC testing" };
+
+            _context.SetupGet(e => e.Activity)
+                .Returns(new Activity())
+                .Verifiable(Times.Exactly(3));
+            _context.SetupGet(e => e.TurnState)
+                .Returns([])
+                .Verifiable(Times.Once);
+            MockSendToSkillAsync(activity);
+
+            var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
+
+            Assert.Equal(DialogTurnStatus.Complete, result.Status);
+            Assert.Equal(activity.Value, result.Result);
+            Mock.Verify(_context, _channel);
+        }
+
+        [Fact]
+        public async Task RepromptDialogAsync_ShouldSendActivity()
+        {
+            var activity = new Activity();
+
+            _context.SetupGet(e => e.Activity)
+                .Returns(activity)
+                .Verifiable(Times.Once);
+            _context.SetupGet(e => e.TurnState)
+                .Returns([])
+                .Verifiable(Times.Once);
+            MockSendToSkillAsync(activity);
+
+            await _dialog.RepromptDialogAsync(_context.Object, _dialogState.DialogStack[0]);
+
+            Mock.Verify(_context, _channel);
+        }
+
+        [Fact]
+        public async Task ResumeDialogAsync_ShouldSendActivity()
+        {
+            var activity = new Activity();
+
+            _context.SetupGet(e => e.Activity)
+                .Returns(activity)
+                .Verifiable(Times.Once);
+            _context.SetupGet(e => e.TurnState)
+                .Returns([])
+                .Verifiable(Times.Once);
+            MockSendToSkillAsync(activity);
+
+            var result = await _dialog.ResumeDialogAsync(_dialogContext.Object, DialogReason.BeginCalled);
+
+            Assert.Equal(DialogTurnStatus.Waiting, result.Status);
+            Mock.Verify(_context, _channel);
+        }
+
         private static IActivity CreateOAuthCardAttachmentActivity(string uri)
         {
             var oauthCard = new OAuthCard { TokenExchangeResource = new TokenExchangeResource { Uri = uri } };
@@ -528,6 +647,32 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 ConversationRefs.TryRemove(skillConversationId, out _);
                 return Task.CompletedTask;
             }
+        }
+
+        private class MockSkillDialog(SkillDialogOptions dialogOptions, string dialogId = null) : SkillDialog(dialogOptions, dialogId)
+        {
+            protected override bool OnValidateActivity(IActivity activity)
+            {
+                return !(activity.Text == "shouldNotValidate");
+            }
+        }
+        private void MockSendToSkillAsync(Activity activity)
+        {
+            var invokeResponse = new InvokeResponse<ExpectedReplies> { Status = 200, Body = new ExpectedReplies([activity]) };
+
+            _context.Setup(e => e.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceResponse())
+                .Verifiable(Times.AtMostOnce);
+            _channel.Setup(e => e.PostActivityAsync<ExpectedReplies>(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Uri>(),
+                    It.IsAny<Uri>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IActivity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(invokeResponse)
+                .Verifiable(Times.Once);
         }
     }
 }
