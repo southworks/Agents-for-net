@@ -93,6 +93,10 @@ namespace Microsoft.Agents.Authentication.Msal
             ExecuteAuthenticationResults authResultPayload = null; 
             if (msalAuthClient is IConfidentialClientApplication msalConfidentialClient)
             {
+                if (localScopes.Length == 0) {
+                    throw new ArgumentException("At least one Scope is required for Client Authentication.");
+                }
+
                 var authResult = await msalConfidentialClient.AcquireTokenForClient(localScopes).WithForceRefresh(true).ExecuteAsync().ConfigureAwait(false);
                 authResultPayload = new ExecuteAuthenticationResults()
                 {
@@ -204,21 +208,26 @@ namespace Microsoft.Agents.Authentication.Msal
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
             IList<string> _localScopesResolver = new List<string>();
+
             if (scopes != null && scopes.Count > 0)
             {
                 return scopes.ToArray();
             }
             else
             {
-                List<string> templist = new List<string>();
-                foreach (var scope in _connectionSettings.Scopes)
+                var templist = new List<string>();
+                
+                if (_connectionSettings.Scopes != null)
                 {
-                    var scopePlaceholder = scope;
-                    if (scopePlaceholder.ToLower().Contains("{instance}"))
+                    foreach (var scope in _connectionSettings.Scopes)
                     {
-                        scopePlaceholder = scopePlaceholder.Replace("{instance}", $"{instanceUrl.Scheme}://{instanceUrl.Host}");
+                        var scopePlaceholder = scope;
+                        if (scopePlaceholder.ToLower().Contains("{instance}"))
+                        {
+                            scopePlaceholder = scopePlaceholder.Replace("{instance}", $"{instanceUrl.Scheme}://{instanceUrl.Host}");
+                        }
+                        templist.Add(scopePlaceholder);
                     }
-                    templist.Add(scopePlaceholder);
                 }
                 return templist.ToArray();
             }
