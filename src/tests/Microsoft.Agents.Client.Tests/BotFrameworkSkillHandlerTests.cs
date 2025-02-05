@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Client.Tests
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.TurnState.Temp.GetValue<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
 
             // Assert based on activity type,
             if (activityType == ActivityTypes.Message)
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Client.Tests
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.TurnState.Temp.GetValue<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
             if (name.StartsWith("application/"))
             {
                 // Should be sent to the channel and not to the bot.
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Client.Tests
             await sut.OnDeleteActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToDelete);
 
             // Assert
-            Assert.NotNull(mockObjects.TurnContext.TurnState.Temp.GetValue<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToDelete, mockObjects.ActivityIdToDelete);
         }
 
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Assert
             Assert.Equal("resourceId", response.Id);
-            Assert.NotNull(mockObjects.TurnContext.TurnState.Temp.GetValue<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToUpdate, mockObjects.TurnContext.Activity.Id);
             Assert.Equal(activity.Text, mockObjects.UpdateActivity.Text);
         }
@@ -308,7 +308,7 @@ namespace Microsoft.Agents.Client.Tests
                     {
                         // Create and capture the TurnContext so we can run assertions on it.
                         TurnContext = new TurnContext(adapter.Object, conv.GetContinuationActivity());
-                        TurnContext.TurnState.Temp.SetValue<IConnectorClient>(Client);
+                        TurnContext.Services.Set<IConnectorClient>(Client);
 
                         await botCallbackHandler(TurnContext, cancel);
                     });

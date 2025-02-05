@@ -143,7 +143,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             using (var turnContext = new TurnContext(adapter.Object, activity))
             {
                 await conversationState.LoadAsync(turnContext, false);
-                turnContext.TurnState.Temp.SetValue(telemetryClientMock.Object);
+                turnContext.StackState.Set(telemetryClientMock.Object);
 
                 await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
             }
@@ -184,20 +184,20 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _skillBotId));
                     claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _parentBotId));
-                    turnContext.TurnState.Temp.SetValue(ChannelAdapter.BotIdentityKey, claimsIdentity);
+                    turnContext.StackState.Set(ChannelAdapter.BotIdentityKey, claimsIdentity);
 
                     if (testCase == FlowTestCase.RootBotConsumingSkill)
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.TurnState.Temp.SetValue(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.StackState.Set(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)
                     {
                         // Simulate the SkillConversationReference with a parent Bot ID stored in TurnState.
                         // This emulates a response coming to a skill from another skill through SkillHandler. 
-                        turnContext.TurnState.Temp.SetValue(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
+                        turnContext.StackState.Set(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
                     }
                 }
 

@@ -197,10 +197,10 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
                         var serviceUrl = dc.Context.Activity.ServiceUrl;
-                        var claimsIdentity = dc.Context.TurnState.Temp.GetValue<ClaimsIdentity>(ChannelAdapter.BotIdentityKey);
+                        var claimsIdentity = dc.Context.StackState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey);
                         var audience = callerInfo.Scope;
                         var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, claimsIdentity, audience, cancellationToken).ConfigureAwait(false);
-                        dc.Context.TurnState.Temp.SetValue<IConnectorClient>(connectorClient);
+                        dc.Context.Services.Set<IConnectorClient>(connectorClient);
                     }
                 }
 
@@ -278,7 +278,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)
         {
-            var clientFactory = turnContext.TurnState.Temp.GetValue<IChannelServiceClientFactory>();
+            var clientFactory = turnContext.Services.Get<IChannelServiceClientFactory>();
             if (clientFactory != null)
             {
                 return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -294,7 +294,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
-            if (turnContext.TurnState.Temp.GetValue<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
+            if (turnContext.StackState.Get<ClaimsIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity botIdentity && BotClaims.IsBotClaim(botIdentity.Claims))
             {
                 return new CallerInfo
                 {

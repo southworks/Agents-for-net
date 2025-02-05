@@ -75,7 +75,7 @@ namespace Microsoft.Agents.BotBuilder.State
             }
 
             var cachedState = GetCachedState();
-            return ObjectPath.HasValue(cachedState.State, name);
+            return cachedState.State.ContainsKey(name);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.BotBuilder.State
 
             var storageKey = GetStorageKey(turnContext);
 
-            if (ShouldLoad(storageKey, force))
+            if (ShouldLoad(turnContext, storageKey, force))
             {
                 var items = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
                 items.TryGetValue(storageKey, out object val);
@@ -199,21 +199,17 @@ namespace Microsoft.Agents.BotBuilder.State
                 }
                 else
                 {
-                    // This should never happen
                     throw new InvalidOperationException("Data is not in the correct format for BotState.");
                 }
+
+                turnContext.StackState.Set<CachedBotState>(Name, _cachedBotState);
             }
         }
 
-        private bool ShouldLoad(string storageKey, bool force)
+        private bool ShouldLoad(ITurnContext turnContext, string storageKey, bool force)
         {
-            var cachedState = GetCachedState();
-            if (cachedState != null && cachedState.Key != storageKey)
-            {
-                throw new InvalidOperationException($"BotState '{GetType().Name}' is being used by multiple conversations. Verify \"AddTransient\" DI registration.");
-            }
-
-            return force || cachedState == null || cachedState.State == null;
+            _cachedBotState = turnContext.StackState.Get<CachedBotState>(Name);
+            return force || _cachedBotState == null || _cachedBotState.State == null;
         }
 
         /// <summary>
@@ -322,8 +318,37 @@ namespace Microsoft.Agents.BotBuilder.State
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
+            if (!IsLoaded())
+            {
+                throw new InvalidOperationException($"{Name} is not loaded");
+            }
+
             var cachedState = GetCachedState();
-            return ObjectPath.GetPathValue<T>(cachedState.State, propertyName, true);
+            if (cachedState.State.TryGetValue(propertyName, out object result))
+            {
+                if (result is T t)
+                {
+                    return t;
+                }
+
+                if (result == null)
+                {
+                    return default(T);
+                }
+
+                // If types are not used by storage serialization try to convert the object to the type expected
+                // using the serializer.
+                var converted = ProtocolJsonSerializer.ToObject<T>(result);
+                cachedState.State[propertyName] = converted;
+                return converted;
+            }
+
+            if (typeof(T).IsValueType)
+            {
+                throw new KeyNotFoundException(propertyName);
+            }
+
+            return default(T);
         }
 
         /// <summary>
@@ -350,8 +375,7 @@ namespace Microsoft.Agents.BotBuilder.State
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
             var cachedState = GetCachedState();
-            //cachedState.State[propertyName] = value;
-            ObjectPath.SetPathValue(cachedState.State, propertyName, value, false);
+            cachedState.State[propertyName] = value;
         }
 
         /// <summary>

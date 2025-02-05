@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Teams.Compat
 
             try
             {
-                var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
+                var userTokenClient = turnContext.Services.Get<IUserTokenClient>();
                 if (userTokenClient != null)
                 {
                     tokenExchangeResponse = await userTokenClient.ExchangeTokenAsync(

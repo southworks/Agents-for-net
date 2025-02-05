@@ -657,7 +657,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             //turnContextMock.Setup(tc => tc.Adapter).Returns(new BotFrameworkAdapter(new SimpleCredentialProvider()));
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
             
-            turnContextMock.Setup(tc => tc.TurnState).Returns((ITurnState) new TurnState());
+            turnContextMock.Setup(tc => tc.StackState).Returns(new TurnContextStateCollection());
             turnContextMock.Setup(tc => tc.Responded).Returns(false);
             turnContextMock.Setup(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()));
             turnContextMock.Setup(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()));
@@ -674,7 +674,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             // Assert
             turnContextMock.VerifyGet(tc => tc.Activity, Times.AtLeastOnce);
             turnContextMock.VerifyGet(tc => tc.Adapter, Times.Once);
-            turnContextMock.VerifyGet(tc => tc.TurnState, Times.Once);
+            turnContextMock.VerifyGet(tc => tc.StackState, Times.Once);
             turnContextMock.VerifyGet(tc => tc.Responded, Times.Once);
             turnContextMock.Verify(tc => tc.OnDeleteActivity(It.IsAny<DeleteActivityHandler>()), Times.Once);
             turnContextMock.Verify(tc => tc.OnSendActivities(It.IsAny<SendActivitiesHandler>()), Times.Once);
@@ -961,7 +961,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 // touch every
                 var activity = turnContext.Activity;
                 var adapter = turnContext.Adapter;
-                var turnState = turnContext.TurnState;
+                var turnState = turnContext.StackState;
                 var responsed = turnContext.Responded;
                 turnContext.OnDeleteActivity((t, a, n) => Task.CompletedTask);
                 turnContext.OnSendActivities((t, a, n) => Task.FromResult(new ResourceResponse[] { new ResourceResponse() }));

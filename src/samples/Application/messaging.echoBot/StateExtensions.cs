@@ -1,19 +1,18 @@
-﻿using Microsoft.Agents.BotBuilder.Application.State;
-using System.Diagnostics.Metrics;
+﻿
+using Microsoft.Agents.BotBuilder.State;
 
 namespace EchoBot
 {
     public static class StateExtensions
     {
-        public static int MessageCount(this TurnState state)
+        public static int MessageCount(this ConversationState state)
         {
-            var value = state.GetValue("conversation.countKey");
-            return value == null ? 0 : (int)value;
+            return state.GetValue<int>("countKey");
         }
 
-        public static void MessageCount(this TurnState state, int value)
+        public static void MessageCount(this ConversationState state, int value)
         {
-            state.SetValue("conversation.countKey", value);
+            state.SetValue("countKey", value);
         }
     }
 }

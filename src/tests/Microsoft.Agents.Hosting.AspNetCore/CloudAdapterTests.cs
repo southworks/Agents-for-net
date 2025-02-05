@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 ILogger<IBotHttpAdapter> logger = null,
                 bool async = true,
                 params BotBuilder.IMiddleware[] middlewares)
-            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, null, logger, async, middlewares)
+            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, async, middlewares)
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
             {

@@ -109,11 +109,8 @@ namespace Microsoft.Agents.BotBuilder
         /// <value>The bot adapter that created this context object.</value>
         IChannelAdapter Adapter { get; }
 
-        /// <summary>
-        /// Gets the collection of values cached with the context object for the lifetime of the turn.
-        /// </summary>
-        /// <value>The collection of services registered on this context object.</value>
-        ITurnState TurnState { get; }
+        TurnContextStateCollection Services { get; }
+        TurnContextStateCollection StackState { get; }
 
         /// <summary>
         /// Gets the activity for this turn of the bot.

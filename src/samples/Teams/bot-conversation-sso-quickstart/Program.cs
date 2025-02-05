@@ -37,7 +37,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Create the Conversation state.
 builder.Services.AddSingleton<ConversationState>();
 
-builder.Services.AddTransient<IMiddleware[]>((sp) =>
+builder.Services.AddSingleton<IMiddleware[]>((sp) =>
 {
     return 
     [

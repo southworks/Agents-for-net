@@ -43,7 +43,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void TurnContext_ShouldBeClonedCorrectly()
         {
             var context1 = new TurnContext(new SimpleAdapter(), new Activity() { Text = "one" });
-            context1.TurnState.Temp.SetValue("x", "test");
+            context1.StackState.Set("x", "test");
             context1.OnSendActivities((context, activities, next) => next());
             context1.OnDeleteActivity((context, activity, next) => next());
             context1.OnUpdateActivity((context, activity, next) => next());
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             Assert.Equal("one", context1.Activity.Text);
             Assert.Equal("two", ccontext2.Activity.Text);
             Assert.Equal(context1.Adapter, ccontext2.Adapter);
-            Assert.Equal(context1.TurnState, ccontext2.TurnState);
+            Assert.Equal(context1.StackState, ccontext2.StackState);
 
             var binding = BindingFlags.Instance | BindingFlags.NonPublic;
             var onSendField = typeof(TurnContext).GetField("_onSendActivities", binding);
@@ -82,14 +82,14 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void Get_ThrowsOnNullKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            Assert.Throws<ArgumentNullException>(() => context.TurnState.Temp.GetValue<object>(null));
+            Assert.Throws<ArgumentNullException>(() => context.StackState.Get<object>(null));
         }
 
         [Fact]
         public void Get_ShouldReturnNullOnEmptyKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            var service = context.TurnState.Temp.GetValue<object>(string.Empty);
+            var service = context.StackState.Get<object>(string.Empty);
             Assert.Null(service);
         }
 
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
         public void Get_ShouldReturnNullWithUnknownKey()
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
-            var result = context.TurnState.Temp.GetValue<object>("test");
+            var result = context.StackState.Get<object>("test");
             Assert.Null(result);
         }
 
@@ -106,8 +106,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            context.TurnState.Temp.SetValue("bar", "foo");
-            var result = context.TurnState.Temp.GetValue<string>("bar");
+            context.StackState.Set("bar", "foo");
+            var result = context.StackState.Get<string>("bar");
 
             Assert.Equal("foo", result);
         }
@@ -117,8 +117,8 @@ namespace Microsoft.Agents.BotBuilder.Tests
         {
             var context = new TurnContext(new SimpleAdapter(), new Activity());
 
-            context.TurnState.Temp.SetValue("foo");
-            string result = context.TurnState.Temp.GetValue<string>();
+            context.StackState.Set("foo");
+            string result = context.StackState.Get<string>();
 
             Assert.Equal("foo", result);
         }

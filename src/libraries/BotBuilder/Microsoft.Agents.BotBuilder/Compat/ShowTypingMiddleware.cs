@@ -80,12 +80,6 @@ namespace Microsoft.Agents.BotBuilder.Compat
             await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);
         }
 
-        private static bool IsSkillBot(ITurnContext turnContext)
-        {
-            return turnContext.TurnState.Temp.GetValue<IIdentity>(ChannelAdapter.BotIdentityKey) is ClaimsIdentity claimIdentity
-                && BotClaims.IsBotClaim(claimIdentity.Claims);
-        }
-
         private static async Task SendTypingAsync(ITurnContext turnContext, TimeSpan delay, TimeSpan period, CancellationToken cancellationToken)
         {
             try
@@ -178,12 +172,9 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <param name="turnContext">The context object for this turn.</param>
         private async Task ProcessTypingAsync(ITurnContext turnContext)
         {
-            if (!IsSkillBot(turnContext) && turnContext.Activity.Type == ActivityTypes.Message)
-            {
-                // Override the typing background task.
-                await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);
-                StartTypingTask(turnContext);
-            }
+            // Override the typing background task.
+            await FinishTypingTaskAsync(turnContext).ConfigureAwait(false);
+            StartTypingTask(turnContext);
         }
     }
 }

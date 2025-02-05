@@ -78,7 +78,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
 
             var callback = new BotCallbackHandler(async (turnContext, ct) =>
             {
-                turnContext.TurnState.Temp.SetValue(SkillConversationReferenceKey, skillConversationReference);
+                turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
             });
 
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
             ResourceResponse resourceResponse = null;
             var callback = new BotCallbackHandler(async (turnContext, ct) =>
             {
-                turnContext.TurnState.Temp.SetValue(SkillConversationReferenceKey, skillConversationReference);
+                turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = activityId;
                 turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}";
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
 
             var callback = new BotCallbackHandler(async (turnContext, ct) =>
             {
-                var client = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+                var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
 
             var callback = new BotCallbackHandler(async (turnContext, ct) =>
             {
-                var client = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+                var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
 
             var callback = new BotCallbackHandler(async (turnContext, ct) =>
             {
-                turnContext.TurnState.Temp.SetValue(SkillConversationReferenceKey, skillConversationReference);
+                turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = replyToActivityId;
                 turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}";

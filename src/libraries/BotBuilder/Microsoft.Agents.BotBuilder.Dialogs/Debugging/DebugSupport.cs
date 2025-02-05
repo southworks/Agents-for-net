@@ -23,7 +23,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Debugging
         /// <param name="context">turnContext.</param>
         /// <returns>IDialogDebugger.</returns>
         public static IDialogDebugger GetDebugger(this ITurnContext context) =>
-            context.TurnState.Temp.GetValue<IDialogDebugger>() ?? NullDialogDebugger.Instance;
+            context.Services.Get<IDialogDebugger>() ?? NullDialogDebugger.Instance;
 
         /// <summary>
         /// Extension method to get IDialogDebugger from DialogContext.

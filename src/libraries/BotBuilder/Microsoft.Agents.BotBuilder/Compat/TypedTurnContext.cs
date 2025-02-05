@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -34,11 +33,8 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <value>The bot adapter that created this context object.</value>
         public IChannelAdapter Adapter => _innerTurnContext.Adapter;
 
-        /// <summary>
-        /// Gets the collection of values cached with the context object for the lifetime of the turn.
-        /// </summary>
-        /// <value>The collection of services registered on this context object.</value>
-        public ITurnState TurnState => _innerTurnContext.TurnState;
+        public TurnContextStateCollection Services => _innerTurnContext.Services;
+        public TurnContextStateCollection StackState => _innerTurnContext.StackState;
 
         /// <summary>
         /// Gets the activity for this turn of the bot.

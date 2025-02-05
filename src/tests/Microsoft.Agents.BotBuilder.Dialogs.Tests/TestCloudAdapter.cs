@@ -40,7 +40,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             public IChannelAdapter Adapter => _innerTurnContext.Adapter;
 
-            public ITurnState TurnState => _innerTurnContext.TurnState;
+            public TurnContextStateCollection StackState => _innerTurnContext.StackState;
+            public TurnContextStateCollection Services => _innerTurnContext.Services;
 
             public IActivity Activity => _innerTurnContext.Activity;
 

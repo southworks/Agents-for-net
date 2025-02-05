@@ -692,7 +692,7 @@ namespace Microsoft.Agents.BotBuilder.Testing
         {
             var turnContext = new TurnContext(this, activity);
 
-            turnContext.TurnState.Temp.SetValue<IUserTokenClient>(this);
+            turnContext.Services.Set<IUserTokenClient>(this);
 
             return turnContext;
         }

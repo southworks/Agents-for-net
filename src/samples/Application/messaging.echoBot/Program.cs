@@ -1,8 +1,8 @@
 ﻿using EchoBot;
-using EchoBot.Model;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Application;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
@@ -34,14 +34,9 @@ builder.Services.AddCloudAdapter<CloudAdapter>();
 // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
 builder.Services.AddTransient<IBot>(sp =>
 {
-    IStorage storage = sp.GetService<IStorage>();
-    ApplicationOptions<AppState> applicationOptions = new()
+    ApplicationOptions applicationOptions = new()
     {
-        Storage = storage,
-        TurnStateFactory = () =>
-        {
-            return new AppState();
-        }
+        TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
     };
 
     return new EchoBotApplication(applicationOptions);

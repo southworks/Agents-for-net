@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -39,11 +38,12 @@ namespace Microsoft.Agents.BotBuilder
         /// <exception cref="ArgumentNullException"><paramref name="activity"/> or
         /// <paramref name="adapter"/> is <c>null</c>.</exception>
         /// <remarks>For use by bot adapter implementations only.</remarks>
-        public TurnContext(IChannelAdapter adapter, IActivity activity, ITurnState state = null)
+        public TurnContext(IChannelAdapter adapter, IActivity activity)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
-            TurnState = state ?? (ITurnState) new TurnState();
+            StackState = new TurnContextStateCollection();
+            Services = new TurnContextStateCollection();
         }
 
         /// <summary>
@@ -63,7 +63,8 @@ namespace Microsoft.Agents.BotBuilder
 
             // all properties should be copied over except for activity.
             Adapter = turnContext.Adapter;
-            TurnState = turnContext.TurnState;
+            StackState = new TurnContextStateCollection();
+            Services = new TurnContextStateCollection();
             Responded = turnContext.Responded;
 
             if (turnContext is TurnContext tc)
@@ -83,11 +84,13 @@ namespace Microsoft.Agents.BotBuilder
         /// <value>The bot adapter that created this context object.</value>
         public IChannelAdapter Adapter { get; }
 
+        public TurnContextStateCollection StackState { get; }
+
         /// <summary>
         /// Gets the services registered on this context object.
         /// </summary>
         /// <value>The services registered on this context object.</value>
-        public ITurnState TurnState { get; }
+        public TurnContextStateCollection Services { get; }
 
         /// <summary>
         /// Gets the activity associated with this turn; or <c>null</c> when processing
@@ -274,7 +277,7 @@ namespace Microsoft.Agents.BotBuilder
                         // is not being sent through the adapter, where it would be added to TurnState.
                         if (activity.Type == ActivityTypes.InvokeResponse)
                         {
-                            TurnState.Temp.SetValue(ChannelAdapter.InvokeResponseKey, activity);
+                            StackState.Add(ChannelAdapter.InvokeResponseKey, activity);
                         }
 
                         responses[index] = new ResourceResponse();

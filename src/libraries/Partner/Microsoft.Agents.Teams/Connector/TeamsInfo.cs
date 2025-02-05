@@ -450,7 +450,7 @@ namespace Microsoft.Agents.Teams.Connector
 
         private static IConnectorClient GetConnectorClient(ITurnContext turnContext)
         {
-            return turnContext.TurnState.Temp.GetValue<IConnectorClient>() ?? throw new InvalidOperationException("This method requires a connector client.");
+            return turnContext.Services.Get<IConnectorClient>() ?? throw new InvalidOperationException("This method requires a connector client.");
         }
 
         private static async Task<TeamsChannelAccount> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)

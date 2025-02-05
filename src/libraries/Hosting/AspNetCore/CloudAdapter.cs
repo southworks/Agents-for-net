@@ -42,10 +42,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ITurnState state = null,
             ILogger<IBotHttpAdapter> logger = null,
             bool async = true,
-            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, state, logger: logger)
+            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger: logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _async = async;

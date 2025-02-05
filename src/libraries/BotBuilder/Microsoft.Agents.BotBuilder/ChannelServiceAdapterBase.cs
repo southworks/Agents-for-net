@@ -23,11 +23,9 @@ namespace Microsoft.Agents.BotBuilder
     /// An adapter that implements the Activity Protocol and can be hosted in different cloud environments both public and private.
     /// </summary>
     /// <param name="channelServiceClientFactory">The IConnectorFactory to use.</param>
-    /// <param name="state"></param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
-        ITurnState state = null,
         ILogger logger = null) : ChannelAdapter(logger)
     {
         /// <summary>
@@ -45,8 +43,6 @@ namespace Microsoft.Agents.BotBuilder
         /// The <see cref="ILogger" /> instance for this adapter.
         /// </value>
         protected ILogger Logger { get; private set; } = logger ?? NullLogger.Instance;
-
-        private ITurnState State = state ?? new TurnState();
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
@@ -79,7 +75,7 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else if (activity.Type == ActivityTypes.InvokeResponse)
                 {
-                    turnContext.TurnState.Temp.SetValue(InvokeResponseKey, activity);
+                    turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
                 else if (activity.Type == ActivityTypes.Trace && activity.ChannelId != Channels.Emulator)
                 {
@@ -89,12 +85,12 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
                     {
-                        var connectorClient = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
                         response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        var connectorClient = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
                         response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
                     }
                 }
@@ -115,7 +111,7 @@ namespace Microsoft.Agents.BotBuilder
 
             Logger.LogInformation($"UpdateActivityAsync ActivityId: {activity.Id}");
 
-            var connectorClient = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+            var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
 
@@ -127,7 +123,7 @@ namespace Microsoft.Agents.BotBuilder
 
             Logger.LogInformation($"DeleteActivityAsync Conversation Id: {reference.Conversation.Id}, ActivityId: {reference.ActivityId}");
 
-            var connectorClient = turnContext.TurnState.Temp.GetValue<IConnectorClient>();
+            var connectorClient = turnContext.Services.Get<IConnectorClient>();
             await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
         }
 
@@ -331,11 +327,14 @@ namespace Microsoft.Agents.BotBuilder
 
         private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, string oauthScope, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
         {
-            var turnContext = new TurnContext(this, activity, State);
-            //turnContext.TurnState.Temp.SetValue(BotIdentityKey, claimsIdentity);
-            turnContext.TurnState.Temp.SetValue(connectorClient);
-            turnContext.TurnState.Temp.SetValue(userTokenClient);
-            turnContext.TurnState.Temp.SetValue(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
+            var turnContext = new TurnContext(this, activity);
+
+            turnContext.StackState.Set(BotIdentityKey, claimsIdentity);
+            turnContext.StackState.Set(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
+
+            turnContext.Services.Set(connectorClient);
+            turnContext.Services.Set(userTokenClient);
+            turnContext.Services.Set(ChannelServiceFactory);
 
             return turnContext;
         }
@@ -358,7 +357,7 @@ namespace Microsoft.Agents.BotBuilder
             // Handle Invoke scenarios where the Bot will return a specific body and return code.
             if (turnContext.Activity.Type == ActivityTypes.Invoke)
             {
-                var activityInvokeResponse = turnContext.TurnState.Temp.GetValue<Activity>(InvokeResponseKey);
+                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)
                 {
                     return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };

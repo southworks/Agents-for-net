@@ -118,7 +118,7 @@ namespace Microsoft.Agents.BotBuilder
         public static IUserTokenClient GetTokenClient(ITurnContext turnContext)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
-            var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
+            var userTokenClient = turnContext.Services.Get<IUserTokenClient>();
             if (userTokenClient != null)
             {
                 return userTokenClient;
@@ -216,12 +216,6 @@ namespace Microsoft.Agents.BotBuilder
                         TokenPostResource = signInResource.TokenPostResource
                     },
                 });
-            }
-
-            // Add the login timeout specified in OAuthPromptSettings to TurnState so it can be referenced if polling is needed
-            if (!turnContext.TurnState.Temp.HasValue(OAuthTurnStateConstants.OAuthLoginTimeoutKey) && Timeout.HasValue)
-            {
-                turnContext.TurnState.Temp.SetValue(OAuthTurnStateConstants.OAuthLoginTimeoutKey, TimeSpan.FromMilliseconds(Timeout.Value));
             }
 
             // Set input hint

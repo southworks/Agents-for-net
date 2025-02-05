@@ -1,16 +1,15 @@
-﻿using EchoBot.Model;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Application;
-using Microsoft.Agents.BotBuilder.Application.State;
+﻿using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace EchoBot
 {
-    public class EchoBotApplication : Application<AppState>
+    public class EchoBotApplication : Application
     {
-        public EchoBotApplication(ApplicationOptions<AppState> options) : base(options)
+        public EchoBotApplication(ApplicationOptions options) : base(options)
         {
             OnConversationUpdate("membersAdded", WelcomeMessageAsync);
 
@@ -24,7 +23,7 @@ namespace EchoBot
         /// <summary>
         /// Handles members added events.
         /// </summary>
-        public static async Task WelcomeMessageAsync(ITurnContext turnContext, TurnState turnState, CancellationToken cancellationToken)
+        public static async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
             {
@@ -38,23 +37,21 @@ namespace EchoBot
         /// <summary>
         /// Handles "/reset" message.
         /// </summary>
-        public static async Task DeleteStateHandlerAsync(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
+        public static async Task DeleteStateHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            turnState.DeleteConversationState();
+            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
             await turnContext.SendActivityAsync("Ok I've deleted the current conversation state", cancellationToken: cancellationToken);
         }
 
         /// <summary>
         /// Handles messages except "/reset".
         /// </summary>
-        public static async Task MessageHandlerAsync(ITurnContext turnContext, AppState turnState, CancellationToken cancellationToken)
+        public static async Task MessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            //int count = turnState.Conversation.MessageCount;
-            int count = turnState.MessageCount();
+            int count = turnState.Conversation.MessageCount();
 
             // Increment count state.
-            //turnState.Conversation.MessageCount = ++count;
-            turnState.MessageCount(++count);
+            turnState.Conversation.MessageCount(++count);
 
             await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
         }

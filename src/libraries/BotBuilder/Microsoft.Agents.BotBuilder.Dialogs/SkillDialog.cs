@@ -310,7 +310,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// </remarks>
         private async Task<bool> InterceptOAuthCardsAsync(ITurnContext turnContext, IActivity activity, string connectionName, CancellationToken cancellationToken)
         {
-            var userTokenClient = turnContext.TurnState.Temp.GetValue<IUserTokenClient>();
+            var userTokenClient = turnContext.Services.Get<IUserTokenClient>();
             if (string.IsNullOrWhiteSpace(connectionName) || userTokenClient == null)
             {
                 // The adapter may choose not to support token exchange, in which case we fallback to showing an oauth card to the user.
@@ -377,7 +377,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Create a conversationId to interact with the skill and send the activity
             var conversationIdFactoryOptions = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = context.TurnState.Temp.GetValue<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = context.StackState.Get<string>(ChannelAdapter.OAuthScopeKey),
                 FromBotId = DialogOptions.BotId,
                 Activity = activity,
                 Bot = DialogOptions.Skill
