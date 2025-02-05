@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.BotBuilder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
@@ -11,7 +14,7 @@ namespace EchoBot
     {
         public EchoBotApplication(ApplicationOptions options) : base(options)
         {
-            OnConversationUpdate("membersAdded", WelcomeMessageAsync);
+            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
             // Listen for user to say "/reset" and then delete conversation state
             OnMessage("/reset", DeleteStateHandlerAsync);
@@ -48,10 +51,8 @@ namespace EchoBot
         /// </summary>
         public static async Task MessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            int count = turnState.Conversation.MessageCount();
-
             // Increment count state.
-            turnState.Conversation.MessageCount(++count);
+            int count = turnState.Conversation.IncrementMessageCount();
 
             await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
         }
