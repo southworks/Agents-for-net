@@ -18,13 +18,15 @@
   <ItemGroup>
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.SpaServices" Version="3.1.32" />
+    <PackageVersion Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.36" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.1" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.1.2" />
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />
-    <PackageVersion Include="Azure.Core" Version="1.43.0" />
+    <PackageVersion Include="Azure.Core" Version="1.44.1" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.67.2" />
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.67.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Abstractions" Version="8.1.2" />

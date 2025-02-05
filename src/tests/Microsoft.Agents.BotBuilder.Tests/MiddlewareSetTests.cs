@@ -454,6 +454,28 @@ namespace Microsoft.Agents.BotBuilder.Tests
             Assert.True(caughtException);
         }
 
+        [Fact]
+        public void GetEnumerator_ShouldReturnMiddlewareList()
+        {
+            var callMeMiddleware = new CallMeMiddlware(() => { });
+
+            var doNotCallNextMiddleware = new DoNotCallNextMiddleware(() => { });
+
+            var middlewareSet = new MiddlewareSet();
+            middlewareSet.Use(callMeMiddleware);
+            middlewareSet.Use(doNotCallNextMiddleware);
+
+            var enumerator = middlewareSet.GetEnumerator();
+
+            Assert.True(enumerator.MoveNext()); 
+            Assert.Equal(callMeMiddleware, enumerator.Current);
+
+            Assert.True(enumerator.MoveNext()); 
+            Assert.Equal(doNotCallNextMiddleware, enumerator.Current);
+
+            Assert.False(enumerator.MoveNext()); // No more middlewares
+        }
+
         public class WasCalledMiddlware : IMiddleware
         {
             public bool Called { get; set; } = false;
