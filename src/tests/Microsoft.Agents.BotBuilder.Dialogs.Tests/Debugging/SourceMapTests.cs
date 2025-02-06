@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Agents.BotBuilder.Dialogs.Debugging;
 using Xunit;
 
-namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
+namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
 {
     public class SourceMapTests
     {
@@ -62,6 +62,18 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 Assert.False(sourceMap.TryGetValue(item, out range), "shouldn't find item");
             }
+        }
+
+        [Fact]
+        public void SourceMap_ShouldInitializePropertyWithDefaultValue()
+        {
+            Assert.IsType<SourceMap>(SourceMap.Instance);
+        }
+
+        [Fact]
+        public void NullSourceMap_ShouldInitializePropertyWithDefaultValue()
+        {
+            Assert.IsType<NullSourceMap>(NullSourceMap.Instance);
         }
 
         public class Item
