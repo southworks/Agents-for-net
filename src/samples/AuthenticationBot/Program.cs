@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using AuthenticationBot;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;

@@ -42,7 +42,6 @@ namespace Microsoft.Agents.BotBuilder.App
         {
             ArgumentNullException.ThrowIfNull(options);
 
-
             Options = options;
 
             if (Options.TurnStateFactory == null)
@@ -525,7 +524,6 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 _typingTimer.Start(turnContext);
             }
-
         }
 
         /// <summary>

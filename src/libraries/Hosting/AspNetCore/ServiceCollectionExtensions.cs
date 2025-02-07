@@ -65,6 +65,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // Add factory for ConnectorClient and UserTokenClient creation
             builder.Services.AddSingleton<IChannelServiceClientFactory, TClientFactory>();
 
+            // Add IStorage for turn state persistence
+            builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
             // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
             AddCloudAdapter<TAdapter>(builder.Services);
 
@@ -96,9 +99,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             builder.Services.AddKeyedSingleton<IChannelFactory>(httpBotClientName, (sp, key) => new HttpBotChannelFactory(
                 sp.GetService<IHttpClientFactory>(),
                 (ILogger<HttpBotChannelFactory>)sp.GetService(typeof(ILogger<HttpBotChannelFactory>))));
-
-            // Add IStorage for turn state persistence
-            builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
             // Add conversation id factory.  
             // This is a memory only implementation, and for production would require persistence.

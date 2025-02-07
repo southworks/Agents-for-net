@@ -21,6 +21,11 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly int _interval;
 
         /// <summary>
+        /// Initial delay before first typing is sent.
+        /// </summary>
+        private readonly int _initialDelay;
+
+        /// <summary>
         /// To detect redundant calls
         /// </summary>
         private bool _disposedValue = false;
@@ -29,9 +34,11 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Constructs a new instance of the <see cref="TypingTimer"/> class.
         /// </summary>
         /// <param name="interval">The interval in milliseconds to send "typing" activity.</param>
-        public TypingTimer(int interval = 1000)
+        /// <param name="initialDelay">Initial delay</param>
+        public TypingTimer(int interval = 1000, int initialDelay = 500)
         {
             _interval = interval;
+            _initialDelay = initialDelay;
         }
 
         /// <summary>
@@ -52,7 +59,7 @@ namespace Microsoft.Agents.BotBuilder.App
                 return false;
             }
 
-            // Listen for outgoing activities
+            // Stop timer when message activities are sent
             turnContext.OnSendActivities(StopTimerWhenSendMessageActivityHandlerAsync);
 
             // Start periodically send "typing" activity
@@ -105,7 +112,7 @@ namespace Microsoft.Agents.BotBuilder.App
 
             try
             {
-                await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing });
+                await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" });
                 if (IsRunning())
                 {
                     _timer?.Change(_interval, Timeout.Infinite);

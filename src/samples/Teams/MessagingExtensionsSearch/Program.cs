@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using MessagingExtensionsSearch.Bots;
-using Microsoft.Agents.Teams;
+using Microsoft.Agents.Extensions.Teams;
 
 var builder = WebApplication.CreateBuilder(args);
 

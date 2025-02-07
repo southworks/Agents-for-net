@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.Teams;
+using Microsoft.Agents.Extensions.Teams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

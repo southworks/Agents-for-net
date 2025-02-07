@@ -13,9 +13,9 @@ using System.Linq;
 using System;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Connector;
 
 namespace TypeaheadSearch.Bots
 {

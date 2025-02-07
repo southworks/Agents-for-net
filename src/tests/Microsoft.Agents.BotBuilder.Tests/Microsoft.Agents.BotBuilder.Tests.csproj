@@ -26,7 +26,7 @@
 	  <ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
 	  <ProjectReference Include="..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
-	  <ProjectReference Include="..\..\libraries\Partner\Microsoft.Agents.SharePoint\Microsoft.Agents.SharePoint.csproj" />
+	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.SharePoint\Microsoft.Agents.Extensions.SharePoint.csproj" />
 	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
 	</ItemGroup>
 	

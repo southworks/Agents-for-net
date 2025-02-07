@@ -5,7 +5,7 @@ using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder;
 
 namespace ReceiveMessagesWithRSC.Bots

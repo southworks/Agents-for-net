@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReceiveMessagesWithRSC.Bots;
-using Microsoft.Agents.Teams;
+using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -6,10 +6,10 @@ using AdaptiveCards.Templating;
 using BotRequestApproval.Models;
 using Microsoft.Agents.Core.Models;
 using System.Text.Json;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Teams.Connector;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Models;
 
 namespace Microsoft.Agents.Samples.Bots
 {

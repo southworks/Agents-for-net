@@ -46,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Model.Tests", "tests\Microsoft.Agents.Model.Tests\Microsoft.Agents.Model.Tests.csproj", "{53FEE87D-2E52-4064-93DB-BD27E3996B59}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Teams.Tests", "tests\Microsoft.Agents.Teams.Tests\Microsoft.Agents.Teams.Tests.csproj", "{D790E414-979D-4FF9-8EB6-08C205423037}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Extensions.Teams.Tests", "tests\Microsoft.Agents.Extensions.Teams.Tests\Microsoft.Agents.Extensions.Teams.Tests.csproj", "{D790E414-979D-4FF9-8EB6-08C205423037}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Authentication.Msal", "libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj", "{AC905963-D232-4679-888B-22A3D6D39ACB}"
 EndProject
@@ -134,11 +134,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MeetingContextApp", "sample
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentication.Msal.Tests", "tests\Microsoft.Agents.Authentication.Msal.Tests\Microsoft.Agents.Authentication.Msal.Tests.csproj", "{B9AD64EF-EA22-4CAC-B89B-03CEE46CFF4F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Partner", "Partner", "{32CF12ED-B87D-4A08-9D24-DBAD9DD4D1FD}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{32CF12ED-B87D-4A08-9D24-DBAD9DD4D1FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Teams", "libraries\Partner\Microsoft.Agents.Teams\Microsoft.Agents.Teams.csproj", "{261310F8-6D5E-4ECC-9250-95DDD7F3B1F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.Teams", "libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj", "{261310F8-6D5E-4ECC-9250-95DDD7F3B1F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.SharePoint", "libraries\Partner\Microsoft.Agents.SharePoint\Microsoft.Agents.SharePoint.csproj", "{790020D4-42D2-40EB-87F0-9DC2A1E6C01D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.SharePoint", "libraries\Extensions\Microsoft.Agents.Extensions.SharePoint\Microsoft.Agents.Extensions.SharePoint.csproj", "{790020D4-42D2-40EB-87F0-9DC2A1E6C01D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{B748D33C-AC75-4AEE-9305-34D1A0126202}"
 EndProject

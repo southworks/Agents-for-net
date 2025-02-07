@@ -1,6 +1,4 @@
 ﻿using EchoBot;
-using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -20,27 +18,18 @@ builder.Logging.AddConsole();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Create the storage to persist turn state
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Add Connections object to access configured token connections.
-builder.Services.AddSingleton<IConnections, ConfigurationConnections>();
-
-// Add factory for ConnectorClient and UserTokenClient creation
-builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
-
-builder.Services.AddCloudAdapter<CloudAdapter>();
-
-// Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-builder.Services.AddTransient<IBot>(sp =>
+// Create the bot as a transient.
+builder.Services.AddTransient<ApplicationOptions>(sp =>
 {
-    ApplicationOptions applicationOptions = new()
+    return new()
     {
+        StartTypingTimer = true,
         TurnStateFactory = () => new TurnState(sp.GetService<IStorage>())
     };
-
-    return new EchoBotApplication(applicationOptions);
 });
+
+builder.AddBot<EchoBotApplication>();
+
 
 var app = builder.Build();
 

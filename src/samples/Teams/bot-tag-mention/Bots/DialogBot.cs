@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder;
 

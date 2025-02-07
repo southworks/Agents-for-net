@@ -8,9 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Xunit;
-using Microsoft.Agents.SharePoint.Models;
-using Microsoft.Agents.SharePoint;
-using Microsoft.Agents.SharePoint.Compat;
+using Microsoft.Agents.Extensions.SharePoint.Models;
+using Microsoft.Agents.Extensions.SharePoint;
+using Microsoft.Agents.Extensions.SharePoint.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 {

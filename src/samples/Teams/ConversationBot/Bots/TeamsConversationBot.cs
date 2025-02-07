@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Teams.Compat;
-using Microsoft.Agents.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.BotBuilder;
 
 namespace ConversationBot.Bots

@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using AdaptiveCards;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Compat;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Models;
 
 namespace LinkUnfurling.Bots
 {

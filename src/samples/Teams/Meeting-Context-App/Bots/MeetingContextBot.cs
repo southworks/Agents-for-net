@@ -3,9 +3,9 @@
 
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Compat;
-using Microsoft.Agents.Teams.Connector;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading;

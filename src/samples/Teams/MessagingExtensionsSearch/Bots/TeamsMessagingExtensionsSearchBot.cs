@@ -7,13 +7,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder;
 
 

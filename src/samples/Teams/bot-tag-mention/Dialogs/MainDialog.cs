@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.BotBuilder.Dialogs;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams;
-using Microsoft.Agents.Teams.Connector;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.Connector;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

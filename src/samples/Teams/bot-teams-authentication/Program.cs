@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TeamsAuth.Bots;
 using TeamsAuth.Dialogs;
-using Microsoft.Agents.Teams;
+using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.BotBuilder.State;
 
 var builder = WebApplication.CreateBuilder(args);

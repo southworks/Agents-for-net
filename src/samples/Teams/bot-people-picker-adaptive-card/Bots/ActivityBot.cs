@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using AdaptiveCards.Templating;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 
 
 namespace PeoplePicker.Bots

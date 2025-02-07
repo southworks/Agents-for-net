@@ -8,11 +8,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Teams.Models;
+using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json.Nodes;
 using TaskModule.Models;
-using Microsoft.Agents.Teams.Compat;
+using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.BotBuilder;
 
 namespace TaskModule.Bots
