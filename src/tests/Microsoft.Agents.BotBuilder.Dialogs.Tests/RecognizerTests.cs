@@ -36,7 +36,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal("hi", actualTelemetryProps["Text"]);
             Assert.Null(actualTelemetryProps["AlteredText"]);
             actualTelemetryProps.TryGetValue("TopIntent", out var intent);
-            Assert.True(intent == "myTestIntent");
+            Assert.Equal("myTestIntent", intent);
             Assert.Equal("1.0", actualTelemetryProps["TopIntentScore"]);
             var hasMyTestIntent = actualTelemetryProps["Intents"].Contains("myTestIntent");
             Assert.True(hasMyTestIntent);

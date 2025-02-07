@@ -361,7 +361,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         }
 
         [Fact]
-        public async Task BeginDialogAsync_ShouldThrowOnNullOptions()
+        public async Task BeginDialogAsync_ShouldThrowOnNullDialogContext()
         {
             var dialog = new ComponentDialog("dialogId");
 

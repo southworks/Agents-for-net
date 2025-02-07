@@ -35,7 +35,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         }
 
         [Fact]
-        public async Task BeginDialogAsync_ShouldThrowOnNullDialog()
+        public async Task BeginDialogAsync_ShouldThrowOnInexistingDialog()
         {
             await Assert.ThrowsAsync<ArgumentException>(() => _dialogContext.BeginDialogAsync("A"));
         }
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         }
 
         [Fact]
-        public async Task PromptAsync_ShouldThrowOnENullOptions()
+        public async Task PromptAsync_ShouldThrowOnNullOptions()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() => _dialogContext.PromptAsync("A", null));
         }
@@ -71,6 +71,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Verifiable(Times.Exactly(2));
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _dialogContext.ContinueDialogAsync());
+            Mock.Verify(_context);
         }
 
         [Fact]
@@ -138,6 +139,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var locale = _dialogContext.GetLocale();
 
             Assert.Equal(Thread.CurrentThread.CurrentCulture.Name, locale);
+            Mock.Verify(_context);
         }
 
         [Fact]
@@ -150,6 +152,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var locale = _dialogContext.GetLocale();
 
             Assert.Equal(Thread.CurrentThread.CurrentCulture.Name, locale);
+            Mock.Verify(_context);
         }
 
         [Fact]
@@ -162,6 +165,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var locale = _dialogContext.GetLocale();
 
             Assert.Equal("es-ES", locale);
+            Mock.Verify(_context);
         }
     }
 }
