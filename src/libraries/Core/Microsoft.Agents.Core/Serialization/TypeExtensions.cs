@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Nodes;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -31,6 +32,11 @@ namespace Microsoft.Agents.Core.Serialization
         {
             jsonObject.Remove("$type");
             jsonObject.Remove("$typeAssembly");
+        }
+        public static void RemoveTypeInfo(this IDictionary<string, object> dict)
+        {
+            dict.Remove("$type");
+            dict.Remove("$typeAssembly");
         }
     }
 }
