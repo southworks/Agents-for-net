@@ -38,6 +38,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     // Update dictionary elements with actual type
                     if (obj is IDictionary<string, object> dict)
                     {
+                        dict.RemoveTypeInfo();
+
                         foreach (KeyValuePair<string, object> child in dict)
                         {
                             var childObj = child.Value;
@@ -53,6 +55,24 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                 {
                                     typedChild.RemoveTypeInfo();
                                     dict[child.Key] = JsonSerializer.Deserialize(typedChild, childType, options);
+                                }
+                            }
+                            else if (childObj is JsonElement valValue)
+                            {
+                                switch (valValue.ValueKind)
+                                {
+                                    case JsonValueKind.Number:
+                                        dict[child.Key] = valValue.GetInt32();
+                                        break;
+
+                                    case JsonValueKind.String:
+                                        dict[child.Key] = valValue.GetString();
+                                        break;
+
+                                    case JsonValueKind.True:
+                                    case JsonValueKind.False:
+                                        dict[child.Key] = valValue.GetBoolean();
+                                        break;
                                 }
                             }
                         }
