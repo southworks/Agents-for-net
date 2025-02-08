@@ -12,9 +12,6 @@ namespace Microsoft.Agents.BotBuilder.State
     /// <remarks>
     /// Conversation state is available in any turn in a specific conversation, regardless of user,
     /// such as in a group conversation.
-    /// 
-    /// This implementation should NOT be used as a singleton.  This includes registering as singleton
-    /// in DI.
     /// </remarks>
     /// <param name="storage">The storage layer to use.</param>
     public class ConversationState(IStorage storage) : BotState(storage, ScopeName)

@@ -13,18 +13,8 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.BotBuilder.State
 {
     /// <summary>
-    /// Defines a state management object and automates the reading and writing of associated state
-    /// properties to a storage layer.
+    /// Base class for BotState key/value state.
     /// </summary>
-    /// <remarks>
-    /// Each state management object defines a scope for a storage layer.
-    ///
-    /// State properties are created within a state management scope, and the Agents SDK
-    /// defines these scopes:
-    /// <see cref="ConversationState"/>, <see cref="UserState"/>, and <see cref="PrivateConversationState"/>.
-    ///
-    /// You can define additional scopes for your bot.
-    /// </remarks>
     /// <seealso cref="IStorage"/>
     public abstract class BotState : IPropertyManager, IBotState
     {
@@ -50,6 +40,7 @@ namespace Microsoft.Agents.BotBuilder.State
             Name = stateName ?? throw new ArgumentNullException(nameof(stateName));
         }
 
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
         /// <summary>
@@ -67,6 +58,7 @@ namespace Microsoft.Agents.BotBuilder.State
             return new BotStatePropertyAccessor<T>(this, name);
         }
 
+        /// <inheritdoc/>
         public bool HasValue(string name)
         {
             if (!IsLoaded())
@@ -78,11 +70,7 @@ namespace Microsoft.Agents.BotBuilder.State
             return cachedState.State.ContainsKey(name);
         }
 
-        /// <summary>
-        /// Delete the property. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-        /// </summary>
-        /// <param name="name">value.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <inheritdoc/>
         public void DeleteValue(string name)
         {
             if (!IsLoaded())
@@ -93,13 +81,7 @@ namespace Microsoft.Agents.BotBuilder.State
             DeletePropertyValue(name);
         }
 
-        /// <summary>
-        /// Get the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-        /// </summary>
-        /// <param name="name">value.</param>
-        /// <param name="defaultValueFactory">Defines the default value.
-        /// Invoked when no value been set for the requested state property.
-        /// If defaultValueFactory is defined as null in that case, the method returns null and</param>
+        /// <inheritdoc/>
         public T GetValue<T>(string name, Func<T> defaultValueFactory = null)
         {
             if (!IsLoaded())
@@ -135,12 +117,7 @@ namespace Microsoft.Agents.BotBuilder.State
             return result;
         }
 
-        /// <summary>
-        /// Set the property value. The semantics are intended to be lazy, note the use of LoadAsync at the start.
-        /// </summary>
-        /// <param name="name">value.</param>
-        /// <param name="value">value.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <inheritdoc/>
         public void SetValue<T>(string name, T value)
         {
             if (!IsLoaded())
@@ -154,25 +131,12 @@ namespace Microsoft.Agents.BotBuilder.State
         /// <summary>
         /// True if state has been loaded.
         /// </summary>
-        /// <returns></returns>
         public bool IsLoaded()
         {
             return _cachedBotState != null;
         }
 
-        /// <summary>
-        /// Populates the state cache for this <see cref="BotState"/> from the storage layer.
-        /// </summary>
-        /// <remarks>
-        /// LoadAsync loads State for the specified turn.
-        /// </remarks>
-        /// <param name="turnContext">The context object for this turn.</param>
-        /// <param name="force">Optional, <c>true</c> to overwrite any existing state cache;
-        /// or <c>false</c> to load state from storage only if the cache doesn't already exist.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
+        /// <inheritdoc/>
         public virtual async Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
@@ -212,16 +176,7 @@ namespace Microsoft.Agents.BotBuilder.State
             return force || _cachedBotState == null || _cachedBotState.State == null;
         }
 
-        /// <summary>
-        /// Writes the state cache for this <see cref="BotState"/> to the storage layer.
-        /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
-        /// <param name="force">Optional, <c>true</c> to save the state cache to storage;
-        /// or <c>false</c> to save state to storage only if a property in the cache has changed.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
+        /// <inheritdoc/>
         public virtual async Task SaveChangesAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
@@ -240,14 +195,7 @@ namespace Microsoft.Agents.BotBuilder.State
             }
         }
 
-        /// <summary>
-        /// Clears the state cache for this <see cref="BotState"/>.
-        /// </summary>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>This method clears the state cache in the turn context. Call
-        /// <see cref="SaveChangesAsync(ITurnContext, bool, CancellationToken)"/> to persist this
-        /// change in the storage layer.
-        /// </remarks>
+        /// <inheritdoc/>
         public virtual void ClearState()
         {
             if (!IsLoaded())
@@ -259,14 +207,7 @@ namespace Microsoft.Agents.BotBuilder.State
             GetCachedState().Clear();
         }
 
-        /// <summary>
-        /// Deletes any state in storage and the cache for this <see cref="BotState"/>.
-        /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="turnContext"/> is <c>null</c>.</exception>
+        /// <inheritdoc/>
         public virtual async Task DeleteStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             if (IsLoaded())
@@ -276,26 +217,6 @@ namespace Microsoft.Agents.BotBuilder.State
 
             var storageKey = GetStorageKey(turnContext);
             await _storage.DeleteAsync(new[] { storageKey }, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Gets a copy of the raw cached data for this <see cref="BotState"/> from the turn context.
-        /// </summary>
-        /// <returns>A JSON representation of the cached state.</returns>
-        internal JsonElement Get()
-        {
-            var cachedState = GetCachedState();
-            return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
-        }
-
-        /// <summary>
-        /// Gets the cached bot state instance that wraps the raw cached data for this <see cref="BotState"/>
-        /// from the turn context.
-        /// </summary>
-        /// <returns>The cached bot state instance.</returns>
-        internal CachedBotState GetCachedState()
-        {
-            return _cachedBotState;
         }
 
         /// <summary>
@@ -376,6 +297,17 @@ namespace Microsoft.Agents.BotBuilder.State
 
             var cachedState = GetCachedState();
             cachedState.State[propertyName] = value;
+        }
+
+        internal JsonElement Get()
+        {
+            var cachedState = GetCachedState();
+            return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
+        }
+
+        internal CachedBotState GetCachedState()
+        {
+            return _cachedBotState;
         }
 
         /// <summary>
