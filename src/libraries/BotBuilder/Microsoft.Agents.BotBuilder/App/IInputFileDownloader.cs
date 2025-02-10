@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.State;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.App
+namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
     /// A plugin responsible for downloading files relative to the current user's input.

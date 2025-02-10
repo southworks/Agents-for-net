@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.Extensions.Teams.App
+namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
     /// Represents an upload file
