@@ -51,8 +51,6 @@ namespace EchoBot
         /// </summary>
         public static async Task MessageHandlerAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            await Task.Delay(5000);
-
             // Increment count state.
             int count = turnState.Conversation.IncrementMessageCount();
 
