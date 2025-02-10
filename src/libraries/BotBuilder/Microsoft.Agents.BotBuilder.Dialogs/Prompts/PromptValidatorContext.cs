@@ -57,7 +57,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                     return 0;
                 }
 
-                return State[Prompt<T>.AttemptCountKey].CastTo<int>();
+                return (int) State[Prompt<T>.AttemptCountKey];
             }
         }
     }

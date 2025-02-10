@@ -144,7 +144,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Increment step index and run step
             var state = dc.ActiveDialog.State;
 
-            var index = state[StepIndex].CastTo<int>();
+            var index = (int) state[StepIndex];
             return await RunStepAsync(dc, index + 1, reason, result, cancellationToken).ConfigureAwait(false);
         }
 
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 var state = new Dictionary<string, object>((Dictionary<string, object>)instance.State);
 
                 // Create step context
-                var index = state[StepIndex].CastTo<int>();
+                var index = (int) state[StepIndex];
                 var stepName = WaterfallStepName(index);
                 var instanceId = state[PersistedInstanceId]?.ToString();
 

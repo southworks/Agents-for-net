@@ -179,7 +179,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
             // Check for timeout
             var state = dc.ActiveDialog.State;
-            var expires = state[PersistedExpires].CastTo<DateTime>();
+            var expires = (DateTime) state[PersistedExpires];
             var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
 
             try
@@ -215,7 +215,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
                 // Increment attempt count
                 // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
-                promptState[Prompt<int>.AttemptCountKey] = promptState[Prompt<int>.AttemptCountKey].CastTo<int>() + 1;
+                promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value
                 var isValid = recognized.Succeeded;
