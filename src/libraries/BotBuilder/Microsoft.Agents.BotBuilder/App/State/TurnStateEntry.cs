@@ -1,11 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Newtonsoft.Json.Linq;
 using System;
 using System.Text.Json;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
     /// <summary>
     /// Accessor class for managing an individual state scope.

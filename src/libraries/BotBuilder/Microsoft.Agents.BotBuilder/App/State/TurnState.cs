@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
     /// <summary>
     /// Base class defining a collection of turn state scopes.

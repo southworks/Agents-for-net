@@ -5,7 +5,7 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
     /// <summary>
     /// The class representing a record.

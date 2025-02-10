@@ -12,7 +12,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
     ///  Middleware to automatically persist state before the end of each turn.
     /// </summary>
     /// <remarks>
-    /// This calls <see cref="BotState.SaveChangesAsync(ITurnContext, bool, CancellationToken)"/>
+    /// This calls <see cref="IBotState.SaveChangesAsync(ITurnContext, bool, CancellationToken)"/>
     /// on each state object it manages.
     /// </remarks>
     public class AutoSaveStateMiddleware : IMiddleware
@@ -23,10 +23,10 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// Initializes a new instance of the <see cref="AutoSaveStateMiddleware"/> class.
         /// </summary>
         /// <param name="botStates">initial list of <see cref="BotState"/> objects to manage.</param>
-        public AutoSaveStateMiddleware(params BotState[] botStates)
+        public AutoSaveStateMiddleware(params IBotState[] botStates)
         {
             _autoLoad = false;
-            BotStateSet = new TurnState(botStates);
+            TurnState = new TurnState(botStates);
         }
 
         /// <summary>
@@ -34,10 +34,10 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// </summary>
         /// <param name="autoLoad"></param>
         /// <param name="botStates"></param>
-        public AutoSaveStateMiddleware(bool autoLoad, params BotState[] botStates)
+        public AutoSaveStateMiddleware(bool autoLoad, params IBotState[] botStates)
         {
             _autoLoad = autoLoad;
-            BotStateSet = new TurnState(botStates);
+            TurnState = new TurnState(botStates);
         }
 
         /// <summary>
@@ -45,29 +45,16 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// a list of state management objects managed by this object.
         /// </summary>
         /// <param name="botStateSet">The state management objects managed by this object.</param>
-        public AutoSaveStateMiddleware(TurnState botStateSet)
+        public AutoSaveStateMiddleware(ITurnState botStateSet)
         {
-            BotStateSet = botStateSet;
+            TurnState = botStateSet;
         }
 
         /// <summary>
         /// Gets or sets the list of state management objects managed by this object.
         /// </summary>
         /// <value>The state management objects managed by this object.</value>
-        public TurnState BotStateSet { get; set; }
-
-        /// <summary>
-        /// Adds a state management object to the list of states to manage.
-        /// </summary>
-        /// <param name="botState">The bot state to add.</param>
-        /// <returns>The updated <see cref="BotStateSet"/> object.</returns>
-        public AutoSaveStateMiddleware Add(BotState botState)
-        {
-            ArgumentNullException.ThrowIfNull(botState);
-
-            BotStateSet.Add(botState);
-            return this;
-        }
+        public ITurnState TurnState { get; set; }
 
         /// <summary>
         /// Before the turn ends, calls <see cref="BotState.SaveChangesAsync(ITurnContext, bool, CancellationToken)"/>
@@ -84,13 +71,13 @@ namespace Microsoft.Agents.BotBuilder.Compat
             // before turn
             if (_autoLoad)
             {
-                await BotStateSet.LoadStateAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
+                await TurnState.LoadStateAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
             }
 
             await next(cancellationToken).ConfigureAwait(false);
 
             // after turn
-            await BotStateSet.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await TurnState.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
     /// <summary>
     /// Temporary state.

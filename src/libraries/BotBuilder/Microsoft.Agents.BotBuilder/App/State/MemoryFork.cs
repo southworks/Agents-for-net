@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
 
     /// <summary>

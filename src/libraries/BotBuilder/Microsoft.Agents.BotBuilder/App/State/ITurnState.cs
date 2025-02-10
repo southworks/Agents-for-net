@@ -5,7 +5,7 @@ using Microsoft.Agents.Storage;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.Application.State
+namespace Microsoft.Agents.BotBuilder.App.State
 {
     /// <summary>
     /// The turn state interface.

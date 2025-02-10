@@ -1,0 +1,21 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Extensions.Teams.Models;
+using Xunit;
+
+namespace Microsoft.Agents.Extensions.Teams.Tests.Model
+{
+    public class BotConfigAuthTests
+    {
+        [Fact]
+        public void BotConfigAuthInitsWithNoArgs()
+        {
+            var botConfigAuthResponse = new BotConfigAuth();
+
+            Assert.NotNull(botConfigAuthResponse);
+            Assert.IsType<BotConfigAuth>(botConfigAuthResponse);
+            Assert.Equal("auth", botConfigAuthResponse.Type);
+        }
+    }
+}

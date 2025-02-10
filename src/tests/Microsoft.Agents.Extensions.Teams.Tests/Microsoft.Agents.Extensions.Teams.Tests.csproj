@@ -24,5 +24,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
+	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
 	</ItemGroup>
 </Project>
