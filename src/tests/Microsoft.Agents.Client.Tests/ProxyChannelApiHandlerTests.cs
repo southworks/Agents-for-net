@@ -20,13 +20,12 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
-using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.Client.Tests
 {
-    public class BotFrameworkSkillHandlerTests
+    public class ProxyChannelApiHandlerTests
     {
-        private ILogger<BotFrameworkSkillHandlerTests> _logger = null;
+        private ILogger<ProxyChannelApiHandlerTests> _logger = null;
         private static readonly string TestSkillId = Guid.NewGuid().ToString("N");
         private static readonly string TestAuthHeader = string.Empty; // Empty since claims extraction is being mocked
         private static readonly ChannelAccount TestMember = new ChannelAccount()
@@ -36,7 +35,7 @@ namespace Microsoft.Agents.Client.Tests
         };
 
 
-        public BotFrameworkSkillHandlerTests(ITestOutputHelper output)
+        public ProxyChannelApiHandlerTests(ITestOutputHelper output)
         {
             IConfiguration config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -52,7 +51,7 @@ namespace Microsoft.Agents.Client.Tests
                     })
                     .AddConfiguration(config.GetSection("Logging"))
                     .AddProvider(new TraceConsoleLoggingProvider(output)));
-            _logger = loggerFactory.CreateLogger<BotFrameworkSkillHandlerTests>();
+            _logger = loggerFactory.CreateLogger<ProxyChannelApiHandlerTests>();
         }
 
 
@@ -71,13 +70,13 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
 
             // Assert based on activity type,
             if (activityType == ActivityTypes.Message)
@@ -126,13 +125,13 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
             if (name.StartsWith("application/"))
             {
                 // Should be sent to the channel and not to the bot.
@@ -163,11 +162,11 @@ namespace Microsoft.Agents.Client.Tests
             var activityToDelete = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
             await sut.OnDeleteActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToDelete);
 
             // Assert
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToDelete, mockObjects.ActivityIdToDelete);
         }
 
@@ -181,12 +180,12 @@ namespace Microsoft.Agents.Client.Tests
             var activityToUpdate = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
             var response = await sut.OnUpdateActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToUpdate, activity);
 
             // Assert
             Assert.Equal("resourceId", response.Id);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToUpdate, mockObjects.TurnContext.Activity.Id);
             Assert.Equal(activity.Text, mockObjects.UpdateActivity.Text);
         }
@@ -200,7 +199,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new BotFrameworkSkillHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
             var member = await sut.OnGetConversationMemberAsync(mockObjects.CreateTestClaims(), TestMember.Id, conversationId);
 
             // Assert

@@ -190,14 +190,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.StackState.Set(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)
                     {
                         // Simulate the SkillConversationReference with a parent Bot ID stored in TurnState.
                         // This emulates a response coming to a skill from another skill through SkillHandler. 
-                        turnContext.StackState.Set(BotFrameworkSkillHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
+                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
                     }
                 }
 

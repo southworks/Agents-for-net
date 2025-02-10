@@ -15,15 +15,13 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Connector;
 
-namespace Microsoft.Agents.BotBuilder.Compat
+namespace Microsoft.Agents.BotBuilder
 {
     /// <summary>
-    /// This is the Bot Framework SDK implementation of IChannelApiHandler for handling Skill requests.
+    /// This IChannelApiHandler is primarily used when calling another bot using DeliveryModes.Normal, and forwarding most
+    /// bot replies to the originating channel.
     /// </summary>
-    /// <remarks>
-    /// This is for backward compatibility for Bot Framework Skills.
-    /// </remarks>
-    public class BotFrameworkSkillHandler : IChannelApiHandler
+    public class ProxyChannelApiHandler : IChannelApiHandler
     {
         public static readonly string SkillConversationReferenceKey = "Microsoft.Agents.BotBuilder.Skills.SkillConversationReference";
 
@@ -32,7 +30,7 @@ namespace Microsoft.Agents.BotBuilder.Compat
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly ILogger _logger;
 
-        public BotFrameworkSkillHandler(
+        public ProxyChannelApiHandler(
             IChannelAdapter adapter,
             IBot bot,
             IConversationIdFactory conversationIdFactory,

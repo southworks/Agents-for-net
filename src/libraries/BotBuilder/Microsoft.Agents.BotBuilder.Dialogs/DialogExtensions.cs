@@ -12,7 +12,6 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Telemetry;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs
@@ -186,7 +185,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             {
                 // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
-                var skillConversationReference = turnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey);
+                var skillConversationReference = turnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey);
                 if (skillConversationReference != null)
                 {
                     // If the skillConversationReference.OAuthScope is for one of the supported channels, we are at the root and we should not send an EoC.
@@ -201,7 +200,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private static bool IsFromParentToSkill(ITurnContext turnContext)
         {
-            if (turnContext.StackState.Get<BotConversationReference>(BotFrameworkSkillHandler.SkillConversationReferenceKey) != null)
+            if (turnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey) != null)
             {
                 return false;
             }
