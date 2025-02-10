@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.Serialization
             options.Converters.Add(new TaskModuleContinueResponseConverter());
             options.Converters.Add(new TaskModuleMessageResponseConverter());
             options.Converters.Add(new MessagingExtensionAttachmentConverter());
-
+            options.Converters.Add(new TeamsChannelDataSettingsConverter());
             return options;
         }
     }

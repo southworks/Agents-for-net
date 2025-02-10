@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;
 
@@ -68,6 +69,32 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
 
             Assert.NotNull(teamsChannelAccount);
             Assert.IsType<TeamsChannelAccount>(teamsChannelAccount);
+        }
+
+        [Fact]
+        public void TeamChannelAccountRoundTrip()
+        {
+            var teamsChannelData = new TeamsChannelAccount()
+            {
+                GivenName = "givenName",
+                Surname = "surname",
+                Email = "email",
+                UserPrincipalName = "userPrincipalName",
+                TenantId = "tenantId",
+                UserRole = "userRole",
+            };
+
+            // Known good
+            var goodJson = LoadTestJson.LoadJson(teamsChannelData);
+
+            // Out
+            var json = ProtocolJsonSerializer.ToJson(teamsChannelData);
+            Assert.Equal(goodJson, json);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<TeamsChannelAccount>(json);
+            json = ProtocolJsonSerializer.ToJson(inObj);
+            Assert.Equal(goodJson, json);
         }
     }
 }

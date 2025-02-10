@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Microsoft.Agents.Extensions.Teams.Models
 {
@@ -41,7 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// the JSON object is deserialized, but are instead stored in this property. Such properties
         /// will be written to a JSON object when the instance is serialized.</remarks>
 #pragma warning disable CA2227 // Collection properties should be read only
-        public IDictionary<string, object> AdditionalProperties { get; set; }
+        public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
 #pragma warning restore CA2227 // Collection properties should be read only
     }
 }

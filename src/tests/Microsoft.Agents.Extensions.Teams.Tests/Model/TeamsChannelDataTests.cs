@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -110,6 +111,35 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
             Assert.Equal("tenantid", channelData.Tenant.Id);
             Assert.True(channelData.Properties.ContainsKey(TestKey));
             Assert.Equal(TestValue, channelData.Properties[TestKey].ToString());
+        }
+
+        [Fact]
+        public void TeamsChannelDataRoundTrip()
+        {
+            var teamsChannelData = new TeamsChannelData()
+            {
+                Channel = new ChannelInfo() { Id = "channel_id", Name = "channel_name", Type = "channel_type" },
+                EventType = "eventType",
+                Team = new TeamInfo() { Id = "team_id", Name = "team_name", AadGroupId = "aadgroupid_id" },
+                Notification = new NotificationInfo() { Alert = true, AlertInMeeting = true, ExternalResourceUrl = "resourceUrl" },
+                Tenant = new TenantInfo() { Id = "tenant_id" },
+                Meeting = new TeamsMeetingInfo() { Id = "meeting_id" },
+                Settings = new TeamsChannelDataSettings() { SelectedChannel = new ChannelInfo() { Id = "channel_id", Name = "channel_name", Type = "channel_type" }, Properties = ProtocolJsonSerializer.ToJsonElements(new { prop1 = "prop1"}) },
+                OnBehalfOf = [ new OnBehalfOf() {  DisplayName = "displayName", ItemId = 1, MentionType = "mentionType", Mri = "mri"}],
+                Properties = ProtocolJsonSerializer.ToJsonElements(new { prop1 = "root_prop1" })
+            };
+
+            // Known good
+            var goodJson = LoadTestJson.LoadJson(teamsChannelData);
+
+            // Out
+            var json = ProtocolJsonSerializer.ToJson(teamsChannelData);
+            Assert.Equal(goodJson, json);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<TeamsChannelData>(json);
+            json = ProtocolJsonSerializer.ToJson(inObj);
+            Assert.Equal(goodJson, json);
         }
     }
 }
