@@ -15,6 +15,7 @@ using System;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
+    [Collection("DebugSupport.SourceMap")]
     public class RecognizerTests
     {
         [Fact]
@@ -55,6 +56,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public void Constructor_ShouldSetSourceMap()
         {
             var path = "path";
+            var oldSourceMap = DebugSupport.SourceMap;
             DebugSupport.SourceMap = new SourceMap();
 
             var recognizer = new Recognizer(path, 3);
@@ -63,6 +65,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal(path, range.Path);
             Assert.Equal(3, range.StartPoint.LineIndex);
             Assert.Equal(4, range.EndPoint.LineIndex);
+            
+            DebugSupport.SourceMap = oldSourceMap;
         }
 
         [Fact]

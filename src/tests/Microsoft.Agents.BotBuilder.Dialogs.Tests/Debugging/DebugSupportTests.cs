@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
 {
+    [Collection("DebugSupport.SourceMap")]
     public class DebugSupportTests
     {
         [Fact]
@@ -22,11 +23,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests.Debugging
         [Fact]
         public void SourceMap_ShouldReturnCustomValue()
         {
+            var oldSourceMap = DebugSupport.SourceMap;
             var sourceMap = new SourceMap();
             
             DebugSupport.SourceMap = sourceMap;
 
             Assert.Equal(sourceMap, DebugSupport.SourceMap);
+
+            DebugSupport.SourceMap = oldSourceMap;
         }
 
         [Fact]

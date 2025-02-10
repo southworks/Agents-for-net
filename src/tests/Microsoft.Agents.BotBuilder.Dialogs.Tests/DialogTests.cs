@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
+    [Collection("DebugSupport.SourceMap")]
     public class DialogTests
     {
         private readonly Mock<DialogContext> _dialogContext = new(new DialogSet(), new Mock<ITurnContext>().Object, new DialogState());
@@ -49,6 +50,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var dialog = new MockDialog("A");
 
+            var oldSourceMap = DebugSupport.SourceMap;
             DebugSupport.SourceMap = new SourceMap();
             await dialog.BeginDialogAsync(_dialogContext.Object);
             DebugSupport.SourceMap.TryGetValue(dialog, out var range);
@@ -56,6 +58,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal("path", range.Path);
             Assert.Equal(1, range.StartPoint.LineIndex);
             Assert.Equal(2, range.EndPoint.LineIndex);
+
+            DebugSupport.SourceMap = oldSourceMap;
         }
 
         private class MockDialog(string id) : Dialog(id)
