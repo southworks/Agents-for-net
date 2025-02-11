@@ -45,6 +45,7 @@ namespace Microsoft.Agents.BotBuilder.App
 
             if (Options.TurnStateFactory == null)
             {
+                // This defaults to a TurnState with TempState
                 Options.TurnStateFactory = () => new TurnState();
             }
 
@@ -625,6 +626,19 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
                 */
 
+                /*
+                // Download any input files
+                IList<IInputFileDownloader<TState>>? fileDownloaders = this.Options.FileDownloaders;
+                if (fileDownloaders != null && fileDownloaders.Count > 0)
+                {
+                    foreach (IInputFileDownloader<TState> downloader in fileDownloaders)
+                    {
+                        List<InputFile> files = await downloader.DownloadFilesAsync(turnContext, turnState);
+                        turnState.Temp.InputFiles.AddRange(files);
+                    }
+                }
+                */
+
                 bool eventHandlerCalled = false;
 
                 // TODO: why is this needed?  Would not the selector be limiting to "Invoke" anyway, so iterating _routes would be the same thing.
@@ -737,5 +751,5 @@ namespace Microsoft.Agents.BotBuilder.App
             return null;
         }
         */
-    }
+            }
 }
