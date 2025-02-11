@@ -31,5 +31,6 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
 	  <ProjectReference Include="..\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj" />
+	  <ProjectReference Include="..\Microsoft.Agents.BotBuilder.Tests\Microsoft.Agents.BotBuilder.Tests.csproj" />
 	</ItemGroup>
 </Project>
