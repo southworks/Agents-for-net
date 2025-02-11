@@ -34,12 +34,16 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="options">Optional. Options used to configure the application.</param>
         /// <param name="state"></param>
-        public TeamsApplication(ApplicationOptions options) : base(options)
+        public TeamsApplication(TeamsApplicationOptions options) : base(options)
         {
             Meetings = new MeetingsFeature(this);
             MessageExtensions = new MessageExtensionsFeature(this);
             TaskModules = new TaskModulesFeature(this);
+
+            Options = options;
         }
+
+        public new TeamsApplicationOptions Options { get; }
 
         /// <summary>
         /// Fluent interface for accessing Meetings' specific features.

@@ -8,6 +8,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,16 +24,15 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         private static readonly string FETCH_INVOKE_NAME = "task/fetch";
         private static readonly string SUBMIT_INVOKE_NAME = "task/submit";
 
-        //TODO
-        //private static readonly string DEFAULT_TASK_DATA_FILTER = "verb";
+        private static readonly string DEFAULT_TASK_DATA_FILTER = "verb";
 
-        private readonly Application _app;
+        private readonly TeamsApplication _app;
 
         /// <summary>
         /// Creates a new instance of the TaskModules class.
         /// </summary>
         /// <param name="app"> The top level application class to register handlers with.</param>
-        public TaskModulesFeature(Application app)
+        public TaskModulesFeature(TeamsApplication app)
         {
             this._app = app;
         }
@@ -44,16 +45,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application OnFetch(string verb, FetchHandlerAsync handler)
         {
-            throw new NotImplementedException();
-
-            //TODO
-            /*
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
+
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
-            */
         }
 
         /// <summary>
@@ -64,16 +61,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application OnFetch(Regex verbPattern, FetchHandlerAsync handler)
         {
-            throw new NotImplementedException();
-
-            //TODO
-            /*
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
+
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
-            */
         }
 
         /// <summary>
@@ -154,16 +147,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application OnSubmit(string verb, SubmitHandlerAsync handler)
         {
-            throw new NotImplementedException();
-
-            //TODO
-            /*
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
+
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
-            */
         }
 
 
@@ -175,16 +164,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <returns>The application instance for chaining purposes.</returns>
         public Application OnSubmit(Regex verbPattern, SubmitHandlerAsync handler)
         {
-            throw new NotImplementedException();
-
-            //TODO
-            /*
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
+
             string filter = _app.Options.TaskModules?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
             RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
-            */
         }
 
         /// <summary>
@@ -202,7 +187,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                 TaskModuleAction? taskModuleAction;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(turnContext.Activity.Name, SUBMIT_INVOKE_NAME)
-                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity)) == null)
+                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
                 {
                     throw new InvalidOperationException($"Unexpected TaskModules.OnSubmit() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -268,26 +253,24 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                     return Task.FromResult(false);
                 }
 
-                //TODO
-                /*
-                JObject? obj = turnContext.Activity.Value as JObject;
-                if (obj == null)
+                if (turnContext.Activity.Value == null)
                 {
                     return Task.FromResult(false);
                 }
 
-                JObject? data = obj["data"] as JObject;
-                if (data == null)
+                var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
+
+                if (!obj.ContainsKey("data"))
                 {
                     return Task.FromResult(false);
                 }
 
-                bool isVerbMatch = data.TryGetValue(filter, out JToken? filterField) && filterField != null && filterField.Type == JTokenType.String
-                && isMatch(filterField.Value<string>()!);
+                var data = JsonObject.Create(obj["data"]);
+
+                bool isVerbMatch = data.TryGetPropertyValue(filter, out JsonNode filterField) && filterField.GetValueKind() == JsonValueKind.String
+                    && isMatch(filterField.ToString());
 
                 return Task.FromResult(isVerbMatch);
-                */
-            return Task.FromResult(false);
             };
             return routeSelector;
         }

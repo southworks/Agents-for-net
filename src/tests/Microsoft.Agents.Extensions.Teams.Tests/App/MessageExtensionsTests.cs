@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.BotBuilder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.BotBuilder.Tests.App.TestUtils;
