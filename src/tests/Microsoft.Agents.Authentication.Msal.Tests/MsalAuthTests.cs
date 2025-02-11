@@ -64,9 +64,36 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public async Task GetAccessTokenAsync_ShouldThrowOnMalformedUri()
         {
-            var msal = new MsalAuth(_service.Object, _configuration.GetSection(SettingsSection));
+            var msalAuth = new MsalAuth(_service.Object, _configuration.GetSection(SettingsSection));
 
-            await Assert.ThrowsAsync<ArgumentException>(() => msal.GetAccessTokenAsync(null, _scopes, false));
+            await Assert.ThrowsAsync<ArgumentException>(() => msalAuth.GetAccessTokenAsync(null, _scopes, false));
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_ShouldThrowOnNullScopesForClientCredentials()
+        {
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+
+            var returnedOptions = new MsalAuthConfigurationOptions
+            {
+                MSALEnabledLogPII = false
+            };
+            options.Setup(x => x.Value).Returns(returnedOptions).Verifiable(Times.Exactly(2));
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object)
+                .Verifiable(Times.Exactly(2));
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object)
+                .Verifiable(Times.Once);
+
+            var msalAuth = new MsalAuth(service.Object, _configuration.GetSection(SettingsSection));
+
+            await Assert.ThrowsAsync<ArgumentException>(() => msalAuth.GetAccessTokenAsync(ResourceUrl, null, false));
+            Mock.Verify(options, service);
         }
 
         [Fact]
