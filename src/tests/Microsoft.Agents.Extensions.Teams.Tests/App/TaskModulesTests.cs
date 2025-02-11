@@ -12,6 +12,7 @@ using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Moq;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -33,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
-                Value = ProtocolJsonSerializer.ToJsonElements(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     data = new
                     {
@@ -91,7 +92,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
-                Value = ProtocolJsonSerializer.ToJsonElements(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     data = new
                     {
@@ -178,7 +179,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/submit",
-                Value = ProtocolJsonSerializer.ToJsonElements(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     data = new
                     {
@@ -236,7 +237,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "task/submit",
-                Value = ProtocolJsonSerializer.ToJsonElements(new
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     data = new
                     {

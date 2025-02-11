@@ -418,7 +418,6 @@ namespace Microsoft.Agents.BotBuilder.App.AdaptiveCards
                     string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
                     && string.IsNullOrEmpty(turnContext.Activity.Text)
                     && turnContext.Activity.Value != null
-                    && (obj = turnContext.Activity.Value as JsonObject) != null
                     && obj[filter] != null
                     && obj[filter]!.GetValueKind() == System.Text.Json.JsonValueKind.String
                     && isMatch(obj[filter]!.ToString()!));
