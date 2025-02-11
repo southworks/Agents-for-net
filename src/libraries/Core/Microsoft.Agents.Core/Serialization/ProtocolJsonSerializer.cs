@@ -121,13 +121,19 @@ namespace Microsoft.Agents.Core.Serialization
         /// Convert an object to the desired type using serialization and deserialization.
         /// </summary>
         /// <param name="value">The object to be converted to desired type: string, MemoryStream, object</param>
+        /// <param name="defaultFactory"></param>
         /// <typeparam name="T">The type of object to convert to.</typeparam>
         /// <returns>The converted object.</returns>
-        public static T ToObject<T>(object value)
+        public static T ToObject<T>(object value, Func<T> defaultFactory = null)
         {
             if (value == null)
             {
-                throw new ArgumentNullException(nameof(value));
+                if (defaultFactory != null)
+                {
+                    return defaultFactory();
+                }
+
+                return default;
             }
 
             if (value is T result)

@@ -4,10 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
-using Newtonsoft.Json.Linq;
-using System;
 using Xunit;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Model
 {

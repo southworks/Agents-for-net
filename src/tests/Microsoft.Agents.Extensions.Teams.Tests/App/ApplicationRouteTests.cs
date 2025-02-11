@@ -6,11 +6,11 @@ using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.BotBuilder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Moq;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -955,7 +955,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "config/submit",
                 ChannelId = Channels.Msteams,
-                Value = JObject.FromObject(data),
+                Value = ProtocolJsonSerializer.ToJsonElements(data),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -965,7 +965,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "config/submit",
                 ChannelId = Channels.Outlook,
-                Value = JObject.FromObject(data),
+                Value = ProtocolJsonSerializer.ToJsonElements(data),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1008,7 +1008,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             app.OnConfigSubmit((turnContext, _, configData, _) =>
             {
                 Assert.NotNull(configData);
-                Assert.Equal(configData, configData as JObject);
+                //Assert.Equal(configData, configData as JObject);
                 names.Add(turnContext.Activity.Name);
                 return Task.FromResult(configResponseMock.Object);
             });
@@ -1314,7 +1314,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Type = ActivityTypes.Event,
                 ChannelId = Channels.Msteams,
                 Name = "application/vnd.microsoft.meetingStart",
-                Value = JObject.FromObject(new
+                Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     lastReadMessageId = "10101010",
                 }),

@@ -2,6 +2,8 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
+using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
@@ -14,6 +16,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
             {
                 throw new ArgumentNullException(nameof(turnContext));
             }
+
+            Dictionary<string, JsonObject> dictionary = new Dictionary<string, JsonObject>();
+
 
             // Arrange
             var state = new TurnState(new MemoryStorage());

@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -772,21 +773,20 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     return Task.FromResult(false);
                 }
 
-                // TODO
-                /*
-                JObject? obj = turnContext.Activity.Value as JObject;
-                if (obj == null)
+                if (turnContext.Activity.Value == null)
                 {
                     return Task.FromResult(false);
                 }
-                bool isCommandMatch = obj.TryGetValue("commandId", out JToken? commandId) && commandId != null && commandId.Type == JTokenType.String && isMatch(commandId.Value<string>()!);
-                JToken? previewActionToken = obj.GetValue("botMessagePreviewAction");
-                bool isPreviewActionMatch = string.IsNullOrEmpty(botMessagePreviewAction)
-                    ? previewActionToken == null || string.IsNullOrEmpty(previewActionToken.Value<string>())
-                    : previewActionToken != null && string.Equals(botMessagePreviewAction, previewActionToken.Value<string>());
+
+                var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
+
+                bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
+
+                bool isPreviewActionMatch = !obj.TryGetValue("botMessagePreviewAction", out JsonElement previewActionToken) 
+                    || string.IsNullOrEmpty(previewActionToken.ToString())
+                    || string.Equals(botMessagePreviewAction, previewActionToken.ToString());
+
                 return Task.FromResult(isCommandMatch && isPreviewActionMatch);
-                */
-                return Task.FromResult(false);
             };
             return routeSelector;
         }
