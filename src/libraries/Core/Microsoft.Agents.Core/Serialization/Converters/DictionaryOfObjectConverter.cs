@@ -90,6 +90,12 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
         public override void Write(Utf8JsonWriter writer, IDictionary<string, object> value, JsonSerializerOptions options)
         {
+            // If the dictionary is empty, avoid creating an empty object so it doesn't fail at serialization.
+            if (value.Count == 0)
+            {
+                return;
+            }
+
             writer.WriteStartObject();
             foreach (KeyValuePair<string, object> item in value)
             {

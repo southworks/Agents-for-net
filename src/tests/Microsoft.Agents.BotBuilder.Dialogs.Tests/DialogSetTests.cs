@@ -1,11 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Core.Interfaces;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Telemetry;
+using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -23,7 +29,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [Fact]
         public void DialogSet_ConstructorNullProperty()
         {
-            Assert.Throws<ArgumentNullException>(() => new DialogSet((DialogState) null));
+            Assert.Throws<ArgumentNullException>(() => new DialogSet((DialogState)null));
         }
 
         [Fact]
@@ -166,6 +172,113 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Assert.Equal(typeof(NullBotTelemetryClient), ds.Find("B").TelemetryClient.GetType());
             Assert.Equal(typeof(MyBotTelemetryClient), ds.Find("C").TelemetryClient.GetType());
             await Task.CompletedTask;
+        }
+
+        [Fact]
+        public void Add_ShouldThrowOnNullDialog()
+        {
+            var dialogSet = new DialogSet(new DialogState());
+
+            Assert.Throws<ArgumentNullException>(() => dialogSet.Add(null));
+        }
+
+        [Fact]
+        public void Add_ShouldUseSameInstance()
+        {
+            var dialog = new WaterfallDialog("A");
+            var dialogSet = new DialogSet(new DialogState());
+
+            dialogSet.Add(dialog);
+            dialogSet.Add(dialog);
+
+            Assert.Single(dialogSet.GetDialogs());
+        }
+
+        [Fact]
+        public void Add_ShouldApplySuffixId()
+        {
+            var name = "A";
+            var dialogSet = new DialogSet(new DialogState());
+
+            dialogSet.Add(new WaterfallDialog(name));
+            dialogSet.Add(new WaterfallDialog(name));
+            dialogSet.Add(new WaterfallDialog(name));
+
+            var dialogs = dialogSet.GetDialogs();
+            Assert.Equal(name, dialogs.ElementAt(0).Id);
+            Assert.Equal($"{name}2", dialogs.ElementAt(1).Id);
+            Assert.Equal($"{name}3", dialogs.ElementAt(2).Id);
+        }
+
+        [Fact]
+        public void Add_ShouldApplyDependencies()
+        {
+            var name = "A";
+            var dialogSet = new DialogSet(new DialogState());
+
+            dialogSet.Add(new MockDialog(name));
+
+            var dialogs = dialogSet.GetDialogs();
+            Assert.Equal(name, dialogs.ElementAt(0).Id);
+            Assert.Equal($"{name}2", dialogs.ElementAt(1).Id);
+            Assert.Equal("B", dialogs.ElementAt(2).Id);
+        }
+
+        [Fact]
+        public async Task CreateContextAsync_ShouldThrowOnNullDialogState()
+        {
+            var dialogState = new DialogState([
+                new DialogInstance { Id = "A" }
+            ]);
+            var property = new Mock<IStatePropertyAccessor<DialogState>>();
+
+            property.Setup(e => e.GetAsync(It.IsAny<ITurnContext>(), It.IsAny<Func<DialogState>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dialogState)
+                .Verifiable(Times.Once);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            var dialogSet = new DialogSet(property.Object);
+#pragma warning restore CS0618 // Type or member is obsolete
+            var context = new TurnContext(new TestAdapter(), new Activity());
+
+            var dialogContext = await dialogSet.CreateContextAsync(context);
+
+            Assert.Equal(dialogContext.Stack, dialogState.DialogStack);
+            Mock.Verify(property);
+        }
+
+        [Fact]
+        public async Task CreateContextAsync_ShouldThrowOnNullDialogStateAndProperty()
+        {
+            var dialogSet = new DialogSet();
+            var context = new TurnContext(new TestAdapter(), new Activity());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => dialogSet.CreateContextAsync(context));
+        }
+
+        [Fact]
+        public void Find_ShouldThrowOnNullOrEmptyDialogId()
+        {
+            var dialogSet = new DialogSet();
+
+            Assert.Throws<ArgumentNullException>(() => dialogSet.Find(null));
+            Assert.Throws<ArgumentNullException>(() => dialogSet.Find(string.Empty));
+        }
+
+        private class MockDialog(string id) : Dialog(id), IDialogDependencies
+        {
+            public override Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IEnumerable<Dialog> GetDependencies()
+            {
+                return [
+                    new WaterfallDialog("A"),
+                    new WaterfallDialog("B")
+                ];
+            }
         }
 
         private class MyBotTelemetryClient : IBotTelemetryClient, IBotPageViewTelemetryClient
