@@ -6,6 +6,7 @@ using System;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
@@ -15,11 +16,6 @@ namespace Microsoft.Agents.BotBuilder.App
     public class ApplicationOptions
     {
         /// <summary>
-        /// Optional. Storage provider to use for the application.
-        /// </summary>
-        public IStorage? Storage { get; set; }
-
-        /// <summary>
         /// Optional. Options used to customize the processing of Adaptive Card requests.
         /// </summary>
         public AdaptiveCardsOptions? AdaptiveCards { get; set; }
@@ -28,6 +24,11 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Optional. Factory used to create a custom turn state instance.
         /// </summary>
         public Func<ITurnState>? TurnStateFactory { get; set; }
+
+        /// <summary>
+        /// Optional. Array of input file download plugins to use.
+        /// </summary>
+        public IList<IInputFileDownloader>? FileDownloaders { get; set; }
 
         /// <summary>
         /// Optional. Logger factory that will be used in this application.

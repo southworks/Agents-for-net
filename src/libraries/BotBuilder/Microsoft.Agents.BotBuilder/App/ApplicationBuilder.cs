@@ -20,17 +20,6 @@ namespace Microsoft.Agents.BotBuilder.App
         public ApplicationOptions Options { get; } = new();
 
         /// <summary>
-        /// Configures the storage system to use for storing the bot's state.
-        /// </summary>
-        /// <param name="storage">The storage system to use.</param>
-        /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder WithStorage(IStorage storage)
-        {
-            Options.Storage = storage;
-            return this;
-        }
-
-        /// <summary>
         /// Configures the turn state factory to use for managing the bot's turn state.
         /// </summary>
         /// <param name="turnStateFactory">The turn state factory to use.</param>
