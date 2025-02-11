@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Model
@@ -46,6 +49,100 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
 
             Assert.NotNull(msgExtAction);
             Assert.IsType<MessagingExtensionAction>(msgExtAction);
+        }
+
+        [Fact]
+        public void MessagingExtensionActionRoundTrip()
+        {
+            var msgExtAction = new MessagingExtensionAction()
+            {
+                CommandId = "commandId",
+                CommandContext = "commandContext",
+                BotMessagePreviewAction = "botMessagePreviewAction",
+                BotActivityPreview = [
+                        new Activity() { Type = ActivityTypes.Message }
+                    ],
+                MessagePayload = new MessageActionsPayload()
+                {
+                    Id = "id",
+                    ReplyToId = "replyToId",
+                    MessageType = "messageType",
+                    CreatedDateTime = "2025-06-15T13:45:30",
+                    LastModifiedDateTime = "2025-07-17T14:46:40",
+                    Deleted = false,
+                    Subject = "subject",
+                    Summary = "summary",
+                    Importance = "importance",
+                    Locale = "locale",
+                    From = new MessageActionsPayloadFrom()
+                    {
+                        User = new MessageActionsPayloadUser()
+                        {
+                            UserIdentityType = "userIdentityType",
+                            Id = "id",
+                            DisplayName = "displayName"
+                        },
+                        Application = new MessageActionsPayloadApp()
+                        {
+                            ApplicationIdentityType = "applicationIdentityType",
+                            Id = "id",
+                            DisplayName = "displayName"
+                        },
+                        Conversation = new MessageActionsPayloadConversation()
+                        {
+                            ConversationIdentityType = "conversationIdentityType",
+                            Id = "id",
+                            DisplayName = "displayName"
+                        }
+                    },
+                    Body = new MessageActionsPayloadBody()
+                    {
+                        ContentType = "contentType",
+                        Content = "content"
+                    },
+                    AttachmentLayout = "attachmentLayout",
+                    Attachments = [
+                            new MessageActionsPayloadAttachment()
+                            {
+                                Id = "id",
+                                ContentType = "contentType",
+                                ContentUrl = "contentUrl",
+                                Content = "content",
+                                Name = "name",
+                                ThumbnailUrl = "thumbnailUrl"
+                            }
+                        ],
+                    Mentions = [
+                            new MessageActionsPayloadMention()
+                            {
+                                Id = 1,
+                                MentionText = "mentionText",
+                                Mentioned = new MessageActionsPayloadFrom()
+                            }
+                        ],
+                    Reactions = [
+                            new MessageActionsPayloadReaction()
+                            {
+                                ReactionType = "reactionType",
+                                CreatedDateTime = "createdDateTime",
+                                User = new MessageActionsPayloadFrom()
+                            }
+                        ]
+                }
+
+            };
+
+            // Known good
+            var goodJson = LoadTestJson.LoadJson(msgExtAction);
+
+            // Out
+            var json = ProtocolJsonSerializer.ToJson(msgExtAction);
+            Assert.Equal(goodJson, json);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(json);
+            json = ProtocolJsonSerializer.ToJson(inObj);
+            Assert.Equal(goodJson, json);
         }
     }
 }

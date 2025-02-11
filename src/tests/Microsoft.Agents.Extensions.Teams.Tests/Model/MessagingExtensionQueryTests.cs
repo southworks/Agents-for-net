@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 using Xunit;
 
@@ -35,5 +37,45 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
             Assert.NotNull(msgExtQuery);
             Assert.IsType<MessagingExtensionQuery>(msgExtQuery);
         }
+
+        [Fact]
+        public void MessagingExtensionActionRoundTrip()
+        {
+            var msgExtQuery = new MessagingExtensionQuery()
+            {
+                CommandId = "commandId",
+                Parameters = [
+                        new MessagingExtensionParameter()
+                        {
+                            Name = "name1",
+                            Value = new { param1 = "value1" }
+                        },
+                        new MessagingExtensionParameter()
+                        {
+                            Name = "name2",
+                            Value = new { param1 = "value2" }
+                        }
+                    ],
+                QueryOptions = new MessagingExtensionQueryOptions()
+                {
+                    Skip = 1,
+                    Count = 10
+                },
+                State = "state"
+            };
+
+            // Known good
+            var goodJson = LoadTestJson.LoadJson(msgExtQuery);
+
+            // Out
+            var json = ProtocolJsonSerializer.ToJson(msgExtQuery);
+            Assert.Equal(goodJson, json);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<MessagingExtensionQuery>(json);
+            json = ProtocolJsonSerializer.ToJson(inObj);
+            Assert.Equal(goodJson, json);
+        }
+
     }
 }
