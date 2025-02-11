@@ -11,8 +11,9 @@ using System;
 using System.Globalization;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Extensions.Teams.Tests.Model;
 
-namespace Microsoft.Agents.Extensions.Teams.Tests.Model
+namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
     public class TeamsActivityHandlerTests
     {
