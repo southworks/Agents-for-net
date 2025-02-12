@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,6 +49,8 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <value><c>true</c> if at least one response was sent for the current turn; otherwise, <c>false</c>.</value>
         /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
         public bool Responded => _innerTurnContext.Responded;
+
+        public ClaimsIdentity Identity => _innerTurnContext.Identity;
 
         IActivity ITurnContext.Activity => _innerTurnContext.Activity;
 

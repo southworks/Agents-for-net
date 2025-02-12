@@ -374,21 +374,6 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
-        public async Task State_DoNOTRememberContextState()
-        {
-            var adapter = new TestAdapter(TestAdapter.CreateConversation("State_DoNOTRememberContextState"));
-
-            await new TestFlow(adapter, (context, cancellationToken) =>
-            {
-                var obj = context.StackState.Get<UserState>();
-                Assert.Null(obj);
-                return Task.CompletedTask;
-            })
-            .Send("set value")
-            .StartTestAsync();
-        }
-
-        [Fact]
         public async Task State_RememberIStoreItemUserState()
         {
             var userState = new UserState(new MemoryStorage());

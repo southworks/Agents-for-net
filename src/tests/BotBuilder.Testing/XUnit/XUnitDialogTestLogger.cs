@@ -56,7 +56,7 @@ namespace Microsoft.Agents.BotBuilder.Testing.XUnit
         {
             var stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
-            context.StackState.Set(_stopWatchStateKey, stopwatch);
+            context.Services.Set(_stopWatchStateKey, stopwatch);
             await LogIncomingActivityAsync(context, context.Activity, cancellationToken).ConfigureAwait(false);
             context.OnSendActivities(OnSendActivitiesAsync);
 
@@ -98,7 +98,7 @@ namespace Microsoft.Agents.BotBuilder.Testing.XUnit
         /// <returns>A task that represents the work to execute.</returns>
         protected virtual Task LogOutgoingActivityAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var stopwatch = context.StackState.Get<System.Diagnostics.Stopwatch>(_stopWatchStateKey);
+            var stopwatch = context.Services.Get<System.Diagnostics.Stopwatch>(_stopWatchStateKey);
             var actor = "Bot:  ";
             if (activity.Type == ActivityTypes.Message)
             {

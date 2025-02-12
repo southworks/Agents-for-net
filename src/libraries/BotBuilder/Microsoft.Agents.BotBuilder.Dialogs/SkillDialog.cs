@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Connector;
@@ -9,6 +10,7 @@ using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -377,7 +379,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Create a conversationId to interact with the skill and send the activity
             var conversationIdFactoryOptions = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = context.StackState.Get<string>(ChannelAdapter.OAuthScopeKey),
+                FromBotOAuthScope = context.Identity != null ? BotClaims.GetTokenScopes(context.Identity).First() : null,
                 FromBotId = DialogOptions.BotId,
                 Activity = activity,
                 Bot = DialogOptions.Skill

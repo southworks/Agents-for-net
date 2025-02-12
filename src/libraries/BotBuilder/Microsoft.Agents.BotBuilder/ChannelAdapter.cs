@@ -23,16 +23,6 @@ namespace Microsoft.Agents.BotBuilder
         public const string InvokeResponseKey = "ChannelAdapterInvokeResponse";
 
         /// <summary>
-        /// The string value for the bot identity key.
-        /// </summary>
-        public const string BotIdentityKey = "BotIdentity";
-
-        /// <summary>
-        /// The string value for the OAuth scope key.
-        /// </summary>
-        public const string OAuthScopeKey = "ChannelAdapterOAuthScope";
-
-        /// <summary>
         /// Logger for the bot adapter. 
         /// </summary>
         private readonly ILogger? _logger = logger ?? NullLogger.Instance;

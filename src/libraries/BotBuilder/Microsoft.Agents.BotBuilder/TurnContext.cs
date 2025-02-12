@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -98,6 +99,8 @@ namespace Microsoft.Agents.BotBuilder
         /// </summary>
         /// <value>The activity associated with this turn.</value>
         public IActivity Activity { get; }
+
+        public ClaimsIdentity Identity { get; internal set; }
 
         /// <summary>
         /// Gets a value indicating whether at least one response was sent for the current turn.

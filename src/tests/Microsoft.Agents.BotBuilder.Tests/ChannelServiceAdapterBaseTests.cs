@@ -245,7 +245,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
             var connectorClient = CreateMockConnectorClient();
             var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
             var context = new TurnContext(adapter, new Activity());
-            context.StackState.Set<IConnectorClient>(connectorClient.Object);
+            context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
                 new Activity(type: ActivityTypes.Delay, value: 2000)

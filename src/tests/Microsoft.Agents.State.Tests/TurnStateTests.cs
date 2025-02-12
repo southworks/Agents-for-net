@@ -74,9 +74,6 @@ namespace Microsoft.Agents.State.Tests
             turnState.Temp.SetValue("count", 2);
             count = turnState.GetValue<int>("temp.count");
             Assert.Equal(2, count);
-
-            turnState.SetValue($"temp.{ChannelAdapter.OAuthScopeKey}", "botscope");
-            Assert.Equal("botscope", turnState.Temp.GetValue<string>(ChannelAdapter.OAuthScopeKey));
         }
 
         /*

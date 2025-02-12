@@ -133,7 +133,7 @@ namespace Microsoft.Agents.BotBuilder
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
             var claims = CreateClaimsIdentity(botAppId);
-            return ProcessProactiveAsync(CreateClaimsIdentity(botAppId), reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claims.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(CreateClaimsIdentity(botAppId), reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.BotBuilder
         {
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claimsIdentity.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.BotBuilder
             ValidateContinuationActivity(continuationActivity);
 
             var claims = CreateClaimsIdentity(botAppId);
-            return ProcessProactiveAsync(claims, continuationActivity, BotClaims.GetTokenAudience(claims.Claims), callback, cancellationToken);
+            return ProcessProactiveAsync(claims, continuationActivity, BotClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.BotBuilder
                 using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken).ConfigureAwait(false);
 
                 // Create a turn context and run the pipeline.
-                using var context = CreateTurnContext(createActivity, claimsIdentity, null, connectorClient, userTokenClient, callback);
+                using var context = CreateTurnContext(createActivity, claimsIdentity, connectorClient, userTokenClient, callback);
 
                 // Run the pipeline.
                 await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.BotBuilder
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken).ConfigureAwait(false);
 
             // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(continuationActivity, claimsIdentity, audience, connectorClient, userTokenClient, callback);
+            using var context = CreateTurnContext(continuationActivity, claimsIdentity, connectorClient, userTokenClient, callback);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -253,16 +253,12 @@ namespace Microsoft.Agents.BotBuilder
             Logger.LogInformation($"ProcessActivityAsync");
             IList<string> scopes = null;
 
-            string outgoingAudience;
-            if (BotClaims.IsBotClaim(claimsIdentity.Claims))
+            if (BotClaims.IsBotClaim(claimsIdentity))
             {
-                outgoingAudience = BotClaims.GetTokenAudience(claimsIdentity.Claims);
-                scopes = [$"{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}/.default"];
-                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity.Claims)}";
+                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
             }
             else
             {
-                outgoingAudience = AuthenticationConstants.BotFrameworkScope;
                 //activity.CallerId = ???
             }
 
@@ -274,7 +270,7 @@ namespace Microsoft.Agents.BotBuilder
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 claimsIdentity, 
                 activity.ServiceUrl, 
-                outgoingAudience, 
+                BotClaims.GetTokenAudience(claimsIdentity), 
                 cancellationToken, 
                 scopes: scopes,
                 useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
@@ -283,7 +279,7 @@ namespace Microsoft.Agents.BotBuilder
             using var userTokenClient = await ChannelServiceFactory.CreateUserTokenClientAsync(claimsIdentity, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a turn context and run the pipeline.
-            using var context = CreateTurnContext(activity, claimsIdentity, outgoingAudience, connectorClient, userTokenClient, callback);
+            using var context = CreateTurnContext(activity, claimsIdentity, connectorClient, userTokenClient, callback);
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -325,12 +321,11 @@ namespace Microsoft.Agents.BotBuilder
             return (Activity)activity;
         }
 
-        private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, string oauthScope, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
+        private TurnContext CreateTurnContext(IActivity activity, ClaimsIdentity claimsIdentity, IConnectorClient connectorClient, IUserTokenClient userTokenClient, BotCallbackHandler callback)
         {
             var turnContext = new TurnContext(this, activity);
 
-            turnContext.StackState.Set(BotIdentityKey, claimsIdentity);
-            turnContext.StackState.Set(OAuthScopeKey, oauthScope); // in non-skills scenarios the oauth scope value here will be null, so use Set
+            turnContext.Identity = claimsIdentity;
 
             turnContext.Services.Set(connectorClient);
             turnContext.Services.Set(userTokenClient);

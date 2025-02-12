@@ -47,6 +47,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             public bool Responded => _innerTurnContext.Responded;
 
+            public ClaimsIdentity Identity => _innerTurnContext.Identity;
+
             public IConnectorClient Connector => throw new System.NotImplementedException();
 
             public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)

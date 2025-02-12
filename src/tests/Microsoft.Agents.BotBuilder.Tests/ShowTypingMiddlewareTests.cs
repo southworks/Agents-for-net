@@ -150,7 +150,7 @@ namespace Microsoft.Agents.BotBuilder.Tests
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.VersionClaim, "2.0"));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, _parentBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AuthorizedParty, _skillBotId));
-                turnContext.StackState.Set(BotIdentityKey, claimsIdentity);
+                turnContext.Identity = claimsIdentity;
 
                 return turnContext;
             }

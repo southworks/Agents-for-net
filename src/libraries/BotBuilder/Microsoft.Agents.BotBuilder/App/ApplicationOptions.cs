@@ -3,7 +3,6 @@
 
 using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.Agents.Storage;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
 using System.Collections.Generic;
