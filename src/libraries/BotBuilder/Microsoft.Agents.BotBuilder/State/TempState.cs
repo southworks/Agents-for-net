@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.App;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,10 +11,24 @@ namespace Microsoft.Agents.BotBuilder.State
 {
     public class TempState : IBotState
     {
+        /// <summary>
+        /// Name of the input files key
+        /// </summary>
+        public const string InputFilesKey = "inputFiles";
+
         public static readonly string ScopeName = "temp";
         private readonly Dictionary<string, object> _state = [];
 
         public string Name => ScopeName;
+
+        /// <summary>
+        /// Downloaded files included in the Activity
+        /// </summary>
+        public List<InputFile> InputFiles
+        {
+            get => GetValue<List<InputFile>>(InputFilesKey)!;
+            set => SetValue(InputFilesKey, value);
+        }
 
         public void ClearState()
         {

@@ -6,6 +6,7 @@ using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -626,18 +627,16 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
                 */
 
-                /*
                 // Download any input files
-                IList<IInputFileDownloader<TState>>? fileDownloaders = this.Options.FileDownloaders;
+                IList<IInputFileDownloader>? fileDownloaders = this.Options.FileDownloaders;
                 if (fileDownloaders != null && fileDownloaders.Count > 0)
                 {
-                    foreach (IInputFileDownloader<TState> downloader in fileDownloaders)
+                    foreach (IInputFileDownloader downloader in fileDownloaders)
                     {
-                        List<InputFile> files = await downloader.DownloadFilesAsync(turnContext, turnState);
+                        List<InputFile> files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
                         turnState.Temp.InputFiles.AddRange(files);
                     }
                 }
-                */
 
                 bool eventHandlerCalled = false;
 
