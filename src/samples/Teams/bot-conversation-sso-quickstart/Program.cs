@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Extensions.Teams.Compat;
-using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Compat;
@@ -29,7 +28,7 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter, TeamsChannelServiceClientFactory>();
+builder.AddBot<TeamsBot<MainDialog>, TeamsSSOAdapter>();
 
 // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
 builder.Services.AddSingleton<IStorage, MemoryStorage>();

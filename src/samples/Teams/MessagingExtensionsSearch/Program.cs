@@ -8,7 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore;
 using MessagingExtensionsSearch.Bots;
-using Microsoft.Agents.Extensions.Teams;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +21,7 @@ builder.Logging.AddDebug();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsMessagingExtensionsSearchBot, CloudAdapter, TeamsChannelServiceClientFactory>();
+builder.AddBot<TeamsMessagingExtensionsSearchBot>();
 
 var app = builder.Build();
 

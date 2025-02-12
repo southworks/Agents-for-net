@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Agents.Connector;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
 {
@@ -47,9 +48,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         }
 
         [Fact]
-        public void Constructor_ShouldThrowOnNullClientFactory()
+        public void Constructor_ShouldThrowOnNullConnector()
         {
-            Assert.Throws<ArgumentNullException>(() => new RestTeamsOperations(null, null, null));
+            Assert.Throws<ArgumentNullException>(() => new RestTeamsOperations(null));
         }
 
         [Fact]
@@ -534,14 +535,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
         private RestTeamsOperations UseTeamsOperations()
         {
-            var httpFactory = new Mock<IHttpClientFactory>();
-            httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
-                .Returns(MockHttpClient.Object);
+            var transport = new Mock<IRestTransport>();
+            transport.Setup(x => x.Endpoint)
+                .Returns(new Uri(ServiceUrl));
+            transport.Setup(a => a.GetHttpClientAsync())
+                .Returns(Task.FromResult(MockHttpClient.Object));
 
-            return new RestTeamsOperations(httpFactory.Object, nameof(RestTeamsConnectorClient), null)
-            {
-                Client = new RestTeamsConnectorClient(new Uri("http://teams.com"), httpFactory.Object, null)
-            };
+            return new RestTeamsOperations(transport.Object);
         }
     }
 }

@@ -3,23 +3,26 @@
 
 using Microsoft.Agents.Connector;
 using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams.Connector
 {
     /// <summary>
-    /// TeamsConnectorClient REST implementation.  This ConnectorClient is suitable for either ABS or SMBA.
+    /// TeamsConnectorClient REST implementation.
     /// </summary>
-    public class RestTeamsConnectorClient : RestConnectorClient, ITeamsConnectorClient
+    public class RestTeamsConnectorClient : ITeamsConnectorClient
     {
+        public RestTeamsConnectorClient(IConnectorClient connector, IRestTransport transport = null)
+        {
+            var restTransport = transport ?? connector as IRestTransport;
+            Teams = new RestTeamsOperations(restTransport);
+        }
+
         /// <inheritdoc/>
         public ITeamsOperations Teams { get; private set; }
 
-        public RestTeamsConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestTeamsConnectorClient)) : base(endpoint, httpClientFactory, tokenProviderFunction, namedClient)
+        public void Dispose()
         {
-            Teams = new RestTeamsOperations(httpClientFactory, namedClient, tokenProviderFunction) { Client = this };
+            GC.SuppressFinalize(this);
         }
     }
 }

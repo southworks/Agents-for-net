@@ -485,13 +485,13 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         private static ITeamsConnectorClient GetTeamsConnectorClient(ITurnContext turnContext)
         {
             var connectorClient = GetConnectorClient(turnContext);
-            if (connectorClient is ITeamsConnectorClient teamsConnector)
+            if (connectorClient is IRestTransport withTransport)
             {
-                return teamsConnector;
+                return new RestTeamsConnectorClient(connectorClient, withTransport);
             }
             else
             {
-                throw new InvalidOperationException("ITeamsConnectorClient is not available.  Did you register TeamsChannelServiceClientFactory?");
+                throw new InvalidOperationException("ITeamsConnectorClient is not available.  Did you register IChannelServiceClientFactory?");
             }
         }
     }

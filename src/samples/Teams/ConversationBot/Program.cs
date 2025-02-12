@@ -4,7 +4,6 @@
 using ConversationBot.Bots;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.Extensions.Teams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +17,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsConversationBot, CloudAdapter, TeamsChannelServiceClientFactory>();
+builder.AddBot<TeamsConversationBot>();
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
@@ -18,12 +19,10 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
     /// <summary>
     /// TeamsOperations operations.
     /// </summary>
-    internal class RestTeamsOperations(
-        IHttpClientFactory httpClientFactory,
-        string httpClientName,
-        Func<Task<string>> tokenProviderFunction) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), ITeamsOperations
+    internal class RestTeamsOperations(IRestTransport transport) : ITeamsOperations
     {
         private static volatile RetryParams currentRetryPolicy;
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         /// <summary>
         /// Gets a reference to the TeamsConnectorClient.
@@ -262,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             var request = new HttpRequestMessage
             {
                 Method = httpMethod,
-                RequestUri = new Uri(Client.BaseUri, apiUrl)
+                RequestUri = new Uri(_transport.Endpoint, apiUrl)
                     .AppendQuery("continuationToken", continuationToken)
             };
             request.Headers.Add("Accept", "application/json");
@@ -288,7 +287,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
             try
             {
-                using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+                using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
                 using var httpResponse = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 switch ((int)httpResponse.StatusCode)
                 {
