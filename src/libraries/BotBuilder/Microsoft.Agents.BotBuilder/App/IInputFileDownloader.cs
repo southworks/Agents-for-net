@@ -20,6 +20,6 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="turnState">The turn state.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A list of input files</returns>
-        public Task<List<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default);
+        public Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default);
     }
 }

@@ -14,6 +14,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         public RestTeamsConnectorClient(IConnectorClient connector, IRestTransport transport = null)
         {
             var restTransport = transport ?? connector as IRestTransport;
+            ArgumentNullException.ThrowIfNull(nameof(restTransport));
             Teams = new RestTeamsOperations(restTransport);
         }
 

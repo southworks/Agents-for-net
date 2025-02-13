@@ -24,9 +24,9 @@ namespace Microsoft.Agents.BotBuilder.State
         /// <summary>
         /// Downloaded files included in the Activity
         /// </summary>
-        public List<InputFile> InputFiles
+        public IList<InputFile> InputFiles
         {
-            get => GetValue<List<InputFile>>(InputFilesKey)!;
+            get => GetValue<IList<InputFile>>(InputFilesKey, () => []);
             set => SetValue(InputFilesKey, value);
         }
 

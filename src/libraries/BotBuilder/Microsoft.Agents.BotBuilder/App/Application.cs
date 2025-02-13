@@ -7,6 +7,7 @@ using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -633,8 +634,8 @@ namespace Microsoft.Agents.BotBuilder.App
                 {
                     foreach (IInputFileDownloader downloader in fileDownloaders)
                     {
-                        List<InputFile> files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                        turnState.Temp.InputFiles.AddRange(files);
+                        var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                        turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
                     }
                 }
 

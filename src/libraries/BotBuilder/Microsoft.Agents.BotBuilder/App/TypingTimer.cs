@@ -66,7 +66,7 @@ namespace Microsoft.Agents.BotBuilder.App
             _timer = new Timer(SendTypingActivity, turnContext, Timeout.Infinite, Timeout.Infinite);
 
             // Fire first time
-            _timer.Change(0, Timeout.Infinite);
+            _timer.Change(_initialDelay, Timeout.Infinite);
 
             return true;
         }
