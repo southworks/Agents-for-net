@@ -450,7 +450,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
         private static IConnectorClient GetConnectorClient(ITurnContext turnContext)
         {
-            return turnContext.Services.Get<IConnectorClient>() ?? throw new InvalidOperationException("This method requires a connector client.");
+            return turnContext.Services.Get<IConnectorClient>() ?? throw new InvalidOperationException("IConnectorClient is not available.  Was IChannelServiceClientFactory registered?");
         }
 
         private static async Task<TeamsChannelAccount> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)
@@ -491,7 +491,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             }
             else
             {
-                throw new InvalidOperationException("ITeamsConnectorClient is not available.  Did you register IChannelServiceClientFactory?");
+                throw new InvalidOperationException("ITeamsConnectorClient is not available.  The registered ConnectorClient does not support IRestTransport");
             }
         }
     }
