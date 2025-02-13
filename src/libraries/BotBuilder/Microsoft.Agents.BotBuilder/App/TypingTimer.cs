@@ -20,6 +20,9 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         private readonly int _interval;
 
+        // For synchronizing SendActivity and Typing to prevent race
+        private static Mutex _send;  
+
         /// <summary>
         /// Initial delay before first typing is sent.
         /// </summary>
@@ -35,7 +38,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="interval">The interval in milliseconds to send "typing" activity.</param>
         /// <param name="initialDelay">Initial delay</param>
-        public TypingTimer(int interval = 1000, int initialDelay = 500)
+        public TypingTimer(int interval = 5000, int initialDelay = 500)
         {
             _interval = interval;
             _initialDelay = initialDelay;
@@ -61,6 +64,8 @@ namespace Microsoft.Agents.BotBuilder.App
 
             // Stop timer when message activities are sent
             turnContext.OnSendActivities(StopTimerWhenSendMessageActivityHandlerAsync);
+
+            _send = new Mutex(false);
 
             // Start periodically send "typing" activity
             _timer = new Timer(SendTypingActivity, turnContext, Timeout.Infinite, Timeout.Infinite);
@@ -112,10 +117,14 @@ namespace Microsoft.Agents.BotBuilder.App
 
             try
             {
-                await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" });
-                if (IsRunning())
+                _send.WaitOne();
+                if (_timer != null)
                 {
-                    _timer?.Change(_interval, Timeout.Infinite);
+                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" });
+                    if (IsRunning())
+                    {
+                        _timer?.Change(_interval, Timeout.Infinite);
+                    }
                 }
             }
             catch (Exception e) when (e is ObjectDisposedException || e is TaskCanceledException || e is NullReferenceException)
@@ -124,6 +133,10 @@ namespace Microsoft.Agents.BotBuilder.App
                 // the turn context object is disposed of or the request is cancelled. We can just eat the
                 // error but lets make sure our states cleaned up a bit.
                 Dispose();
+            }
+            finally
+            {
+                _send.ReleaseMutex();
             }
         }
 
@@ -135,7 +148,14 @@ namespace Microsoft.Agents.BotBuilder.App
                 {
                     if (activity.Type == ActivityTypes.Message)
                     {
+                        // This will block ITurnContext.SendActivity until the typing timer is done.
+                        _send.WaitOne();
+
+                        // Stop timer
                         Dispose();
+
+                        // Release, which could free up timer SendTypingActivity (if it was blocked).
+                        _send.ReleaseMutex();
                         break;
                     }
                 }
