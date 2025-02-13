@@ -16,9 +16,8 @@ using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Telemetry;
-using Microsoft.Agents.Core;
-using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.Compat;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
@@ -32,6 +31,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
         // Captures an EndOfConversation if it was sent to help with assertions.
         private IActivity _eocSent;
+
+        private readonly Mock<ITurnContext> _context = new();
+        private readonly Mock<DialogContext> _dialogContext;
+
+        public DialogExtensionsTests()
+        {
+            _dialogContext = new(new DialogSet(), _context.Object, new DialogState());
+        }
 
         /// <summary>
         /// Enum to handle different test cases.
@@ -149,6 +156,87 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             }
 
             Assert.Equal(telemetryClientMock.Object, dialog.TelemetryClient);
+        }
+
+        [Fact]
+        public async Task InternalRunAsync_ShouldThrowWhenHandlingException()
+        {
+            var exception = new Exception("Error accessing Identity");
+            _dialogContext.Object.Stack = null;
+
+            _context.SetupSequence(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.Identity)
+                .Throws(exception);
+            _context.SetupSequence(e => e.StackState)
+                .Returns([]);
+
+            var ex = await Assert.ThrowsAsync<AggregateException>(() => DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None));
+            Assert.Equal(2, ex.InnerExceptions.Count);
+            Assert.Equal(exception, ex.InnerExceptions[1]);
+        }
+
+        [Fact]
+        public async Task InternalRunAsync_ShouldThrowUnhandledException()
+        {
+            var exception = new Exception("Error setting TurnState");
+
+            _context.SetupSequence(e => e.StackState)
+                .Returns([])
+                .Throws(exception);
+
+            var ex = await Assert.ThrowsAsync<Exception>(() => DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None));
+            Assert.Equal(exception, ex);
+        }
+
+        [Fact]
+        public async Task InternalRunAsync_ShouldReturnEmptyOnEndOfConversation()
+        {
+            var claims = new ClaimsIdentity([
+                new Claim(AuthenticationConstants.VersionClaim, "2.0"),
+                new Claim(AuthenticationConstants.AudienceClaim, "skillId"),
+                new Claim(AuthenticationConstants.AuthorizedParty, "parentBotId")
+            ]);
+
+            _context.SetupGet(e => e.StackState)
+                .Returns([]);
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.Activity)
+                .Returns(new Activity { Type = ActivityTypes.EndOfConversation })
+                .Verifiable(Times.Once);
+            _context.Setup(e => e.Identity)
+                .Returns(claims);
+
+            var result = await DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None);
+
+            Assert.Equal(DialogTurnStatus.Empty, result.Status);
+            Mock.Verify(_context);
+        }
+
+        [Fact]
+        public async Task InternalRunAsync_ShouldReturnEmptyOnRepromptEvent()
+        {
+            var claims = new ClaimsIdentity([
+                new Claim(AuthenticationConstants.VersionClaim, "2.0"),
+                new Claim(AuthenticationConstants.AudienceClaim, "skillId"),
+                new Claim(AuthenticationConstants.AuthorizedParty, "parentBotId")
+            ]);
+
+            _context.SetupGet(e => e.StackState)
+                .Returns(new TurnContextStateCollection());
+            _context.SetupGet(e => e.Services)
+                .Returns([]);
+            _context.SetupGet(e => e.Activity)
+                .Returns(new Activity { Type = ActivityTypes.Event, Name = DialogEvents.RepromptDialog })
+                .Verifiable(Times.Exactly(3));
+            _context.Setup(e => e.Identity)
+                .Returns(claims);
+
+            var result = await DialogExtensions.InternalRunAsync(_context.Object, "A", _dialogContext.Object, CancellationToken.None);
+
+            Assert.Equal(DialogTurnStatus.Empty, result.Status);
+            Mock.Verify(_context);
         }
 
         /// <summary>
