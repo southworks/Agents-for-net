@@ -30,7 +30,7 @@ jobs:
       run: dotnet restore AgentSdk.proj
   
     - name: Build
-      run: dotnet build -v diag --no-restore -c debug AgentSdk.proj
+      run: dotnet build -v d --no-restore -c debug AgentSdk.proj
 
     - name: Package
       run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.sln 
