@@ -3,5 +3,9 @@
     <PropertyGroup>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IsPackable>false</IsPackable>
+        <SamplesRoot>$(MSBuildThisFileDirectory)</SamplesRoot>
+        <IncludeAspNetSampleHelpers>true</IncludeAspNetSampleHelpers>
     </PropertyGroup>
+
+    <Import Project="$(SamplesRoot)AspnetSampleSupport.props" Condition="'$(IncludeAspNetSampleHelpers)' == 'true'" />
 </Project>
