@@ -17,9 +17,4 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
-
-	<Target Name="FindSamplesRoot_DEBUG" BeforeTargets="PreBuildEvent">
-    	<Message Importance="high" Text="$(SamplesRoot)Shared\AspNetExtensions.cs" />
-  	</Target>
-
 </Project>
