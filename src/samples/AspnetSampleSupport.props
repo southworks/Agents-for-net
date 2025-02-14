@@ -1,9 +1,0 @@
-<Project>
-    <Choose>
-        <When Condition="'$(IncludeAspNetSampleHelpers)' == 'true'">
-            <ItemGroup>
-                <Compile Include="$(SamplesRoot)Shared\AspNetExtensions.cs" Link="AspNetExtensions.cs" />
-            </ItemGroup>
-        </When>
-    </Choose>
-</Project>

@@ -4,8 +4,10 @@
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IsPackable>false</IsPackable>
         <SamplesRoot>$(MSBuildThisFileDirectory)</SamplesRoot>
-        <IncludeAspNetSampleHelpers>true</IncludeAspNetSampleHelpers>
     </PropertyGroup>
 
-    <Import Project="$(SamplesRoot)AspnetSampleSupport.props" Condition="'$(IncludeAspNetSampleHelpers)' == 'true'" />
+    <ItemGroup>
+        <!-- Common files for all asp.net web based samples of agents.-->
+        <Compile Include="$(SamplesRoot)Shared\AspNetExtensions.cs" Link="AspNetExtensions.cs" />
+    </ItemGroup>
 </Project>
