@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.Setup;
+using Microsoft.Agents.Samples;
 using Microsoft.Agents.Samples.Bots;
 using Microsoft.Agents.State;
 using Microsoft.Agents.Storage;
