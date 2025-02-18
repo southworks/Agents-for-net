@@ -148,6 +148,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SearchCommand", "samples\Application\messageExtensions.a.searchCommand\SearchCommand.csproj", "{AC149C90-3191-4995-B6F5-7EA35F311EAB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{E08758F4-9774-472A-B0E0-CA057F6296AA}"
+	ProjectSection(SolutionItems) = preProject
+		samples\Shared\AspNetExtensions.cs = samples\Shared\AspNetExtensions.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -457,6 +462,7 @@ Global
 		{A8EDAEA3-4057-4862-BC92-F9CFA645246A} = {927E4F54-6FBC-4390-BF64-BF3C1874C1AB}
 		{348A61E5-E16A-47ED-B621-F2C61E1E316D} = {927E4F54-6FBC-4390-BF64-BF3C1874C1AB}
 		{AC149C90-3191-4995-B6F5-7EA35F311EAB} = {851DB8B0-CD62-414F-B370-EC3680563B6E}
+		{E08758F4-9774-472A-B0E0-CA057F6296AA} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}

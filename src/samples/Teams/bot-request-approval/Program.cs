@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Hosting.Setup;
+using Microsoft.Agents.Samples;
 using Microsoft.Agents.Samples.Bots;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
