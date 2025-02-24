@@ -13,6 +13,7 @@ using Microsoft.Agents.Extensions.Teams.Models;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -70,7 +71,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnSubmitAction("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -124,7 +125,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnSubmitAction("not-test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -161,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnSubmitAction(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected MessageExtensions.OnSubmitAction() triggered for activity type: invoke", exception.Message);
@@ -222,7 +223,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewEdit("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -280,7 +281,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewEdit("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -317,7 +318,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewEdit(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected MessageExtensions.OnBotMessagePreviewEdit() triggered for activity type: invoke", exception.Message);
@@ -376,7 +377,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewSend("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -433,7 +434,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewSend("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -469,7 +470,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnBotMessagePreviewSend(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected MessageExtensions.OnBotMessagePreviewSend() triggered for activity type: invoke", exception.Message);
@@ -517,7 +518,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnFetchTask("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -563,7 +564,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnFetchTask("not-test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -600,7 +601,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnFetchTask(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected MessageExtensions.OnFetchTask() triggered for activity type: invoke", exception.Message);
@@ -664,7 +665,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQuery("test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -723,7 +724,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQuery("not-test-command", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -760,7 +761,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQuery(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected MessageExtensions.OnQuery() triggered for activity type: invoke", exception.Message);
@@ -808,7 +809,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnSelectItem(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -859,7 +860,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnSelectItem(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -911,7 +912,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQueryLink(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -953,7 +954,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQueryLink(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -1005,7 +1006,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnAnonymousQueryLink(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -1047,7 +1048,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnAnonymousQueryLink(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -1093,7 +1094,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnQueryUrlSetting(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -1134,7 +1135,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnAnonymousQueryLink(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -1182,7 +1183,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnConfigureSettings(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -1222,7 +1223,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnConfigureSettings(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -1263,7 +1264,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnCardButtonClicked(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -1303,7 +1304,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.MessageExtensions.OnCardButtonClicked(handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);

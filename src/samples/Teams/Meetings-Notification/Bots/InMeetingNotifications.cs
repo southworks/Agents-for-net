@@ -83,7 +83,7 @@ namespace InMeetingNotificationsBot.Bots
 
                     // Send and adaptive card to user to select members for sending targeted notifications.
                     Attachment adaptiveCardAttachment = GetAdaptiveCardAttachment("SendTargetNotificationCard.json", meetingNotificationDetails);
-                    await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment));
+                    await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
                 }
                 else if (turnContext.Activity.Text.Trim() == "SendInMeetingNotification")
                 {

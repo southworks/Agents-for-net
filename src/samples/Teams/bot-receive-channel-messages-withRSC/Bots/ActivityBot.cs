@@ -48,16 +48,16 @@ namespace ReceiveMessagesWithRSC.Bots
             switch (userCommand)
             {
                 case "1":
-                    await turnContext.SendActivityAsync(MessageFactory.Text(PermissionRequired));
+                    await turnContext.SendActivityAsync(MessageFactory.Text(PermissionRequired), cancellationToken);
                     return;
 
                 case "2":
-                    await turnContext.SendActivityAsync(MessageFactory.Text(DocLink));
+                    await turnContext.SendActivityAsync(MessageFactory.Text(DocLink), cancellationToken);
                     return;
 
                 default:
-                    await turnContext.SendActivityAsync(MessageFactory.Text(SampleDescription));
-                    await turnContext.SendActivityAsync(MessageFactory.Text(Option));
+                    await turnContext.SendActivityAsync(MessageFactory.Text(SampleDescription), cancellationToken);
+                    await turnContext.SendActivityAsync(MessageFactory.Text(Option), cancellationToken);
                     return;
             }
         }

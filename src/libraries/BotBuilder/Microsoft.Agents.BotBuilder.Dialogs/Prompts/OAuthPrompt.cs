@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 
@@ -81,12 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _validator = validator;
 
-            _dialogOAuthFlow = new OAuthFlow(
-                _settings.Title,
-                _settings.Text,
-                _settings.ConnectionName,
-                _settings.Timeout,
-                _settings.ShowSignInLink);
+            _dialogOAuthFlow = new OAuthFlow(_settings);
         }
 
         /// <summary>
@@ -141,7 +137,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             }
 
             // Initialize state
-            var timeout = _settings.Timeout ?? (int)OAuthTurnStateConstants.OAuthLoginTimeoutValue.TotalMilliseconds;
+            var timeout = _settings.Timeout ?? (int)OAuthPromptSettings.DefaultTimeoutValue.TotalMilliseconds;
             var state = dc.ActiveDialog.State;
             state[PersistedOptions] = opt;
             state[PersistedState] = new Dictionary<string, object>
@@ -152,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             state[PersistedExpires] = DateTime.UtcNow.AddMilliseconds(timeout);
             SetCallerInfoInDialogState(state, dc.Context);
 
-            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, opt?.Prompt, cancellationToken).ConfigureAwait(false);
+            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, () => Task.FromResult(opt?.Prompt), cancellationToken).ConfigureAwait(false);
             if (token != null)
             {
                 // Return token
@@ -260,7 +256,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// the result contains the user's token.</remarks>
         public async Task<TokenResponse> GetUserTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return await OAuthFlow.GetTokenClient(turnContext).GetUserTokenAsync(turnContext.Activity.From.Id, _settings.ConnectionName, turnContext.Activity.ChannelId, magicCode: null, cancellationToken).ConfigureAwait(false);
+            return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -272,7 +268,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            await OAuthFlow.GetTokenClient(turnContext).SignOutUserAsync(turnContext.Activity.From.Id, _settings.ConnectionName, turnContext.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
         public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)

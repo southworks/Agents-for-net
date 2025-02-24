@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -11,10 +10,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder
+namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
 {
     /// <summary>
-    /// Creates a new prompt that asks the user to sign in using the UserTokenService Single Sign On (SSO)
+    /// Creates a new prompt that asks the user to sign in using the Azure Bot Token Service.
     /// service.
     /// </summary>
     /// <remarks>
@@ -31,29 +30,28 @@ namespace Microsoft.Agents.BotBuilder
     /// Both flows are automatically supported by the `OAuthFlow` and the only thing you need to be
     /// careful of is that you don't block the `event` and `invoke` activities that the prompt might
     /// be waiting on.
-    /// <param name="title">The title of the OAuthCard|SigninCard sent.</param>
-    /// <param name="text">The title of the OAuthCard|SigninCard sent.</param>
-    /// <param name="connectionName">Required:  The name of the OAuth connection to use.</param>
-    /// <param name="timeout">Option login timeout.</param>
-    /// <param name="showSignInLink">Options, but true if the Channel requires it.</param>
+    /// <param name="settings"></param>
     /// </remarks>
     /// <remarks>
     /// Initializes a new instance of the <see cref="OAuthFlow"/> class.
     /// </remarks>
-    public class OAuthFlow(string title, string text, string connectionName, int? timeout, bool? showSignInLink)
+    public class OAuthFlow
     {
-        public string Title { get; init; } = title ?? "Sign In";
-        public string Text { get; init; } = text ?? "Please sign in";
-        public string ConnectionName { get; init; } = connectionName ?? throw new ArgumentNullException(connectionName);
-        public int? Timeout { get; init; } = timeout;
-        public bool? ShowSignInLink { get; init; } = showSignInLink;
+        private readonly OAuthSettings _settings;
 
-        public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, IActivity? prompt, CancellationToken cancellationToken = default)
+        public OAuthFlow(OAuthSettings settings)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        }
+
+        public OAuthSettings Settings => _settings;
+
+        public virtual async Task<TokenResponse> BeginFlowAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
             // Attempt to get the users token
-            var output = await GetTokenClient(turnContext).GetUserTokenAsync(turnContext.Activity.From.Id, ConnectionName, turnContext.Activity.ChannelId, magicCode: null, cancellationToken).ConfigureAwait(false);
+            var output = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode: null, cancellationToken).ConfigureAwait(false);
             if (output != null)
             {
                 // Return token
@@ -63,7 +61,7 @@ namespace Microsoft.Agents.BotBuilder
             // Prompt user to login
             await SendOAuthCardAsync(
                 turnContext,
-                prompt, cancellationToken).ConfigureAwait(false);
+                promptFactory, cancellationToken).ConfigureAwait(false);
 
             return null;
         }
@@ -81,7 +79,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
         /// user's reply as valid input for the prompt.</para></remarks>
         /// <exception cref="TimeoutException"/>
-        public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken = default)
+        public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
@@ -104,36 +102,9 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            await GetTokenClient(turnContext).SignOutUserAsync(turnContext.Activity.From.Id, ConnectionName, turnContext.Activity.ChannelId, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Returns the IUserTokenClient for the OAuthFlow.
-        /// </summary>
-        /// <param name="turnContext"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
-        public static IUserTokenClient GetTokenClient(ITurnContext turnContext)
-        {
-            ArgumentNullException.ThrowIfNull(turnContext);
-            var userTokenClient = turnContext.Services.Get<IUserTokenClient>();
-            if (userTokenClient != null)
-            {
-                return userTokenClient;
-            }
-            throw new NotSupportedException("OAuthFlow: IUserTokenClient is not supported.  Was a IUserTokenClient registered?");
-        }
-
-        /// <summary>
-        /// Provide subclasses a chance to alter the SignInCard or other signin Activity values.
-        /// </summary>
-        /// <param name="prompt"></param>
-        /// <returns></returns>
-        protected virtual IActivity AlterSignInPrompt(IActivity prompt)
-        {
-            return prompt;
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -143,34 +114,48 @@ namespace Microsoft.Agents.BotBuilder
         /// </summary>
         /// <param name="settings">OAuthSettings.</param>
         /// <param name="turnContext">ITurnContext.</param>
-        /// <param name="prompt">Activity.</param>
+        /// <param name="promptFactory">Creates signin prompt</param>
         /// <param name="cancellationToken">CancellationToken.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        private async Task SendOAuthCardAsync(ITurnContext turnContext, IActivity prompt, CancellationToken cancellationToken)
+        private async Task SendOAuthCardAsync(ITurnContext turnContext, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
+            IActivity prompt = null;
+            if (promptFactory != null)
+            {
+                prompt = await promptFactory().ConfigureAwait(false);
+                if (prompt != null && prompt.Attachments == null)
+                {
+                    prompt.Attachments = [];
+                }
+            }
+
+            if (prompt == null)
+            {
+                prompt = Activity.CreateMessageActivity();
+                prompt.Attachments = [];
+            }
+
             // Ensure prompt initialized
-            prompt ??= Activity.CreateMessageActivity();
-            prompt.Attachments ??= [];
 
             // Append appropriate card if missing
             if (!ChannelSupportsOAuthCard(turnContext.Activity.ChannelId))
             {
                 if (!prompt.Attachments.Any(a => a.Content is SigninCard))
                 {
-                    var signInResource = await GetTokenClient(turnContext).GetSignInResourceAsync(ConnectionName, turnContext.Activity, null, cancellationToken).ConfigureAwait(false);
+                    var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
                     prompt.Attachments.Add(new Attachment
                     {
                         ContentType = SigninCard.ContentType,
                         Content = new SigninCard
                         {
-                            Text = Text,
+                            Text = _settings.Text,
                             Buttons =
                             [
                                 new CardAction
                                 {
-                                    Title = Title,
+                                    Title = _settings.Title,
                                     Value = signInResource.SignInLink,
                                     Type = ActionTypes.Signin,
                                 },
@@ -182,11 +167,11 @@ namespace Microsoft.Agents.BotBuilder
             else if (!prompt.Attachments.Any(a => a.Content is OAuthCard))
             {
                 var cardActionType = ActionTypes.Signin;
-                var signInResource = await GetTokenClient(turnContext).GetSignInResourceAsync(ConnectionName, turnContext.Activity, null, cancellationToken).ConfigureAwait(false);
+                var signInResource = await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false);
 
                 string value;
-                if ((ShowSignInLink != null && ShowSignInLink == false) || 
-                    (ShowSignInLink == null && !ChannelRequiresSignInLink(turnContext.Activity.ChannelId)))
+                if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||
+                    _settings.ShowSignInLink == null && !ChannelRequiresSignInLink(turnContext.Activity.ChannelId))
                 {
                     value = null;
                 }
@@ -195,24 +180,30 @@ namespace Microsoft.Agents.BotBuilder
                     value = signInResource.SignInLink;
                 }
 
+                TokenExchangeResource? tokenExchangeResource = null;
+                if (_settings.EnableSso == true)
+                {
+                    tokenExchangeResource = signInResource.TokenExchangeResource;
+                }
+
                 prompt.Attachments.Add(new Attachment
                 {
                     ContentType = OAuthCard.ContentType,
                     Content = new OAuthCard
                     {
-                        Text = Text,
-                        ConnectionName = ConnectionName,
+                        Text = _settings.Text,
+                        ConnectionName = _settings.ConnectionName,
                         Buttons =
                         [
                             new CardAction
                             {
-                                Title = Title,
-                                Text = Text,
+                                Title = _settings.Title,
+                                Text = _settings.Text,
                                 Type = cardActionType,
                                 Value = value
                             },
                         ],
-                        TokenExchangeResource = signInResource.TokenExchangeResource,
+                        TokenExchangeResource = tokenExchangeResource,
                         TokenPostResource = signInResource.TokenPostResource
                     },
                 });
@@ -224,7 +215,7 @@ namespace Microsoft.Agents.BotBuilder
                 prompt.InputHint = InputHints.AcceptingInput;
             }
 
-            await turnContext.SendActivityAsync(AlterSignInPrompt(prompt), cancellationToken).ConfigureAwait(false);
+            await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -246,8 +237,8 @@ namespace Microsoft.Agents.BotBuilder
             }
             else if (IsVerificationInvoke(turnContext))
             {
-                var value = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
-                var magicCode = value.ContainsKey("state") ? ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["state"].ToString() : null;
+                var value = turnContext.Activity.Value.ToJsonElements();
+                var magicCode = value.ContainsKey("state") ? turnContext.Activity.Value.ToJsonElements()["state"].ToString() : null;
 
                 // Getting the token follows a different flow in Teams. At the signin completion, Teams
                 // will send the bot an "invoke" activity that contains a "magic" code. This code MUST
@@ -258,7 +249,7 @@ namespace Microsoft.Agents.BotBuilder
                 // progress) retry in that case.
                 try
                 {
-                    result = await GetTokenClient(turnContext).GetUserTokenAsync(turnContext.Activity.From.Id, ConnectionName, turnContext.Activity.ChannelId, magicCode, cancellationToken).ConfigureAwait(false);
+                    result = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.ConnectionName, magicCode, cancellationToken).ConfigureAwait(false);
 
                     if (result != null)
                     {
@@ -288,11 +279,11 @@ namespace Microsoft.Agents.BotBuilder
                         new TokenExchangeInvokeResponse
                         {
                             Id = null,
-                            ConnectionName = ConnectionName,
+                            ConnectionName = _settings.ConnectionName,
                             FailureDetail = "The bot received an InvokeActivity that is missing a TokenExchangeInvokeRequest value. This is required to be sent with the InvokeActivity.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
-                else if (tokenExchangeRequest.ConnectionName != ConnectionName)
+                else if (tokenExchangeRequest.ConnectionName != _settings.ConnectionName)
                 {
                     await SendInvokeResponseAsync(
                         turnContext,
@@ -300,7 +291,7 @@ namespace Microsoft.Agents.BotBuilder
                         new TokenExchangeInvokeResponse
                         {
                             Id = tokenExchangeRequest.Id,
-                            ConnectionName = ConnectionName,
+                            ConnectionName = _settings.ConnectionName,
                             FailureDetail = "The bot received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
@@ -312,7 +303,7 @@ namespace Microsoft.Agents.BotBuilder
                         var userId = turnContext.Activity.From.Id;
                         var channelId = turnContext.Activity.ChannelId;
                         var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
-                        tokenExchangeResponse = await GetTokenClient(turnContext).ExchangeTokenAsync(userId, ConnectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
+                        tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.ConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
                     }
 #pragma warning disable CA1031 // Do not catch general exception types (ignoring, see comment below)
                     catch
@@ -331,7 +322,7 @@ namespace Microsoft.Agents.BotBuilder
                             new TokenExchangeInvokeResponse
                             {
                                 Id = tokenExchangeRequest.Id,
-                                ConnectionName = ConnectionName,
+                                ConnectionName = _settings.ConnectionName,
                                 FailureDetail = "The bot is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
                     }
@@ -343,7 +334,7 @@ namespace Microsoft.Agents.BotBuilder
                             new TokenExchangeInvokeResponse
                             {
                                 Id = tokenExchangeRequest.Id,
-                                ConnectionName = ConnectionName,
+                                ConnectionName = _settings.ConnectionName,
                             }, cancellationToken).ConfigureAwait(false);
 
                         result = new TokenResponse
@@ -364,11 +355,12 @@ namespace Microsoft.Agents.BotBuilder
                     var matched = magicCodeRegex.Match(turnContext.Activity.Text);
                     if (matched.Success)
                     {
-                        result = await GetTokenClient(turnContext).GetUserTokenAsync(
-                            turnContext.Activity.From.Id, 
-                            ConnectionName, 
-                            turnContext.Activity.ChannelId, 
-                            magicCode: matched.Value, 
+                        // Note that if result is null, it is likely because the magicCode was invalid.
+                        // The Token Service doesn't provide any way to determine this though.
+                        result = await UserTokenClientWrapper.GetUserTokenAsync(
+                            turnContext,
+                            _settings.ConnectionName,
+                            magicCode: matched.Value,
                             cancellationToken).ConfigureAwait(false);
                     }
                 }
@@ -404,7 +396,7 @@ namespace Microsoft.Agents.BotBuilder
             };
         }
 
-        private static bool ChannelRequiresSignInLink(string channelId)
+        public static bool ChannelRequiresSignInLink(string channelId)
         {
             return channelId switch
             {
@@ -412,7 +404,6 @@ namespace Microsoft.Agents.BotBuilder
                 _ => false,
             };
         }
-
 
         private static bool HasTimedOut(ITurnContext context, DateTime expires)
         {

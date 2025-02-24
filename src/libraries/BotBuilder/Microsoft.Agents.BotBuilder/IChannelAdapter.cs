@@ -203,6 +203,19 @@ namespace Microsoft.Agents.BotBuilder
         Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
+        /// The implementation for continue conversation.
+        /// </summary>
+        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the conversation.</param>
+        /// <param name="continuationActivity">The continuation <see cref="Activity"/> used to create the <see cref="ITurnContext" />.</param>
+        /// <param name="audience">The audience for the call.</param>
+        /// <param name="callback">The method to call for the resulting bot turn.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="async">For Adapters that support async Activity processing, this allows control to force synchronous handling.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken);
+        Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null);
+
+        /// <summary>
         /// When overridden in a derived class, sends activities to the conversation.
         /// </summary>
         /// <param name="turnContext">The context object for the turn.</param>

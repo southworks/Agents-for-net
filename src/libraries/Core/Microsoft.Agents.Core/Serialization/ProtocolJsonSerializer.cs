@@ -159,7 +159,13 @@ namespace Microsoft.Agents.Core.Serialization
             return System.Text.Json.JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 
-
+        public static bool Equals<T>(T value1, T value2)
+        {
+            return string.Equals(
+                    JsonSerializer.Serialize(value1, ProtocolJsonSerializer.SerializationOptions),
+                    JsonSerializer.Serialize(value2, ProtocolJsonSerializer.SerializationOptions)
+                );
+        }
 
         public static T CloneTo<T>(object obj)
         {

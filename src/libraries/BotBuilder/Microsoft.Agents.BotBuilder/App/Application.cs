@@ -2,14 +2,18 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
+using Microsoft.Agents.BotBuilder.App.Authentication;
+using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.Agents.BotBuilder.App.Authentication.AuthenticationManager;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
@@ -18,8 +22,7 @@ namespace Microsoft.Agents.BotBuilder.App
     /// </summary>
     public class Application : IBot
     {
-        //TODO
-        //private readonly AuthenticationManager<TState>? _authentication;
+        private readonly AuthenticationManager _authentication;
 
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
@@ -30,8 +33,7 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly ConcurrentQueue<TurnEventHandlerAsync> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandlerAsync> _afterTurn;
 
-        // TODO
-        //private readonly SelectorAsync? _startSignIn;
+        private readonly SelectorAsync? _startSignIn;
 
         /// <summary>
         /// Creates a new Application instance.
@@ -57,11 +59,9 @@ namespace Microsoft.Agents.BotBuilder.App
             _beforeTurn = new ConcurrentQueue<TurnEventHandlerAsync>();
             _afterTurn = new ConcurrentQueue<TurnEventHandlerAsync>();
 
-            //TODO
-            /*
             if (options.Authentication != null)
             {
-                _authentication = new AuthenticationManager<TState>(this, options.Authentication, options.Storage);
+                _authentication = new AuthenticationManager(this, options.Authentication);
 
                 if (options.Authentication.AutoSignIn != null)
                 {
@@ -69,10 +69,10 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
                 else
                 {
+                    // If AutoSignIn wasn't specified, default to true. 
                     _startSignIn = (context, cancellationToken) => Task.FromResult(true);
                 }
             }
-            */
         }
 
         /// <summary>
@@ -80,14 +80,11 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         public AdaptiveCardsFeature AdaptiveCards { get; }
 
-        //TODO
-        /*
         /// <summary>
         /// Accessing authentication specific features.
         /// </summary>
-        public AuthenticationManager<TState> Authentication
+        public AuthenticationManager Authentication
         {
-
             get
             {
                 if (_authentication == null)
@@ -98,13 +95,13 @@ namespace Microsoft.Agents.BotBuilder.App
                 return _authentication;
             }
         }
-        */
 
         /// <summary>
         /// The application's configured options.
         /// </summary>
         public ApplicationOptions Options { get; }
 
+        #region Route Handling
         /// <summary>
         /// Adds a new route to the application.
         /// 
@@ -230,33 +227,33 @@ namespace Microsoft.Agents.BotBuilder.App
             switch (conversationUpdateEvent)
             {
                 case ConversationUpdateEvents.MembersAdded:
-                {
-                    routeSelector = (context, _) => Task.FromResult
-                    (
-                        string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        && context.Activity?.MembersAdded != null
-                        && context.Activity.MembersAdded.Count > 0
-                    );
-                    break;
-                }
+                    {
+                        routeSelector = (context, _) => Task.FromResult
+                        (
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            && context.Activity?.MembersAdded != null
+                            && context.Activity.MembersAdded.Count > 0
+                        );
+                        break;
+                    }
                 case ConversationUpdateEvents.MembersRemoved:
-                {
-                    routeSelector = (context, _) => Task.FromResult
-                    (
-                        string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                        && context.Activity?.MembersRemoved != null
-                        && context.Activity.MembersRemoved.Count > 0
-                    );
-                    break;
-                }
+                    {
+                        routeSelector = (context, _) => Task.FromResult
+                        (
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            && context.Activity?.MembersRemoved != null
+                            && context.Activity.MembersRemoved.Count > 0
+                        );
+                        break;
+                    }
                 default:
-                {
-                    routeSelector = (context, _) => Task.FromResult
-                    (
-                        string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                    );
-                    break;
-                }
+                    {
+                        routeSelector = (context, _) => Task.FromResult
+                        (
+                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                        );
+                        break;
+                    }
             }
             AddRoute(routeSelector, handler, isInvokeRoute: false);
             return this;
@@ -483,22 +480,9 @@ namespace Microsoft.Agents.BotBuilder.App
             return this;
         }
 
-        /// <summary>
-        /// Called by the adapter (for example, a <see cref="CloudAdapter"/>)
-        /// at runtime in order to process an inbound <see cref="Activity"/>.
-        /// </summary>
-        /// <param name="turnContext">The context object for this turn.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(turnContext);
-            ArgumentNullException.ThrowIfNull(turnContext.Activity);
+        #endregion
 
-            await _OnTurnAsync(turnContext, cancellationToken);
-        }
-
+        #region ShowTyping
         /// <summary>
         /// Manually start a timer to periodically send "typing" activities.
         /// </summary>
@@ -539,10 +523,93 @@ namespace Microsoft.Agents.BotBuilder.App
             _typingTimer = null;
         }
 
+        #endregion
+
+        #region User Authentication
+
+        /// <summary>
+        /// If the user is signed in, get the access token. If not, triggers the sign in flow for the provided authentication setting name
+        /// and returns.In this case, the bot should end the turn until the sign in flow is completed.
+        /// </summary>
+        /// <remarks>
+        /// Use this method to get the access token for a user that is signed in to the bot.
+        /// If the user isn't signed in, this method starts the sign-in flow.
+        /// The bot should end the turn in this case until the sign-in flow completes and the user is signed in.
+        /// </remarks>
+        /// <param name="turnContext"> The turn context.</param>
+        /// <param name="turnState"></param>
+        /// <param name="settingName">The name of the authentication setting.</param>
+        /// <param name="completionHandler"></param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public Task GetTokenOrStartSignInAsync(ITurnContext turnContext, ITurnState turnState, string settingName, SignInCompletionHandlerAsync completionHandler, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+
+            /*
+            // TODO: AddRoute
+
+            // User is currently not in sign in flow
+            if (AuthUtilities.UserInSignInFlow(turnState) == null)
+            {
+                AuthUtilities.SetUserInSignInFlow(turnState, settingName);
+            }
+            else
+            {
+                AuthUtilities.DeleteUserInSignInFlow(turnState);
+                throw new InvalidOperationException("Invalid sign in flow state. Cannot start sign in when already started");
+            }
+
+            SignInResponse response = await Authentication.SignUserInAsync(turnContext, settingName, cancellationToken).ConfigureAwait(false);
+
+            if (response.Status == SignInStatus.Error)
+            {
+                string message = response.Error!.ToString();
+
+                // TODO: the current activity shouldn't trigger an error in the case of manual signin.  Problem is, the flow impls
+                // currently ignore all but specific activities.
+                if (response.Cause == AuthExceptionReason.InvalidActivity)
+                {
+                    message = $"User is not signed in and cannot start sign in flow for this activity: {response.Error}";
+                }
+
+                throw new InvalidOperationException($"Error occurred while trying to authenticate user: {message}, flow: {settingName}");
+            }
+
+            // Call the handler immediately if the user was already signed in.
+            if (response.Status == SignInStatus.Complete)
+            {
+                AuthUtilities.DeleteUserInSignInFlow(turnState);
+                AuthUtilities.SetTokenInState(turnState, settingName, response.TokenResponse.Token);
+                await completionHandler(turnContext, turnState, settingName, response, cancellationToken).ConfigureAwait(false);
+            }
+
+            */
+        }
+
+        #endregion
+
+        #region Turn Handling
+        /// <summary>
+        /// Called by the adapter (for example, a <see cref="CloudAdapter"/>)
+        /// at runtime in order to process an inbound <see cref="Activity"/>.
+        /// </summary>
+        /// <param name="turnContext">The context object for this turn.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(turnContext);
+            ArgumentNullException.ThrowIfNull(turnContext.Activity);
+
+            await _OnTurnAsync(turnContext, cancellationToken);
+        }
+
         /// <summary>
         /// Internal method to wrap the logic of handling a bot turn.
         /// </summary>
-        private async Task _OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        private async Task _OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             try
             {
@@ -562,47 +629,83 @@ namespace Microsoft.Agents.BotBuilder.App
 
                 // Load turn state
                 ITurnState turnState = Options.TurnStateFactory!();
-
                 await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                //TODO
-                /*
-                // If user is in sign in flow, return the authentication setting name
-                string? settingName = AuthUtilities.UserInSignInFlow(turnState);
-                bool shouldStartSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
-
-                // Sign the user in
-                if (this._authentication != null && (shouldStartSignIn || settingName != null))
+                // Handle user auth
+                if (_authentication != null)
                 {
-                    if (settingName == null)
+                    // If a flow is active, continue that.
+                    string? flowName = AuthUtilities.UserInSignInFlow(turnState);
+                    bool shouldStartSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
+
+                    if (shouldStartSignIn || flowName != null)
                     {
-                        settingName = this._authentication.Default;
-                    }
+                        if (flowName == null)
+                        {
+                            // Auth flow hasn't start yet.
+                            flowName = _authentication.Default;
 
-                    // Sets the setting name in the context object. It is used in `signIn/verifyState` & `signIn/tokenExchange` route selectors.
-                    BotAuthenticationBase<TState>.SetSettingNameInContextActivityValue(turnContext, settingName);
+                            // Bank the Activity so it can be executed after sign in is complete.
+                            AuthUtilities.SetUserSigninActivity(turnContext, turnState);
+                        }
 
-                    SignInResponse response = await this._authentication.SignUserInAsync(turnContext, turnState, settingName);
+                        SignInResponse response = await _authentication.SignUserInAsync(turnContext, flowName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                    if (response.Status == SignInStatus.Complete)
-                    {
-                        AuthUtilities.DeleteUserInSignInFlow(turnState);
-                    }
+                        if (response.Status == SignInStatus.Pending)
+                        {
+                            // Requires user action, save state and stop processing current activity.  Done with this turn.
+                            AuthUtilities.SetUserInSignInFlow(turnState, flowName);
+                            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
 
-                    if (response.Status == SignInStatus.Pending)
-                    {
-                        // Requires user action, save state and stop processing current activity
-                        await turnState.SaveStateAsync(turnContext, storage);
-                        return;
-                    }
+                        if (response.Status == SignInStatus.Error && response.Cause != AuthExceptionReason.InvalidActivity)
+                        {
+                            await _authentication.Get(flowName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                            AuthUtilities.DeleteUserInSignInFlow(turnState);
+                            AuthUtilities.DeleteUserSigninActivity(turnState);
+                            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                    if (response.Status == SignInStatus.Error && response.Cause != AuthExceptionReason.InvalidActivity)
-                    {
-                        AuthUtilities.DeleteUserInSignInFlow(turnState);
-                        throw new TeamsAIException("An error occurred when trying to sign in.", response.Error!);
+                            if (Options.Authentication.SignInFailedMessage == null)
+                            {
+                                throw response.Error;
+                            }
+
+                            await turnContext.SendActivitiesAsync(Options.Authentication.SignInFailedMessage(flowName, response), cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        if (response.Status == SignInStatus.Complete)
+                        {
+                            AuthUtilities.DeleteUserInSignInFlow(turnState);
+                            AuthUtilities.SetTokenInState(turnState, flowName, response.TokenResponse.Token);
+                            // TODO: should probably call "_authentication.Get(flowName).ResetState?", but is this safe?
+
+                            var signInActivity = AuthUtilities.DeleteUserSigninActivity(turnState);
+                            if (signInActivity != null)
+                            {
+                                // If the current activity matches the one used to trigger sign in, then
+                                // this is because the user received a token that didn't involve a multi-turn
+                                // flow.  No further action needed.
+                                if (!ProtocolJsonSerializer.Equals(signInActivity, turnContext.Activity))
+                                {
+                                    // Since we could be handling an Invoke in this turn, and ITurnContext.Activity is readonly,
+                                    // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
+                                    await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                                    await Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInActivity, this, cancellationToken).ConfigureAwait(false);
+                                    return;
+                                }
+                            }
+
+                            if (Options.Authentication.CompletedMessage != null)
+                            {
+                                await turnContext.SendActivitiesAsync(Options.Authentication.CompletedMessage(flowName, response), cancellationToken).ConfigureAwait(false);
+                            }
+                        }
+
+                        // If we got this far, fall through to normal Activity route handling.
                     }
                 }
-                */
 
                 // Call before turn handler
                 foreach (TurnEventHandlerAsync beforeTurnHandler in _beforeTurn)
@@ -617,15 +720,6 @@ namespace Microsoft.Agents.BotBuilder.App
                         return;
                     }
                 }
-
-                /*
-                // Populate {{$temp.input}}
-                if ((turnState.Temp.Input == null || turnState.Temp.Input.Length == 0) && turnContext.Activity.Text != null)
-                {
-                    // Use the received activity text
-                    turnState.Temp.Input = turnContext.Activity.Text;
-                }
-                */
 
                 // Download any input files
                 IList<IInputFileDownloader>? fileDownloaders = this.Options.FileDownloaders;
@@ -688,67 +782,6 @@ namespace Microsoft.Agents.BotBuilder.App
             }
         }
 
-        //TODO
-        /*
-        /// <summary>
-        /// If the user is signed in, get the access token. If not, triggers the sign in flow for the provided authentication setting name
-        /// and returns.In this case, the bot should end the turn until the sign in flow is completed.
-        /// </summary>
-        /// <remarks>
-        /// Use this method to get the access token for a user that is signed in to the bot.
-        /// If the user isn't signed in, this method starts the sign-in flow.
-        /// The bot should end the turn in this case until the sign-in flow completes and the user is signed in.
-        /// </remarks>
-        /// <param name="turnContext"> The turn context.</param>
-        /// <param name="turnState">The turn state.</param>
-        /// <param name="settingName">The name of the authentication setting.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The access token for the user if they are signed, otherwise null.</returns>
-        /// <exception cref="TeamsAIException"></exception>
-        public async Task<string?> GetTokenOrStartSignInAsync(ITurnContext turnContext, TState turnState, string settingName, CancellationToken cancellationToken = default)
-        {
-            string? token = await Authentication.Get(settingName).IsUserSignedInAsync(turnContext, cancellationToken);
-
-            if (token != null)
-            {
-                AuthUtilities.SetTokenInState(turnState, settingName, token);
-                AuthUtilities.DeleteUserInSignInFlow(turnState);
-                return token;
-            }
-
-            // User is currently not in sign in flow
-            if (AuthUtilities.UserInSignInFlow(turnState) == null)
-            {
-                AuthUtilities.SetUserInSignInFlow(turnState, settingName);
-            }
-            else
-            {
-                AuthUtilities.DeleteUserInSignInFlow(turnState);
-                throw new TeamsAIException("Invalid sign in flow state. Cannot start sign in when already started");
-            }
-
-            SignInResponse response = await Authentication.SignUserInAsync(turnContext, turnState, settingName);
-
-            if (response.Status == SignInStatus.Error)
-            {
-                string message = response.Error!.ToString();
-                if (response.Cause == AuthExceptionReason.InvalidActivity)
-                {
-                    message = $"User is not signed in and cannot start sign in flow for this activity: {response.Error}";
-                }
-
-                throw new TeamsAIException($"Error occured while trying to authenticate user: {message}");
-            }
-
-            if (response.Status == SignInStatus.Complete)
-            {
-                AuthUtilities.DeleteUserInSignInFlow(turnState);
-                return turnState.Temp.AuthTokens[settingName];
-            }
-
-            // response.Status == SignInStatus.Pending
-            return null;
-        }
-        */
-            }
+        #endregion
+    }
 }

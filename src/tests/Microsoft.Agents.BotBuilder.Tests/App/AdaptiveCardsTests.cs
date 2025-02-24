@@ -11,6 +11,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionExecute("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -127,8 +128,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionExecute("test-verb", handler);
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -166,7 +167,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionExecute(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected AdaptiveCards.OnActionExecute() triggered for activity type: invoke", exception.Message);
@@ -209,7 +210,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionSubmit("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.True(called);
@@ -251,7 +252,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionSubmit("not-test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.False(called);
@@ -289,7 +290,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnActionSubmit(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: message", exception.Message);
@@ -358,7 +359,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnSearch("test-dataset", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -417,7 +418,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnSearch("not-test-dataset", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -461,7 +462,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // Act
             app.AdaptiveCards.OnSearch(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected AdaptiveCards.OnSearch() triggered for activity type: invoke", exception.Message);

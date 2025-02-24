@@ -169,7 +169,7 @@ namespace Microsoft.Agents.BotBuilder
             _ = callback ?? throw new ArgumentNullException(nameof(callback));
             ValidateContinuationActivity(continuationActivity);
 
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -219,6 +219,11 @@ namespace Microsoft.Agents.BotBuilder
             }
         }
 
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        {
+            await ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// The implementation for continue conversation.
         /// </summary>
@@ -227,8 +232,9 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name="audience">The audience for the call.</param>
         /// <param name="callback">The method to call for the resulting bot turn.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="async"></param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        protected async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+        public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
 

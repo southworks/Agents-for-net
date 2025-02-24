@@ -10,6 +10,7 @@ using Microsoft.Agents.Client;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using System.Threading;
 
 namespace Microsoft.Agents.Samples.Bots
 {
@@ -46,11 +47,11 @@ namespace Microsoft.Agents.Samples.Bots
                 // Send a message to the user
                 var errorMessageText = "The bot encountered an error or bug.";
                 var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
-                await turnContext.SendActivityAsync(errorMessage);
+                await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
                 errorMessageText = "To continue to run this bot, please fix the bot source code.";
                 errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.ExpectingInput.ToString());
-                await turnContext.SendActivityAsync(errorMessage);
+                await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
                 // Send a trace activity, which will be displayed in the Bot Framework Emulator
                 await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError");

@@ -7,6 +7,7 @@ using Microsoft.Agents.BotBuilder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -50,8 +51,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 false);
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(messages);
@@ -103,7 +104,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 false);
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(selectedRoutes);
@@ -154,8 +155,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 true);
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -211,7 +212,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 true);
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(selectedRoutes);
@@ -259,7 +260,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 false);
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(selectedRoutes);
@@ -315,7 +316,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 false);
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(selectedRoutes);
@@ -361,8 +362,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
@@ -408,8 +409,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
@@ -456,8 +457,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(types);
@@ -519,9 +520,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Equal(3, types.Count);
@@ -580,9 +581,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -639,9 +640,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -679,7 +680,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -737,9 +738,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(texts);
@@ -797,9 +798,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(texts);
@@ -846,8 +847,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
 
             // Assert
             Assert.Single(texts);
@@ -912,9 +913,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Equal(3, texts.Count);
@@ -973,9 +974,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -1032,9 +1033,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -1102,9 +1103,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(ids);

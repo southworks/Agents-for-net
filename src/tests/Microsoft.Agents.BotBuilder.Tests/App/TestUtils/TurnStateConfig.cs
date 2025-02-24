@@ -4,6 +4,7 @@ using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
@@ -28,7 +29,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
             string conversationId = activity.Conversation.Id;
             string userId = activity.From.Id;
 
-            await state.LoadStateAsync(turnContext);
+            await state.LoadStateAsync(turnContext, cancellationToken: CancellationToken.None);
 
             return state;
         }

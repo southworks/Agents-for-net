@@ -71,13 +71,13 @@ namespace Microsoft.Agents.BotBuilder.Compat
             // before turn
             if (_autoLoad)
             {
-                await TurnState.LoadStateAsync(turnContext, true, cancellationToken).ConfigureAwait(false);
+                await TurnState.LoadStateAsync(turnContext, cancellationToken:cancellationToken, force:true).ConfigureAwait(false);
             }
 
             await next(cancellationToken).ConfigureAwait(false);
 
             // after turn
-            await TurnState.SaveStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
+            await TurnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 }

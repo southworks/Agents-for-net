@@ -152,7 +152,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
                 public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default(CancellationToken))
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"));
+                    await turnContext.SendActivityAsync(MessageFactory.Text("*** WaterfallDialog End ***"), cancellationToken);
                     await base.EndDialogAsync(turnContext, instance, reason, cancellationToken);
                 }
             }

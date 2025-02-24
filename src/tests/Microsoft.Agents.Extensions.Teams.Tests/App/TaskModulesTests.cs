@@ -13,6 +13,7 @@ using Microsoft.Agents.Extensions.Teams.Models;
 using Moq;
 using System;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -69,7 +70,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnFetch("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -122,7 +123,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnFetch("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -159,7 +160,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnFetch(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected TaskModules.OnFetch() triggered for activity type: invoke", exception.Message);
@@ -214,7 +215,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnSubmit("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.NotNull(activitiesToSend);
@@ -268,7 +269,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnSubmit("test-verb", handler);
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Null(activitiesToSend);
@@ -305,7 +306,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Act
             app.TaskModules.OnSubmit(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext));
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
 
             // Assert
             Assert.Equal("Unexpected TaskModules.OnSubmit() triggered for activity type: invoke", exception.Message);

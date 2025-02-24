@@ -37,11 +37,11 @@ namespace Microsoft.Agents.State.Tests
                 {
                     if (context.Activity.Text == "get userCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"));
+                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"), cancellationToken);
                     }
                     else if (context.Activity.Text == "get convCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"));
+                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"), cancellationToken);
                     }
                 }
 
@@ -112,11 +112,11 @@ namespace Microsoft.Agents.State.Tests
                 {
                     if (context.Activity.Text == "get userCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"));
+                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"), cancellationToken);
                     }
                     else if (context.Activity.Text == "get convCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"));
+                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"), cancellationToken);
                     }
                 }
 

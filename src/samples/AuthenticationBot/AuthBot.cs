@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App.Authentication;
+using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
@@ -27,7 +29,7 @@ namespace AuthenticationBot
             _logger = logger ?? NullLogger<AuthBot>.Instance;
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _botState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
-            _flow = new OAuthFlow("Sign In", "Please sign in", _configuration["ConnectionName"], 30000, null);
+            _flow = new OAuthFlow(new OAuthSettings() { ConnectionName = _configuration["ConnectionName"] });
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -63,7 +65,7 @@ namespace AuthenticationBot
                     // If a TokenResponse is returned, there was a cached token already.  Otherwise, start the process of getting a new token.
                     if (tokenResponse == null)
                     {
-                        var expires = DateTime.UtcNow.AddMilliseconds(_flow.Timeout ?? TimeSpan.FromMinutes(15).TotalMilliseconds);
+                        var expires = DateTime.UtcNow.AddMilliseconds(_flow.Settings.Timeout ?? TimeSpan.FromMinutes(15).TotalMilliseconds);
 
                         state.FlowStarted = true;
                         state.FlowExpires = expires;

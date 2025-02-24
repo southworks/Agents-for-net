@@ -21,6 +21,13 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication
         InvalidActivity,
 
         /// <summary>
+        /// The the flow timed out (C2 didn't respond in time).
+        /// </summary>
+        Timeout,
+
+        InvalidSignIn,
+
+        /// <summary>
         /// Other error.
         /// </summary>
         Other

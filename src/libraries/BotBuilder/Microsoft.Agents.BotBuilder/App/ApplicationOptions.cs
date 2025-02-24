@@ -3,9 +3,11 @@
 
 using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
 using System.Collections.Generic;
+using Microsoft.Agents.BotBuilder.App.Authentication;
+using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
@@ -14,6 +16,8 @@ namespace Microsoft.Agents.BotBuilder.App
     /// </summary>
     public class ApplicationOptions
     {
+        public IChannelAdapter? Adapter { get; set; }
+
         /// <summary>
         /// Optional. Options used to customize the processing of Adaptive Card requests.
         /// </summary>
@@ -49,12 +53,9 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         public bool StartTypingTimer { get; set; } = true;
 
-        //TODO
-        /*
         /// <summary>
         /// Optional. Options used to enable authentication for the application.
         /// </summary>
-        public AuthenticationOptions<TState>? Authentication { get; set; }
-        */
+        public AuthenticationOptions Authentication { get; set; }
     }
 }

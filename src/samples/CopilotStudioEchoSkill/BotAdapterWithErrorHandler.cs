@@ -8,6 +8,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.BotBuilder;
+using System.Threading;
 
 namespace CopilotStudioEchoSkill
 {
@@ -43,11 +44,11 @@ namespace CopilotStudioEchoSkill
                 // Send a message to the user.
                 var errorMessageText = "The skill encountered an error or bug.";
                 var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
-                await turnContext.SendActivityAsync(errorMessage);
+                await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
                 errorMessageText = "To continue to run this bot, please fix the bot source code.";
                 errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.ExpectingInput.ToString());
-                await turnContext.SendActivityAsync(errorMessage);
+                await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
                 // Send a trace activity
                 await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError");
@@ -67,7 +68,7 @@ namespace CopilotStudioEchoSkill
                 var endOfConversation = Activity.CreateEndOfConversationActivity();
                 endOfConversation.Code = "SkillError";
                 endOfConversation.Text = exception.Message;
-                await turnContext.SendActivityAsync(endOfConversation);
+                await turnContext.SendActivityAsync(endOfConversation, CancellationToken.None);
             }
             catch (Exception ex)
             {

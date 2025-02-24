@@ -138,7 +138,7 @@ namespace ConversationBot.Bots
             }
 
             var message = MessageFactory.Text($"You are: {member.Name}.");
-            var res = await turnContext.SendActivityAsync(message);
+            var res = await turnContext.SendActivityAsync(message, cancellationToken);
 
         }
 

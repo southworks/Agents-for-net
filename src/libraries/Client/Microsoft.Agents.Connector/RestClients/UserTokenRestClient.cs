@@ -98,6 +98,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 200:
                     return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                 case 404:
+                    // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
                 default:
                     throw new HttpRequestException($"GetTokenAsync {httpResponse.StatusCode}");

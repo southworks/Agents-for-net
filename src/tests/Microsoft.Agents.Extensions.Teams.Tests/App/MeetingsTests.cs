@@ -7,6 +7,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Act
             foreach (var turnContext in turnContexts)
             {
-                await app.OnTurnAsync(turnContext);
+                await app.OnTurnAsync(turnContext, CancellationToken.None);
             }
 
             // Assert
@@ -70,7 +71,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Act
             foreach (var turnContext in turnContexts)
             {
-                await app.OnTurnAsync(turnContext);
+                await app.OnTurnAsync(turnContext, CancellationToken.None);
             }
 
             // Assert
@@ -102,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Act
             foreach (var turnContext in turnContexts)
             {
-                await app.OnTurnAsync(turnContext);
+                await app.OnTurnAsync(turnContext, CancellationToken.None);
             }
 
             // Assert
@@ -134,7 +135,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Act
             foreach (var turnContext in turnContexts)
             {
-                await app.OnTurnAsync(turnContext);
+                await app.OnTurnAsync(turnContext, CancellationToken.None);
             }
 
             // Assert

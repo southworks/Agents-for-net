@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Throws(new UnauthorizedAccessException())
                 .Verifiable(Times.Once);
 
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(new(ActivityTypes.Message, conversation: new(id: "test")));
             var bot = new ActivityHandler();
 
-            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>()))
+            record.Queue.Setup(e => e.QueueBackgroundActivity(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<Type>()))
                 .Verifiable(Times.Once);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, bot, CancellationToken.None);
@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var logger = new Mock<ILogger<IBotHttpAdapter>>();
             var middleware = new Mock<BotBuilder.IMiddleware>();
 
-            var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, new AdapterOptions() {  Async = true }, middleware.Object);
+            var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, middlewares: middleware.Object);
             return new(adapter, factory, queue, logger);
         }
 
@@ -241,9 +241,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 IChannelServiceClientFactory channelServiceClientFactory,
                 IActivityTaskQueue activityTaskQueue,
                 ILogger<IBotHttpAdapter> logger = null,
-                AdapterOptions options = null,
                 params BotBuilder.IMiddleware[] middlewares)
-            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, options, middlewares)
+            : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, null, middlewares)
         {
             public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
             {

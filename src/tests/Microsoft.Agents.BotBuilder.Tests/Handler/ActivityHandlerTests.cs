@@ -1095,11 +1095,11 @@ namespace Microsoft.Agents.BotBuilder.Tests.Handler
                 turnContext.OnDeleteActivity((t, a, n) => Task.CompletedTask);
                 turnContext.OnSendActivities((t, a, n) => Task.FromResult(new ResourceResponse[] { new ResourceResponse() }));
                 turnContext.OnUpdateActivity((t, a, n) => Task.FromResult(new ResourceResponse()));
-                await turnContext.DeleteActivityAsync(activity.GetConversationReference());
-                await turnContext.DeleteActivityAsync(activity.Id);
-                await turnContext.SendActivityAsync(new Activity());
-                await turnContext.SendActivitiesAsync(new IActivity[] { new Activity() });
-                await turnContext.UpdateActivityAsync(new Activity());
+                await turnContext.DeleteActivityAsync(activity.GetConversationReference(), cancellationToken);
+                await turnContext.DeleteActivityAsync(activity.Id, cancellationToken);
+                await turnContext.SendActivityAsync(new Activity(), cancellationToken);
+                await turnContext.SendActivitiesAsync([new Activity()], cancellationToken);
+                await turnContext.UpdateActivityAsync(new Activity(), cancellationToken);
                 await turnContext.TraceActivityAsync(activity.Name, activity.Value, activity.ValueType, activity.Label);
             }
         }

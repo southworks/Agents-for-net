@@ -12,6 +12,7 @@ using Microsoft.Agents.Extensions.Teams.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Moq;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -56,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -100,7 +101,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -144,7 +145,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -189,7 +190,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -232,7 +233,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -275,7 +276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -318,7 +319,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -361,7 +362,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -404,7 +405,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -447,7 +448,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -512,9 +513,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -581,9 +582,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Equal(2, names.Count);
@@ -652,9 +653,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -715,9 +716,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -778,9 +779,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -843,9 +844,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -922,10 +923,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
-            await app.OnTurnAsync(turnContext4);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(turnContext4, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -1014,10 +1015,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
-            await app.OnTurnAsync(turnContext4);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
+            await app.OnTurnAsync(turnContext4, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -1096,9 +1097,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(ids);
@@ -1177,9 +1178,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(ids);
@@ -1251,9 +1252,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext1);
-            await app.OnTurnAsync(turnContext2);
-            await app.OnTurnAsync(turnContext3);
+            await app.OnTurnAsync(turnContext1, CancellationToken.None);
+            await app.OnTurnAsync(turnContext2, CancellationToken.None);
+            await app.OnTurnAsync(turnContext3, CancellationToken.None);
 
             // Assert
             Assert.Single(ids);
@@ -1298,7 +1299,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Single(names);
@@ -1339,7 +1340,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             // Act
-            await app.OnTurnAsync(turnContext);
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
             Assert.Empty(names);

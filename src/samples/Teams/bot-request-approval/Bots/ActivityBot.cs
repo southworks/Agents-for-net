@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Samples.Bots
                         pendingActivity.Id = turnContext.Activity.ReplyToId;
                         pendingActivity.Attachments = new List<Attachment> { responseAttachment };
 
-                        await turnContext.UpdateActivityAsync(pendingActivity);
+                        await turnContext.UpdateActivityAsync(pendingActivity, cancellationToken);
 
                         response = JsonDocument.Parse(cardJson);
                         adaptiveCardResponse = new AdaptiveCardInvokeResponse()
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.Samples.Bots
                         canceledActivity.Type = "message";
                         canceledActivity.Id = turnContext.Activity.ReplyToId;
                         canceledActivity.Attachments = new List<Attachment> { cancelCardResponse };
-                        await turnContext.UpdateActivityAsync(canceledActivity);
+                        await turnContext.UpdateActivityAsync(canceledActivity, cancellationToken);
                         response = JsonDocument.Parse(cardJson);
                         adaptiveCardResponse = new AdaptiveCardInvokeResponse()
                         {
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Samples.Bots
                         approvedActivity.Id = turnContext.Activity.ReplyToId;
                         approvedActivity.Attachments = new List<Attachment> { approvedAttachment };
 
-                        await turnContext.UpdateActivityAsync(approvedActivity);
+                        await turnContext.UpdateActivityAsync(approvedActivity, cancellationToken);
 
                         response = JsonDocument.Parse(cardJson);
                         adaptiveCardResponse = new AdaptiveCardInvokeResponse()
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Samples.Bots
                         rejectedActivity.Id = turnContext.Activity.ReplyToId;
                         rejectedActivity.Attachments = new List<Attachment> { rejectedAttachment };
 
-                        await turnContext.UpdateActivityAsync(rejectedActivity);
+                        await turnContext.UpdateActivityAsync(rejectedActivity, cancellationToken);
 
                         response = JsonDocument.Parse(cardJson);
                         adaptiveCardResponse = new AdaptiveCardInvokeResponse()

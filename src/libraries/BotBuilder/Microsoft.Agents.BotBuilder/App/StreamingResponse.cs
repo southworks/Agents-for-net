@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.App
@@ -311,7 +312,7 @@ namespace Microsoft.Agents.BotBuilder.App
             }
             */
 
-            ResourceResponse response = await this._context.SendActivityAsync(activity).ConfigureAwait(false);
+            ResourceResponse response = await this._context.SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
 
             await Task.Delay(TimeSpan.FromSeconds(1.5));
 

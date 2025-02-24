@@ -21,7 +21,7 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly int _interval;
 
         // For synchronizing SendActivity and Typing to prevent race
-        private static Mutex _send;  
+        private static AutoResetEvent _send;  
 
         /// <summary>
         /// Initial delay before first typing is sent.
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.BotBuilder.App
             // Stop timer when message activities are sent
             turnContext.OnSendActivities(StopTimerWhenSendMessageActivityHandlerAsync);
 
-            _send = new Mutex(false);
+            _send = new AutoResetEvent(false);
 
             // Start periodically send "typing" activity
             _timer = new Timer(SendTypingActivity, turnContext, Timeout.Infinite, Timeout.Infinite);
@@ -117,13 +117,13 @@ namespace Microsoft.Agents.BotBuilder.App
 
             try
             {
-                _send.WaitOne();
                 if (_timer != null)
                 {
-                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" });
+                    await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing, RelatesTo = turnContext.Activity.RelatesTo, Text = "TYPING" }, CancellationToken.None).ConfigureAwait(false);
                     if (IsRunning())
                     {
                         _timer?.Change(_interval, Timeout.Infinite);
+                        _send.WaitOne();
                     }
                 }
             }
@@ -133,10 +133,6 @@ namespace Microsoft.Agents.BotBuilder.App
                 // the turn context object is disposed of or the request is cancelled. We can just eat the
                 // error but lets make sure our states cleaned up a bit.
                 Dispose();
-            }
-            finally
-            {
-                _send.ReleaseMutex();
             }
         }
 
@@ -149,13 +145,11 @@ namespace Microsoft.Agents.BotBuilder.App
                     if (activity.Type == ActivityTypes.Message)
                     {
                         // This will block ITurnContext.SendActivity until the typing timer is done.
-                        _send.WaitOne();
+                        _send.Set();
 
                         // Stop timer
                         Dispose();
 
-                        // Release, which could free up timer SendTypingActivity (if it was blocked).
-                        _send.ReleaseMutex();
                         break;
                     }
                 }

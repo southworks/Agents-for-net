@@ -117,6 +117,24 @@ namespace Microsoft.Agents.BotBuilder.State
             return result;
         }
 
+        public bool TryGetValue<T>(string name, out T result)
+        {
+            if (!IsLoaded())
+            {
+                result = default;
+                return false;
+            }
+
+            if (!HasValue(name))
+            {
+                result = default;
+                return false;
+            }
+
+            result = GetPropertyValue<T>(name);
+            return true;
+        }
+
         /// <inheritdoc/>
         public void SetValue<T>(string name, T value)
         {
