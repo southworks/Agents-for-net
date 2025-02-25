@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
+using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 

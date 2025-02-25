@@ -5,9 +5,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
 using System.Collections.Generic;
-using Microsoft.Agents.BotBuilder.App.Authentication;
 using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.Storage;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
@@ -54,8 +53,8 @@ namespace Microsoft.Agents.BotBuilder.App
         public bool StartTypingTimer { get; set; } = true;
 
         /// <summary>
-        /// Optional. Options used to enable authentication for the application.
+        /// Optional. Options used to enable user authentication for the application.
         /// </summary>
-        public AuthenticationOptions Authentication { get; set; }
+        public UserAuthenticationOptions UserAuthentication { get; set; }
     }
 }

@@ -4,9 +4,9 @@
 using AuthenticationBot;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.App.Authentication;
-using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
@@ -32,29 +32,53 @@ builder.Services.AddTransient<ITurnState>(sp => new TurnState(sp.GetService<ISto
 builder.AddBot((sp) =>
 {
     var adapter = sp.GetService<IChannelAdapter>();
+    var storage = sp.GetService<IStorage>();
 
-    var authOptions = new AuthenticationOptions()
+    var authOptions = new UserAuthenticationOptions()
     {
-        Storage = sp.GetService<IStorage>()
+        // Auto-SignIn will use this OAuth flow
+        Default = "graph",
+
+        AutoSignIn = UserAuthenticationOptions.AutoSignInOn, //UserAuthenticationOptions.AutoSignInOff,
+
+        Handlers =
+        [
+            new OAuthAuthentication(
+                "graph",
+                new OAuthSettings()
+                {
+                    ConnectionName = builder.Configuration["ConnectionName"]
+                },
+                storage)]
     };
-    authOptions.AddAuthentication("graph", new OAuthSettings()
-    {
-        ConnectionName = builder.Configuration["ConnectionName"],
-        Title = "Sign In",
-        Text = "Please sign in to use the bot.",
-        EndOnInvalidMessage = true,
-        EnableSso = true,
-    });
 
     var appOptions = new ApplicationOptions()
     {
         Adapter = adapter,
-        StartTypingTimer = false,
-        Authentication = authOptions,
+        StartTypingTimer = true,
+        UserAuthentication = authOptions,
         TurnStateFactory = () => sp.GetService<ITurnState>()
     };
 
     var app = new Application(appOptions);
+
+    app.Authentication.OnUserSignInSuccess(async (turnContext, turnState, flowName, tokenResponse, cancellationToken) =>
+    {
+        await turnContext.SendActivityAsync($"Successfully logged in to '{flowName}'", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"Token string length: {tokenResponse.Token.Length}", cancellationToken: cancellationToken);
+    });
+
+    app.Authentication.OnUserSignInFailure(async (turnContext, turnState, flowName, response, cancellationToken) =>
+    {
+        // Failed to login
+        await turnContext.SendActivityAsync($"Failed to login to '{flowName}'", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"Error message: {response.Error.Message}", cancellationToken: cancellationToken);
+    });
+
+    app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
+    {
+        await app.Authentication.GetTokenOrStartSignInAsync(turnContext, turnState, "graph", cancellationToken);
+    });
 
     // Listen for user to say "/reset" and then delete state
     app.OnMessage("/reset", async (turnContext, turnState, cancellationToken) =>
@@ -64,7 +88,7 @@ builder.AddBot((sp) =>
         await turnContext.SendActivityAsync("Ok I've deleted the current turn state", cancellationToken: cancellationToken);
     });
 
-    // Listen for user to say "/sigout" and then delete cached token
+    // Listen for user to say "/signout" and then delete cached token
     app.OnMessage("/signout", async (turnContext, turnState, cancellationToken) =>
     {
         await app.Authentication.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);

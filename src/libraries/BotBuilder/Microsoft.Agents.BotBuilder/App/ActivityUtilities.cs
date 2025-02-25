@@ -4,7 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using System.Net;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
+namespace Microsoft.Agents.BotBuilder.App
 {
     public static class ActivityUtilities
     {

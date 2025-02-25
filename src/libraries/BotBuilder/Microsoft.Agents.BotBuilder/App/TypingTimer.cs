@@ -38,7 +38,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="interval">The interval in milliseconds to send "typing" activity.</param>
         /// <param name="initialDelay">Initial delay</param>
-        public TypingTimer(int interval = 5000, int initialDelay = 500)
+        public TypingTimer(int interval = 2000, int initialDelay = 500)
         {
             _interval = interval;
             _initialDelay = initialDelay;
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.BotBuilder.App
                     if (IsRunning())
                     {
                         _timer?.Change(_interval, Timeout.Infinite);
-                        _send.WaitOne();
+                        _send.Set();
                     }
                 }
             }
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.BotBuilder.App
                     if (activity.Type == ActivityTypes.Message)
                     {
                         // This will block ITurnContext.SendActivity until the typing timer is done.
-                        _send.Set();
+                        _send.WaitOne();
 
                         // Stop timer
                         Dispose();

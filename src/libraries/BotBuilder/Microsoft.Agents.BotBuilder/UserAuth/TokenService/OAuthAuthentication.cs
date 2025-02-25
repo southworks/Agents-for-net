@@ -3,15 +3,16 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
+namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
     /// Handles user authentication using The Azure Bot Token Service.
     /// </summary>
-    public class OAuthAuthentication : IAuthentication
+    public class OAuthAuthentication : IUserAuthentication
     {
         private readonly OAuthSettings _settings;
         //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
@@ -25,6 +26,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
         /// <param name="storage">The storage to use.</param>
         public OAuthAuthentication(string name, OAuthSettings settings, IStorage storage) : this(settings, new OAuthBotAuthentication(name, settings, storage))
         {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
@@ -39,6 +41,8 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
             //_messageExtensionAuth = messageExtensionAuth;
             _botAuthentication = botAuthentication;
         }
+
+        public string Name { get; private set; }
 
         /// <summary>
         /// Check if the user is signed, if they are then return the token.

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
+namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
     /// The settings for OAuthAuthentication.
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
         /// Default is <see cref="DefaultTimeoutValue"/>.
         /// </summary>
         /// <value>The number of milliseconds the prompt waits for the user to authenticate.</value>
-        public int? Timeout { get; set; } = (int) DefaultTimeoutValue.TotalMilliseconds;
+        public int? Timeout { get; set; } = (int)DefaultTimeoutValue.TotalMilliseconds;
 
         /// <summary>
         /// Gets or sets a value indicating whether the <see cref="OAuthPrompt"/> should end upon
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
         /// </summary>
         /// <value>True if the <see cref="OAuthPrompt"/> should automatically end upon receiving
         /// an invalid message.</value>
-        public bool EndOnInvalidMessage { get; set; }
+        public bool EndOnInvalidMessage { get; set; } = true;
 
         /// <summary>
         /// Gets or sets an optional boolean value to force the display of a Sign In link overriding
