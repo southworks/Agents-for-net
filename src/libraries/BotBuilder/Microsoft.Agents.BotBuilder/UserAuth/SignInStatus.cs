@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication
+namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
     /// The sign-in status

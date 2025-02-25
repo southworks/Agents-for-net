@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
+namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
     /// Creates a new prompt that asks the user to sign in using the Azure Bot Token Service.

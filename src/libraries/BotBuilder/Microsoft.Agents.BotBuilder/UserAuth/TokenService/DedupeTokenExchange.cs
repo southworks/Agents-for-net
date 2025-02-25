@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
+namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
     /// If the activity name is signin/tokenExchange, this middleware will attempt to
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
     /// specific user login will have an identical Activity.Value.Id.
     /// 
     /// Only one of these token exchange requests should be processed by the bot.
-    /// The others return <see cref="System.Net.HttpStatusCode.PreconditionFailed"/>.
+    /// The others return <see cref="HttpStatusCode.PreconditionFailed"/>.
     /// For a distributed bot in production, this requires a distributed storage
     /// ensuring only one token exchange is processed. This middleware supports
     /// CosmosDb storage found in Microsoft.Bot.Builder.Azure, or MemoryStorage for
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication.TokenService
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
-                ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
+                ETag = turnContext.Activity.Value.ToJsonElements()["id"].ToString(),
             };
 
             var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };

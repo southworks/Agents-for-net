@@ -5,13 +5,15 @@ using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication
+namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
     /// Handles user sign-in and sign-out.
     /// </summary>
-    public interface IAuthentication
+    public interface IUserAuthentication
     {
+        string Name { get; }
+
         /// <summary>
         /// Signs in a user.
         /// This method will be called automatically by the Application class.

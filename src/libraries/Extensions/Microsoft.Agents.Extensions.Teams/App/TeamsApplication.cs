@@ -14,7 +14,6 @@ using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.MessageExtensions;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
-using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
 
 namespace Microsoft.Agents.Extensions.Teams.App
 {

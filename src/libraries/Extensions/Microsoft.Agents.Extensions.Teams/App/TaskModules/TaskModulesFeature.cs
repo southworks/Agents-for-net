@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.App.Authentication.TokenService;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;

@@ -4,7 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using System;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication
+namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
     /// The sign-in response
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.BotBuilder.App.Authentication
         public AuthExceptionReason? Cause { get; set; }
 
         /// <summary>
-        /// The token resonse.  Only available when sign-in status is Complete.
+        /// The token response.  Only available when sign-in status is Complete.
         /// </summary>
         public TokenResponse TokenResponse { get; set; }
     }

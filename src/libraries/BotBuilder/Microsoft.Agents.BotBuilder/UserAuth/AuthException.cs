@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.BotBuilder.App.Authentication
+namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
     /// Cause of user authentication exception.
