@@ -53,7 +53,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// </summary>
         /// <value>True if the <see cref="OAuthPrompt"/> should automatically end upon receiving
         /// an invalid message.</value>
-        public bool EndOnInvalidMessage { get; set; } = true;
+        public bool EndOnInvalidMessage { get; set; }
 
         /// <summary>
         /// Gets or sets an optional boolean value to force the display of a Sign In link overriding
