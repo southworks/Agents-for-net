@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
+using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -20,7 +21,6 @@ namespace Microsoft.Agents.BotBuilder.App
     public class Application : IBot
     {
         private readonly UserAuthenticationFeature _authentication;
-
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
 
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.BotBuilder.App
 
             if (Options.TurnStateFactory == null)
             {
-                // This defaults to a TurnState with TempState
+                // This defaults to a TurnState with TempState only
                 Options.TurnStateFactory = () => new TurnState();
             }
 
@@ -61,10 +61,17 @@ namespace Microsoft.Agents.BotBuilder.App
             }
         }
 
+        #region Application Features
+
         /// <summary>
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCardsFeature AdaptiveCards { get; }
+
+        /// <summary>
+        /// The application's configured options.
+        /// </summary>
+        public ApplicationOptions Options { get; }
 
         /// <summary>
         /// Accessing authentication specific features.
@@ -75,19 +82,17 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 if (_authentication == null)
                 {
-                    throw new InvalidOperationException("The Application.UserAuthentication property is unavailable because no authentication options were configured.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthenticationNotConfigured, null);
                 }
 
                 return _authentication;
             }
         }
 
-        /// <summary>
-        /// The application's configured options.
-        /// </summary>
-        public ApplicationOptions Options { get; }
+        #endregion
 
         #region Route Handling
+
         /// <summary>
         /// Adds a new route to the application.
         /// 
