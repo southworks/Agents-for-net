@@ -526,14 +526,6 @@ namespace Microsoft.Agents.BotBuilder.App
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentNullException.ThrowIfNull(turnContext.Activity);
 
-            await InnerOnTurnAsync(turnContext, cancellationToken);
-        }
-
-        /// <summary>
-        /// Internal method to wrap the logic of handling a bot turn.
-        /// </summary>
-        private async Task InnerOnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
             try
             {
                 // Start typing timer if configured
@@ -542,7 +534,7 @@ namespace Microsoft.Agents.BotBuilder.App
                     StartTypingTimer(turnContext);
                 };
 
-                // Remove @mentions
+                // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
                 {
                     if (Options.NormalizeMentions)
