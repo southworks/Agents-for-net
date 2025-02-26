@@ -24,7 +24,6 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
 
-        // TODO:  These really aren't queues, so why this type?
         private readonly ConcurrentQueue<Route> _invokeRoutes;
         private readonly ConcurrentQueue<Route> _routes;
         private readonly ConcurrentQueue<TurnEventHandlerAsync> _beforeTurn;
@@ -527,13 +526,13 @@ namespace Microsoft.Agents.BotBuilder.App
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentNullException.ThrowIfNull(turnContext.Activity);
 
-            await _OnTurnAsync(turnContext, cancellationToken);
+            await InnerOnTurnAsync(turnContext, cancellationToken);
         }
 
         /// <summary>
         /// Internal method to wrap the logic of handling a bot turn.
         /// </summary>
-        private async Task _OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        private async Task InnerOnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             try
             {
@@ -544,11 +543,16 @@ namespace Microsoft.Agents.BotBuilder.App
                 };
 
                 // Remove @mentions
-                if (Options.RemoveRecipientMention && ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
                 {
-                    // TODO: What about normalizing mentions (via integrated NormalizeMentions)?
-
-                    turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
+                    if (Options.NormalizeMentions)
+                    {
+                        turnContext.Activity.NormalizeMentions(Options.RemoveRecipientMention);
+                    }
+                    else if (Options.RemoveRecipientMention)
+                    {
+                        turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
+                    }
                 }
 
                 // Load turn state

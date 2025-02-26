@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 
 using Microsoft.Agents.Core.Models;
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,89 +40,8 @@ namespace Microsoft.Agents.BotBuilder.Compat
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
-            NormalizeActivity(turnContext.Activity);
+            turnContext.Activity.NormalizeMentions(RemoveRecipientMention);
             await next(cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Normalize the activity.
-        /// </summary>
-        /// <param name="activity">activity.</param>
-        private void NormalizeActivity(IActivity activity)
-        {
-            if (activity.Type == ActivityTypes.Message)
-            {
-                if (RemoveRecipientMention)
-                {
-                    // strip recipient mention tags and text.
-                    activity.RemoveRecipientMention();
-
-                    if (activity.Entities != null)
-                    {
-                        // strip entity.mention records for recipient id.
-                        activity.Entities = activity.Entities.Where(entity => entity is Mention mention &&
-                           mention.Mentioned.Id != activity.Recipient.Id).ToList();
-                    }
-                }
-
-                // remove <at> </at> tags keeping the inner text.
-                activity.Text = RemoveAt(activity.Text);
-
-                if (activity.Entities != null)
-                {
-                    // remove <at> </at> tags from mention records keeping the inner text.
-                    foreach (var entity in activity.GetMentions())
-                    {
-                        entity.Text = RemoveAt(entity.Text)?.Trim();
-                    }
-                }
-            }
-        }
-
-        private string RemoveAt(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                return text;
-            }
-
-            bool foundTag;
-            do
-            {
-                foundTag = false;
-                int iAtStart = text.IndexOf("<at", StringComparison.InvariantCultureIgnoreCase);
-                if (iAtStart >= 0)
-                {
-                    int iAtEnd = text.IndexOf(">", iAtStart, StringComparison.InvariantCultureIgnoreCase);
-                    if (iAtEnd > 0)
-                    {
-                        int iAtClose = text.IndexOf("</at>", iAtEnd, StringComparison.InvariantCultureIgnoreCase);
-                        if (iAtClose > 0)
-                        {
-                            // replace </at> 
-                            var followingText = text.Substring(iAtClose + 5);
-
-                            // if first char of followingText is not whitespace
-                            if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
-                            {
-                                // insert space because teams does => <at>Tom</at>is cool => Tomis cool
-                                followingText = $" {followingText}";
-                            }
-
-                            text = text.Substring(0, iAtClose) + followingText;
-
-                            // replace <at ...>
-                            text = text.Substring(0, iAtStart) + text.Substring(iAtEnd + 1);
-
-                            // we found one, try again, there may be more.
-                            foundTag = true;
-                        }
-                    }
-                }
-            }
-            while (foundTag);
-
-            return text;
         }
     }
 }

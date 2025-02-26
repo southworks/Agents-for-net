@@ -46,6 +46,12 @@ namespace Microsoft.Agents.BotBuilder.App
         public bool RemoveRecipientMention { get; set; } = true;
 
         /// <summary>
+        /// Optional. If true, the bot will automatically normalize mentions across channels.
+        /// Defaults to true.
+        /// </summary>
+        public bool NormalizeMentions { get; set; } = true;
+
+        /// <summary>
         /// Optional. If true, the bot will automatically start a typing timer when messages are received.
         /// This allows the bot to automatically indicate that it's received the message and is processing
         /// the request. Defaults to true.

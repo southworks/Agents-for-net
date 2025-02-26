@@ -3,10 +3,10 @@
 
 using System.Text.RegularExpressions;
 using System.Linq;
-using Microsoft.Agents.Core.Models;
 using System;
+using Microsoft.Agents.Core.Serialization;
 
-namespace Microsoft.Agents.Core.Serialization
+namespace Microsoft.Agents.Core.Models
 {
     public static class EntityExtension
     {
@@ -32,11 +32,88 @@ namespace Microsoft.Agents.Core.Serialization
             entity.Type = copy.Type;
             entity.Properties = copy.Properties;
         }
-        
+
+        public static void NormalizeMentions(this IActivity activity, bool removeMention)
+        {
+            if (activity.Type == ActivityTypes.Message)
+            {
+                if (removeMention)
+                {
+                    // strip recipient mention tags and text.
+                    activity.RemoveRecipientMention();
+
+                    if (activity.Entities != null)
+                    {
+                        // strip entity.mention records for recipient id.
+                        activity.Entities = activity.Entities.Where(entity => entity is Mention mention &&
+                           mention.Mentioned.Id != activity.Recipient.Id).ToList();
+                    }
+                }
+
+                // remove <at> </at> tags keeping the inner text.
+                activity.Text = RemoveAt(activity.Text);
+
+                if (activity.Entities != null)
+                {
+                    // remove <at> </at> tags from mention records keeping the inner text.
+                    foreach (var entity in activity.GetMentions())
+                    {
+                        entity.Text = RemoveAt(entity.Text)?.Trim();
+                    }
+                }
+            }
+        }
+
+        private static string RemoveAt(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            bool foundTag;
+            do
+            {
+                foundTag = false;
+                int iAtStart = text.IndexOf("<at", StringComparison.InvariantCultureIgnoreCase);
+                if (iAtStart >= 0)
+                {
+                    int iAtEnd = text.IndexOf(">", iAtStart, StringComparison.InvariantCultureIgnoreCase);
+                    if (iAtEnd > 0)
+                    {
+                        int iAtClose = text.IndexOf("</at>", iAtEnd, StringComparison.InvariantCultureIgnoreCase);
+                        if (iAtClose > 0)
+                        {
+                            // replace </at> 
+                            var followingText = text.Substring(iAtClose + 5);
+
+                            // if first char of followingText is not whitespace
+                            if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
+                            {
+                                // insert space because teams does => <at>Tom</at>is cool => Tomis cool
+                                followingText = $" {followingText}";
+                            }
+
+                            text = text.Substring(0, iAtClose) + followingText;
+
+                            // replace <at ...>
+                            text = text.Substring(0, iAtStart) + text.Substring(iAtEnd + 1);
+
+                            // we found one, try again, there may be more.
+                            foundTag = true;
+                        }
+                    }
+                }
+            }
+            while (foundTag);
+
+            return text;
+        }
+
 
         /// <summary>
         /// Remove any mention text for given id from the Activity.Text property.  For example, given the message
-        /// @echoBot Hi Bot, this will remove "@echoBot", leaving "Hi Bot".
+        /// `@echoBot Hi Bot`, this will remove "@echoBot", leaving `Hi Bot`.
         /// </summary>
         /// <param name="activity"></param>
         /// <description>
@@ -76,7 +153,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static StreamInfo GetStreamingEntity(this IActivity activity)
         {
-            if (activity.Entities == null ||  activity.Entities.Count == 0)
+            if (activity.Entities == null || activity.Entities.Count == 0)
             {
                 return null;
             }
