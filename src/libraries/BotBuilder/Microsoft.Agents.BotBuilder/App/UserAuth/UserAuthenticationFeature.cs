@@ -225,7 +225,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.SignInComplete")
+                && string.Equals(context.Activity?.Name, SignInCompletionEventName)
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {

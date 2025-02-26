@@ -17,8 +17,7 @@
 		<PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
 	</ItemGroup>
 
-
 	<ItemGroup>
-	  <ProjectReference Include="..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
+	  <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
 	</ItemGroup>
 </Project>

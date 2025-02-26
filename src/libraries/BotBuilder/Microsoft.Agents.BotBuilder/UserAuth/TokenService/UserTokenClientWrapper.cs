@@ -11,28 +11,28 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     public class UserTokenClientWrapper
     {
-        public static async Task<SignInResource> GetSignInResourceAsync(ITurnContext context, string connectionName, CancellationToken cancellationToken)
+        public static Task<SignInResource> GetSignInResourceAsync(ITurnContext context, string connectionName, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);
-            return await userTokenClient.GetSignInResourceAsync(connectionName, context.Activity, null, cancellationToken);
+            return userTokenClient.GetSignInResourceAsync(connectionName, context.Activity, null, cancellationToken);
         }
 
-        public static async Task<TokenResponse> GetUserTokenAsync(ITurnContext context, string connectionName, string magicCode, CancellationToken cancellationToken)
+        public static Task<TokenResponse> GetUserTokenAsync(ITurnContext context, string connectionName, string magicCode, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);
-            return await userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, magicCode, cancellationToken);
+            return userTokenClient.GetUserTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, magicCode, cancellationToken);
         }
 
-        public static async Task<TokenResponse> ExchangeTokenAsync(ITurnContext context, string connectionName, TokenExchangeRequest tokenExchangeRequest, CancellationToken cancellationToken)
+        public static Task<TokenResponse> ExchangeTokenAsync(ITurnContext context, string connectionName, TokenExchangeRequest tokenExchangeRequest, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);
-            return await userTokenClient.ExchangeTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, tokenExchangeRequest, cancellationToken);
+            return userTokenClient.ExchangeTokenAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, tokenExchangeRequest, cancellationToken);
         }
 
-        public static async Task SignOutUserAsync(ITurnContext context, string connectionName, CancellationToken cancellationToken)
+        public static Task SignOutUserAsync(ITurnContext context, string connectionName, CancellationToken cancellationToken)
         {
             IUserTokenClient userTokenClient = GetUserTokenClient(context);
-            await userTokenClient.SignOutUserAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, cancellationToken);
+            return userTokenClient.SignOutUserAsync(context.Activity.From.Id, connectionName, context.Activity.ChannelId, cancellationToken);
         }
 
         private static IUserTokenClient GetUserTokenClient(ITurnContext context)

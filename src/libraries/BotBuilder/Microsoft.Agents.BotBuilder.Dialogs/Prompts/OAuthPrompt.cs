@@ -148,7 +148,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             state[PersistedExpires] = DateTime.UtcNow.AddMilliseconds(timeout);
             SetCallerInfoInDialogState(state, dc.Context);
 
-            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, () => Task.FromResult(opt?.Prompt), cancellationToken).ConfigureAwait(false);
+            var token = await _dialogOAuthFlow.BeginFlowAsync(dc.Context, opt?.Prompt == null ? null : () => Task.FromResult(opt?.Prompt), cancellationToken).ConfigureAwait(false);
             if (token != null)
             {
                 // Return token
