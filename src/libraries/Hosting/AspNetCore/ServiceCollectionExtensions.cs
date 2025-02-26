@@ -43,7 +43,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         public static IHostApplicationBuilder AddBot(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
         {
-            AddCore<CloudAdapter>(builder);
+            return AddBot<CloudAdapter>(builder, implementationFactory);
+        }
+
+        public static IHostApplicationBuilder AddBot<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
+            where TAdapter : CloudAdapter
+        {
+            AddCore<TAdapter>(builder);
 
             builder.Services.AddTransient<IBot>(implementationFactory);
 
