@@ -15,7 +15,6 @@ namespace EchoBot
         public MyBot(AgentApplicationOptions options) : base(options)
         {
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-            OnMessage("/reset", ResetAsync);
 
             // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
             OnActivity(ActivityTypes.Message, OnMessageAsync);
@@ -30,12 +29,6 @@ namespace EchoBot
                     await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
                 }
             }
-        }
-
-        protected async Task ResetAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
-            await turnContext.SendActivityAsync("Ok I've deleted the current conversation state", cancellationToken: cancellationToken);
         }
 
         protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
