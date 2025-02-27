@@ -13,21 +13,16 @@ using WeatherBot.Agents;
 namespace WeatherBot
 {
     // This is the core handler for the Bot Message loop. Each new request will be processed by this class.
-    public class MyBot : Application
+    public class MyBot : AgentApplication
     {
         private readonly WeatherForecastAgent _weatherAgent;
 
-        public MyBot(ApplicationOptions options, WeatherForecastAgent weatherAgent) : base(options)
+        public MyBot(AgentApplicationOptions options, WeatherForecastAgent weatherAgent) : base(options)
         {
             _weatherAgent = weatherAgent;
-
-            // Setup Activity routes
-            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-
-            // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-            OnActivity(ActivityTypes.Message, MessageActivityAsync);
         }
 
+        [ActivityRoute(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
         protected async Task MessageActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             var chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
@@ -55,6 +50,7 @@ namespace WeatherBot
             await turnContext.SendActivityAsync(response, cancellationToken);
         }
 
+        [ConversationUpdateRoute(Event = ConversationUpdateEvents.MembersAdded)]
         protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             foreach (ChannelAccount member in turnContext.Activity.MembersAdded)

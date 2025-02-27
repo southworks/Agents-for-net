@@ -64,7 +64,7 @@ This sample is intended to introduce you to:
       }
       ```
 
-      1. Replace all `{{ClientId}}` with the AppId of the bot identity.
+      1. Replace all `{{ClientId}}` with the AppId of the bot.
       1. Replace all `{{TenantId}}` with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       

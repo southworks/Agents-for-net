@@ -5,25 +5,26 @@ using Microsoft.Extensions.Logging;
 using System;
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
-    /// A builder class for simplifying the creation of an Application instance.
+    /// A builder class for simplifying the creation of an AgentApplication instance.
     /// </summary>
-    public class ApplicationBuilder
+    public class AgentApplicationBuilder
     {
         /// <summary>
         /// The application's configured options.
         /// </summary>
-        public ApplicationOptions Options { get; } = new();
+        public AgentApplicationOptions Options { get; } = new();
 
         /// <summary>
         /// Configures the turn state factory to use for managing the bot's turn state.
         /// </summary>
         /// <param name="turnStateFactory">The turn state factory to use.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder WithTurnStateFactory(Func<ITurnState> turnStateFactory)
+        public AgentApplicationBuilder WithTurnStateFactory(Func<ITurnState> turnStateFactory)
         {
             Options.TurnStateFactory = turnStateFactory;
             return this;
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="loggerFactory">The Logger factory</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
+        public AgentApplicationBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
         {
             Options.LoggerFactory = loggerFactory;
             return this;
@@ -45,7 +46,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="adaptiveCardOptions">The options for Adaptive Cards.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder WithAdaptiveCardOptions(AdaptiveCardsOptions adaptiveCardOptions)
+        public AgentApplicationBuilder WithAdaptiveCardOptions(AdaptiveCardsOptions adaptiveCardOptions)
         {
             Options.AdaptiveCards = adaptiveCardOptions;
             return this;
@@ -57,11 +58,23 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="removeRecipientMention">The boolean for removing recipient mentions.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder SetRemoveRecipientMention(bool removeRecipientMention)
+        public AgentApplicationBuilder SetRemoveRecipientMention(bool removeRecipientMention)
         {
             Options.RemoveRecipientMention = removeRecipientMention;
             return this;
         }
+
+        /// <summary>
+        /// Configures the normalizing mentions across different channels.
+        /// </summary>
+        /// <param name="normalizeMentions">The boolean for normalizing mentions.</param>
+        /// <returns>The ApplicationBuilder instance.</returns>
+        public AgentApplicationBuilder SetNormalizeMentions(bool normalizeMentions)
+        {
+            Options.NormalizeMentions = normalizeMentions;
+            return this;
+        }
+
 
         /// <summary>
         /// Configures the typing timer when messages are received.
@@ -69,35 +82,32 @@ namespace Microsoft.Agents.BotBuilder.App
         /// </summary>
         /// <param name="startTypingTimer">The boolean for starting the typing timer.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder SetStartTypingTimer(bool startTypingTimer)
+        public AgentApplicationBuilder SetStartTypingTimer(bool startTypingTimer)
         {
             Options.StartTypingTimer = startTypingTimer;
             return this;
         }
 
-        //TODO
-        /*
         /// <summary>
         /// Configures authentication for the application.
         /// </summary>
         /// <param name="adapter">The bot adapter.</param>
         /// <param name="authenticationOptions">The options for authentication.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
-        public ApplicationBuilder<TState> WithAuthentication(ChannelAdapter adapter, AuthenticationOptions<TState> authenticationOptions)
+        public AgentApplicationBuilder WithUserAuthentication(ChannelAdapter adapter, UserAuthenticationOptions authenticationOptions)
         {
             Options.Adapter = adapter;
-            Options.Authentication = authenticationOptions;
+            Options.UserAuthentication = authenticationOptions;
             return this;
         }
-        */
 
         /// <summary>
         /// Builds and returns a new Application instance.
         /// </summary>
         /// <returns>The Application instance.</returns>
-        public Application Build()
+        public AgentApplication Build()
         {
-            return new Application(Options);
+            return new AgentApplication(Options);
         }
     }
 }

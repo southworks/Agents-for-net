@@ -51,13 +51,13 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         private static readonly string QUERY_SETTING_URL = "composeExtension/querySettingUrl";
         private static readonly string QUERY_CARD_BUTTON_CLICKED = "composeExtension/onCardButtonClicked";
 
-        private readonly Application _app;
+        private readonly AgentApplication _app;
 
         /// <summary>
         /// Creates a new instance of the MessageExtensions class.
         /// </summary>
         /// <param name="app"></param> The top level application class to register handlers with.
-        public MessageExtensionsFeature(Application app)
+        public MessageExtensionsFeature(AgentApplication app)
         {
             this._app = app;
         }
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
+        public AgentApplication OnSubmitAction(string commandId, SubmitActionHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandId);
             ArgumentNullException.ThrowIfNull(handler);
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
+        public AgentApplication OnSubmitAction(Regex commandIdPattern, SubmitActionHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandIdPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmitAction(RouteSelectorAsync routeSelector, SubmitActionHandlerAsync handler)
+        public AgentApplication OnSubmitAction(RouteSelectorAsync routeSelector, SubmitActionHandlerAsync handler)
         {
             MessagingExtensionAction? messagingExtensionAction;
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmitAction(MultipleRouteSelector routeSelectors, SubmitActionHandlerAsync handler)
+        public AgentApplication OnSubmitAction(MultipleRouteSelector routeSelectors, SubmitActionHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnBotMessagePreviewEdit(string commandId, BotMessagePreviewEditHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandId);
             ArgumentNullException.ThrowIfNull(handler);
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnBotMessagePreviewEdit(Regex commandIdPattern, BotMessagePreviewEditHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandIdPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewEdit(RouteSelectorAsync routeSelector, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnBotMessagePreviewEdit(RouteSelectorAsync routeSelector, BotMessagePreviewEditHandlerAsync handler)
         {
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewEdit(MultipleRouteSelector routeSelectors, BotMessagePreviewEditHandlerAsync handler)
+        public AgentApplication OnBotMessagePreviewEdit(MultipleRouteSelector routeSelectors, BotMessagePreviewEditHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnBotMessagePreviewSend(string commandId, BotMessagePreviewSendHandler handler)
         {
             ArgumentNullException.ThrowIfNull(commandId);
             ArgumentNullException.ThrowIfNull(handler);
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnBotMessagePreviewSend(Regex commandIdPattern, BotMessagePreviewSendHandler handler)
         {
             ArgumentNullException.ThrowIfNull(commandIdPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewSend(RouteSelectorAsync routeSelector, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnBotMessagePreviewSend(RouteSelectorAsync routeSelector, BotMessagePreviewSendHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnBotMessagePreviewSend(MultipleRouteSelector routeSelectors, BotMessagePreviewSendHandler handler)
+        public AgentApplication OnBotMessagePreviewSend(MultipleRouteSelector routeSelectors, BotMessagePreviewSendHandler handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the commands to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
+        public AgentApplication OnFetchTask(string commandId, FetchTaskHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandId);
             ArgumentNullException.ThrowIfNull(handler);
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
+        public AgentApplication OnFetchTask(Regex commandIdPattern, FetchTaskHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandIdPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -389,7 +389,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetchTask(RouteSelectorAsync routeSelector, FetchTaskHandlerAsync handler)
+        public AgentApplication OnFetchTask(RouteSelectorAsync routeSelector, FetchTaskHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -420,7 +420,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetchTask(MultipleRouteSelector routeSelectors, FetchTaskHandlerAsync handler)
+        public AgentApplication OnFetchTask(MultipleRouteSelector routeSelectors, FetchTaskHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -454,7 +454,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandId">ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQuery(string commandId, QueryHandlerAsync handler)
+        public AgentApplication OnQuery(string commandId, QueryHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandId);
             ArgumentNullException.ThrowIfNull(handler);
@@ -468,7 +468,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
         /// <param name="handler">Function to call when the command is received.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
+        public AgentApplication OnQuery(Regex commandIdPattern, QueryHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(commandIdPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -482,7 +482,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQuery(RouteSelectorAsync routeSelector, QueryHandlerAsync handler)
+        public AgentApplication OnQuery(RouteSelectorAsync routeSelector, QueryHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -525,7 +525,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQuery(MultipleRouteSelector routeSelectors, QueryHandlerAsync handler)
+        public AgentApplication OnQuery(MultipleRouteSelector routeSelectors, QueryHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -565,7 +565,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSelectItem(SelectItemHandlerAsync handler)
+        public AgentApplication OnSelectItem(SelectItemHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQueryLink(QueryLinkHandlerAsync handler)
+        public AgentApplication OnQueryLink(QueryLinkHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -635,7 +635,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </remarks>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
+        public AgentApplication OnAnonymousQueryLink(QueryLinkHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -671,7 +671,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </remarks>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
+        public AgentApplication OnQueryUrlSetting(QueryUrlSettingHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -706,7 +706,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </remarks>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnConfigureSettings(ConfigureSettingsHandler handler)
+        public AgentApplication OnConfigureSettings(ConfigureSettingsHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -739,7 +739,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
         /// </remarks>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnCardButtonClicked(CardButtonClickedHandler handler)
+        public AgentApplication OnCardButtonClicked(CardButtonClickedHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>

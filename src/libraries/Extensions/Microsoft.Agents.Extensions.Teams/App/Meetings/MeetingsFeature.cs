@@ -15,13 +15,13 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
     /// </summary>
     public class MeetingsFeature
     {
-        private readonly Application _app;
+        private readonly AgentApplication _app;
 
         /// <summary>
         /// Creates a new instance of the Meetings class.
         /// </summary>
         /// <param name="app"></param> The top level application class to register handlers with.
-        public MeetingsFeature(Application app)
+        public MeetingsFeature(AgentApplication app)
         {
             this._app = app;
         }
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// </summary>
         /// <param name="handler">Function to call when a Microsoft Teams meeting start event activity is received from the connector.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnStart(MeetingStartHandler handler)
+        public AgentApplication OnStart(MeetingStartHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
                 MeetingStartEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingStartEventDetails>(turnContext.Activity.Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            _app.AddRoute(routeSelector, routeHandler);
             return _app;
         }
 
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// </summary>
         /// <param name="handler">Function to call when a Microsoft Teams meeting end event activity is received from the connector.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnEnd(MeetingEndHandler handler)
+        public AgentApplication OnEnd(MeetingEndHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
                 MeetingEndEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingEndEventDetails>(turnContext.Activity.Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            _app.AddRoute(routeSelector, routeHandler);
             return _app;
         }
 
@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// </summary>
         /// <param name="handler">Function to call when a Microsoft Teams meeting participants join event activity is received from the connector.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnParticipantsJoin(MeetingParticipantsEventHandler handler)
+        public AgentApplication OnParticipantsJoin(MeetingParticipantsEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
                 MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            _app.AddRoute(routeSelector, routeHandler);
             return _app;
         }
 
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
         /// </summary>
         /// <param name="handler">Function to call when a Microsoft Teams meeting participants leave event activity is received from the connector.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnParticipantsLeave(MeetingParticipantsEventHandler handler)
+        public AgentApplication OnParticipantsLeave(MeetingParticipantsEventHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
                 MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            _app.AddRoute(routeSelector, routeHandler);
             return _app;
         }
     }

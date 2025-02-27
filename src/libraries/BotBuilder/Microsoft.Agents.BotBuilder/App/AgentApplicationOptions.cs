@@ -11,9 +11,9 @@ using Microsoft.Agents.BotBuilder.App.UserAuth;
 namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
-    /// Options for the <see cref="Application"/> class.
+    /// Options for the <see cref="AgentApplication"/> class.
     /// </summary>
-    public class ApplicationOptions
+    public class AgentApplicationOptions
     {
         public IChannelAdapter? Adapter { get; set; }
 

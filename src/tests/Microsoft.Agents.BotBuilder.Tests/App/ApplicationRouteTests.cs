@@ -16,6 +16,91 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
     public class ApplicationRouteTests
     {
         [Fact]
+        public async Task Test_RouteList_RouteRank()
+        {
+            List<string> values = [];
+            RouteList routes = new();
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; },
+                rank: 2
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; },
+                rank: 0
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("3"); return Task.CompletedTask; },
+                rank: 1
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("4"); return Task.CompletedTask; },
+                rank: 1
+            );
+
+            foreach ( var route in routes.Enumerate())
+            {
+                await route.Handler(null, null, CancellationToken.None);
+            }
+
+            Assert.Equal(4, values.Count);
+            Assert.Equal("2", values[0]);
+            Assert.Equal("3", values[1]);
+            Assert.Equal("4", values[2]);
+            Assert.Equal("1", values[3]);
+        }
+
+        [Fact]
+        public async Task Test_RouteList_ByInvoke()
+        {
+            List<string> values = [];
+            RouteList routes = new();
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("1"); return Task.CompletedTask; }
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("2"); return Task.CompletedTask; }
+            );
+
+            routes.AddRoute(
+                (turnContext, CancellationToken) => { return Task.FromResult(true); },
+                (turnContext, turnState, CancellationToken) => { values.Add("invoke"); return Task.CompletedTask; },
+                isInvokeRoute: true
+            );
+
+            // non-invoke
+            foreach (var route in routes.Enumerate())
+            {
+                await route.Handler(null, null, CancellationToken.None);
+            }
+
+            Assert.Equal(2, values.Count);
+            Assert.Equal("1", values[0]);
+            Assert.Equal("2", values[1]);
+
+            // Invoke
+            values.Clear();
+            foreach (var route in routes.Enumerate(true))
+            {
+                await route.Handler(null, null, CancellationToken.None);
+            }
+
+            Assert.Single(values);
+            Assert.Equal("invoke", values[0]);
+        }
+
+        [Fact]
         public async Task Test_Application_Route()
         {
             // Arrange
@@ -33,7 +118,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -71,7 +156,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -139,7 +224,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var turnContext2 = new TurnContext(adapter, activity2);
 
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
@@ -180,7 +265,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
@@ -236,7 +321,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
@@ -284,7 +369,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
@@ -348,7 +433,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -395,7 +480,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -443,7 +528,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -500,7 +585,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -567,7 +652,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -626,7 +711,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -665,7 +750,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -724,7 +809,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -784,7 +869,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -833,7 +918,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -893,7 +978,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -960,7 +1045,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -1019,7 +1104,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -1089,7 +1174,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 Status = 200
             };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,

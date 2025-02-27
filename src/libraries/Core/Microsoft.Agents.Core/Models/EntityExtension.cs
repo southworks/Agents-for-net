@@ -131,6 +131,8 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>new Activity.Text property value.</returns>
         public static string RemoveMentionText(this IActivity activity, string id)
         {
+            if (string.IsNullOrEmpty(id)) { return activity.Text; }
+
             foreach (var mention in activity.GetMentions().Where(mention => mention.Mentioned.Id == id))
             {
                 if (mention.Text == null)

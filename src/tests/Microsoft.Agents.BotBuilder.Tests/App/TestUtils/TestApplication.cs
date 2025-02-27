@@ -5,7 +5,7 @@ using System;
 
 namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
 {
-    public class TestApplication : Application
+    public class TestApplication : AgentApplication
     {
         public TestApplication(TestApplicationOptions options) : base(options)
         {
@@ -15,5 +15,5 @@ namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
         }
     }
 
-    public class TestApplicationOptions : ApplicationOptions { }
+    public class TestApplicationOptions : AgentApplicationOptions { }
 }

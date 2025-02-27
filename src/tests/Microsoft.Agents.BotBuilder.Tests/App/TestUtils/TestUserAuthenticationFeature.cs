@@ -6,7 +6,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App.TestUtils
 {
     internal sealed class TestUserAuthenticationFeature : UserAuthenticationFeature
     {
-        public TestUserAuthenticationFeature(Application app, UserAuthenticationOptions options) : base(app, options)
+        public TestUserAuthenticationFeature(AgentApplication app, UserAuthenticationOptions options) : base(app, options)
         {
         }
     }

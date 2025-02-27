@@ -1,4 +1,6 @@
-﻿# OAuth Authentication
+﻿# Compat OAuth Authentication
+
+This bot demonstrates migrating a Bot Framework SDK bot to Agents SDK.  The sample was created using `18.bot-authentication` from microsoft/BotBuilder-Samples on GitHub.
 
 This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use authentication in your Agent using OAuth.
 

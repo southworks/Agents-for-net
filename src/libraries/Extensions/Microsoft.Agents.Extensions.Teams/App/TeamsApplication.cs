@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class TeamsApplication : Application
+    public class TeamsApplication : AgentApplication
     {
         private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";
         private static readonly string CONFIG_SUBMIT_INVOKE_NAME = "config/submit";
@@ -65,8 +65,9 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank"></param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public override Application OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler)
+        public override AgentApplication OnConversationUpdate(string conversationUpdateEvent, RouteHandler handler, ushort rank = RouteRank.Unspecified)
         {
             ArgumentNullException.ThrowIfNull(conversationUpdateEvent);
             ArgumentNullException.ThrowIfNull(handler);
@@ -135,7 +136,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     break;
                 }
             }
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(routeSelector, handler);
             return this;
         }
 
@@ -144,7 +145,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnMessageEdit(RouteHandler handler)
+        public AgentApplication OnMessageEdit(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -156,7 +157,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "editMessage"));
             };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(routeSelector, handler);
             return this;
         }
 
@@ -165,7 +166,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnMessageUndelete(RouteHandler handler)
+        public AgentApplication OnMessageUndelete(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -177,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
             };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(routeSelector, handler);
             return this;
         }
 
@@ -186,7 +187,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnMessageDelete(RouteHandler handler)
+        public AgentApplication OnMessageDelete(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
@@ -198,7 +199,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
             };
-            AddRoute(routeSelector, handler, isInvokeRoute: false);
+            AddRoute(routeSelector, handler);
             return this;
         }
 
@@ -207,7 +208,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnTeamsReadReceipt(ReadReceiptHandler handler)
+        public AgentApplication OnTeamsReadReceipt(ReadReceiptHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -221,7 +222,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 ReadReceiptInfo readReceiptInfo = ProtocolJsonSerializer.ToObject<ReadReceiptInfo>(turnContext.Activity.Value) ?? new();
                 await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
             };
-            AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            AddRoute(routeSelector, routeHandler);
             return this;
         }
 
@@ -230,7 +231,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnConfigFetch(ConfigHandlerAsync handler)
+        public AgentApplication OnConfigFetch(ConfigHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -257,7 +258,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the event is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnConfigSubmit(ConfigHandlerAsync handler)
+        public AgentApplication OnConfigSubmit(ConfigHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
@@ -284,7 +285,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFileConsentAccept(FileConsentHandler handler)
+        public AgentApplication OnFileConsentAccept(FileConsentHandler handler)
             => OnFileConsent(handler, "accept");
 
         /// <summary>
@@ -292,10 +293,10 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFileConsentDecline(FileConsentHandler handler)
+        public AgentApplication OnFileConsentDecline(FileConsentHandler handler)
             => OnFileConsent(handler, "decline");
 
-        private Application OnFileConsent(FileConsentHandler handler, string fileConsentAction)
+        private AgentApplication OnFileConsent(FileConsentHandler handler, string fileConsentAction)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) =>
@@ -330,7 +331,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler)
+        public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
@@ -360,7 +361,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// </summary>
         /// <param name="handler">Function to cal lwhen the route is triggered</param>
         /// <returns></returns>
-        public Application OnFeedbackLoop(FeedbackLoopHandler handler)
+        public AgentApplication OnFeedbackLoop(FeedbackLoopHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
 

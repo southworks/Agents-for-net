@@ -34,7 +34,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";
         private readonly IUserAuthenticationDispatcher _dispatcher;
         private readonly UserAuthenticationOptions _options;
-        private readonly Application _app;
+        private readonly AgentApplication _app;
 
         /// <summary>
         /// Callback when user sign in success
@@ -48,7 +48,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
         public string Default { get; private set; }
 
-        public UserAuthenticationFeature(Application app, UserAuthenticationOptions options)
+        public UserAuthenticationFeature(AgentApplication app, UserAuthenticationOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _dispatcher = new UserAuthenticationDispatcher([.. _options.Handlers]);
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 }
             };
 
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: false);
+            _app.AddRoute(routeSelector, routeHandler);
         }
 
         public static bool IsSignInCompletionEvent(IActivity activity)

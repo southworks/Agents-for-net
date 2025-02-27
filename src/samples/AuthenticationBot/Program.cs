@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AuthenticationBot;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
@@ -27,9 +27,8 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Create the bot as a transient.
-builder.Services.AddTransient<ITurnState>(sp => new TurnState(sp.GetService<IStorage>()));
-builder.AddBot((sp) =>
+// Add ApplicationOptions
+builder.Services.AddTransient(sp =>
 {
     var adapter = sp.GetService<IChannelAdapter>();
     var storage = sp.GetService<IStorage>();
@@ -55,73 +54,18 @@ builder.AddBot((sp) =>
                 storage)]
     };
 
-    var appOptions = new ApplicationOptions()
+    return new AgentApplicationOptions()
     {
         Adapter = adapter,
-        StartTypingTimer = true,
-        UserAuthentication = authOptions,
-        TurnStateFactory = () => sp.GetService<ITurnState>()
+        StartTypingTimer = false,
+        TurnStateFactory = () => new TurnState(storage),
+        UserAuthentication = authOptions
     };
-
-    var app = new Application(appOptions);
-
-    app.Authentication.OnUserSignInSuccess(async (turnContext, turnState, flowName, tokenResponse, cancellationToken) =>
-    {
-        await turnContext.SendActivityAsync($"Successfully logged in to '{flowName}'", cancellationToken: cancellationToken);
-    });
-
-    app.Authentication.OnUserSignInFailure(async (turnContext, turnState, flowName, response, cancellationToken) =>
-    {
-        await turnContext.SendActivityAsync($"Failed to login to '{flowName}': {response.Error.Message}", cancellationToken: cancellationToken);
-    });
-
-    app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
-    {
-        await app.Authentication.GetTokenOrStartSignInAsync(turnContext, turnState, "graph", cancellationToken);
-    });
-
-    // Listen for user to say "/reset" and then delete state
-    app.OnMessage("/reset", async (turnContext, turnState, cancellationToken) =>
-    {
-        await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
-        await turnState.User.DeleteStateAsync(turnContext, cancellationToken);
-        await turnContext.SendActivityAsync("Ok I've deleted the current turn state", cancellationToken: cancellationToken);
-    });
-
-    // Listen for user to say "/signout" and then delete cached token
-    app.OnMessage("/signout", async (turnContext, turnState, cancellationToken) =>
-    {
-        await app.Authentication.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
-        await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
-    });
-
-    // Display a welcome message
-    app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, async (turnContext, turnState, cancellationToken) =>
-    {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
-        {
-            if (member.Id != turnContext.Activity.Recipient.Id)
-            {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Welcome to AuthenticationBot. Type 'auto' to demonstrate Auto SignIn. Type '/signin' to sign in for graph.  Type '/signout' to sign-out.  Anything else will be repeated back."), cancellationToken);
-            }
-        }
-    });
-
-    // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-    app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
-    {
-        if (turnContext.Activity.Text == "auto")
-        {
-            await turnContext.SendActivityAsync($"Successfully logged in to '{app.Authentication.Default}', token length: {turnState.Temp.AuthTokens[app.Authentication.Default].Length}", cancellationToken: cancellationToken);
-        }
-        else
-        {
-            await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
-        }
-    });
-
-    return app;
 });
+
+// Add the bot (which is transient)
+builder.AddBot<AuthBot>();
+
 
 var app = builder.Build();
 

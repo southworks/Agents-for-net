@@ -34,7 +34,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 Value = new MathCommand { First = 10, Second = 2 }
             };
 
-            await new TestFlow(adapter, new CommandBot(new ApplicationOptions()))
+            await new TestFlow(adapter, new CommandBot(new AgentApplicationOptions()))
                 .Send(commandActivity)
                 .AssertReply((activity) =>
                 {
@@ -55,9 +55,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         }
     }
 
-    class CommandBot : Application
+    class CommandBot : AgentApplication
     {
-        public CommandBot(ApplicationOptions options) : base(options) 
+        public CommandBot(AgentApplicationOptions options) : base(options) 
         {
             OnActivity(ActivityTypes.Command, OnCommandAsync);
         }

@@ -6,7 +6,7 @@ using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 
 namespace Microsoft.Agents.Extensions.Teams.App
 {
-    public class TeamsApplicationOptions : ApplicationOptions
+    public class TeamsApplicationOptions : AgentApplicationOptions
     {
         /// <summary>
         /// Optional. Options used to customize the processing of Task Modules requests.

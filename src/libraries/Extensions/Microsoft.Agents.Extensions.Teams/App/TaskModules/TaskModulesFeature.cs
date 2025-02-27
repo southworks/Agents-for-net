@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="verb">Name of the verb to register the handler for.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetch(string verb, FetchHandlerAsync handler)
+        public AgentApplication OnFetch(string verb, FetchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetch(Regex verbPattern, FetchHandlerAsync handler)
+        public AgentApplication OnFetch(Regex verbPattern, FetchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetch(RouteSelectorAsync routeSelector, FetchHandlerAsync handler)
+        public AgentApplication OnFetch(RouteSelectorAsync routeSelector, FetchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnFetch(MultipleRouteSelector routeSelectors, FetchHandlerAsync handler)
+        public AgentApplication OnFetch(MultipleRouteSelector routeSelectors, FetchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="verb">Name of the verb to register the handler for.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmit(string verb, SubmitHandlerAsync handler)
+        public AgentApplication OnSubmit(string verb, SubmitHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(verb);
             ArgumentNullException.ThrowIfNull(handler);
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="verbPattern">Regular expression to match against the verbs to register the handler for</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmit(Regex verbPattern, SubmitHandlerAsync handler)
+        public AgentApplication OnSubmit(Regex verbPattern, SubmitHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(verbPattern);
             ArgumentNullException.ThrowIfNull(handler);
@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmit(RouteSelectorAsync routeSelector, SubmitHandlerAsync handler)
+        public AgentApplication OnSubmit(RouteSelectorAsync routeSelector, SubmitHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync verb(s) to register the handler for.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public Application OnSubmit(MultipleRouteSelector routeSelectors, SubmitHandlerAsync handler)
+        public AgentApplication OnSubmit(MultipleRouteSelector routeSelectors, SubmitHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelectors);
             ArgumentNullException.ThrowIfNull(handler);

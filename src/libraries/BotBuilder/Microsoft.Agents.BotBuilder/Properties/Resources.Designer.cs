@@ -61,6 +61,24 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The ActivityRouteAttribute.Selector method does not match the RouteSelectorAsync delegate definition..
+        /// </summary>
+        internal static string AttributeSelectorInvalid {
+            get {
+                return ResourceManager.GetString("AttributeSelectorInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The ActivityRouteAttribute.Selector method is not found..
+        /// </summary>
+        internal static string AttributeSelectorNotFound {
+            get {
+                return ResourceManager.GetString("AttributeSelectorNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An instance of IAccessTokenProvider not found for {0}.
         /// </summary>
         internal static string IAccessTokenProviderNotFound {
@@ -70,7 +88,7 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Application.Authentication property is unavailable because no user authentication handlers were configured..
+        ///   Looks up a localized string similar to The AgentApplication.Authentication property is unavailable because no user authentication handlers were configured..
         /// </summary>
         internal static string UserAuthenticationNotConfigured {
             get {

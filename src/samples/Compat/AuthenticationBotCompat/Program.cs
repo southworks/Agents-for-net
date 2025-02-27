@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using CopilotStudioEchoSkill;
+using AuthenticationBotCompat;
+using AuthenticationBotCompat.Bots;
+using AuthenticationBotCompat.Dialogs;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -16,9 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
 builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
@@ -33,18 +33,24 @@ builder.Services.AddTransient(sp =>
     };
 });
 
+// Create the User state. (Used in this bot's Dialog implementation.)
+builder.Services.AddSingleton<UserState>();
+
+// Create the Conversation state. (Used by the Dialog system itself.)
+builder.Services.AddSingleton<ConversationState>();
+
+// The Dialog that will be run by the bot.
+builder.Services.AddSingleton<MainDialog>();
+
 // Add the bot (which is transient)
-builder.AddBot<MyBot, BotAdapterWithErrorHandler>();
+builder.AddBot<AuthBot<MainDialog>, AdapterWithErrorHandler>();
+
 
 var app = builder.Build();
 
-// Required for providing the bot manifest.
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Agents SDK Sample - EchoSkill");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }
@@ -52,5 +58,5 @@ else
 {
     app.MapControllers();
 }
-
 app.Run();
+

@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -130,7 +130,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -347,7 +347,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -390,7 +390,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -433,7 +433,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
@@ -566,7 +566,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
-            var app = new Application(new()
+            var app = new AgentApplication(new()
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,

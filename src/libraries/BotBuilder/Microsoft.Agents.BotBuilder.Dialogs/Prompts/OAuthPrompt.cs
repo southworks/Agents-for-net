@@ -188,7 +188,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                     var callerInfo = (CallerInfo)dc.ActiveDialog.State[PersistedCaller];
                     if (callerInfo != null)
                     {
-                        // set the ServiceUrl to the skill host's Url
+                        // set the ServiceUrl to the caller host's Url
                         dc.Context.Activity.ServiceUrl = callerInfo.CallerServiceUrl;
 
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
