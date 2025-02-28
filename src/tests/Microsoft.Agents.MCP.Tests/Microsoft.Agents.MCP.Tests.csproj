@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<ComponentAreaName>CplTests.Mcp</ComponentAreaName>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<Import Project="..\..\Build.Common.core.props" />
+</Project>

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <ComponentAreaName>McpServer</ComponentAreaName>
+    <SignAssembly>true</SignAssembly>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="..\..\..\..\Build.Common.core.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Microsoft.Agents.MCP.Core.DependencyInjection\Microsoft.Agents.MCP.Core.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Microsoft.Agents.MCP.Server.Handlers\Microsoft.Agents.MCP.Server.Handlers.csproj" />
+    <ProjectReference Include="..\Microsoft.Agents.MCP.Server.Transports\Microsoft.Agents.MCP.Server.Transports.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Newtonsoft.Json.Schema" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Newtonsoft.Json.Schema" />
+  </ItemGroup>
+
+</Project>

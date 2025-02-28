@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <SkipAspExtension>true</SkipAspExtension>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\libraries\MCP\Core\Microsoft.Agents.MCP.Core\Microsoft.Agents.MCP.Core.csproj" />
+    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.DependencyInjection\Microsoft.Agents.MCP.Client.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.Handlers\Microsoft.Agents.MCP.Client.Handlers.csproj" />
+    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.Transports\Microsoft.Agents.MCP.Client.Transports.csproj" />
+  </ItemGroup>
+</Project>

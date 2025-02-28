@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <ComponentAreaName>McpServer</ComponentAreaName>
+    <SignAssembly>true</SignAssembly>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="..\..\..\..\Build.Common.core.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Microsoft.Agents.MCP.Core.Handlers\Microsoft.Agents.MCP.Core.Handlers.csproj" />
+  </ItemGroup>
+
+</Project>
