@@ -19,4 +19,7 @@
     <ProjectReference Include="..\..\Core\Microsoft.Agents.MCP.Core\Microsoft.Agents.MCP.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 </Project>
