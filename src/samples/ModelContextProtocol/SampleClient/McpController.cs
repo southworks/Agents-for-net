@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.MCP.Core.JsonRpc;
-using Microsoft.Agents.MCP.Client.Handlers.Initialization;
+using Microsoft.Agents.MCP.Client.Initialization;
 using Microsoft.Agents.MCP.Core.Handlers.Contracts.SharedMethods.Ping;
 using Microsoft.Agents.MCP.Core.Abstractions;
 using Microsoft.Agents.MCP.Core.Transport;

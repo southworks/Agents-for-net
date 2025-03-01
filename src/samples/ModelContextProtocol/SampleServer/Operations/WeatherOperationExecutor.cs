@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using Microsoft.Agents.MCP.Core.Payloads;
-using Microsoft.Agents.MCP.Server.Handlers.Methods.Tools.ToolsCall.Handlers;
+using Microsoft.Agents.MCP.Server.Methods.Tools.ToolsCall.Handlers;
 using Microsoft.Agents.MCP.Core.Abstractions;
 using Microsoft.Agents.MCP.Core.Handlers.Contracts.ClientMethods.Logging;
 using Microsoft.Agents.MCP.Core.Handlers.Contracts.ClientMethods.Sampling;

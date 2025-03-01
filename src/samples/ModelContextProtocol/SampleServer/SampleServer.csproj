@@ -7,13 +7,11 @@
     <SkipAspExtension>true</SkipAspExtension>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Server\Microsoft.Agents.MCP.Server.DependencyInjection\Microsoft.Agents.MCP.Server.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Core\Microsoft.Agents.MCP.Core\Microsoft.Agents.MCP.Core.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Server\Microsoft.Agents.MCP.Server.Handlers\Microsoft.Agents.MCP.Server.Handlers.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Server\Microsoft.Agents.MCP.Server.Transports\Microsoft.Agents.MCP.Server.Transports.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Hosting\Microsoft.Agents.MCP.Server.AspNet\Microsoft.Agents.MCP.Server.AspNet.csproj" />
   </ItemGroup>
-
+  
+ 
 </Project>

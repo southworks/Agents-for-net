@@ -9,9 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\libraries\MCP\Core\Microsoft.Agents.MCP.Core\Microsoft.Agents.MCP.Core.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.DependencyInjection\Microsoft.Agents.MCP.Client.DependencyInjection.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.Handlers\Microsoft.Agents.MCP.Client.Handlers.csproj" />
-    <ProjectReference Include="..\..\..\libraries\MCP\Client\Microsoft.Agents.MCP.Client.Transports\Microsoft.Agents.MCP.Client.Transports.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.MCP.Client\Microsoft.Agents.MCP.Client.csproj" />
   </ItemGroup>
+
 </Project>
