@@ -81,8 +81,8 @@ public class MemoryMcpSessionManager : IMcpSessionManager
     {
         public CancellationTokenSource ctSource = new CancellationTokenSource();
         public McpContextProperties Properties { get; set; } = new();
-        ConcurrentDictionary<StreamConsumer, bool> incomingStreamConsumers = new();
-        ConcurrentDictionary<StreamConsumer, bool> outgoingStreamConsumers = new();
+        ConcurrentDictionary<StreamConsumer.StreamEnumerable, bool> incomingStreamConsumers = new();
+        ConcurrentDictionary<StreamConsumer.StreamEnumerable, bool> outgoingStreamConsumers = new();
         private readonly ILogger _logger;
 
         public MemorySession(Func<CancellationToken, Task> closeAsync, ILogger logger)
@@ -95,9 +95,8 @@ public class MemoryMcpSessionManager : IMcpSessionManager
         private static readonly UnboundedChannelOptions s_channelOptions = new()
         {
             AllowSynchronousContinuations = true,
-            SingleWriter = false, // typing activities may come concurrently 
+            SingleWriter = false,
             SingleReader = false,
-
         };
 
         public async Task WriteOutgoingPayload(McpPayload request, CancellationToken cancellationToken)
@@ -114,15 +113,13 @@ public class MemoryMcpSessionManager : IMcpSessionManager
 
         public IAsyncEnumerable<McpPayload> GetIncomingMessagesAsync(CancellationToken cancellationToken)
         {
-            var consumer = new StreamConsumer(cancellationToken);
-            incomingStreamConsumers.TryAdd(consumer, true);
+            var consumer = new StreamConsumer(this, cancellationToken, true);
             return consumer;
         }
 
         public IAsyncEnumerable<McpPayload> GetResponseMessagesAsync(CancellationToken cancellationToken)
         {
-            var consumer = new StreamConsumer(cancellationToken);
-            outgoingStreamConsumers.TryAdd(consumer, true);
+            var consumer = new StreamConsumer(this, cancellationToken, false);
             return consumer;
         }
 
@@ -133,7 +130,7 @@ public class MemoryMcpSessionManager : IMcpSessionManager
             {
                 foreach (var consumer in incomingStreamConsumers)
                 {
-                    consumer.Key.SendPayload(payload);
+                    await consumer.Key.NotifyAsync(payload);
                 }
             }
         }
@@ -145,7 +142,7 @@ public class MemoryMcpSessionManager : IMcpSessionManager
             {
                 foreach(var consumer in outgoingStreamConsumers)
                 {
-                    consumer.Key.SendPayload(payload);
+                    await consumer.Key.NotifyAsync(payload);
                 }
             }
         }
@@ -181,114 +178,107 @@ public class MemoryMcpSessionManager : IMcpSessionManager
         private readonly Channel<McpPayload> _outgoingQueue = Channel.CreateUnbounded<McpPayload>(s_channelOptions);
 
         private readonly Channel<McpPayload> _incomingQueue = Channel.CreateUnbounded<McpPayload>(s_channelOptions);
+
+        internal void Register(StreamConsumer.StreamEnumerable streamEnumerable, bool isIncoming)
+        {
+            if(isIncoming)
+            {
+                incomingStreamConsumers.TryAdd(streamEnumerable, true);
+            }
+            else
+            {
+                outgoingStreamConsumers.TryAdd(streamEnumerable, true);
+            }
+        }
+
+        internal void Remove(StreamConsumer.StreamEnumerable streamEnumerable, bool isIncoming)
+        {
+            if (isIncoming)
+            {
+                incomingStreamConsumers.TryRemove(streamEnumerable, out _);
+            }
+            else
+            {
+                outgoingStreamConsumers.TryRemove(streamEnumerable, out _);
+            }
+        }
     }
 
     private class StreamConsumer : IAsyncEnumerable<McpPayload>
     {
-        public StreamConsumer(CancellationToken ct)
+        private readonly MemorySession memorySession;
+        private readonly bool isIncoming;
+        private readonly CancellationToken cancellationToken;
+
+        public StreamConsumer(MemorySession memorySession, CancellationToken ct, bool isIncoming)
         {
-            this.listeners = new ConcurrentDictionary<StreamEnumerable, bool>();
-            this.CancellationToken = ct;
+            this.memorySession = memorySession;
+            this.cancellationToken = ct;
+            this.isIncoming = isIncoming;
         }
-
-        public bool IsCanceled { get; set; }
-        public bool IsClosed => CancellationToken.IsCancellationRequested;
-        public CancellationToken CancellationToken { get; }
-
-        private readonly List<McpPayload> payloads = new();
-        private ConcurrentDictionary<StreamEnumerable, bool> listeners;
 
         public IAsyncEnumerator<McpPayload> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
-            var l = new StreamEnumerable(this, CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken));
-            listeners.TryAdd(l, true);
-            return l;
-        }
-
-        internal void SendPayload(McpPayload payload)
-        {
-            payloads.Add(payload);
-
-            foreach(var i in listeners)
-            {
-                i.Key.Notify();
-            }
-
-        }
-
-        internal void Cancel()
-        {
-            IsCanceled = true;
-
-            // Close the Waiting AsyncEnumerators
+            return new StreamEnumerable(this, CancellationTokenSource.CreateLinkedTokenSource(this.cancellationToken, cancellationToken));
         }
 
         internal class StreamEnumerable : IAsyncEnumerator<McpPayload>
         {
-            private int index = -1;
-            private StreamConsumer streamConsumer;
-            private readonly SemaphoreSlim waitSema = new(1,1);
+            private McpPayload? _current;
+            private static readonly UnboundedChannelOptions s_channelOptions = new()
+            {
+                AllowSynchronousContinuations = true,
+                SingleWriter = false,
+                SingleReader = true,
+            };
 
+
+            private readonly Channel<McpPayload> _incomingQueue = Channel.CreateUnbounded<McpPayload>(s_channelOptions);
+            private StreamConsumer streamConsumer;
             private CancellationTokenSource cancellationToken;
 
             public StreamEnumerable(StreamConsumer streamConsumer, CancellationTokenSource cancellationToken)
             {
                 this.streamConsumer = streamConsumer;
                 this.cancellationToken = cancellationToken;
+                streamConsumer.memorySession.Register(this, streamConsumer.isIncoming);
             }
 
             public McpPayload Current
             {
                 get
                 {
-                    if (index == -1)
+                    if (_current == null)
                     {
                         throw new Exception("Move index before consuming");
                     }
-                    if(index >= streamConsumer.payloads.Count)
-                    {
-                        throw new Exception("End of stream");
-                    }
 
-                    return streamConsumer.payloads[index];
+                    return _current;
                 }
             }
 
             public ValueTask DisposeAsync()
             {
-                streamConsumer.listeners.TryRemove(this, out _);
+                streamConsumer.memorySession.Remove(this, streamConsumer.isIncoming);
                 cancellationToken.Dispose();
                 return ValueTask.CompletedTask;
             }
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                index++;
-                if(index < streamConsumer.payloads.Count)
-                {
-                    return true;
-                }    
-
-                while (index >= streamConsumer.payloads.Count)
-                {
-                    // Wait for more payloads.
-                    // TODO: Could be a race condition if we wait AFTER the release happened, causing it to lock up.
-                    await waitSema.WaitAsync(index, cancellationToken.Token);
-                }
-
-                return !cancellationToken.IsCancellationRequested;
+                var c = await _incomingQueue.Reader.ReadAsync(cancellationToken.Token);
+                _current = c;
+                return true;
             }
 
-            internal void Notify()
+            internal async Task NotifyAsync(McpPayload payload)
             {
-                try
-                {
-                    waitSema.Release();
-                } catch(SemaphoreFullException)
-                {
+                await _incomingQueue.Writer.WriteAsync(payload);
+            }
 
-                }
-                
+            internal void Cancel()
+            {
+                throw new NotImplementedException();
             }
         }
     }

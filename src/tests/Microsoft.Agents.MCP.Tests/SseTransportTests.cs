@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -30,48 +29,23 @@ using Xunit;
 
 namespace Microsoft.Agents.MCP.Tests
 {
-    public class TransportTests
+    public class SseTransportTests : TransportTestBase
     {
-        [Fact]
-        public async Task InitializeClient()
+        protected override IMcpTransport CreateTransport(IMcpProcessor processor, ITransportManager transportManager, ILogger<SseTransportTests> logger)
         {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddLogging();
-            serviceCollection.AddModelContextProtocolHandlers();
-            serviceCollection.AddDefaultOperationFactory();
-            serviceCollection.AddDefaultPayloadExecutionFactory();
-            serviceCollection.AddDefaultPayloadResolver();
-            serviceCollection.AddMemorySessionManager();
-            serviceCollection.AddTransportManager();
-
-            serviceCollection.AddDefaultServerExecutors();
-            serviceCollection.AddDefaultClientExecutors();
-
-            using var services = serviceCollection.BuildServiceProvider();
-            var processor = services.GetRequiredService<IMcpProcessor>();
-            var transportManager = services.GetRequiredService<ITransportManager>();
-            var logger = services.GetRequiredService<ILogger<TransportTests>>();
-
             Mock<IHttpClientFactory> httpClientFactoryMock = new Mock<IHttpClientFactory>();
             SetupFakeHttpCalls(httpClientFactoryMock, processor, transportManager, logger);
-            var transport = new HttpSseClientTransport("http://localhost/", httpClientFactoryMock.Object);
-
-            var session = await processor.CreateSessionAsync(transport, CancellationToken.None);
-            await ClientRequestHelpers.InitializeAsync(session, new InitializationParameters() { }, CancellationToken.None);
-            var ping = await ClientRequestHelpers.SendAsync<PingResponse>(session, new McpPingRequest(PingRequestParameters.Instance), CancellationToken.None);
-
+            return new HttpSseClientTransport("http://localhost/", httpClientFactoryMock.Object);
         }
 
         private void SetupFakeHttpCalls(
             Mock<IHttpClientFactory> httpClientFactoryMock,
             IMcpProcessor processor,
             ITransportManager transportManager,
-            ILogger<TransportTests> logger)
+            ILogger<SseTransportTests> logger)
         {
-            // Use the HttpClientFactory mock to connect the client transport to the appropriate server transport
-            var clientMock = new Mock<HttpClient>();
             var handler = new PlumbingHandler(processor, transportManager, logger);
-            httpClientFactoryMock.Setup(x => x.CreateClient("")).Returns(new HttpClient(handler, false));
+            httpClientFactoryMock.Setup(x => x.CreateClient("")).Returns(() => new HttpClient(handler, false));
         }
 
         private class PlumbingHandler : HttpClientHandler

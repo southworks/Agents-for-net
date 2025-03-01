@@ -13,7 +13,7 @@ namespace Microsoft.Agents.MCP.Client.Initialization
           CancellationToken ct)
         {
             var result = await SendAsync<InitializationResult>(session, new McpInitializeRequest(parameters), ct);
-            // TODO: Validate server response result
+            // TODO: Validate server initialization response result
             await SendAsync(session, new McpInitializeNotification(InitializeNotificationParameters.Instance), ct);
         }
 
@@ -30,10 +30,11 @@ namespace Microsoft.Agents.MCP.Client.Initialization
             McpRequest request, 
             CancellationToken ct)
         {
-            var results = session.GetIncomingSessionStream(ct);
+            var results = session.GetIncomingSessionStream(ct).GetAsyncEnumerator();
             await session.WriteOutgoingPayload(request, ct);
-            await foreach(var item in results)
+            while (await results.MoveNextAsync())
             {
+                var item = results.Current;
                 if (item is McpResult<JsonElement> response && response.Id == request.Id)
                 {
                     // Try Parse JsonElement as InitializeResponse

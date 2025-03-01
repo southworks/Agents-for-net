@@ -83,12 +83,12 @@ namespace Microsoft.Agents.MCP.Client.Transports
         /// <returns>A task that represents the asynchronous connect operation.</returns>
         public Task Connect(string sessionId, Func<JsonRpcPayload, CancellationToken, Task> ingestMessage, Func<CancellationToken, Task> close)
         {
+            SessionId = sessionId;
             if (SessionId != null)
             {
                 transportManager.AddTransport(SessionId, this);
             }
             ingestionFunc = ingestMessage;
-            SessionId = sessionId;
             return Task.CompletedTask;
         }
 

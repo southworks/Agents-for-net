@@ -63,28 +63,37 @@ public class OperationContext : IMcpContext
     public async Task<McpPayload> PostRequestAsync(McpRequest payload, CancellationToken ct)
     {
         logger.LogInformation($"Posting request: {payload.Method}");
+        var sessionReader = session.GetIncomingSessionStream(ct).GetAsyncEnumerator();
         await session.WriteOutgoingPayload(payload, ct);
-        var waitForResultTask = WaitForResultAsync(payload.Id, ct);
-
+        var waitForResultTask = WaitForResultAsync(payload.Id, sessionReader, ct);
         return await waitForResultTask;
     }
 
-    private async Task<McpPayload> WaitForResultAsync(string id, CancellationToken ct)
+    private async Task<McpPayload> WaitForResultAsync(string id, IAsyncEnumerator<McpPayload> sessionReader, CancellationToken ct)
     {
         logger.LogDebug($"Waiting for result with ID: {id}");
-        await foreach (var incomingPayload in session.GetIncomingSessionStream(ct))
+        try
         {
-            if (incomingPayload is McpResult result && result.Id == id)
+            while (await sessionReader.MoveNextAsync())
             {
-                logger.LogInformation($"Received result for ID: {id}");
-                return result;
-            }
-            if (incomingPayload is McpError error && error.Id == id)
-            {
-                logger.LogError($"Received error for ID: {id}");
-                return error;
+                var incomingPayload = sessionReader.Current;
+                if (incomingPayload is McpResult result && result.Id == id)
+                {
+                    logger.LogInformation($"Received result for ID: {id}");
+                    return result;
+                }
+                if (incomingPayload is McpError error && error.Id == id)
+                {
+                    logger.LogError($"Received error for ID: {id}");
+                    return error;
+                }
             }
         }
+        finally
+        {
+            await sessionReader.DisposeAsync();
+        }
+
 
         var errorMessage = "Unable to get result for a closed session";
         logger.LogError(errorMessage);
