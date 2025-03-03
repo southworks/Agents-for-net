@@ -67,7 +67,7 @@ namespace AuthenticationBot
         {
             if (turnContext.Activity.Text == "auto")
             {
-                await turnContext.SendActivityAsync($"Successfully logged in to '{Authentication.Default}', token length: {turnState.Temp.AuthTokens[Authentication.Default].Length}", cancellationToken: cancellationToken);
+                await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authentication.Default}', token length: {turnState.Temp.AuthTokens[Authentication.Default].Length}", cancellationToken: cancellationToken);
             }
             else
             {
