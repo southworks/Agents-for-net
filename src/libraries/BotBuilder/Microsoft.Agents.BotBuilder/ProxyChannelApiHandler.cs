@@ -19,7 +19,8 @@ namespace Microsoft.Agents.BotBuilder
 {
     /// <summary>
     /// This IChannelApiHandler is primarily used when calling another bot using DeliveryModes.Normal, and forwarding most
-    /// bot replies to the originating channel.
+    /// bot replies to the originating channel.  This is the legacy behavior for the Root bot in a Skill scenario, including 
+    /// for Dialogs SkillDialog.
     /// </summary>
     public class ProxyChannelApiHandler : IChannelApiHandler
     {

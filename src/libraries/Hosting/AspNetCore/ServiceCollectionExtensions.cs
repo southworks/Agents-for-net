@@ -17,56 +17,32 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     public static class ServiceCollectionExtensions
     {
-        /// <summary>
-        /// Add the default CloudAdapter.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="async"></param>
-        public static void AddCloudAdapter(this IServiceCollection services)
+        public static IHostApplicationBuilder AddBot(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory, IStorage storage = null)
         {
-            services.AddCloudAdapter<CloudAdapter>();
+            return AddBot<CloudAdapter>(builder, implementationFactory, storage);
         }
 
-        /// <summary>
-        /// Add the derived CloudAdapter.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="async"></param>
-        public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
-        {
-            AddAsyncCloudAdapterSupport(services);
-
-            services.AddSingleton<CloudAdapter, T>();
-            services.AddSingleton<IBotHttpAdapter>(sp => sp.GetService<CloudAdapter>());
-            services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
-        }
-
-        public static IHostApplicationBuilder AddBot(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
-        {
-            return AddBot<CloudAdapter>(builder, implementationFactory);
-        }
-
-        public static IHostApplicationBuilder AddBot<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory)
+        public static IHostApplicationBuilder AddBot<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory, IStorage storage = null)
             where TAdapter : CloudAdapter
         {
-            AddCore<TAdapter>(builder);
+            AddCore<TAdapter>(builder, storage);
 
             builder.Services.AddTransient<IBot>(implementationFactory);
 
             return builder;
         }
 
-        public static IHostApplicationBuilder AddBot<TBot>(this IHostApplicationBuilder builder)
+        public static IHostApplicationBuilder AddBot<TBot>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TBot : class, IBot
         {
-            return AddBot<TBot, CloudAdapter>(builder);
+            return AddBot<TBot, CloudAdapter>(builder, storage);
         }
 
-        public static IHostApplicationBuilder AddBot<TBot, TAdapter>(this IHostApplicationBuilder builder)
+        public static IHostApplicationBuilder AddBot<TBot, TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TBot : class, IBot
             where TAdapter : CloudAdapter
         {
-            AddCore<TAdapter>(builder);
+            AddCore<TAdapter>(builder, storage);
 
             // Add the Bot,  this is the primary worker for the bot. 
             builder.Services.AddTransient<IBot, TBot>();
@@ -74,7 +50,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        public static IHostApplicationBuilder AddChannelHost<THandler>(this IHostApplicationBuilder builder, string httpBotClientName = "HttpBotClient")
+        /// <summary>
+        /// Adds bot-to-bot functionality.
+        /// </summary>
+        /// <typeparam name="THandler"></typeparam>
+        /// <param name="builder"></param>
+        /// <param name="httpBotClientName"></param>
+        /// <param name="storage">Used for ConversationIdFactory.  If null, the registered IStorage will be used.</param>
+        /// <returns></returns>
+        public static IHostApplicationBuilder AddChannelHost<THandler>(this IHostApplicationBuilder builder, string httpBotClientName = "HttpBotClient", IStorage storage = null)
             where THandler : class, IChannelApiHandler
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(httpBotClientName);
@@ -99,7 +83,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add conversation id factory.  
             // This is a memory only implementation, and for production would require persistence.
-            builder.Services.AddSingleton<IConversationIdFactory, ConversationIdFactory>();
+            if (storage != null)
+            {
+                builder.Services.AddSingleton<IConversationIdFactory>(sp => new ConversationIdFactory(storage));
+            }
+            else
+            {
+                builder.Services.AddSingleton<IConversationIdFactory, ConversationIdFactory>();
+            }
 
             // Add bot callback handler.
             // This is the object that handles callback endpoints for bot responses.
@@ -109,7 +100,31 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
-        private static void AddCore<TAdapter>(this IHostApplicationBuilder builder)
+        /// <summary>
+        /// Add the default CloudAdapter.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="async"></param>
+        public static void AddCloudAdapter(this IServiceCollection services)
+        {
+            services.AddCloudAdapter<CloudAdapter>();
+        }
+
+        /// <summary>
+        /// Add the derived CloudAdapter.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="async"></param>
+        public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
+        {
+            AddAsyncCloudAdapterSupport(services);
+
+            services.AddSingleton<CloudAdapter, T>();
+            services.AddSingleton<IBotHttpAdapter>(sp => sp.GetService<CloudAdapter>());
+            services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+        }
+
+        private static void AddCore<TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TAdapter : CloudAdapter
         {
             // Add Connections object to access configured token connections.
@@ -119,7 +134,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             builder.Services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
 
             // Add IStorage for turn state persistence
-            builder.Services.AddSingleton<IStorage, MemoryStorage>();
+            if (storage != null)
+            {
+                builder.Services.AddSingleton(storage);
+            }
+            else
+            {
+                builder.Services.AddSingleton<IStorage, MemoryStorage>();
+            }
 
             // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
             AddCloudAdapter<TAdapter>(builder.Services);
