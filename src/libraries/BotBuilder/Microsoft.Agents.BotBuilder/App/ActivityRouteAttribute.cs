@@ -10,7 +10,7 @@ namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
     /// Adds an AgentApplication.OnActivity route.
-    /// Only one of Type, Regex, or Selector will be used:
+    /// Only one of will be used:
     /// 1. Type
     /// 2. Regex
     /// 3. Selector
