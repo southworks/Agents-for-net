@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Mcp.Core.Payloads;
 using Microsoft.Agents.Mcp.Core.Abstractions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Mcp.Core;
 
@@ -25,25 +23,31 @@ public class McpProcessor : IMcpProcessor
     public async Task<IMcpSession> CreateSessionAsync(IMcpTransport transport, CancellationToken ct)
     {
         var session = await sessionManager.CreateSessionAsync(transport, ct);
+        var enumerator = session.GetIncomingSessionStream(CancellationToken.None).GetAsyncEnumerator();
+        
         // Hook session into processing pipeline
-        _ = Task.Run(() => ConnectSessionAsync(session, ct));
+        _ = Task.Run(() => ConnectSessionAsync(session, enumerator, ct));
         return session;
     }
 
-    private async Task ConnectSessionAsync(IMcpSession session, CancellationToken ct)
+    private async Task ConnectSessionAsync(IMcpSession session, IAsyncEnumerator<McpPayload> enumerator, CancellationToken ct)
     {
-        using var sharedToken = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var sharedToken = new CancellationTokenSource();
 
         try
         {
-            await foreach (var incomingPayload in session.GetIncomingSessionStream(ct))
+            while (await enumerator.MoveNextAsync())
             {
-                _ = Task.Run(() => ExecuteOperation(session, incomingPayload, sharedToken.Token)); 
+                _ = Task.Run(() => ExecuteOperation(session, enumerator.Current, sharedToken.Token)); 
             }
         }
         catch (Exception)
         {
             sharedToken.Cancel();
+        }
+        finally
+        {
+            sharedToken.Dispose();
         }
 
     }
