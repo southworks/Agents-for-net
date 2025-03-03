@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text;
 using System.Text.Json;
+using System;
 
 namespace WeatherBot.Agents
 {
@@ -67,6 +68,8 @@ namespace WeatherBot.Agents
         /// <returns>An instance of <see cref="WeatherForecastAgentResponse"/></returns>
         public async Task<WeatherForecastAgentResponse> InvokeAgentAsync(string input, ChatHistory chatHistory)
         {
+            ArgumentNullException.ThrowIfNull(chatHistory);
+
             ChatMessageContent message = new(AuthorRole.User, input);
             chatHistory.Add(message);
 
