@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Core.Models
+namespace Microsoft.Agents.Connector.Types
 {
     /// <summary> Metadata for an attachment. </summary>
     public class AttachmentInfo

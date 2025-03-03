@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
     public class TeamsAttachmentDownloader : IInputFileDownloader
     {
         private readonly TeamsAttachmentDownloaderOptions _options;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IAccessTokenProvider _accessTokenProvider;
 
 
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 throw new ArgumentException("TeamsAttachmentDownloader.TokenProviderName not found.");
             }
 
-            _httpClient = httpClientFactory.CreateClient(nameof(TeamsAttachmentDownloader));
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <inheritdoc />
@@ -77,11 +77,11 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 accessToken = await _accessTokenProvider.GetAccessTokenAsync(BotClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
             }
 
-            List<InputFile> files = new();
+            List<InputFile> files = [];
 
             foreach (Attachment attachment in attachments)
             {
-                InputFile? file = await _DownloadFile(attachment, accessToken);
+                InputFile? file = await DownloadFileAsync(attachment, accessToken);
                 if (file != null)
                 {
                     files.Add(file);
@@ -92,9 +92,11 @@ namespace Microsoft.Agents.Extensions.Teams.App
         }
 
 
-        private async Task<InputFile?> _DownloadFile(Attachment attachment, string accessToken)
+        private async Task<InputFile?> DownloadFileAsync(Attachment attachment, string accessToken)
         {
             string? name = attachment.Name;
+
+            using var httpClient = _httpClientFactory.CreateClient(nameof(TeamsAttachmentDownloader));
 
             if (attachment.ContentUrl != null && (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
             {
@@ -115,7 +117,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 {
                     request.Headers.Add("Authorization", $"Bearer {accessToken}");
 
-                    HttpResponseMessage response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+                    HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
 
                     // Failed to download file
                     if (!response.IsSuccessStatusCode)

@@ -3,9 +3,7 @@
 
 #nullable disable
 
-using System;
-
-namespace Microsoft.Agents.Core.Models
+namespace Microsoft.Agents.Connector.Types
 {
     /// <summary> Attachment data. </summary>
     public class AttachmentData
@@ -29,12 +27,12 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary> Content-Type of the attachment. </summary>
-        public string Type { get; }
+        public string Type { get; set; }
         /// <summary> Name of the attachment. </summary>
-        public string Name { get; }
+        public string Name { get; set; }
         /// <summary> Attachment content. </summary>
-        public byte[] OriginalBase64 { get; }
+        public byte[] OriginalBase64 { get; set; }
         /// <summary> Attachment thumbnail. </summary>
-        public byte[] ThumbnailBase64 { get; }
+        public byte[] ThumbnailBase64 { get; set; }
     }
 }

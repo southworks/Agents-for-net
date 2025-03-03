@@ -7,6 +7,7 @@ using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -17,6 +18,26 @@ namespace Microsoft.Agents.Connector.RestClients
     internal class AttachmentsRestClient(IRestTransport transport) : IAttachments
     {
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
+
+        /// <summary>
+        /// Get the URI of an attachment view.
+        /// </summary>
+        /// <param name="attachmentId">id of the attachment.</param>
+        /// <param name="viewId">default is "original".</param>
+        /// <returns>uri.</returns>
+#pragma warning disable CA1055 // Uri return values should not be strings (we can't change this without breaking binary compat)
+        public string GetAttachmentUri(string attachmentId, string viewId = "original")
+#pragma warning restore CA1055 // Uri return values should not be strings
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(attachmentId);
+
+            // Construct URL
+            var baseUrl = _transport.Endpoint.ToString();
+            var url = new Uri(new Uri(baseUrl + (baseUrl.EndsWith("/", StringComparison.OrdinalIgnoreCase) ? string.Empty : "/", StringComparison.OrdinalIgnoreCase)), "v3/attachments/{attachmentId}/views/{viewId}").ToString();
+            url = url.Replace("{attachmentId}", Uri.EscapeDataString(attachmentId));
+            url = url.Replace("{viewId}", Uri.EscapeDataString(viewId));
+            return url;
+        }
 
         internal HttpRequestMessage CreateGetAttachmentInfoRequest(string attachmentId)
         {

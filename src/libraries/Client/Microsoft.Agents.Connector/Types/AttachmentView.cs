@@ -3,7 +3,7 @@
 
 #nullable disable
 
-namespace Microsoft.Agents.Core.Models
+namespace Microsoft.Agents.Connector.Types
 {
     /// <summary> Attachment View name and size. </summary>
     public class AttachmentView

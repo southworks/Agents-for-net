@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
