@@ -1,35 +1,35 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Agents.MCP.Core.JsonRpc;
-using Microsoft.Agents.MCP.Client.Initialization;
-using Microsoft.Agents.MCP.Core.Handlers.Contracts.SharedMethods.Ping;
-using Microsoft.Agents.MCP.Core.Abstractions;
-using Microsoft.Agents.MCP.Core.Transport;
-using Microsoft.Agents.MCP.Client.Transports;
-using Microsoft.Agents.MCP.Core.Handlers.Contracts.ServerMethods.Initialize;
+using Microsoft.Agents.Mcp.Core.JsonRpc;
+using Microsoft.Agents.Mcp.Client.Initialization;
+using Microsoft.Agents.Mcp.Core.Handlers.Contracts.SharedMethods.Ping;
+using Microsoft.Agents.Mcp.Core.Abstractions;
+using Microsoft.Agents.Mcp.Core.Transport;
+using Microsoft.Agents.Mcp.Client.Transports;
+using Microsoft.Agents.Mcp.Core.Handlers.Contracts.ServerMethods.Initialize;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
 using System;
 
-namespace Microsoft.Agents.MCP.Client.Sample;
+namespace Microsoft.Agents.Mcp.Client.Sample;
 
 [Route("/")]
 [ApiController]
 public class McpController : Controller
 {
     private readonly IHttpClientFactory httpClientFactory;
-    private readonly IMcpProcessor mcpProcessor;
+    private readonly IMcpProcessor McpProcessor;
     private readonly ITransportManager transportManager;
 
     public McpController(
         IHttpClientFactory httpClientFactory,
-        IMcpProcessor mcpProcessor,
+        IMcpProcessor McpProcessor,
         ITransportManager transportManager,
-        IMcpHandler mcpHandler)
+        IMcpHandler McpHandler)
     {
         this.httpClientFactory = httpClientFactory;
-        this.mcpProcessor = mcpProcessor;
+        this.McpProcessor = McpProcessor;
         this.transportManager = transportManager;
     }
 
@@ -40,13 +40,13 @@ public class McpController : Controller
     }
 
 
-    [HttpPost("/mcp/test")]
+    [HttpPost("/Mcp/test")]
     public async Task<IActionResult> Test([FromBody] JsonRpcPayload request, CancellationToken ct)
     {
         using var inputStream = new MemoryStream();
         using var outputStream = new MemoryStream();
         var transport = new HttpSseClientTransport("", httpClientFactory);
-        var session = await mcpProcessor.CreateSessionAsync(transport, ct);
+        var session = await McpProcessor.CreateSessionAsync(transport, ct);
         await ClientRequestHelpers.InitializeAsync(session, new InitializationParameters() { }, ct);
         var ping = await ClientRequestHelpers.SendAsync<PingResponse>(session, new McpPingRequest(PingRequestParameters.Instance), ct);
         return Ok(ping);

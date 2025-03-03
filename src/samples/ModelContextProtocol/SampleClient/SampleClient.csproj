@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.MCP.Client\Microsoft.Agents.MCP.Client.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.Mcp.Client\Microsoft.Agents.Mcp.Client.csproj" />
   </ItemGroup>
 
 </Project>

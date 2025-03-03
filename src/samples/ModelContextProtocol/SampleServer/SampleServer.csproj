@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
-    <ProjectReference Include="..\..\..\libraries\Hosting\Microsoft.Agents.MCP.Server.AspNet\Microsoft.Agents.MCP.Server.AspNet.csproj" />
+    <ProjectReference Include="..\..\..\libraries\Hosting\Microsoft.Agents.Mcp.Server.AspNet\Microsoft.Agents.Mcp.Server.AspNet.csproj" />
   </ItemGroup>
   
  

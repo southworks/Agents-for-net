@@ -1,9 +1,9 @@
-using Microsoft.Agents.MCP.Server.Sample.Operations;
+using Microsoft.Agents.Mcp.Server.Sample.Operations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.MCP.Core.DependencyInjection;
-using Microsoft.Agents.MCP.Server.DependencyInjection;
+using Microsoft.Agents.Mcp.Core.DependencyInjection;
+using Microsoft.Agents.Mcp.Server.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();

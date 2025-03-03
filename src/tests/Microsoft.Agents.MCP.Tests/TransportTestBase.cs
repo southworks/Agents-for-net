@@ -1,18 +1,18 @@
-﻿using Microsoft.Agents.MCP.Client.DependencyInjection;
-using Microsoft.Agents.MCP.Client.Initialization;
-using Microsoft.Agents.MCP.Core.Abstractions;
-using Microsoft.Agents.MCP.Core.DependencyInjection;
-using Microsoft.Agents.MCP.Core.Handlers.Contracts.ServerMethods.Initialize;
-using Microsoft.Agents.MCP.Core.Handlers.Contracts.SharedMethods.Ping;
-using Microsoft.Agents.MCP.Core.Transport;
-using Microsoft.Agents.MCP.Server.DependencyInjection;
+﻿using Microsoft.Agents.Mcp.Client.DependencyInjection;
+using Microsoft.Agents.Mcp.Client.Initialization;
+using Microsoft.Agents.Mcp.Core.Abstractions;
+using Microsoft.Agents.Mcp.Core.DependencyInjection;
+using Microsoft.Agents.Mcp.Core.Handlers.Contracts.ServerMethods.Initialize;
+using Microsoft.Agents.Mcp.Core.Handlers.Contracts.SharedMethods.Ping;
+using Microsoft.Agents.Mcp.Core.Transport;
+using Microsoft.Agents.Mcp.Server.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.MCP.Tests
+namespace Microsoft.Agents.Mcp.Tests
 {
     public abstract class TransportTestBase
     {

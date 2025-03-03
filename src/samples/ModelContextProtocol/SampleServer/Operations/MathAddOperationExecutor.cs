@@ -1,13 +1,13 @@
 ﻿
-using Microsoft.Agents.MCP.Core.Abstractions;
-using Microsoft.Agents.MCP.Core.Handlers.Contracts.ClientMethods.Logging;
-using Microsoft.Agents.MCP.Core.Payloads;
-using Microsoft.Agents.MCP.Server.Methods.Tools.ToolsCall.Handlers;
+using Microsoft.Agents.Mcp.Core.Abstractions;
+using Microsoft.Agents.Mcp.Core.Handlers.Contracts.ClientMethods.Logging;
+using Microsoft.Agents.Mcp.Core.Payloads;
+using Microsoft.Agents.Mcp.Server.Methods.Tools.ToolsCall.Handlers;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.MCP.Server.Sample.Operations;
+namespace Microsoft.Agents.Mcp.Server.Sample.Operations;
 
 public struct MathAddInput
 {

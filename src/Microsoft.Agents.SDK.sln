@@ -138,7 +138,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentica
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.TestSupport", "tests\Microsoft.Agents.TestSupport\Microsoft.Agents.TestSupport.csproj", "{8DF6799A-AB3E-49A9-9A2A-8BBED20AB0BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.MCP.Tests", "tests\Microsoft.Agents.MCP.Tests\Microsoft.Agents.MCP.Tests.csproj", "{620EE5AF-F4E1-CCD2-C532-2C025F3EF011}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Mcp.Tests", "tests\Microsoft.Agents.Mcp.Tests\Microsoft.Agents.Mcp.Tests.csproj", "{620EE5AF-F4E1-CCD2-C532-2C025F3EF011}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ModelContextProtocol", "ModelContextProtocol", "{B674B6A0-7B7C-4999-9C58-59A257938CBC}"
 EndProject
@@ -146,13 +146,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClient", "samples\Mod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleServer", "samples\ModelContextProtocol\SampleServer\SampleServer.csproj", "{F6D3FED9-ED1D-0A18-3FB5-50A50B100476}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.MCP.Core", "libraries\Core\Microsoft.Agents.MCP.Core\Microsoft.Agents.MCP.Core.csproj", "{B41D2645-6F71-91AA-5816-21D054615F3F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Mcp.Core", "libraries\Core\Microsoft.Agents.Mcp.Core\Microsoft.Agents.Mcp.Core.csproj", "{B41D2645-6F71-91AA-5816-21D054615F3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.MCP.Client", "libraries\Client\Microsoft.Agents.MCP.Client\Microsoft.Agents.MCP.Client.csproj", "{3A9D143E-FB7A-C4A8-1CB4-FD14956452F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Mcp.Client", "libraries\Client\Microsoft.Agents.Mcp.Client\Microsoft.Agents.Mcp.Client.csproj", "{3A9D143E-FB7A-C4A8-1CB4-FD14956452F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.MCP.Server", "libraries\Hosting\Microsoft.Agents.MCP.Server\Microsoft.Agents.MCP.Server.csproj", "{49F71DB8-EA94-B80A-B41E-539E04E75916}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Mcp.Server", "libraries\Hosting\Microsoft.Agents.Mcp.Server\Microsoft.Agents.Mcp.Server.csproj", "{49F71DB8-EA94-B80A-B41E-539E04E75916}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.MCP.Server.AspNet", "libraries\Hosting\Microsoft.Agents.MCP.Server.AspNet\Microsoft.Agents.MCP.Server.AspNet.csproj", "{B6BE3274-38B6-621F-6E34-FA13175FFD34}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Mcp.Server.AspNet", "libraries\Hosting\Microsoft.Agents.Mcp.Server.AspNet\Microsoft.Agents.Mcp.Server.AspNet.csproj", "{B6BE3274-38B6-621F-6E34-FA13175FFD34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

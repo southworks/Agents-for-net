@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Agents.MCP.Core.JsonRpc;
+using Microsoft.Agents.Mcp.Core.JsonRpc;
 using System.Text.Json;
-using Microsoft.Agents.MCP.Core.Abstractions;
-using Microsoft.Agents.MCP.Core.Transport;
-using Microsoft.Agents.MCP.Server.Transports;
+using Microsoft.Agents.Mcp.Core.Abstractions;
+using Microsoft.Agents.Mcp.Core.Transport;
+using Microsoft.Agents.Mcp.Server.AspNet;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,25 +11,25 @@ using System.Threading;
 using System;
 using System.IO;
 
-namespace Microsoft.Agents.MCP.Server.Sample;
+namespace Microsoft.Agents.Mcp.Server.Sample;
 
 [Route("/")]
 [ApiController]
 public class McpController : Controller
 {
     private readonly IHttpClientFactory httpClientFactory;
-    private readonly IMcpProcessor mcpProcessor;
+    private readonly IMcpProcessor McpProcessor;
     private readonly ITransportManager transportManager;
     private readonly ILogger<McpController> logger;
 
     public McpController(
         IHttpClientFactory httpClientFactory,
-        IMcpProcessor mcpProcessor,
+        IMcpProcessor McpProcessor,
         ITransportManager transportManager,
         ILogger<McpController> logger)
     {
         this.httpClientFactory = httpClientFactory;
-        this.mcpProcessor = mcpProcessor;
+        this.McpProcessor = McpProcessor;
         this.transportManager = transportManager;
         this.logger = logger;
     }
@@ -40,43 +40,43 @@ public class McpController : Controller
         return Ok(new { message = "Pong", timestamp = DateTime.UtcNow });
     }
 
-    [HttpGet("/mcp/sse")]
+    [HttpGet("/Mcp/sse")]
     public async Task SseGet(CancellationToken ct)
     {
         logger.LogInformation("Starting SSE connection.");
-        var transport = new HttpSseServerTransport(transportManager, (string session) => $"/mcp/sse/message?sessionId={session}", Response, ct, logger);
-        var session = await mcpProcessor.CreateSessionAsync(transport, ct);
+        var transport = new HttpSseServerTransport(transportManager, (string session) => $"/Mcp/sse/message?sessionId={session}", Response, ct, logger);
+        var session = await McpProcessor.CreateSessionAsync(transport, ct);
         await transport.WaitTillCloseAsync(ct);
         logger.LogInformation("SSE connection closed.");
     }
 
-    [HttpPost("/mcp/sse/message")]
+    [HttpPost("/Mcp/sse/message")]
     public Task<IActionResult> SsePost(JsonRpcPayload request, [FromQuery] string sessionId, CancellationToken ct)
     {
         logger.LogInformation($"Received SSE POST request for session {sessionId}.");
         return DispatchRequest(request, sessionId, ct);
     }
 
-    [HttpPost("/mcp/http")]
+    [HttpPost("/Mcp/http")]
     public async Task<IActionResult> Index(CallbackJsonRpcPayload request, [FromQuery] string? sessionId, CancellationToken ct)
     {
         if (sessionId == null)
         {
             var transport = new HttpCallbackServerTransport(transportManager, httpClientFactory, request.CallbackUrl);
-            var session = await mcpProcessor.CreateSessionAsync(transport, ct);
+            var session = await McpProcessor.CreateSessionAsync(transport, ct);
             sessionId = session.SessionId;
         }
 
         return await DispatchRequest(request, sessionId, ct);
     }
 
-    [HttpPost("/mcp/stdio")]
+    [HttpPost("/Mcp/stdio")]
     public async Task<IActionResult> Stdio([FromBody] JsonRpcPayload request, CancellationToken ct)
     {
         using var inputStream = new MemoryStream();
         using var outputStream = new MemoryStream();
         var transport = new StdioServerTransport(inputStream, outputStream);
-        var session = await mcpProcessor.CreateSessionAsync(transport, ct);
+        var session = await McpProcessor.CreateSessionAsync(transport, ct);
 
         // Simulate writing the request to the input stream
         var writer = new StreamWriter(inputStream) { AutoFlush = true };

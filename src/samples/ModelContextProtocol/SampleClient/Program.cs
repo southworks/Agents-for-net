@@ -1,6 +1,6 @@
 
-using Microsoft.Agents.MCP.Client.DependencyInjection;
-using Microsoft.Agents.MCP.Core.DependencyInjection;
+using Microsoft.Agents.Mcp.Client.DependencyInjection;
+using Microsoft.Agents.Mcp.Core.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

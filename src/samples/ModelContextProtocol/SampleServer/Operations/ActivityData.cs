@@ -1,7 +1,7 @@
 ﻿using Microsoft.Agents.Core.Models;
 using System.Text.Json;
 
-namespace Microsoft.Agents.MCP.Server.Sample.Operations;
+namespace Microsoft.Agents.Mcp.Server.Sample.Operations;
 
 internal class ActivityData
 {
