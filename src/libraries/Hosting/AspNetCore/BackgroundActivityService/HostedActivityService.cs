@@ -6,8 +6,8 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -42,14 +42,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        public HostedActivityService(IServiceProvider provider, IConfiguration config, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger)
+        /// <param name="options"></param>
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IChannelAdapter adapter, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
-            _shutdownTimeoutSeconds = config.GetValue<int>("ShutdownTimeoutSeconds", 60);
+            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
             _activityQueue = activityTaskQueue;
             _adapter = adapter;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
@@ -133,7 +134,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
-                    await _adapter.ProcessActivityAsync(activityWithClaims.ClaimsIdentity, activityWithClaims.Activity, ((IBot) bot).OnTurnAsync, stoppingToken);
+
+                    if (activityWithClaims.IsProactive)
+                    {
+                        await _adapter.ProcessProactiveAsync(
+                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.Activity,
+                            activityWithClaims.ProactiveAudience ?? BotClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
+                            ((IBot)bot).OnTurnAsync, 
+                            stoppingToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await _adapter.ProcessActivityAsync(
+                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.Activity,
+                            ((IBot)bot).OnTurnAsync, 
+                            stoppingToken).ConfigureAwait(false);
+                    }
                 }
                 catch (Exception ex)
                 {
