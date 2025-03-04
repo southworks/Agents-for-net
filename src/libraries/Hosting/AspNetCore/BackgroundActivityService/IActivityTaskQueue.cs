@@ -22,8 +22,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="claimsIdentity">Authenticated <see cref="ClaimsIdentity"/> used to process the 
         /// activity.</param>
         /// <param name="activity"><see cref="Activity"/> to be processed.</param>
+        /// <param name="proactive"></param>
+        /// <param name="proactiveAudience"></param>
         /// <param name="bot"></param>
-        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, Activity activity, Type bot = null);
+        void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null);
 
         /// <summary>
         /// Wait for a signal of an enqueued Activity with Claims to be processed.

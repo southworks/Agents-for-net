@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Agents.State;
 using System;
 
 namespace WeatherBot.Agents
