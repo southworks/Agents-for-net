@@ -8,8 +8,6 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.AI;
-using System.IO;
-using System;
 
 namespace IntermediateMessagesBot
 {
@@ -33,7 +31,7 @@ namespace IntermediateMessagesBot
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                    await turnContext.SendActivityAsync(MessageFactory.Text("Say anything and I'll recite poetry."), cancellationToken);
                 }
             }
         }
@@ -41,6 +39,8 @@ namespace IntermediateMessagesBot
         protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             StreamingResponse response = new StreamingResponse(turnContext);
+
+            await response.QueueInformativeUpdate("Hold on for an awesome poem...", cancellationToken);
 
             await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
                 "Write a poem about why Microsoft Agents SDK is so great.",
@@ -54,7 +54,7 @@ namespace IntermediateMessagesBot
                 }
             }
 
-            await response.EndStream();
+            await response.EndStreamAsync(cancellationToken);
         }
     }
 }

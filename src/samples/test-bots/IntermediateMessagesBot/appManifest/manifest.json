@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "53c6c7ea-ac4a-49c3-8e21-1d86dcd7c8c8",
+  "packageName": "com.Microsoft.Agents.Extensions.Teams.allbotcards",
+  "developer": {
+    "name": "Teams App, Inc.",
+    "websiteUrl": "https://www.microsoft.com",
+    "privacyUrl": "https://www.microsoft.com/privacy",
+    "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Types Of Cards",
+    "full": "Types Of Cards"
+  },
+  "description": {
+    "short": "Types Of Cards.",
+    "full": "This sample shows the feature where user can send different types of cards using bot."
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "53c6c7ea-ac4a-49c3-8e21-1d86dcd7c8c8",
+      "scopes": [
+        "personal"
+      ],
+      "isNotificationOnly": false
+    }
+  ],
+  "validDomains": [
+    "trboehre-azurerelay.servicebus.windows.net"
+  ]
+}
