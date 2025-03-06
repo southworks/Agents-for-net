@@ -40,7 +40,7 @@ namespace IntermediateMessagesBot
         {
             StreamingResponse response = new StreamingResponse(turnContext);
 
-            await response.QueueInformativeUpdate("Hold on for an awesome poem...", cancellationToken);
+            await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
 
             await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
                 "Write a poem about why Microsoft Agents SDK is so great.",
