@@ -10,31 +10,12 @@ namespace Microsoft.Agents.Authentication.Msal.Model
     /// <summary>
     /// Gets and manages connection settings for MSAL Auth
     /// </summary>
-    internal class ConnectionSettings : ConnectionSettingsBase, IMSALConnectionSettings
+    public class ConnectionSettings : ConnectionSettingsBase, IMSALConnectionSettings
     {
-        /*
-        public static ConnectionSettings CreateFromConfigurationOptions(IConfigurationSection configurationSection)
-        {
-            var config = new ConnectionSettings(configurationSection);
-            if (configurationSection != null)
-            {
-                config.CertificateThumbPrint = configurationSection.GetValue<string>("CertThumbprint", string.Empty);
-                config.CertificateSubjectName = configurationSection.GetValue<string>("CertSubjectName", string.Empty);
-                config.CertificateStoreName = configurationSection.GetValue<string>("CertStoreName", "My");
-                config.ValidCertificateOnly = configurationSection.GetValue<bool>("ValidCertificateOnly", true);
-                config.SendX5C = configurationSection.GetValue<bool>("SendX5C", false);
-                config.ClientSecret = configurationSection.GetValue<string>("ClientSecret", string.Empty);
-                config.AuthType = configurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
-            }
-
-            ValidateConfiguration(config);
-
-            return config;
-        }
-        */
-
         public ConnectionSettings(IConfigurationSection configurationSection) : base(configurationSection)
         {
+            ArgumentNullException.ThrowIfNull(configurationSection);
+
             if (configurationSection != null)
             {
                 CertificateThumbPrint = configurationSection.GetValue<string>("CertThumbprint", string.Empty);
@@ -43,14 +24,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 ValidCertificateOnly = configurationSection.GetValue<bool>("ValidCertificateOnly", true);
                 SendX5C = configurationSection.GetValue<bool>("SendX5C", false);
                 ClientSecret = configurationSection.GetValue<string>("ClientSecret", string.Empty);
-                if (string.IsNullOrEmpty(configurationSection.GetValue<string>("AuthType")))
-                {
-                    AuthType = AuthTypes.ClientSecret;
-                }
-                else
-                {
-                    AuthType = configurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
-                }
+                AuthType = configurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
             }
 
             ValidateConfiguration();
@@ -59,7 +33,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         /// <summary>
         /// Auth Type to use for the connection
         /// </summary>
-        public AuthTypes AuthType { get; set; }
+        public AuthTypes AuthType { get; set; } = AuthTypes.ClientSecret;
 
         /// <summary>
         /// Certificate thumbprint to use for the connection when using a certificate that is resident on the machine
