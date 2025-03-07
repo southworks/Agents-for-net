@@ -30,12 +30,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        private static string _correlationId;
+        //private static string _correlationId;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="httpClientFactory"></param>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
         /// <param name="logger"></param>
@@ -43,12 +45,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="middlewares"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public CloudAdapter(
+            IHttpClientFactory httpClientFactory,
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
             BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
+            _httpClientFactory = httpClientFactory;
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
 
@@ -117,9 +121,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
-                _correlationId = "Test-Correlation-Id";
+                //_correlationId = "Test-Correlation-Id";
 
-                //base.ChannelServiceFactory.SetHttpClientFactory(new TestHttpClientFactory());
+                base.ChannelServiceFactory.SetHttpClientFactory(_httpClientFactory);
 
                 if (!IsValidChannelActivity(activity, httpResponse))
                 {
@@ -199,18 +203,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return true;
         }
 
-        internal class TestHttpClientFactory(IHttpClientFactory parent = null) : IHttpClientFactory
-        {
-            private readonly IHttpClientFactory _parent = parent;
+        //internal class TestHttpClientFactory(IHttpClientFactory parent = null) : IHttpClientFactory
+        //{
+        //    private readonly IHttpClientFactory _parent = parent;
 
-            public HttpClient CreateClient(string name)
-            {
-                HttpClient client = _parent != null ? _parent.CreateClient(name) : new();
+        //    public HttpClient CreateClient(string name)
+        //    {
+        //        HttpClient client = _parent != null ? _parent.CreateClient(name) : new();
 
-                client.DefaultRequestHeaders.Add("x-ms-correlation-id", _correlationId);
+        //        client.DefaultRequestHeaders.Add("x-ms-correlation-id", _correlationId);
 
-                return client;
-            }
-        }
+        //        return client;
+        //    }
+        //}
     }
 }

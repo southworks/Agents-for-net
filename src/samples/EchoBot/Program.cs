@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,11 +33,21 @@ builder.Services.AddTransient(sp =>
     };
 });
 
+builder.Services.AddHeaderPropagation(options =>
+{
+    // Propagate if the header exists
+    options.Headers.Add("x-ms-correlation-id");
+});
+
+builder.Services.AddHttpClient("MyClient", c => c.DefaultRequestHeaders.Add("x-ms-correlation-id", "111")).AddHeaderPropagation();
+
 // Add the bot (which is transient)
 builder.AddBot<MyBot>();
 
 
 var app = builder.Build();
+
+app.UseHeaderPropagation();
 
 if (app.Environment.IsDevelopment())
 {

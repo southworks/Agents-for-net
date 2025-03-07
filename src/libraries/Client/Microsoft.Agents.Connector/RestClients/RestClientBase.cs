@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Connector.RestClients
 
         public async Task<HttpClient> GetHttpClientAsync()
         {
-            var httpClient = _httpClientFactory.CreateClient(_httpClientName);
+            var httpClient = _httpClientFactory.CreateClient("MyClient"); // _httpClientName);
 
             if (_tokenProviderFunction != null)
             {

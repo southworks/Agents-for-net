@@ -18,6 +18,7 @@
   <ItemGroup>
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.HeaderPropagation" Version="8.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.SpaServices" Version="3.1.32" />
     <PackageVersion Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.36" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
@@ -92,7 +93,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.29.0" />
     <!-- Required until we move ModelContextProtocol libraries to net9 -->
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-	<!-- Azure OpenAI -->
-	<PackageVersion Include="OpenAI" Version="2.1.0" />
+    <!-- Azure OpenAI -->
+    <PackageVersion Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 </Project>
