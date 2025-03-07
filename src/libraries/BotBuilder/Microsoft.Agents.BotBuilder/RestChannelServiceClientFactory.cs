@@ -31,7 +31,7 @@ namespace Microsoft.Agents.BotBuilder
         private readonly string _tokenServiceAudience;
         private readonly ILogger _logger;
         private readonly IConnections _connections;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private IHttpClientFactory _httpClientFactory;
 
         /// <param name="configuration"></param>
         /// <param name="httpClientFactory">Used to create an HttpClient with the fullname of this class</param>
@@ -63,6 +63,11 @@ namespace Microsoft.Agents.BotBuilder
             _tokenServiceAudience = string.IsNullOrWhiteSpace(tokenAudience)
                 ? tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience))
                 : tokenAudience;
+        }
+
+        public void SetHttpClientFactory(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <inheritdoc />

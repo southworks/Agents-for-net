@@ -14,6 +14,7 @@ using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -29,6 +30,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
+
+        private static string _correlationId;
 
         /// <summary>
         /// 
@@ -114,6 +117,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
+                _correlationId = "Test-Correlation-Id";
+
+                //base.ChannelServiceFactory.SetHttpClientFactory(new TestHttpClientFactory());
+
                 if (!IsValidChannelActivity(activity, httpResponse))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -190,6 +197,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             return true;
+        }
+
+        internal class TestHttpClientFactory(IHttpClientFactory parent = null) : IHttpClientFactory
+        {
+            private readonly IHttpClientFactory _parent = parent;
+
+            public HttpClient CreateClient(string name)
+            {
+                HttpClient client = _parent != null ? _parent.CreateClient(name) : new();
+
+                client.DefaultRequestHeaders.Add("x-ms-correlation-id", _correlationId);
+
+                return client;
+            }
         }
     }
 }

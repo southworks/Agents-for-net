@@ -6,6 +6,7 @@ using System.Threading;
 using System.Security.Claims;
 using System.Collections.Generic;
 using Microsoft.Agents.Connector;
+using System.Net.Http;
 
 namespace Microsoft.Agents.BotBuilder
 {
@@ -37,5 +38,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
         /// <returns>Asynchronous Task with <see cref="IUserTokenClient" /> instance.</returns>
         Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, CancellationToken cancellationToken, bool useAnonymous = false);
+
+        void SetHttpClientFactory(IHttpClientFactory httpClientFactory);
     }
 }
