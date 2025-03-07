@@ -5,7 +5,7 @@
   "id": "<<AAD_APP_CLIENT_ID>>",
   "packageName": "com.Microsoft.Agents.StreamingMessagesBot",
   "developer": {
-    "name": "Teams App, Inc.",
+    "name": "Microsoft, Inc.",
     "websiteUrl": "https://www.microsoft.com",
     "privacyUrl": "https://www.microsoft.com/privacy",
     "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
