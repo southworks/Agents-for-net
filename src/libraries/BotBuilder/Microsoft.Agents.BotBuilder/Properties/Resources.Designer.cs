@@ -88,11 +88,38 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to StreamingResponse instance has already ended..
+        /// </summary>
+        internal static string StreamingResponseEnded {
+            get {
+                return ResourceManager.GetString("StreamingResponseEnded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to StreamingResponse in Teams requires QueueInformativeUpdate to be called first..
+        /// </summary>
+        internal static string TeamsRequiresInformativeFirst {
+            get {
+                return ResourceManager.GetString("TeamsRequiresInformativeFirst", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The AgentApplication.Authentication property is unavailable because no user authentication handlers were configured..
         /// </summary>
         internal static string UserAuthenticationNotConfigured {
             get {
                 return ResourceManager.GetString("UserAuthenticationNotConfigured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        /// </summary>
+        internal static string UserAuthenticationRequiresAdapter {
+            get {
+                return ResourceManager.GetString("UserAuthenticationRequiresAdapter", resourceCulture);
             }
         }
     }

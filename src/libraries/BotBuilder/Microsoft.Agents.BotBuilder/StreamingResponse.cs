@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -21,11 +22,17 @@ namespace Microsoft.Agents.BotBuilder
     ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
     /// </summary>
     /// <remarks>
-    /// Teams channels require that QueueInformativeUpdateAsync is called before calling QueueTextChunk.
+    /// Teams channels require that <see cref="QueueInformativeUpdateAsync"/> is called before calling <see cref="QueueTextChunk"/>.
     /// </remarks>
     /// <remarks>
-    /// Only Teams and WebChat support intermediate messages.  However, channels that do not support
-    /// intermediate message will only receive the final message when EndStreamAsync is called.
+    /// Only Teams and WebChat support streaming messages.  However, channels that do not support
+    /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
+    /// </remarks>
+    /// <remarks>
+    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Bot Channels require
+    /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
+    /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
+    /// in message delivery failures.
     /// </remarks>
     public class StreamingResponse
     {
@@ -58,7 +65,7 @@ namespace Microsoft.Agents.BotBuilder
         public string Message { get; private set; } = "";
 
         /// <summary>
-        /// The interval at which intermediate messages are sent.
+        /// The interval in milliseconds at which intermediate messages are sent.
         /// </summary>
         /// <remarks>
         /// Teams default: 1000
@@ -67,13 +74,13 @@ namespace Microsoft.Agents.BotBuilder
         public int Interval { get; set; }
 
         /// <summary>
-        /// The amount of time EndStreamSync will wait.
+        /// The amount of time in milliseconds EndStreamSync will wait.
         /// </summary>
         /// <remarks>
-        /// This should be adjust based on Interval and the amount of
+        /// This should be adjusted based on Interval and the amount of
         /// text being chunked.
         /// </remarks>
-        public int Timeout { get; set; } = 30000;
+        public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
 
         /// <summary>
         /// Indicate if the current channel supports intermediate messages.
@@ -121,7 +128,7 @@ namespace Microsoft.Agents.BotBuilder
             {
                 if (_ended)
                 {
-                    throw new InvalidOperationException("The stream has already ended.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
                 _informativeSent = true;
@@ -169,12 +176,12 @@ namespace Microsoft.Agents.BotBuilder
             {
                 if (_ended)
                 {
-                    throw new InvalidOperationException("The stream has already ended.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
                 if (!_informativeSent && _isTeamsChannel)
                 {
-                    throw new InvalidOperationException($"Teams channels must use {nameof(StreamingResponse)}.QueueInformativeUpdate first.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsRequiresInformativeFirst, null);
                 }
 
                 // buffer all chunks
@@ -202,7 +209,7 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (_ended)
                     {
-                        throw new InvalidOperationException("The stream has already ended.");
+                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                     }
 
                     _ended = true;
@@ -220,7 +227,7 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (_ended)
                     {
-                        throw new InvalidOperationException("The stream has already ended.");
+                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                     }
 
                     _ended = true;

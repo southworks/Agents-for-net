@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using IntermediateMessagesBot;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
@@ -13,9 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Azure.AI.OpenAI;
-using Azure.Identity;
 using System;
 using System.ClientModel;
+using StreamingMessageBot;
 
 var builder = WebApplication.CreateBuilder(args);
 

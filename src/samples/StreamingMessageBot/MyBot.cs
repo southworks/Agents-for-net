@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.AI;
 
-namespace IntermediateMessagesBot
+namespace StreamingMessageBot
 {
     public class MyBot : AgentApplication
     {
