@@ -42,7 +42,11 @@ namespace Microsoft.Agents.BotBuilder.Errors
         internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
 
-        // Application
+        // UserAuth (base, not Application)
+        internal static AgentErrorDefinition UserAuthenticationHandlerNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.UserAuthenticationHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition FailedToCreateUserAuthenticationHandler = new AgentErrorDefinition(baseBotBuilderErrorCode - 7, Properties.Resources.FailedToCreateUserAuthenticationHandler, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition NoUserAuthenticationHandlers = new AgentErrorDefinition(baseBotBuilderErrorCode - 8, Properties.Resources.NoUserAuthenticationHandlers, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UserAuthenticationTypeNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 9, Properties.Resources.UserAuthenticationTypeNotFound, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

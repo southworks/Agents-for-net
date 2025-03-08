@@ -52,13 +52,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             Assert.Throws<ArgumentNullException>(() =>
             {
                 var app = new TestApplication(new TestApplicationOptions());
-                var options = new UserAuthenticationOptions();
-                options.Handlers =
-                [
-                    MockGraph.Object,
-                    MockSharePoint.Object,
-                ];
-
+                var options = new UserAuthenticationOptions(MockGraph.Object, MockSharePoint.Object);
                 var authManager = new TestUserAuthenticationFeature(app, options);
             });
         }
@@ -68,12 +62,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             // arrange
             var app = new TestApplication(new TestApplicationOptions() {  Adapter = MockChannelAdapter.Object });
-            var options = new UserAuthenticationOptions();
-            options.Handlers =
-            [
-                MockGraph.Object,
-                MockSharePoint.Object,
-            ];
+            var options = new UserAuthenticationOptions(MockGraph.Object, MockSharePoint.Object);
 
             var authManager = new TestUserAuthenticationFeature(app, options);
             var turnContext = MockTurnContext();
@@ -93,14 +82,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             // arrange
             var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
-            var options = new UserAuthenticationOptions
-            {
-                Handlers =
-                [
-                    MockGraph.Object,
-                    MockSharePoint.Object,
-                ]
-            };
+            var options = new UserAuthenticationOptions(MockGraph.Object, MockSharePoint.Object);
             var authManager = new TestUserAuthenticationFeature(app, options);
             var turnContext = MockTurnContext();
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -122,13 +104,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 .Returns(Task.FromResult((TokenResponse) null));
 
             var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
-            var options = new UserAuthenticationOptions
-            {
-                Handlers =
-                [
-                    MockGraph.Object
-                ]
-            };
+            var options = new UserAuthenticationOptions(MockGraph.Object);
             var authManager = new TestUserAuthenticationFeature(app, options);
             var turnContext = MockTurnContext();
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
@@ -145,15 +121,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             // arrange
             var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
-            var options = new UserAuthenticationOptions
-            {
-                Handlers =
-                [
-                    MockGraph.Object,
-                    MockSharePoint.Object,
-                ]
-            };
-
+            var options = new UserAuthenticationOptions(MockGraph.Object, MockSharePoint.Object);
             var authManager = new TestUserAuthenticationFeature(app, options);
             var turnContext = MockTurnContext();
             
@@ -177,14 +145,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             // arrange
             var app = new TestApplication(new TestApplicationOptions() { Adapter = MockChannelAdapter.Object });
-            var options = new UserAuthenticationOptions
-            {
-                Handlers =
-                [
-                    MockGraph.Object,
-                    MockSharePoint.Object,
-                ]
-            };
+            var options = new UserAuthenticationOptions(MockGraph.Object, MockSharePoint.Object);
             var authManager = new TestUserAuthenticationFeature(app, options);
             var turnContext = MockTurnContext();
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);

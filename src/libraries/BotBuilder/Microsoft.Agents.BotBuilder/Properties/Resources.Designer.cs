@@ -79,11 +79,38 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to create user authentication provider for handler name &apos;{0}&apos;.
+        /// </summary>
+        internal static string FailedToCreateUserAuthenticationHandler {
+            get {
+                return ResourceManager.GetString("FailedToCreateUserAuthenticationHandler", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An instance of IAccessTokenProvider not found for {0}.
         /// </summary>
         internal static string IAccessTokenProviderNotFound {
             get {
                 return ResourceManager.GetString("IAccessTokenProviderNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No UserAuthentication Handlers were defined..
+        /// </summary>
+        internal static string NoUserAuthenticationHandlers {
+            get {
+                return ResourceManager.GetString("NoUserAuthenticationHandlers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Handler &apos;{0}&apos; not found in configuration.
+        /// </summary>
+        internal static string UserAuthenticationHandlerNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthenticationHandlerNotFound", resourceCulture);
             }
         }
         
@@ -102,6 +129,15 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         internal static string UserAuthenticationRequiresAdapter {
             get {
                 return ResourceManager.GetString("UserAuthenticationRequiresAdapter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type &apos;{0}&apos; not found in Assembly &apos;{1}&apos; or is the wrong type for &apos;{2}&apos;.
+        /// </summary>
+        internal static string UserAuthenticationTypeNotFound {
+            get {
+                return ResourceManager.GetString("UserAuthenticationTypeNotFound", resourceCulture);
             }
         }
     }

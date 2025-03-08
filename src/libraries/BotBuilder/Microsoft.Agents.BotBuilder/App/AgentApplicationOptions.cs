@@ -19,16 +19,77 @@ namespace Microsoft.Agents.BotBuilder.App
     {
         public AgentApplicationOptions() { }
 
-        public AgentApplicationOptions(IConfiguration configuration, IChannelAdapter channelAdapter, IStorage storage, ILoggerFactory loggerFactory = null, string configurationSection = "AgentApplicationOptions") 
+        /// <summary>
+        /// Creates AgentApplicationOptions from IConfiguration and DI.
+        /// </summary>
+        /// <code>
+        /// "AgentApplication": {
+        ///   "StartTypingTimer": true,
+        ///   "RemoveRecipientMention": true,
+        ///   "NormalizeMentions": true,
+        ///   
+        ///   "UserAuthentication": {  // omit to disable User Authentication
+        ///     "Default": "graph",
+        ///     "AutoSignIn": {true | false},
+        ///     "Handlers": {
+        ///       "graph": {
+        ///         "Settings": {
+        ///           "AzureBotConnectionName": null
+        ///         }
+        ///       }
+        ///     }
+        ///   },
+        ///   
+        ///   "AdaptiveCards" : {     // optional
+        ///   }
+        /// }
+        /// </code>
+        /// <param name="sp"></param>
+        /// <param name="configuration"></param>
+        /// <param name="channelAdapter"></param>
+        /// <param name="storage">The IStorage used by User Authentication.</param>
+        /// <param name="authOptions"></param>
+        /// <param name="cardOptions"></param>
+        /// <param name="loggerFactory"></param>
+        /// <param name="fileDownloaders"></param>
+        /// <param name="configKey"></param>
+        public AgentApplicationOptions(
+            IServiceProvider sp,
+            IConfiguration configuration, 
+            IChannelAdapter channelAdapter, 
+            IStorage storage = null, 
+            UserAuthenticationOptions authOptions = null,
+            AdaptiveCardsOptions cardOptions = null,
+            ILoggerFactory loggerFactory = null,
+            IList<IInputFileDownloader> fileDownloaders = null,
+            string configKey = "AgentApplication") 
         { 
             Adapter = channelAdapter;
             TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
             LoggerFactory = loggerFactory;
 
-            var section = configuration.GetSection(configurationSection);
+            var section = configuration.GetSection(configKey);
             StartTypingTimer = section.GetValue<bool>(nameof(StartTypingTimer), false);
             RemoveRecipientMention = section.GetValue<bool>(nameof(RemoveRecipientMention), false);
             NormalizeMentions = section.GetValue<bool>(nameof(NormalizeMentions), false);
+
+            if (authOptions != null)
+            {
+                UserAuthentication = authOptions;
+            }
+            else if (section.GetSection("UserAuthentication").Exists())
+            {
+                UserAuthentication = new UserAuthenticationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthentication");
+            }
+
+            section = section.GetSection("AdaptiveCards");
+            if (section.Exists())
+            {
+                AdaptiveCards = cardOptions ?? section.Get<AdaptiveCardsOptions>();
+            }
+
+            // Can't get these from config at the moment
+            FileDownloaders = fileDownloaders;
         }
 
         public IChannelAdapter? Adapter { get; set; }

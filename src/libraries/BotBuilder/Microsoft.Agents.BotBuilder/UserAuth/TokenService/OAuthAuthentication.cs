@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,13 +19,20 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
         private readonly OAuthBotAuthentication _botAuthentication;
 
+        public OAuthAuthentication(string name, IStorage storage, IConfigurationSection configurationSection)
+            : this(name, configurationSection.Get<OAuthSettings>(), storage)
+        {
+
+        }
+
         /// <summary>
         /// Initializes the class
         /// </summary>
         /// <param name="name">The authentication name.</param>
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
-        public OAuthAuthentication(string name, OAuthSettings settings, IStorage storage) : this(settings, new OAuthBotAuthentication(name, settings, storage))
+        public OAuthAuthentication(string name, OAuthSettings settings, IStorage storage) 
+            : this(settings, new OAuthBotAuthentication(name, settings, storage))
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
@@ -52,7 +60,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <returns>The token if the user is signed. Otherwise null.</returns>
         public async Task<string?> IsUserSignedInAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            TokenResponse tokenResponse = await GetUserToken(turnContext, _settings.ConnectionName, cancellationToken);
+            TokenResponse tokenResponse = await GetUserToken(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(tokenResponse?.Token))
             {
@@ -98,7 +106,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
-            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.ConnectionName, cancellationToken);
+            await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }
 
         /// <summary>

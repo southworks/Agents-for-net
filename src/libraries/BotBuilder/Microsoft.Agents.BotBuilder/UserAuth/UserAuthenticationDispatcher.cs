@@ -1,60 +1,94 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.App.UserAuth;
+using Microsoft.Agents.BotBuilder.Errors;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
-    /// The user authentication manager
+    /// Loads and dispatches request to a named instance of IUserAuthentication.
     /// </summary>
+    /// <remarks>
+    /// This utilizes type loading to support extensibility.
+    /// </remarks>
     public class UserAuthenticationDispatcher : IUserAuthenticationDispatcher
     {
-        private readonly Dictionary<string, IUserAuthentication> _userAuthHandlers = [];
+        private readonly Dictionary<string, UserAuthenticationDefinition> _userAuthHandlers = [];
+        private readonly ILogger<UserAuthenticationDispatcher> _logger;
+        private readonly IStorage _storage;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthenticationDispatcher(IUserAuthentication[] userAuthHandlers)
+        public UserAuthenticationDispatcher(params IUserAuthentication[] userAuthHandlers)
         {
-            ArgumentNullException.ThrowIfNull(nameof(userAuthHandlers));
+            if (userAuthHandlers == null || userAuthHandlers.Length == 0)
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthenticationHandlers, null);
+            }
 
             foreach(var authenticator in userAuthHandlers)
             {
-                _userAuthHandlers.Add(authenticator.Name, authenticator);
+                _userAuthHandlers.Add(authenticator.Name, new UserAuthenticationDefinition() {  Instance = authenticator });
             }
         }
-
-        public IUserAuthentication Default => _userAuthHandlers.Count > 0 ? _userAuthHandlers.First().Value : throw new InvalidOperationException("No IUserAuthentication have been defined.");
 
         /// <summary>
-        /// Creates a new instance of the class
+        /// Create dispatcher from config.
         /// </summary>
-        /// <param name="app">The application.</param>
-        /// <param name="options">The authentication options</param>
-        /// <param name="storage">The storage to use.</param>
-        /// <exception cref="TeamsAIException">Throws when the options does not contain authentication handlers</exception>
-        public UserAuthenticationDispatcher(UserAuthenticationOptions options)
+        /// <code>
+        /// "UserAuthentication": {
+        ///   "graph": {
+        ///     "Assembly": null,  // Optional, defaults to OAuthAuthentication Assembly
+        ///     "Type": null,      // Optional, defaults to OAuthAuthentication Type
+        ///     "Settings": {      // Settings are Type specific, for OAuthAuthentication, any OAuthSettings property.
+        ///     }
+        ///   }
+        /// }
+        /// </code>
+        /// <remarks>
+        /// <see cref="OAuthAuthentication"/> is the default IUserAuthentication unless type loading is specified.  The `Settings`
+        /// node for the defaults is properties in <see cref="OAuthSettings"/>.  This User Authentication is performed with
+        /// the Azure Bot Token Service using `OAuth Connections` defined on the Azure Bot.
+        /// </remarks>
+        /// <param name="sp"></param>
+        /// <param name="configuration"></param>
+        /// <param name="storage"></param>
+        /// <param name="configKey"></param>
+        public UserAuthenticationDispatcher(IServiceProvider sp, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
         {
-            ArgumentNullException.ThrowIfNull(nameof(options));
+            _logger = (ILogger<UserAuthenticationDispatcher>)sp.GetService(typeof(ILogger<UserAuthenticationDispatcher>));
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
-            if (options.Handlers.Count == 0)
+            _userAuthHandlers = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthenticationDefinition>>() ?? [];
+            if (_userAuthHandlers.Count == 0)
             {
-                throw new ArgumentException("Authentications setting is empty");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthenticationHandlers, null);
             }
 
-            foreach(var authenticator in options.Handlers)
+            var assemblyLoader = new UserAuthenticationModuleLoader(AssemblyLoadContext.Default, _logger);
+
+            foreach (var definition in _userAuthHandlers)
             {
-                _userAuthHandlers.Add(authenticator.Name, authenticator);
+                definition.Value.Constructor = assemblyLoader.GetProviderConstructor(definition.Key, definition.Value.Assembly, definition.Value.Type);
             }
         }
+
+        public IUserAuthentication Default => _userAuthHandlers.Count > 0 
+            ? GetHandlerInstance(_userAuthHandlers.First().Key) 
+            : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthenticationHandlerNotFound, null);
 
         /// <inheritdoc/>
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string flowName, CancellationToken cancellationToken = default)
@@ -108,20 +142,43 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             await Get(flowName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <inheritdoc/>
         public IUserAuthentication Get(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
-                return Default; 
+                return Default;
             }
 
-            if (_userAuthHandlers.TryGetValue(name, out IUserAuthentication? value))
+            return GetHandlerInstance(name);
+        }
+
+        private IUserAuthentication GetHandlerInstance(string name)
+        {
+            if (!_userAuthHandlers.TryGetValue(name, out UserAuthenticationDefinition handlerDefinition))
             {
-                return value;
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthenticationHandlerNotFound, null, name);
+            }
+            return GetHandlerInstance(name, handlerDefinition);
+        }
+
+        private IUserAuthentication GetHandlerInstance(string name, UserAuthenticationDefinition handlerDefinition)
+        {
+            if (handlerDefinition.Instance != null)
+            {
+                // Return existing instance.
+                return handlerDefinition.Instance;
             }
 
-            throw new InvalidOperationException($"Could not find user authentication handler '{name}'.");
+            try
+            {
+                // Construct the provider
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, handlerDefinition.Settings]) as IUserAuthentication;
+                return handlerDefinition.Instance;
+            }
+            catch (Exception ex)
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthenticationHandler, ex, handlerDefinition.Type);
+            }
         }
     }
 }

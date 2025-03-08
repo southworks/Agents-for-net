@@ -33,6 +33,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Creates a new AgentApplication instance.
         /// </summary>
         /// <param name="options">Optional. Options used to configure the application.</param>
+        /// <param name="userAuthFeature"></param>
         /// <param name="state"></param>
         public AgentApplication(AgentApplicationOptions options)
         {

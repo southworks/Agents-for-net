@@ -55,7 +55,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             if (ShouldExchange(turnContext))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
-                if (!await ExchangedTokenAsync(turnContext, _settings.ConnectionName, cancellationToken).ConfigureAwait(false))
+                if (!await ExchangedTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false))
                 {
                     return false;
                 }

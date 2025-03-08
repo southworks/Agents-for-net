@@ -137,4 +137,20 @@
     <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing AgentApplication.</comment>
   </data>
+  <data name="UserAuthenticationTypeNotFound" xml:space="preserve">
+    <value>Type '{0}' not found in Assembly '{1}' or is the wrong type for '{2}'</value>
+    <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>
+  </data>
+  <data name="UserAuthenticationHandlerNotFound" xml:space="preserve">
+    <value>Handler '{0}' not found in configuration</value>
+    <comment>Rased when IUserAuthenticationDispatcher requests a handler by name that cannot be found</comment>
+  </data>
+  <data name="FailedToCreateUserAuthenticationHandler" xml:space="preserve">
+    <value>Failed to create user authentication provider for handler name '{0}'</value>
+    <comment>Raised when a handler is found but the constructor cannot be invoked</comment>
+  </data>
+  <data name="NoUserAuthenticationHandlers" xml:space="preserve">
+    <value>No UserAuthentication Handlers were defined.</value>
+    <comment>Raised when creating the UserAuthenticationDispatcher.</comment>
+  </data>
 </root>

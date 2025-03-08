@@ -29,7 +29,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
     /// </summary>
     public class UserAuthenticationFeature
     {
-        private readonly SelectorAsync? _startSignIn;
+        private readonly AutoSignInSelectorAsync? _startSignIn;
         private const string IS_SIGNED_IN_KEY = "__InSignInFlow__";
         private const string SIGNIN_ACTIVITY_KEY = "__SignInFlowActivity__";
         private const string SignInCompletionEventName = "application/vnd.microsoft.SignInCompletion";
@@ -51,9 +51,9 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
         public UserAuthenticationFeature(AgentApplication app, UserAuthenticationOptions options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-            _dispatcher = new UserAuthenticationDispatcher([.. _options.Handlers]);
             _app = app ?? throw new ArgumentNullException(nameof(app));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _dispatcher = options.Dispatcher;
 
             if (_app.Options.Adapter == null)
             {
@@ -84,19 +84,14 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <returns></returns>
         internal async Task<bool> SignUserInAsync(ITurnContext turnContext, ITurnState turnState, string flowName = null, CancellationToken cancellationToken = default)
         {
-            // NOTE:  This is marked internal for now.  It could be this can be consolidated with GetTokenOrStartSignInAsync.
-
             // If a flow is active, continue that.
             string? activeFlowName = UserInSignInFlow(turnState);
             bool shouldStartSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
 
             if (shouldStartSignIn || activeFlowName != null)
             {
-                if (activeFlowName == null)
-                {
-                    // Auth flow hasn't start yet.
-                    activeFlowName = flowName ?? Default;
-                }
+                // Auth flow hasn't start yet.
+                activeFlowName ??= flowName ?? Default;
 
                 // Get token or start flow for specified flow.
                 SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
