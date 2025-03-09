@@ -10,7 +10,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
     /// <summary>
     /// Handles user sign-in and sign-out.
     /// </summary>
-    public interface IUserAuthentication
+    public interface IUserAuthorization
     {
         string Name { get; }
 

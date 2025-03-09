@@ -17,31 +17,31 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
     /// <summary>
-    /// Loads and dispatches request to a named instance of IUserAuthentication.
+    /// Loads and dispatches request to a named instance of IUserAuthorization.
     /// </summary>
     /// <remarks>
     /// This utilizes type loading to support extensibility.
     /// </remarks>
-    public class UserAuthenticationDispatcher : IUserAuthenticationDispatcher
+    public class UserAuthorizationDispatcher : IUserAuthorizationDispatcher
     {
-        private readonly Dictionary<string, UserAuthenticationDefinition> _userAuthHandlers = [];
-        private readonly ILogger<UserAuthenticationDispatcher> _logger;
+        private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = [];
+        private readonly ILogger<UserAuthorizationDispatcher> _logger;
         private readonly IStorage _storage;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthenticationDispatcher(params IUserAuthentication[] userAuthHandlers)
+        public UserAuthorizationDispatcher(params IUserAuthorization[] userAuthHandlers)
         {
             if (userAuthHandlers == null || userAuthHandlers.Length == 0)
             {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthenticationHandlers, null);
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
             }
 
             foreach(var authenticator in userAuthHandlers)
             {
-                _userAuthHandlers.Add(authenticator.Name, new UserAuthenticationDefinition() {  Instance = authenticator });
+                _userAuthHandlers.Add(authenticator.Name, new UserAuthorizationDefinition() {  Instance = authenticator });
             }
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// Create dispatcher from config.
         /// </summary>
         /// <code>
-        /// "UserAuthentication": {
+        /// "UserAuthorization": {
         ///   "graph": {
         ///     "Assembly": null,  // Optional, defaults to OAuthAuthentication Assembly
         ///     "Type": null,      // Optional, defaults to OAuthAuthentication Type
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// }
         /// </code>
         /// <remarks>
-        /// <see cref="OAuthAuthentication"/> is the default IUserAuthentication unless type loading is specified.  The `Settings`
+        /// <see cref="OAuthAuthentication"/> is the default <see cref="IUserAuthorization"/> unless type loading is specified.  The `Settings`
         /// node for the defaults is properties in <see cref="OAuthSettings"/>.  This User Authentication is performed with
         /// the Azure Bot Token Service using `OAuth Connections` defined on the Azure Bot.
         /// </remarks>
@@ -67,18 +67,18 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// <param name="configuration"></param>
         /// <param name="storage"></param>
         /// <param name="configKey"></param>
-        public UserAuthenticationDispatcher(IServiceProvider sp, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
+        public UserAuthorizationDispatcher(IServiceProvider sp, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
         {
-            _logger = (ILogger<UserAuthenticationDispatcher>)sp.GetService(typeof(ILogger<UserAuthenticationDispatcher>));
+            _logger = (ILogger<UserAuthorizationDispatcher>)sp.GetService(typeof(ILogger<UserAuthorizationDispatcher>));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
-            _userAuthHandlers = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthenticationDefinition>>() ?? [];
+            _userAuthHandlers = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>() ?? [];
             if (_userAuthHandlers.Count == 0)
             {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthenticationHandlers, null);
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
             }
 
-            var assemblyLoader = new UserAuthenticationModuleLoader(AssemblyLoadContext.Default, _logger);
+            var assemblyLoader = new UserAuthorizationModuleLoader(AssemblyLoadContext.Default, _logger);
 
             foreach (var definition in _userAuthHandlers)
             {
@@ -86,16 +86,16 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             }
         }
 
-        public IUserAuthentication Default => _userAuthHandlers.Count > 0 
+        public IUserAuthorization Default => _userAuthHandlers.Count > 0 
             ? GetHandlerInstance(_userAuthHandlers.First().Key) 
-            : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthenticationHandlerNotFound, null);
+            : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationHandlerNotFound, null);
 
         /// <inheritdoc/>
         public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string flowName, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
-            IUserAuthentication auth = Get(flowName);
+            IUserAuthorization auth = Get(flowName);
             TokenResponse token;
             try
             {
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         {
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
-            IUserAuthentication auth = Get(flowName);
+            IUserAuthorization auth = Get(flowName);
             await auth.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             await Get(flowName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
-        public IUserAuthentication Get(string name)
+        public IUserAuthorization Get(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -152,16 +152,16 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             return GetHandlerInstance(name);
         }
 
-        private IUserAuthentication GetHandlerInstance(string name)
+        private IUserAuthorization GetHandlerInstance(string name)
         {
-            if (!_userAuthHandlers.TryGetValue(name, out UserAuthenticationDefinition handlerDefinition))
+            if (!_userAuthHandlers.TryGetValue(name, out UserAuthorizationDefinition handlerDefinition))
             {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthenticationHandlerNotFound, null, name);
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationHandlerNotFound, null, name);
             }
             return GetHandlerInstance(name, handlerDefinition);
         }
 
-        private IUserAuthentication GetHandlerInstance(string name, UserAuthenticationDefinition handlerDefinition)
+        private IUserAuthorization GetHandlerInstance(string name, UserAuthorizationDefinition handlerDefinition)
         {
             if (handlerDefinition.Instance != null)
             {
@@ -172,12 +172,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, handlerDefinition.Settings]) as IUserAuthentication;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, handlerDefinition.Settings]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)
             {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthenticationHandler, ex, handlerDefinition.Type);
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, ex, handlerDefinition.Type);
             }
         }
     }

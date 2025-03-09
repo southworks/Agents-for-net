@@ -13,34 +13,34 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.BotBuilder.App.UserAuth
 {
     /// <summary>
-    /// Function for determining whether authentication should be enabled for an activity.
+    /// Function for determining whether authorization should be enabled for an activity.
     /// </summary>
     /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
-    /// <returns>True if authentication should be enabled. Otherwise, False.</returns>
+    /// <returns>True if authorization should be enabled. Otherwise, False.</returns>
     public delegate Task<bool> AutoSignInSelectorAsync(ITurnContext turnContext, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Options for authentication.
+    /// Options for user authorization.
     /// </summary>
-    public class UserAuthenticationOptions
+    public class UserAuthorizationOptions
     {
         public readonly static AutoSignInSelectorAsync AutoSignInOn = (context, cancellationToken) => Task.FromResult(true);
-        public readonly static AutoSignInSelectorAsync AutoSignInOff = (context, cancellationToken) => Task.FromResult(UserAuthenticationFeature.IsSignInCompletionEvent(context.Activity));
+        public readonly static AutoSignInSelectorAsync AutoSignInOff = (context, cancellationToken) => Task.FromResult(UserAuthorizationFeature.IsSignInCompletionEvent(context.Activity));
 
         /// <summary>
-        /// Creates UserAuthenticationOptions from IConfiguration and DI.
+        /// Creates UserAuthorizationOptions from IConfiguration and DI.
         /// </summary>
         /// <code>
-        /// "UserAuthentication": {
+        /// "UserAuthorization": {
         ///   "Default": "graph",
         ///   "AutoSignIn": true,
         ///   "Assembly": null,    // Optional
         ///   "Type": null,        // Optional, defaults to OAuthAuthentication
         ///   "Handlers": {
         ///     "graph": {
-        ///     "Settings": {      // Settings are IUserAuthentication specific
+        ///     "Settings": {      // Settings are IUserAuthorization specific
         ///     }
         ///   }
         /// }
@@ -50,8 +50,8 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// a custom selector, DI a <see cref="AutoSignInSelectorAsync"/>.
         /// </remarks>
         /// <remarks>
-        /// The "Handlers" property is mapped to <see cref="UserAuthenticationDispatcher"/> using the key of `UserAuthentication:Handlers.  
-        /// To provide a custom <see cref="IUserAuthenticationDispatcher"/> use DI.  If a custom IUserAuthenticationDispatcher is provided
+        /// The "Handlers" property is mapped to <see cref="UserAuthorizationDispatcher"/> using the key of `UserAuthorization:Handlers.  
+        /// To provide a custom <see cref="IUserAuthorizationDispatcher"/> use DI.  If a custom IUserAuthorizationDispatcher is provided
         /// the Handlers node is note used.
         /// </remarks>
         /// <param name="sp"></param>
@@ -60,36 +60,35 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <param name="dispatcher"></param>
         /// <param name="autoSignInSelector"></param>
         /// <param name="configKey"></param>
-        public UserAuthenticationOptions(
+        public UserAuthorizationOptions(
             IServiceProvider sp, 
             IConfiguration configuration, 
             IStorage storage = null,
-            IUserAuthenticationDispatcher dispatcher = null, 
+            IUserAuthorizationDispatcher dispatcher = null, 
             AutoSignInSelectorAsync autoSignInSelector = null, 
-            string configKey = "UserAuthentication")
+            string configKey = "UserAuthorization")
         {
             var section = configuration.GetSection(configKey);
             Default = section.GetValue<string>(nameof(Default));
-            Dispatcher = dispatcher ?? new UserAuthenticationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
+            Dispatcher = dispatcher ?? new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelectorAsync>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
             AutoSignIn = selectorInstance ?? (autoSignIn ? AutoSignInOn : AutoSignInOff);
         }
 
-        public UserAuthenticationOptions(params IUserAuthentication[] userAuthHandlers)
+        public UserAuthorizationOptions(params IUserAuthorization[] userAuthHandlers)
         {
-            Dispatcher = new UserAuthenticationDispatcher(userAuthHandlers);
+            Dispatcher = new UserAuthorizationDispatcher(userAuthHandlers);
         }
 
         /// <summary>
-        /// The IUserAuthentication handlers.
+        /// The IUserAuthorization handlers.
         /// </summary>
-        public IUserAuthenticationDispatcher Dispatcher { get; set; }
+        public IUserAuthorizationDispatcher Dispatcher { get; set; }
 
         /// <summary>
-        /// Describes the authentication class the bot should use if the user does not specify a authentication class name.
-        /// If the value is not provided, the first one in `Authentications` setting will be used as the default one.
+        /// The default user authorization handler name to use for AutoSignIn.
         /// </summary>
         public string Default { get; set; }
 
@@ -101,12 +100,12 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         public AutoSignInSelectorAsync? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in completion message.  This is only used if the <see cref="UserAuthenticationFeature.OnUserSignInSuccess"/> is not set.
+        /// Optional sign in completion message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInSuccess"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> CompletedMessage { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthenticationFeature.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}", flowName, response.Cause))];

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     /// <summary>
     /// Handles user authentication using The Azure Bot Token Service.
     /// </summary>
-    public class OAuthAuthentication : IUserAuthentication
+    public class OAuthAuthentication : IUserAuthorization
     {
         private readonly OAuthSettings _settings;
         //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 return await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             }
 
-            throw new AuthException("Incoming activity is not a valid activity to initiate authentication flow.", AuthExceptionReason.InvalidActivity);
+            return null;
         }
 
         public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

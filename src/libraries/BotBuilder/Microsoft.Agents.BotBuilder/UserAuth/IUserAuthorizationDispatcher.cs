@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
-    public interface IUserAuthenticationDispatcher
+    public interface IUserAuthorizationDispatcher
     {
-        IUserAuthentication Default {  get; }
+        IUserAuthorization Default {  get; }
 
         /// <summary>
         /// Get an authentication class via name
@@ -16,7 +16,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// <param name="flowName">The name of the user authentication flow</param>
         /// <returns>The user authentication handler</returns>
         /// <exception cref="InvalidOperationException">When cannot find the class with given name</exception>
-        IUserAuthentication Get(string flowName);
+        IUserAuthorization Get(string flowName);
 
         /// <summary>
         /// 

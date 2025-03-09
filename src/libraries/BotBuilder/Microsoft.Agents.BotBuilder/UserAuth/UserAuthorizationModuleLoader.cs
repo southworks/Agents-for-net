@@ -14,7 +14,7 @@ using System.Runtime.Loader;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
-    internal class UserAuthenticationModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
+    internal class UserAuthorizationModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
         
@@ -46,10 +46,10 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
                 type = assembly.GetType($"{assemblyName}.{typeName}");
                 if (!IsValidProviderType(type))
                 {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthenticationTypeNotFound, null, typeName, assemblyName, name);
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
                 }
             }
-            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthenticationHandler, null, typeName, assemblyName); 
+            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         private static bool IsValidProviderType(Type type)
         {
             if (type == null ||
-                !typeof(IUserAuthentication).IsAssignableFrom(type) ||
+                !typeof(IUserAuthorization).IsAssignableFrom(type) ||
                 !type.IsPublic ||
                 type.IsNested ||
                 type.IsAbstract)

@@ -28,7 +28,7 @@ namespace Microsoft.Agents.BotBuilder.App
         ///   "RemoveRecipientMention": true,
         ///   "NormalizeMentions": true,
         ///   
-        ///   "UserAuthentication": {  // omit to disable User Authentication
+        ///   "UserAuthorization": {  // omit to disable User Authorization
         ///     "Default": "graph",
         ///     "AutoSignIn": {true | false},
         ///     "Handlers": {
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// <param name="sp"></param>
         /// <param name="configuration"></param>
         /// <param name="channelAdapter"></param>
-        /// <param name="storage">The IStorage used by User Authentication.</param>
+        /// <param name="storage">The IStorage used by UserAuthorization.</param>
         /// <param name="authOptions"></param>
         /// <param name="cardOptions"></param>
         /// <param name="loggerFactory"></param>
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.BotBuilder.App
             IConfiguration configuration, 
             IChannelAdapter channelAdapter, 
             IStorage storage = null, 
-            UserAuthenticationOptions authOptions = null,
+            UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
             ILoggerFactory loggerFactory = null,
             IList<IInputFileDownloader> fileDownloaders = null,
@@ -75,11 +75,11 @@ namespace Microsoft.Agents.BotBuilder.App
 
             if (authOptions != null)
             {
-                UserAuthentication = authOptions;
+                UserAuthorization = authOptions;
             }
-            else if (section.GetSection("UserAuthentication").Exists())
+            else if (section.GetSection("UserAuthorization").Exists())
             {
-                UserAuthentication = new UserAuthenticationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthentication");
+                UserAuthorization = new UserAuthorizationOptions(sp, configuration, storage, configKey: $"{configKey}:UserAuthorization");
             }
 
             section = section.GetSection("AdaptiveCards");
@@ -136,8 +136,8 @@ namespace Microsoft.Agents.BotBuilder.App
         public bool StartTypingTimer { get; set; } = false;
 
         /// <summary>
-        /// Optional. Options used to enable user authentication for the application.
+        /// Optional. Options used to enable user authorization for the application.
         /// </summary>
-        public UserAuthenticationOptions UserAuthentication { get; set; }
+        public UserAuthorizationOptions UserAuthorization { get; set; }
     }
 }

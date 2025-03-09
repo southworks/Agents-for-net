@@ -6,12 +6,12 @@ using System.Reflection;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
-    internal class UserAuthenticationDefinition
+    internal class UserAuthorizationDefinition
     {
         public string Assembly { get; set; }
         public string Type { get; set; }
         public IConfigurationSection Settings { get; set; }
         public ConstructorInfo Constructor { get; set; }
-        public IUserAuthentication Instance { get; set; }
+        public IUserAuthorization Instance { get; set; }
     }
 }
