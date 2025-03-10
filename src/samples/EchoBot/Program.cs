@@ -16,8 +16,15 @@ using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddHttpClient();
+//builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("MyClient").AddHeaderPropagation(o => o.Headers.Add("X-Ms-Correlation-Id"));
+
+builder.Services.AddHeaderPropagation(options =>
+{
+    // Propagate if the header exists
+    options.Headers.Add("X-Ms-Correlation-Id");
+});
+
 builder.Logging.AddConsole();
 
 // Add AspNet token validation
@@ -33,17 +40,10 @@ builder.Services.AddTransient(sp =>
     };
 });
 
-builder.Services.AddHeaderPropagation(options =>
-{
-    // Propagate if the header exists
-    options.Headers.Add("x-ms-correlation-id");
-});
-
-builder.Services.AddHttpClient("MyClient", c => c.DefaultRequestHeaders.Add("x-ms-correlation-id", "111")).AddHeaderPropagation();
+builder.Services.AddControllers();
 
 // Add the bot (which is transient)
 builder.AddBot<MyBot>();
-
 
 var app = builder.Build();
 
