@@ -271,7 +271,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
                     if (IsSignInCompletionEvent(signInContinuation))
                     {
-                        signInContinuation.Value = new SignInEventValue() { HandlerName = handlerName, Response = response };
+                        signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response };
                         await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                         await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInContinuation, _app, cancellationToken).ConfigureAwait(false);
                         return false;
