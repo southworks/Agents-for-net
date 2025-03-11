@@ -74,7 +74,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var response = await app.Authorization.AutoSignInUserAsync(turnContext, turnState);
+            var response = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.True(response);
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.AutoSignInUserAsync(turnContext, turnState, SharePointName);
+            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
 
             // assert
             Assert.True(signInComplete);
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.AutoSignInUserAsync(turnContext, turnState);
+            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.False(signInComplete);
@@ -142,8 +142,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.AutoSignInUserAsync(turnContext, turnState);
-            await app.Authorization.AutoSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
             await app.Authorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
@@ -165,8 +165,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.AutoSignInUserAsync(turnContext, turnState);
-            await app.Authorization.AutoSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
             await app.Authorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert

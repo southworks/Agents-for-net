@@ -591,8 +591,7 @@ namespace Microsoft.Agents.BotBuilder.App
                 // Handle user auth
                 if (_userAuth != null)
                 {
-                    // Start sign in for default flow.  Incoming Activities are handled by UserAuthorization until complete.
-                    var signInComplete = await _userAuth.AutoSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
                     if (!signInComplete)
                     {
                         return;

@@ -13,8 +13,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.BotBuilder.App.UserAuth
 {
     /// <summary>
-    /// Function for determining whether authorization should be enabled for an activity.
+    /// Delegate for determining whether user authorization should be enabled for an incoming Activity.
     /// </summary>
+    /// <remarks>
+    /// <see cref="AutoSignInOn"/> and <see cref="AutoSignInOff"/> can be used to provide a simple boolean result.
+    /// </remarks>
     /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -27,7 +30,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
     public class UserAuthorizationOptions
     {
         public readonly static AutoSignInSelectorAsync AutoSignInOn = (context, cancellationToken) => Task.FromResult(true);
-        public readonly static AutoSignInSelectorAsync AutoSignInOff = (context, cancellationToken) => Task.FromResult(UserAuthorizationFeature.IsSignInCompletionEvent(context.Activity));
+        public readonly static AutoSignInSelectorAsync AutoSignInOff = (context, cancellationToken) => Task.FromResult(false);
 
         /// <summary>
         /// Creates UserAuthorizationOptions from IConfiguration and DI.
@@ -88,21 +91,20 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         public IUserAuthorizationDispatcher Dispatcher { get; set; }
 
         /// <summary>
-        /// The default user authorization handler name to use for AutoSignIn.
+        /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is
+        /// used if Auto SignIn is enabled.
         /// </summary>
         public string Default { get; set; }
 
         /// <summary>
         /// Indicates whether the bot should start the sign in flow when the user sends a message to the bot or triggers a message extension.
         /// If the selector returns false, the bot will not start the sign in flow before routing the activity to the bot logic.
-        /// If the selector is not provided, the sign in will always happen for valid activities.
+        /// If the selector is not provided, the default selector returns true.
         /// </summary>
+        /// <remarks>
+        /// Auto SignIn will use the value of <see cref="Default"/> for the UserAuthorization handler to use.
+        /// </remarks>
         public AutoSignInSelectorAsync? AutoSignIn { get; set; }
-
-        /// <summary>
-        /// Optional sign in completion message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInSuccess"/> is not set.
-        /// </summary>
-        public Func<string, SignInResponse, IActivity[]> CompletedMessage { get; set; }
 
         /// <summary>
         /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInFailure"/> is not set.

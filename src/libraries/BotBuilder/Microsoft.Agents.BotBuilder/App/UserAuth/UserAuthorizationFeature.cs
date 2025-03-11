@@ -21,15 +21,15 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
     /// 
     /// Auto Sign In:
     /// If enabled in <see cref="UserAuthorizationOptions"/>, sign in starts automatically after the first Message the user sends.  When
-    /// the sign in is complete, the turn continues with the original message. On failure, an optional message is sent, otherwise
-    /// and exception thrown.
+    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/>
+    /// is called.
     /// 
     /// Manual Sign In:
     /// <see cref="SignInUserAsync"/> is used to get a cached token or start the sign in.  In either case, the
     /// <see cref="OnUserSignInSuccess(Func{ITurnContext, ITurnState, string, string, CancellationToken, Task})"/> and
     /// <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/> should
-    /// be set to handle continuation.  That is, after calling GetTokenOrStartSignInAsync, the turn should be considered complete,
-    /// and performing actions after that could be confusing.
+    /// be set to handle continuation.  That is, after calling SignInUserAsync, the turn should be considered complete,
+    /// and performing actions after that could be confusing.  i.e., Perform additional turn activity in OnUserSignInSuccess.
     /// </summary>
     /// <remarks>
     /// This is always executed in the context of a turn for the user in <see cref="ITurnContext.Activity.From"/>.
@@ -181,14 +181,24 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             DeleteCachedToken(flow);
         }
 
+        /// <summary>
+        /// Clears all UserAuth state for the user.  This includes cached tokens, and flow related state.
+        /// </summary>
+        /// <param name="turnContext"></param>
+        /// <param name="turnState"></param>
+        /// <param name="handlerName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task ResetStateAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
         {
             handlerName ??= Default;
+            
+            await SignOutUserAsync(turnContext, turnState, handlerName, cancellationToken).ConfigureAwait(false);
+
             await _dispatcher.ResetStateAsync(turnContext, handlerName, cancellationToken).ConfigureAwait(false);
             DeleteActiveFlow(turnState);
-            DeleteCachedToken(handlerName);
+            DeleteSingInContinuationActivity(turnState);
         }
-
 
         /// <summary>
         /// The handler function is called when the user has successfully signed in
@@ -207,8 +217,9 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// The handler function is called when the user sign in flow fails
         /// </summary>
         /// <remarks>
-        /// This is only used for manual user authorization.  The Auto Sign In will end the turn with and optional error message
-        /// or exception.
+        /// This is called for either Manual or Auto SignIn flows.  However, normally expected AgentApplication
+        /// Turn process has not been performed during an Auto Sign In.  This handler should be used to send failure message to the user
+        /// and the turn ended.
         /// </remarks>
         /// <param name="handler">The handler function to call when the user failed to signed in</param>
         /// <returns>The class itself for chaining purpose</returns>
@@ -230,14 +241,14 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <param name="handlerName">The name of the handler defined in <see cref="UserAuthorizationOptions"/></param>
         /// <param name="cancellationToken"></param>
         /// <returns>false indicates the sign in is not complete.</returns>
-        internal async Task<bool> AutoSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
+        internal async Task<bool> StartOrContinueSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
         {
             // If a flow is active, continue that.
             string? activeFlowName = UserInSignInFlow(turnState);
             bool flowContinuation = activeFlowName != null;
-            bool shouldStartSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
+            bool autoSignIn = _startSignIn != null && await _startSignIn(turnContext, cancellationToken);
 
-            if (shouldStartSignIn || flowContinuation)
+            if (autoSignIn || flowContinuation)
             {
                 // Auth flow hasn't start yet.
                 activeFlowName ??= handlerName ?? Default;
@@ -271,18 +282,24 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
                     if (IsSignInCompletionEvent(signInContinuation))
                     {
+                        // This will execute OnUserSignInFailure in a new TurnContext.  This is for manual sign in only.
+                        // This could be optimized to execute the OnUserSignInFailure directly if the we're not currently
+                        // handling an Invoke.
                         signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response };
                         await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                         await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInContinuation, _app, cancellationToken).ConfigureAwait(false);
                         return false;
                     }
 
-                    if (_options.SignInFailedMessage == null)
+                    if (_userSignInFailureHandler != null)
                     {
-                        throw response.Error;
+                        await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, cancellationToken).ConfigureAwait(false);
+                        return false;
                     }
 
-                    await turnContext.SendActivitiesAsync(_options.SignInFailedMessage(activeFlowName, response), cancellationToken).ConfigureAwait(false);
+                    await turnContext.SendActivitiesAsync(
+                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response), 
+                        cancellationToken).ConfigureAwait(false);
                     return false;
                 }
 
@@ -302,6 +319,9 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                             // an a the OnSignInSuccess/Fail handling by the bot could exceed that.  Also, this is all executing prior
                             // to other Application routes having been run (ex. before/after turn).
                             // This is handled by the route added in AddManualSignInCompletionHandler().
+                            //
+                            // Note:  This should be optimized to only do this if the current TurnContext.Activity is Invoke.  Otherwise,
+                            // the OnUserSignInSuccess can be called directly?
                             signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response };
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInContinuation, _app, cancellationToken).ConfigureAwait(false);
@@ -321,31 +341,24 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                         }
                     }
                 }
-
-                // If we got this far, fall through to normal Activity route handling.
-                if (_options.CompletedMessage != null)
-                {
-                    await turnContext.SendActivitiesAsync(_options.CompletedMessage(activeFlowName, response), cancellationToken).ConfigureAwait(false);
-                }
             }
 
-            // Sign in is complete.  Either a sign in completed, or auto sign in isn't enabled.
+            // Sign in is complete (or never started if Auto Sign in is false)
+            // AgentApplication will perform normal ITurnContext.Activity routing to bot.
             return true;
         }
 
-        /// <summary>
-        /// For manual sign in (GetTokenOrStartSignInAsync), an Event is sent proactively to get the
-        /// OnSignInSuccess and OnSignInFailure into a non-Invoke TurnContext.
-        /// </summary>
+        // For manual sign in (SignInUserAsync), an Event is sent proactively to get the
+        // OnSignInSuccess and OnSignInFailure into a non-Invoke TurnContext.
         private void AddManualSignInCompletionHandler()
         {
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            static Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.Name, SignInCompletionEventName)
             );
 
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
                 var signInCompletion = ProtocolJsonSerializer.ToObject<SignInEventValue>(turnContext.Activity.Value);
                 if (signInCompletion.Response.Status == SignInStatus.Complete && _userSignInSuccessHandler != null)
@@ -357,7 +370,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 {
                     await _userSignInFailureHandler(turnContext, turnState, signInCompletion.HandlerName, signInCompletion.Response, cancellationToken).ConfigureAwait(false);
                 }
-            };
+            }
 
             _app.AddRoute(routeSelector, routeHandler);
         }
@@ -427,6 +440,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             }
         }
 
+        // Sign In continuation is the Activity that will be processed when the flow is complete.
         private static void SetSingInContinuationActivity(ITurnState turnState, IActivity activity)
         {
             turnState.User.SetValue(SIGNIN_ACTIVITY_KEY, activity);
