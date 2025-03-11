@@ -8,6 +8,8 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.AI;
+using Microsoft.VisualBasic;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace StreamingMessageBot
 {
@@ -38,23 +40,24 @@ namespace StreamingMessageBot
 
         protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            StreamingResponse response = new StreamingResponse(turnContext);
+            StreamingResponse response = new(turnContext);
 
-            await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
-
-            await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
-                "Write a poem about why Microsoft Agents SDK is so great.",
-                new ChatOptions { MaxOutputTokens = 1000 },
-                cancellationToken: cancellationToken))
+            try
             {
-                var text = update.ToString();
-                if (!string.IsNullOrEmpty(text))
+                await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
+
+                await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
+                    "Write a poem about why Microsoft Agents SDK is so great.",
+                    new ChatOptions { MaxOutputTokens = 1000 },
+                    cancellationToken: cancellationToken))
                 {
-                    response.QueueTextChunk(text);
+                    response.QueueTextChunk(update?.ToString());
                 }
             }
-
-            await response.EndStreamAsync(cancellationToken);
+            finally
+            {
+                await response.EndStreamAsync(cancellationToken);
+            }
         }
     }
 }
