@@ -47,7 +47,7 @@
   ],
   "validDomains": [
     "token.botframework.com",
-    "qv62606t-3978.use.devtunnels.ms"
+    "<<BOT_DOMAIN>>"
   ],
   "webApplicationInfo": {
     "id": "${{AAD_APP_CLIENT_ID}}",
