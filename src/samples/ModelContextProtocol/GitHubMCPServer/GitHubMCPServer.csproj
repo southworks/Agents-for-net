@@ -2,13 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+	  <LangVersion>latest</LangVersion>
+	  <ImplicitUsings>disable</ImplicitUsings>
+	  <SkipAspExtension>true</SkipAspExtension>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="D:\POC\MCP\MCP SDK\Agents-for-net\src\samples\Shared\AspNetExtensions.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Mcp.Core\Microsoft.Agents.Mcp.Core.csproj" />

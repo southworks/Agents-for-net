@@ -1,6 +1,9 @@
 using Microsoft.Agents.Mcp.Server.GitHubMCPServer.Operations;
 using Microsoft.Agents.Mcp.Core.DependencyInjection;
 using Microsoft.Agents.Mcp.Server.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();

@@ -2,10 +2,17 @@
 using Microsoft.Agents.Mcp.Core.Handlers.Contracts.ClientMethods.Logging;
 using Microsoft.Agents.Mcp.Core.Payloads;
 using Microsoft.Agents.Mcp.Server.Methods.Tools.ToolsCall.Handlers;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace Microsoft.Agents.Mcp.Server.GitHubMCPServer.Operations
@@ -535,6 +542,7 @@ namespace Microsoft.Agents.Mcp.Server.GitHubMCPServer.Operations
 
             return result;
         }
+
 
         private string BuildUrl(string baseUrl, Dictionary<string, string> parameters)
         {

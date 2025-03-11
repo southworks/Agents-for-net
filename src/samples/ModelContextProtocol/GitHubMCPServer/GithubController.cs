@@ -4,11 +4,16 @@ using System.Text.Json;
 using Microsoft.Agents.Mcp.Core.Abstractions;
 using Microsoft.Agents.Mcp.Core.Transport;
 using Microsoft.Agents.Mcp.Server.AspNet;
-
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.IO;
 
 namespace GitHubMCPServer
 {
-    [Route("api/[controller]")]
+    [Route("/")]
     [ApiController]
     public class GithubController : ControllerBase
     {
