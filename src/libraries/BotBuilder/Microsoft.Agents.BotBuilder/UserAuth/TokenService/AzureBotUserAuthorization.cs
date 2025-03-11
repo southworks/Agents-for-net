@@ -13,13 +13,13 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     /// <summary>
     /// Handles user authentication using The Azure Bot Token Service.
     /// </summary>
-    public class OAuthAuthentication : IUserAuthorization
+    public class AzureBotUserAuthorization : IUserAuthorization
     {
         private readonly OAuthSettings _settings;
         //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
         private readonly OAuthBotAuthentication _botAuthentication;
 
-        public OAuthAuthentication(string name, IStorage storage, IConfigurationSection configurationSection)
+        public AzureBotUserAuthorization(string name, IStorage storage, IConfigurationSection configurationSection)
             : this(name, configurationSection.Get<OAuthSettings>(), storage)
         {
 
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="name">The authentication name.</param>
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
-        public OAuthAuthentication(string name, OAuthSettings settings, IStorage storage) 
+        public AzureBotUserAuthorization(string name, OAuthSettings settings, IStorage storage) 
             : this(settings, new OAuthBotAuthentication(name, settings, storage))
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="botAuthentication">The bot authentication instance</param>
         /// <param name="messageExtensionAuth">The message extension authentication instance</param>
-        internal OAuthAuthentication(OAuthSettings settings, OAuthBotAuthentication botAuthentication)
+        internal AzureBotUserAuthorization(OAuthSettings settings, OAuthBotAuthentication botAuthentication)
         {
             _settings = settings;
             //_messageExtensionAuth = messageExtensionAuth;

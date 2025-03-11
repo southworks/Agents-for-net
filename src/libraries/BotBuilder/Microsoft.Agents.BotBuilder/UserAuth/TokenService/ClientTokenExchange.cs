@@ -31,12 +31,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     /// local development. IStorage's ETag implementation for token exchange activity
     /// deduplication.
     /// </remarks>
-    internal class DedupeTokenExchange
+    internal class ClientTokenExchange
     {
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
 
-        public DedupeTokenExchange(OAuthSettings oauthSettings, IStorage storage)
+        public ClientTokenExchange(OAuthSettings oauthSettings, IStorage storage)
         {
             _settings = oauthSettings;
             _storage = storage;

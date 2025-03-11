@@ -215,6 +215,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 prompt.InputHint = InputHints.AcceptingInput;
             }
 
+            prompt.ChannelData = turnContext.Activity.ChannelData;
             await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
         }
 

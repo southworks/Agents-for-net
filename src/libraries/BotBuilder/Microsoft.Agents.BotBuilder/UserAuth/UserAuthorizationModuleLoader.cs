@@ -25,14 +25,14 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             if (string.IsNullOrEmpty(assemblyName))
             {
                 // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
-                assemblyName = typeof(OAuthAuthentication).Assembly.GetName().Name;
+                assemblyName = typeof(AzureBotUserAuthorization).Assembly.GetName().Name;
                 logger.LogInformation("No assembly name given in config for connection `{name}`.  Using default assembly lib: `{assemblyName}`", name, assemblyName);
             }
 
             if (string.IsNullOrEmpty(typeName))
             {
                 // A Type name wasn't given in config.  Set to the default type name
-                typeName = typeof(OAuthAuthentication).FullName;
+                typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
             }
 

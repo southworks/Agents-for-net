@@ -20,7 +20,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
         private FlowState _state;
-        private readonly DedupeTokenExchange _dedupe;
+        private readonly ClientTokenExchange _dedupe;
 
         /// <summary>
         /// Name of the authentication handler
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            _dedupe = new DedupeTokenExchange(_settings, _storage);
+            _dedupe = new ClientTokenExchange(_settings, _storage);
 
             // Subclasses will define the signin prompt so the OAuthFlow optional args aren't needed.
             _flow = new OAuthFlow(oauthSettings);
