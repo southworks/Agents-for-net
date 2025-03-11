@@ -217,13 +217,17 @@ namespace Microsoft.Agents.Mcp.Server.AspNet
         /// <returns>A task that completes when the transport is closed.</returns>
         public Task WaitTillCloseAsync(CancellationToken cancellationToken = default)
         {
+            _logger.LogDebug("WaitTillCloseAsync called with cancellationToken: {CancellationToken}", cancellationToken);
+
             if (_isClosed)
             {
+                _logger.LogDebug("Transport is already closed.");
                 return Task.CompletedTask;
             }
 
             if (cancellationToken == default)
             {
+                _logger.LogDebug("No cancellation token provided, waiting for _closeCompletionSource.Task.");
                 return _closeCompletionSource.Task;
             }
 
@@ -232,10 +236,17 @@ namespace Microsoft.Agents.Mcp.Server.AspNet
             return Task.WhenAny(_closeCompletionSource.Task, Task.Delay(Timeout.Infinite, cancellationToken))
                 .ContinueWith(t =>
                 {
-                    if (t.IsCanceled || (t.IsCompleted && t.Result != _closeCompletionSource.Task))
+                    if (t.IsCanceled)
                     {
+                        _logger.LogWarning("WaitTillCloseAsync was canceled.");
                         throw new TaskCanceledException();
                     }
+                    if (t.IsCompleted && t.Result != _closeCompletionSource.Task)
+                    {
+                        _logger.LogWarning("WaitTillCloseAsync completed with a different task.");
+                        throw new TaskCanceledException();
+                    }
+                    _logger.LogDebug("WaitTillCloseAsync completed successfully.");
                     return t;
                 }).Unwrap();
         }
