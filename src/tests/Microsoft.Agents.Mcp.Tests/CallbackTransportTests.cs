@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Xunit;
 
 namespace Microsoft.Agents.Mcp.Tests
 {
@@ -21,8 +22,8 @@ namespace Microsoft.Agents.Mcp.Tests
         {
             Mock<IHttpClientFactory> httpClientFactoryMock = new Mock<IHttpClientFactory>();
             var clientTransport = new HttpCallbackClientTransport(
-                transportManager, 
-                httpClientFactoryMock.Object, 
+                transportManager,
+                httpClientFactoryMock.Object,
                 new Uri("https://localhost/server/"),
                 (s) => $"https://localhost/callback/{s}");
             SetupFakeHttpCalls(httpClientFactoryMock, clientTransport, processor, transportManager, logger);
@@ -38,6 +39,69 @@ namespace Microsoft.Agents.Mcp.Tests
         {
             var handler = new PlumbingHandler(httpClientFactoryMock.Object, clientTransport, processor, transportManager, logger);
             httpClientFactoryMock.Setup(x => x.CreateClient("")).Returns(() => new HttpClient(handler, false));
+        }
+
+        [Fact]
+        public void HttpCallbackClientTransport_ShouldInitializeCorrectly()
+        {
+            // Arrange
+            var transportManagerMock = new Mock<ITransportManager>();
+            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var endpoint = new Uri("https://localhost/server/");
+            Func<string, string> callbackEndpointFunc = (s) => $"https://localhost/callback/{s}";
+
+            // Act
+            var transport = new HttpCallbackClientTransport(transportManagerMock.Object, httpClientFactoryMock.Object, endpoint, callbackEndpointFunc);
+
+            // Assert
+            Assert.NotNull(transport);
+        }
+
+        [Fact]
+        public async Task CloseAsync_ShouldCloseTransport()
+        {
+            // Arrange
+            var transportManagerMock = new Mock<ITransportManager>();
+            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var endpoint = new Uri("https://localhost/server/");
+            Func<string, string> callbackEndpointFunc = (s) => $"https://localhost/callback/{s}";
+            var transport = new HttpCallbackClientTransport(transportManagerMock.Object, httpClientFactoryMock.Object, endpoint, callbackEndpointFunc);
+            var cancellationToken = new CancellationToken();
+
+            var httpClientMock = new Mock<HttpClient>();
+            httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClientMock.Object);
+
+            // Act
+            await transport.CloseAsync(cancellationToken);
+
+            // Assert
+            Assert.True(transport.IsClosed);
+        }
+
+        [Fact]
+        public async Task SendOutgoingAsync_ShouldSendPayload()
+        {
+            // Arrange
+            var transportManagerMock = new Mock<ITransportManager>();
+            var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+            var endpoint = new Uri("https://localhost/server/");
+            Func<string, string> callbackEndpointFunc = (s) => $"https://localhost/callback/{s}";
+            var transport = new HttpCallbackClientTransport(transportManagerMock.Object, httpClientFactoryMock.Object, endpoint, callbackEndpointFunc);
+            var payload = new JsonRpcPayload { Method = "testMethod", Params = JsonSerializer.SerializeToElement(new { param1 = "value1" }) };
+            var cancellationToken = new CancellationToken();
+
+            var httpClientMock = new Mock<HttpClient>();
+            httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClientMock.Object);
+
+            // Mock the SessionId using reflection
+            var sessionIdProperty = typeof(HttpCallbackClientTransport).GetProperty("SessionId");
+            sessionIdProperty.SetValue(transport, "test-session-id");
+
+            // Act
+            await transport.SendOutgoingAsync(payload, cancellationToken);
+
+            // Assert
+            httpClientFactoryMock.Verify(x => x.CreateClient(It.IsAny<string>()), Times.Once);
         }
 
         private class PlumbingHandler : HttpClientHandler
@@ -102,7 +166,7 @@ namespace Microsoft.Agents.Mcp.Tests
                 }
 
                 throw new Exception("Unsupported method");
-            } 
+            }
         }
     }
 }
