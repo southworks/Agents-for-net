@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -27,13 +29,17 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = [];
         private readonly ILogger<UserAuthorizationDispatcher> _logger;
         private readonly IStorage _storage;
+        private readonly IConnections _connections;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="connections"></param>
         /// <param name="userAuthHandlers"></param>
-        public UserAuthorizationDispatcher(params IUserAuthorization[] userAuthHandlers)
+        public UserAuthorizationDispatcher(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
+            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+
             if (userAuthHandlers == null || userAuthHandlers.Length == 0)
             {
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
@@ -71,6 +77,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         {
             _logger = (ILogger<UserAuthorizationDispatcher>)sp.GetService(typeof(ILogger<UserAuthorizationDispatcher>));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _connections = sp.GetService<IConnections>();
 
             _userAuthHandlers = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>() ?? [];
             if (_userAuthHandlers.Count == 0)
@@ -96,7 +103,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
             IUserAuthorization auth = Get(flowName);
-            TokenResponse token;
+            string token;
             try
             {
                 token = await auth.SignInUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
@@ -116,11 +123,11 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
                 return newResponse;
             }
 
-            if (token != null)
+            if (!string.IsNullOrEmpty(token))
             {
                 return new SignInResponse(SignInStatus.Complete)
                 {
-                    TokenResponse = token
+                    Token = token
                 };
             }
 
@@ -172,7 +179,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, handlerDefinition.Settings]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([name, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

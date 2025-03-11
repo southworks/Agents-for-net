@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Azure;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.Testing;
@@ -26,13 +27,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         private Mock<IUserAuthorization> MockGraph;
         private Mock<IUserAuthorization> MockSharePoint;
         private Mock<IChannelAdapter> MockChannelAdapter;
+        private Mock<IConnections> MockConnections;
 
         public UserAuthenticationFeatureTests()
         {
             MockGraph = new Mock<IUserAuthorization>();
             MockGraph
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken }));
+                .Returns(Task.FromResult(GraphToken));
             MockGraph
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -40,12 +42,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             MockSharePoint = new Mock<IUserAuthorization>();
             MockSharePoint
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = SharePointToken }));
+                .Returns(Task.FromResult(SharePointToken));
             MockSharePoint
                 .Setup(e => e.Name)
                 .Returns(SharePointName);
 
             MockChannelAdapter = new Mock<IChannelAdapter>();
+
+            MockConnections = new Mock<IConnections>();
         }
 
         [Fact]
@@ -54,7 +58,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             Assert.Throws<ArgumentNullException>(() =>
             {
                 var app = new TestApplication(new TestApplicationOptions());
-                var options = new UserAuthorizationOptions(MockGraph.Object, MockSharePoint.Object);
+                var options = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object);
                 var authManager = new TestUserAuthenticationFeature(app, options);
             });
         }
@@ -66,7 +70,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var options = new TestApplicationOptions() 
             { 
                 Adapter = MockChannelAdapter.Object, 
-                UserAuthorization = new UserAuthorizationOptions(MockGraph.Object, MockSharePoint.Object) 
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object) 
             };
             var app = new TestApplication(options);
 
@@ -89,7 +93,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var options = new TestApplicationOptions()
             {
                 Adapter = MockChannelAdapter.Object,
-                UserAuthorization = new UserAuthorizationOptions(MockGraph.Object, MockSharePoint.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
             };
             var app = new TestApplication(options);
 
@@ -110,12 +114,12 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             MockGraph
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((TokenResponse) null));
+                .Returns(Task.FromResult((string)null));
 
             var options = new TestApplicationOptions()
             {
                 Adapter = MockChannelAdapter.Object,
-                UserAuthorization = new UserAuthorizationOptions(MockGraph.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
             };
             var app = new TestApplication(options);
             var turnContext = MockTurnContext();
@@ -135,7 +139,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var options = new TestApplicationOptions()
             {
                 Adapter = MockChannelAdapter.Object,
-                UserAuthorization = new UserAuthorizationOptions(MockGraph.Object, MockSharePoint.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
             };
             var app = new TestApplication(options);
             var turnContext = MockTurnContext();
@@ -158,7 +162,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var options = new TestApplicationOptions()
             {
                 Adapter = MockChannelAdapter.Object,
-                UserAuthorization = new UserAuthorizationOptions(MockGraph.Object, MockSharePoint.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object, MockSharePoint.Object)
             };
             var app = new TestApplication(options);
             var turnContext = MockTurnContext();
@@ -185,7 +189,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken }));
+                .Returns(Task.FromResult(GraphToken));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -195,7 +199,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             {
                 Adapter = adapter,
                 TurnStateFactory = () => new TurnState(storage),
-                UserAuthorization = new UserAuthorizationOptions(graphMock.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
                 }
@@ -241,9 +245,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((TokenResponse)null);
+                        return Task.FromResult((string)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken });
+                    return Task.FromResult(GraphToken);
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -254,7 +258,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             {
                 Adapter = adapter,
                 TurnStateFactory = () => new TurnState(storage),
-                UserAuthorization = new UserAuthorizationOptions(graphMock.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff
                 }
@@ -295,7 +299,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken }));
+                .Returns(Task.FromResult(GraphToken));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -305,7 +309,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             {
                 Adapter = adapter,
                 TurnStateFactory = () => new TurnState(storage),
-                UserAuthorization = new UserAuthorizationOptions(graphMock.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn
                 }
@@ -346,9 +350,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
                 {
                     if (attempt++ == 0)
                     {
-                        return Task.FromResult((TokenResponse)null);
+                        return Task.FromResult((string)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken });
+                    return Task.FromResult(GraphToken);
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -359,7 +363,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             {
                 Adapter = adapter,
                 TurnStateFactory = () => new TurnState(storage),
-                UserAuthorization = new UserAuthorizationOptions(graphMock.Object)
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOn
                 }

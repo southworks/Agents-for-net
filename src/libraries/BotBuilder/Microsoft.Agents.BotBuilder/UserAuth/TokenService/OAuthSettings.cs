@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
@@ -20,6 +21,9 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// </summary>
         /// <value>The name of the OAuth connection.</value>
         public string AzureBotOAuthConnectionName { get; set; }
+
+        public string OBOConnectionName { get; set; }
+        public IList<string> OBOScopes { get; set; }
 
         /// <summary>
         /// Gets or sets the title of the sign-in card.

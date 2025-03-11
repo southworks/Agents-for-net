@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
@@ -80,9 +81,9 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             AutoSignIn = selectorInstance ?? (autoSignIn ? AutoSignInOn : AutoSignInOff);
         }
 
-        public UserAuthorizationOptions(params IUserAuthorization[] userAuthHandlers)
+        public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
-            Dispatcher = new UserAuthorizationDispatcher(userAuthHandlers);
+            Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
         }
 
         /// <summary>

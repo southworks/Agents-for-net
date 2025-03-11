@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -17,10 +18,11 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
     {
         private readonly OAuthSettings _settings;
         //private readonly OAuthMessageExtensionsAuthentication? _messageExtensionAuth;
-        private readonly OAuthBotAuthentication _botAuthentication;
+        private readonly BotUserAuthorization _botAuthentication;
+        private readonly IConnections _connections;
 
-        public AzureBotUserAuthorization(string name, IStorage storage, IConfigurationSection configurationSection)
-            : this(name, configurationSection.Get<OAuthSettings>(), storage)
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+            : this(name, storage, connections, configurationSection.Get<OAuthSettings>())
         {
 
         }
@@ -31,10 +33,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="name">The authentication name.</param>
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
-        public AzureBotUserAuthorization(string name, OAuthSettings settings, IStorage storage) 
-            : this(settings, new OAuthBotAuthentication(name, settings, storage))
+        /// <param name="connections"></param>
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings) 
+            : this(settings, new BotUserAuthorization(name, settings, storage))
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         }
 
         /// <summary>
@@ -43,7 +47,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="botAuthentication">The bot authentication instance</param>
         /// <param name="messageExtensionAuth">The message extension authentication instance</param>
-        internal AzureBotUserAuthorization(OAuthSettings settings, OAuthBotAuthentication botAuthentication)
+        internal AzureBotUserAuthorization(OAuthSettings settings, BotUserAuthorization botAuthentication)
         {
             _settings = settings;
             //_messageExtensionAuth = messageExtensionAuth;
@@ -53,30 +57,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         public string Name { get; private set; }
 
         /// <summary>
-        /// Check if the user is signed, if they are then return the token.
-        /// </summary>
-        /// <param name="turnContext">The turn turnContext.</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The token if the user is signed. Otherwise null.</returns>
-        public async Task<string?> IsUserSignedInAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
-        {
-            TokenResponse tokenResponse = await GetUserToken(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(tokenResponse?.Token))
-            {
-                return tokenResponse.Token;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Sign in current user
         /// </summary>
         /// <param name="turnContext">The turn turnContext</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in response</returns>
-        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public async Task<string> SignInUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             /*
             if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
@@ -87,7 +73,8 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 
             if (_botAuthentication != null && _botAuthentication.IsValidActivity(turnContext))
             {
-                return await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                return await HandleOBO(turnContext, token, cancellationToken).ConfigureAwait(false);
             }
 
             return null;
@@ -115,6 +102,39 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         protected virtual async Task<TokenResponse> GetUserToken(ITurnContext turnContext, string connectionName, CancellationToken cancellationToken)
         {
             return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, "", cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<string> HandleOBO(ITurnContext turnContext, string token, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(_settings.OBOConnectionName))
+            {
+                return token;
+            }
+
+            try
+            {
+                var tokenProvider = _connections.GetConnection(_settings.OBOConnectionName);
+                if (tokenProvider is IOBOExchange oboExchange)
+                {
+                    var oboToken = await oboExchange.AcquireTokenOnBehalfOf(_settings.OBOScopes, token).ConfigureAwait(false);
+
+                    return oboToken;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"IOBOExchange not supported on {_settings.OBOConnectionName}");
+                }
+            }
+            catch (Exception)
+            {
+                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                throw;
+            }
         }
     }
 }

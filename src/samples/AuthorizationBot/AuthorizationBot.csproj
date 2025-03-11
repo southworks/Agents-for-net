@@ -13,7 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Update="appManifest\manifest.json">
+		<Content Update="appManifest\teams-manifest.json">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		  <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

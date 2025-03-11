@@ -14,11 +14,12 @@ using Microsoft.Agents.Connector;
 namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 {
     /// <summary>
-    /// If the activity name is signin/tokenExchange, this middleware will attempt to
+    /// If the activity name is signin/tokenExchange, this will attempt to
     /// exchange the token, and deduplicate the incoming call, ensuring only one
     /// exchange request is processed.
     /// </summary>
     /// <remarks>
+    /// This is only for Teams or SharePoint channels.
     /// If a user is signed into multiple Teams clients, the Bot could receive a
     /// "signin/tokenExchange" from each client. Each token exchange request for a
     /// specific user login will have an identical Activity.Value.Id.

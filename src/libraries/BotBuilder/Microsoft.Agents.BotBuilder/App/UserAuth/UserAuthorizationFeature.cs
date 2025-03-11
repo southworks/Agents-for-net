@@ -43,7 +43,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         private readonly IUserAuthorizationDispatcher _dispatcher;
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
-        private readonly Dictionary<string, TokenResponse> _authTokens = [];
+        private readonly Dictionary<string, string> _authTokens = [];
 
         /// <summary>
         /// Callback when user sign in success
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <returns></returns>
         public string GetToken(string handlerName)
         {
-            return _authTokens.TryGetValue(handlerName, out var token) ? token.Token : default(string);
+            return _authTokens.TryGetValue(handlerName, out var token) ? token : default(string);
         }
 
         /// <summary>
@@ -164,12 +164,12 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             if (response.Status == SignInStatus.Complete)
             {
                 DeleteActiveFlow(turnState);
-                CacheToken(handlerName, response.TokenResponse);
+                CacheToken(handlerName, response.Token);
 
                 // call the handler directly
                 if (_userSignInSuccessHandler != null)
                 {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.TokenResponse.Token, cancellationToken).ConfigureAwait(false);
+                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.Token, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -306,7 +306,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 if (response.Status == SignInStatus.Complete)
                 {
                     DeleteActiveFlow(turnState);
-                    CacheToken(activeFlowName, response.TokenResponse);
+                    CacheToken(activeFlowName, response.Token);
 
                     var signInContinuation = DeleteSingInContinuationActivity(turnState);
                     if (signInContinuation != null)
@@ -363,8 +363,8 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 var signInCompletion = ProtocolJsonSerializer.ToObject<SignInEventValue>(turnContext.Activity.Value);
                 if (signInCompletion.Response.Status == SignInStatus.Complete && _userSignInSuccessHandler != null)
                 {
-                    CacheToken(signInCompletion.HandlerName, signInCompletion.Response.TokenResponse);
-                    await _userSignInSuccessHandler(turnContext, turnState, signInCompletion.HandlerName, signInCompletion.Response.TokenResponse.Token, cancellationToken).ConfigureAwait(false);
+                    CacheToken(signInCompletion.HandlerName, signInCompletion.Response.Token);
+                    await _userSignInSuccessHandler(turnContext, turnState, signInCompletion.HandlerName, signInCompletion.Response.Token, cancellationToken).ConfigureAwait(false);
                 }
                 else if (_userSignInFailureHandler != null)
                 {
@@ -387,7 +387,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// </summary>
         /// <param name="name">The name of token</param>
         /// <param name="token">The value of token</param>
-        private void CacheToken(string name, TokenResponse token)
+        private void CacheToken(string name, string token)
         {
             _authTokens[name] = token;
         }

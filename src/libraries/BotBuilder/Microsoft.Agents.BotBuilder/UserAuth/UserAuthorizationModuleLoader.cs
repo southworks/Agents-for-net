@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.BotBuilder.UserAuth.TokenService;
 using Microsoft.Agents.Core.Errors;
@@ -14,7 +15,7 @@ using System.Runtime.Loader;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
-    internal class UserAuthorizationModuleLoader(AssemblyLoadContext loadContext, ILogger logger)
+    internal class UserAuthorizationModuleLoader( AssemblyLoadContext loadContext, ILogger logger)
     {
         private readonly AssemblyLoadContext _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
         
@@ -94,7 +95,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             return type.GetConstructor(
                 bindingAttr: BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
-                types: [typeof(string), typeof(IStorage), typeof(IConfigurationSection)],
+                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection)],
                 modifiers: null);
         }
     }
