@@ -12,15 +12,16 @@ using System.Globalization;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.Testing;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
-using Microsoft.Agents.Connector.Teams;
 using Microsoft.Agents.Connector;
 using Moq;
+using System.Net.Http;
+using System.Threading;
+using System.Net;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 {
     public class TeamsActivityHandlerTests
     {
-        private const string BaseUri = "https://test.coffee";
         IActivity[] _activitiesToSend = null;
 
         public TeamsActivityHandlerTests()
@@ -72,17 +73,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsMemberAddedNoTeam()
         {
             // Arrange 
-            var customHttpClient = new HttpClient(new RosterHttpMessageHandler())
-            {
-                // Set a special base address so then we can make sure the connector client is honoring this http client.
-                BaseAddress = new Uri(BaseUri)
-            };
+            var conversationsMock = new Mock<IConversations>();
+            conversationsMock.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ChannelAccount { Id = "id-1" });
 
-            var httpFactory = new Mock<IHttpClientFactory>();
-            httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
-                .Returns(customHttpClient);
+            var connectorMock = new Mock<IConnectorClient>();
+            connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-            var connectorClient = new RestTeamsConnectorClient(new Uri("http://localhost/"), httpFactory.Object, null);
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
@@ -90,17 +87,17 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 [
                     new ChannelAccount { Id = "id-1" },
                 ],
-                Recipient = new ChannelAccount { Id = "b" },
+                Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 ChannelId = Channels.Msteams,
             };
 
-            var turnContext = new TurnContext(new SimpleAdapter(), activity);
-            turnContext.TurnState.Add<IConnectorClient>(connectorClient);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set(connectorMock.Object);
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -108,25 +105,20 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
         }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsMemberAddedFullDetailsInEvent()
-            {
-            var customHttpClient = new HttpClient(new RosterHttpMessageHandler())
-            {
-                // Set a special base address so then we can make sure the connector client is honoring this http client.
-                BaseAddress = new Uri(BaseUri)
-            };
+        [Fact]
+        public async Task TestConversationUpdateTeamsMemberAddedFullDetailsInEvent()
+        {
+            var conversationsMock = new Mock<IConversations>();
+            conversationsMock.Setup(x => x.GetConversationMemberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ChannelAccount { Id = "id-1" });
 
-            var httpFactory = new Mock<IHttpClientFactory>();
-                httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
-                    .Returns(customHttpClient);
+            var connectorMock = new Mock<IConnectorClient>();
+            connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-                var connectorClient = new RestTeamsConnectorClient(new Uri("http://localhost/"), httpFactory.Object, null);
-                
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    MembersAdded =
+            var activity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                MembersAdded =
                 [
                     new TeamsChannelAccount
                     {
@@ -139,1252 +131,1252 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                         UserPrincipalName = "t@microsoft.com",
                     },
                 ],
-                    Recipient = new ChannelAccount { Id = "b" },
-                    ChannelData = new TeamsChannelData
+                Recipient = new ChannelAccount { Id = "b" },
+                ChannelData = new TeamsChannelData
+                {
+                    EventType = "teamMemberAdded",
+                    Team = new TeamInfo
                     {
-                        EventType = "teamMemberAdded",
-                        Team = new TeamInfo
-                        {
-                            Id = "team-id",
-                        },
+                        Id = "team-id",
                     },
-                    ChannelId = Channels.Msteams,
-                };
+                },
+                ChannelId = Channels.Msteams,
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(), activity);
-                turnContext.TurnState.Add<IConnectorClient>(connectorClient);
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            turnContext.Services.Set(connectorMock.Object);
 
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
 
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
-            }
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMembersAddedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsMemberRemoved()
+        [Fact]
+        public async Task TestConversationUpdateTeamsMemberRemoved()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    MembersRemoved =
-                    [
-                        new ChannelAccount { Id = "a" },
+                Type = ActivityTypes.ConversationUpdate,
+                MembersRemoved =
+                [
+                    new ChannelAccount { Id = "a" },
                 ],
-                    Recipient = new ChannelAccount { Id = "b" },
-                    ChannelData = new TeamsChannelData { EventType = "teamMemberRemoved" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Recipient = new ChannelAccount { Id = "b" },
+                ChannelData = new TeamsChannelData { EventType = "teamMemberRemoved" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMembersRemovedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMembersRemovedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsChannelCreated()
+        [Fact]
+        public async Task TestConversationUpdateTeamsChannelCreated()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "channelCreated" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "channelCreated" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsChannelCreatedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsChannelCreatedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsChannelDeleted()
+        [Fact]
+        public async Task TestConversationUpdateTeamsChannelDeleted()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsChannelDeletedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsChannelDeletedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsChannelRenamed()
+        [Fact]
+        public async Task TestConversationUpdateTeamsChannelRenamed()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsChannelRenamedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsChannelRenamedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsChannelRestored()
+        [Fact]
+        public async Task TestConversationUpdateTeamsChannelRestored()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "channelRestored" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "channelRestored" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsChannelRestoredAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsChannelRestoredAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamArchived()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamArchived()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamArchived" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamArchived" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamArchivedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamArchivedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamDeleted()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamDeleted()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamDeletedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamDeletedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamHardDeleted()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamHardDeleted()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamHardDeletedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamHardDeletedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamRenamed()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamRenamed()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamRenamedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamRenamedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamRestored()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamRestored()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamRestored" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamRestored" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamRestoredAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamRestoredAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestConversationUpdateTeamsTeamUnarchived()
+        [Fact]
+        public async Task TestConversationUpdateTeamsTeamUnarchived()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.ConversationUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTeamUnarchivedAsync", bot.Record[1]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTeamUnarchivedAsync", bot.Record[1]);
+        }
 
-            [Fact]
-            public async Task TestFileConsentAccept()
+        [Fact]
+        public async Task TestFileConsentAccept()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "fileConsent/invoke",
+                Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "fileConsent/invoke",
-                    Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
+                    Action = "accept",
+                    UploadInfo = new FileUploadInfo
                     {
-                        Action = "accept",
-                        UploadInfo = new FileUploadInfo
-                        {
-                            UniqueId = "uniqueId",
-                            FileType = "fileType",
-                            UploadUrl = "uploadUrl",
-                        },
-                    }),
-                };
+                        UniqueId = "uniqueId",
+                        FileType = "fileType",
+                        UploadUrl = "uploadUrl",
+                    },
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(3, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsFileConsentAsync", bot.Record[1]);
-                Assert.Equal("OnTeamsFileConsentAcceptAsync", bot.Record[2]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(3, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsFileConsentAsync", bot.Record[1]);
+            Assert.Equal("OnTeamsFileConsentAcceptAsync", bot.Record[2]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestFileConsentDecline()
+        [Fact]
+        public async Task TestFileConsentDecline()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "fileConsent/invoke",
+                Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "fileConsent/invoke",
-                    Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
+                    Action = "decline",
+                    UploadInfo = new FileUploadInfo
                     {
-                        Action = "decline",
-                        UploadInfo = new FileUploadInfo
-                        {
-                            UniqueId = "uniqueId",
-                            FileType = "fileType",
-                            UploadUrl = "uploadUrl",
-                        },
-                    }),
-                };
+                        UniqueId = "uniqueId",
+                        FileType = "fileType",
+                        UploadUrl = "uploadUrl",
+                    },
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(3, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsFileConsentAsync", bot.Record[1]);
-                Assert.Equal("OnTeamsFileConsentDeclineAsync", bot.Record[2]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(3, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsFileConsentAsync", bot.Record[1]);
+            Assert.Equal("OnTeamsFileConsentDeclineAsync", bot.Record[2]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestActionableMessageExecuteAction()
+        [Fact]
+        public async Task TestActionableMessageExecuteAction()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "actionableMessage/executeAction",
-                    Value = JsonSerializer.SerializeToElement(new O365ConnectorCardActionQuery()),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "actionableMessage/executeAction",
+                Value = JsonSerializer.SerializeToElement(new O365ConnectorCardActionQuery()),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsO365ConnectorCardActionAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsO365ConnectorCardActionAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestComposeExtensionQueryLink()
+        [Fact]
+        public async Task TestComposeExtensionQueryLink()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/queryLink",
-                    Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/queryLink",
+                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsAppBasedLinkQueryAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsAppBasedLinkQueryAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestComposeExtensionAnonymousQueryLink()
+        [Fact]
+        public async Task TestComposeExtensionAnonymousQueryLink()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/anonymousQueryLink",
-                    Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/anonymousQueryLink",
+                Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsAnonymousAppBasedLinkQueryAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsAnonymousAppBasedLinkQueryAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestComposeExtensionQuery()
+        [Fact]
+        public async Task TestComposeExtensionQuery()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/query",
-                    Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/query",
+                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionQueryAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionQueryAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestMessagingExtensionSelectItemAsync()
+        [Fact]
+        public async Task TestMessagingExtensionSelectItemAsync()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/selectItem",
-                    Value = new JsonElement(),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/selectItem",
+                Value = new JsonElement(),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionSelectItemAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionSelectItemAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestMessagingExtensionSubmitAction()
+        [Fact]
+        public async Task TestMessagingExtensionSubmitAction()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/submitAction",
-                    Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/submitAction",
+                Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(3, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
-                Assert.Equal("OnTeamsMessagingExtensionSubmitActionAsync", bot.Record[2]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(3, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
+            Assert.Equal("OnTeamsMessagingExtensionSubmitActionAsync", bot.Record[2]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestMessagingExtensionSubmitActionPreviewActionEdit()
+        [Fact]
+        public async Task TestMessagingExtensionSubmitActionPreviewActionEdit()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/submitAction",
+                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/submitAction",
-                    Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                    BotMessagePreviewAction = "edit",
+                }),
+            };
+
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(3, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
+            Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewEditAsync", bot.Record[2]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task TestMessagingExtensionSubmitActionPreviewActionSend()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/submitAction",
+                Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                {
+                    BotMessagePreviewAction = "send",
+                }),
+            };
+
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(3, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
+            Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewSendAsync", bot.Record[2]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task TestMessagingExtensionFetchTask()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/fetchTask",
+                Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
+            };
+
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionFetchTaskAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task TestMessagingExtensionConfigurationQuerySettingUrl()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/querySettingUrl",
+                Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
+            };
+
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionConfigurationQuerySettingUrlAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task TestMessagingExtensionConfigurationSetting()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "composeExtension/setting",
+                Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
+            };
+
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessagingExtensionConfigurationSettingAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task TestTaskModuleFetch()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "task/fetch",
+                Value = JsonSerializer.SerializeToElement(new
+                {
+                    data = new
                     {
-                        BotMessagePreviewAction = "edit",
-                    }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(3, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
-                Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewEditAsync", bot.Record[2]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestMessagingExtensionSubmitActionPreviewActionSend()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/submitAction",
-                    Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
+                        key = "value",
+                        type = "task / fetch",
+                    },
+                    context = new
                     {
-                        BotMessagePreviewAction = "send",
-                    }),
-                };
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(3, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionSubmitActionDispatchAsync", bot.Record[1]);
-                Assert.Equal("OnTeamsMessagingExtensionBotMessagePreviewSendAsync", bot.Record[2]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTaskModuleFetchAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestMessagingExtensionFetchTask()
+        [Fact]
+        public async Task TestTaskModuleSubmit()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "task/submit",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/fetchTask",
-                    Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionFetchTaskAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestMessagingExtensionConfigurationQuerySettingUrl()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/querySettingUrl",
-                    Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionConfigurationQuerySettingUrlAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestMessagingExtensionConfigurationSetting()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "composeExtension/setting",
-                    Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessagingExtensionConfigurationSettingAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestTaskModuleFetch()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "task/fetch",
-                    Value = JsonSerializer.SerializeToElement(new
+                    data = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "task / fetch",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTaskModuleFetchAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestTaskModuleSubmit()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "task/submit",
-                    Value = JsonSerializer.SerializeToElement(new
+                        key = "value",
+                        type = "task / fetch",
+                    },
+                    context = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "task / fetch",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTaskModuleSubmitAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTaskModuleSubmitAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestTabFetch()
+        [Fact]
+        public async Task TestTabFetch()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "tab/fetch",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "tab/fetch",
-                    Value = JsonSerializer.SerializeToElement(new
+                    data = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "task / fetch",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTabFetchAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestTabSubmit()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "tab/submit",
-                    Value = JsonSerializer.SerializeToElement(new
+                        key = "value",
+                        type = "task / fetch",
+                    },
+                    context = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "tab / submit",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsTabSubmitAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTabFetchAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestConfigFetch()
+        [Fact]
+        public async Task TestTabSubmit()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "tab/submit",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "config/fetch",
-                    Value = JsonSerializer.SerializeToElement(new
+                    data = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "config / fetch",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsConfigFetchAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestConfigSubmit()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    Name = "config/submit",
-                    Value = JsonSerializer.SerializeToElement(new
+                        key = "value",
+                        type = "tab / submit",
+                    },
+                    context = new
                     {
-                        data = new
-                        {
-                            key = "value",
-                            type = "config / submit",
-                        },
-                        context = new
-                        {
-                            theme = "default"
-                        }
-                    }),
-                };
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsConfigSubmitAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsTabSubmitAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestSigninVerifyState()
+        [Fact]
+        public async Task TestConfigFetch()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "config/fetch",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.Invoke,
-                    Name = "signin/verifyState",
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsSigninVerifyStateAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-                Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            }
-
-            [Fact]
-            public async Task TestOnEventActivity()
-            {
-                // Arrange
-                var activity = new Activity
-                {
-                    ChannelId = Channels.Directline,
-                    Type = ActivityTypes.Event
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Single(bot.Record);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-            }
-
-            [Fact]
-            public async Task TestMeetingStartEvent()
-            {
-                // Arrange
-                var startTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
-                var activity = new Activity
-                {
-                    ChannelId = Channels.Msteams,
-                    Type = ActivityTypes.Event,
-                    Name = "application/vnd.microsoft.meetingStart",
-                    Value = JsonSerializer.SerializeToElement(new
+                    data = new
                     {
-                        StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
-                    }),
-                };
-
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
-            }
-
-            [Fact]
-            public async Task TestMeetingEndEvent()
-            {
-                // Arrange
-                var endTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
-                var activity = new Activity
-                {
-                    ChannelId = Channels.Msteams,
-                    Type = ActivityTypes.Event,
-                    Name = "application/vnd.microsoft.meetingEnd",
-                    Value = JsonSerializer.SerializeToElement(new
+                        key = "value",
+                        type = "config / fetch",
+                    },
+                    context = new
                     {
-                        EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
-                    }),
-                };
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsConfigFetchAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TeamsReadReceiptEvent()
+        [Fact]
+        public async Task TestConfigSubmit()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                Type = ActivityTypes.Invoke,
+                Name = "config/submit",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    ChannelId = Channels.Msteams,
-                    Type = ActivityTypes.Event,
-                    Name = "application/vnd.microsoft.readReceipt",
-                    Value = JsonSerializer.SerializeToElement(new
+                    data = new
                     {
-                        lastReadMessageId = "10101010"
-                    }),
-                };
+                        key = "value",
+                        type = "config / submit",
+                    },
+                    context = new
+                    {
+                        theme = "default"
+                    }
+                }),
+            };
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await bot.OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsReadReceiptAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.Equal("10101010", _activitiesToSend[0].Text);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsConfigSubmitAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-            [Fact]
-            public async Task TestMeetingParticipantsJoinEvent()
+        [Fact]
+        public async Task TestSigninVerifyState()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    ChannelId = Channels.Msteams,
-                    Type = ActivityTypes.Event,
-                    Name = "application/vnd.microsoft.meetingParticipantJoin",
-                    Value = JsonSerializer.SerializeToElement(
-                        new MeetingParticipantsEventDetails
-                        {
-                            Members =
-                            [
-                                new TeamsMeetingMember(
-                                    new TeamsChannelAccount { Id = "id", Name = "name"},
-                                    new UserMeetingDetails { Role = "role", InMeeting = true }
-                                )
-                            ]
-                        }
-                    ),
-                };
+                Type = ActivityTypes.Invoke,
+                Name = "signin/verifyState",
+            };
 
-                IActivity[] activitiesToSend = null;
-                void CaptureSend(IActivity[] arg)
-                {
-                    activitiesToSend = arg;
-                }
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsSigninVerifyStateAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
-                Assert.NotNull(activitiesToSend);
-                Assert.Single(activitiesToSend);
-                Assert.Equal("id", activitiesToSend[0].Text);
-            }
-
-            [Fact]
-            public async Task TestMeetingParticipantsLeaveEvent()
+        [Fact]
+        public async Task TestOnEventActivity()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    ChannelId = Channels.Msteams,
-                    Type = ActivityTypes.Event,
-                    Name = "application/vnd.microsoft.meetingParticipantLeave",
-                    Value = JsonSerializer.SerializeToElement(
-                        new MeetingParticipantsEventDetails
-                        {
-                            Members =
-                            [
-                                new TeamsMeetingMember(
-                                    new TeamsChannelAccount { Id = "id", Name = "name"},
-                                    new UserMeetingDetails { Role = "role", InMeeting = true }
-                                )
-                            ]
-                        }
-                    ),
-                };
+                ChannelId = Channels.Directline,
+                Type = ActivityTypes.Event
+            };
 
-                _activitiesToSend = null;
+            var turnContext = new TurnContext(new SimpleAdapter(), activity);
 
-                var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+        }
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnEventActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMeetingParticipantsLeaveAsync", bot.Record[1]);
-                Assert.NotNull(_activitiesToSend);
-                Assert.Single(_activitiesToSend);
-                Assert.Equal("id", _activitiesToSend[0].Text);
-            }
-
-            [Fact]
-            public async Task TestMessageUpdateActivityTeamsMessageEdit()
+        [Fact]
+        public async Task TestMeetingStartEvent()
+        {
+            // Arrange
+            var startTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingStart",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.MessageUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "editMessage" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                    StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
+                }),
+            };
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessageEditAsync", bot.Record[1]);
-            }
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-            [Fact]
-            public async Task TestMessageUpdateActivityTeamsMessageUndelete()
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+        }
+
+        [Fact]
+        public async Task TestMeetingEndEvent()
+        {
+            // Arrange
+            var endTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingEnd",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.MessageUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                    EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
+                }),
+            };
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessageUndeleteAsync", bot.Record[1]);
-            }
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-            [Fact]
-            public async Task TestMessageUpdateActivityTeamsMessageUndelete_NoMsteams()
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+        }
+
+        [Fact]
+        public async Task TeamsReadReceiptEvent()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.readReceipt",
+                Value = JsonSerializer.SerializeToElement(new
                 {
-                    Type = ActivityTypes.MessageUpdate,
-                    ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                    lastReadMessageId = "10101010"
+                }),
+            };
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-                // Assert
-                Assert.Single(bot.Record);
-                Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-            }
+            // Act
+            var bot = new TestActivityHandler();
+            await bot.OnTurnAsync(turnContext);
 
-            [Fact]
-            public async Task TestMessageUpdateActivityTeams_NoChannelData()
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsReadReceiptAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.Equal("10101010", _activitiesToSend[0].Text);
+        }
+
+        [Fact]
+        public async Task TestMeetingParticipantsJoinEvent()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.MessageUpdate,
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingParticipantJoin",
+                Value = JsonSerializer.SerializeToElement(
+                    new MeetingParticipantsEventDetails
+                    {
+                        Members =
+                        [
+                            new TeamsMeetingMember(
+                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new UserMeetingDetails { Role = "role", InMeeting = true }
+                            )
+                        ]
+                    }
+                ),
+            };
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Single(bot.Record);
-                Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
-            }
-
-            [Fact]
-            public async Task TestMessageDeleteActivityTeamsMessageSoftDelete()
+            IActivity[] activitiesToSend = null;
+            void CaptureSend(IActivity[] arg)
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.MessageDelete,
-                    ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
-                    ChannelId = Channels.Msteams
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
-
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
-
-                // Assert
-                Assert.Equal(2, bot.Record.Count);
-                Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-                Assert.Equal("OnTeamsMessageSoftDeleteAsync", bot.Record[1]);
+                activitiesToSend = arg;
             }
 
-            [Fact]
-            public async Task TestMessageDeleteActivityTeamsMessageSoftDelete_NoMsteams()
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
+            Assert.NotNull(activitiesToSend);
+            Assert.Single(activitiesToSend);
+            Assert.Equal("id", activitiesToSend[0].Text);
+        }
+
+        [Fact]
+        public async Task TestMeetingParticipantsLeaveEvent()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.MessageDelete,
-                    ChannelData = new TeamsChannelData { EventType = "softMessage" }
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                ChannelId = Channels.Msteams,
+                Type = ActivityTypes.Event,
+                Name = "application/vnd.microsoft.meetingParticipantLeave",
+                Value = JsonSerializer.SerializeToElement(
+                    new MeetingParticipantsEventDetails
+                    {
+                        Members =
+                        [
+                            new TeamsMeetingMember(
+                                new TeamsChannelAccount { Id = "id", Name = "name"},
+                                new UserMeetingDetails { Role = "role", InMeeting = true }
+                            )
+                        ]
+                    }
+                ),
+            };
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            _activitiesToSend = null;
 
-                // Assert
-                Assert.Single(bot.Record);
-                Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-            }
+            var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
 
-            [Fact]
-            public async Task TestMessageDeleteActivityTeams_NoChannelData()
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnEventActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMeetingParticipantsLeaveAsync", bot.Record[1]);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.Equal("id", _activitiesToSend[0].Text);
+        }
+
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageEdit()
+        {
+            // Arrange
+            var activity = new Activity
             {
-                // Arrange
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.MessageDelete,
-                    ChannelId = Channels.Msteams,
-                };
-                var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "editMessage" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
-                // Act
-                var bot = new TestActivityHandler();
-                await ((IBot)bot).OnTurnAsync(turnContext);
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
 
-                // Assert
-                Assert.Single(bot.Record);
-                Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
-            }
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageEditAsync", bot.Record[1]);
+        }
+
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageUndelete()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageUndeleteAsync", bot.Record[1]);
+        }
+
+        [Fact]
+        public async Task TestMessageUpdateActivityTeamsMessageUndelete_NoMsteams()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelData = new TeamsChannelData { EventType = "undeleteMessage" },
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+        }
+
+        [Fact]
+        public async Task TestMessageUpdateActivityTeams_NoChannelData()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageUpdate,
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageUpdateActivityAsync", bot.Record[0]);
+        }
+
+        [Fact]
+        public async Task TestMessageDeleteActivityTeamsMessageSoftDelete()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelData = new TeamsChannelData { EventType = "softDeleteMessage" },
+                ChannelId = Channels.Msteams
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Equal(2, bot.Record.Count);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+            Assert.Equal("OnTeamsMessageSoftDeleteAsync", bot.Record[1]);
+        }
+
+        [Fact]
+        public async Task TestMessageDeleteActivityTeamsMessageSoftDelete_NoMsteams()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelData = new TeamsChannelData { EventType = "softMessage" }
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+        }
+
+        [Fact]
+        public async Task TestMessageDeleteActivityTeams_NoChannelData()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.MessageDelete,
+                ChannelId = Channels.Msteams,
+            };
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+            // Act
+            var bot = new TestActivityHandler();
+            await ((IBot)bot).OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnMessageDeleteActivityAsync", bot.Record[0]);
+        }
 
         private class RosterHttpMessageHandler : HttpMessageHandler
         {
