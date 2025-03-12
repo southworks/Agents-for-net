@@ -5,7 +5,6 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Interfaces;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,17 +20,7 @@ namespace Microsoft.Agents.BotBuilder
         /// <summary>
         /// The key value for any InvokeResponseActivity that would be on the TurnState.
         /// </summary>
-        public const string InvokeResponseKey = "ChannelAdapter.InvokeResponse";
-
-        /// <summary>
-        /// The string value for the bot identity key.
-        /// </summary>
-        public const string BotIdentityKey = "BotIdentity";
-
-        /// <summary>
-        /// The string value for the OAuth scope key.
-        /// </summary>
-        public const string OAuthScopeKey = "Microsoft.Agents.Protocols.Adapter.ChannelAdapter.OAuthScope";
+        public const string InvokeResponseKey = "ChannelAdapterInvokeResponse";
 
         /// <summary>
         /// Logger for the bot adapter. 
@@ -115,6 +104,16 @@ namespace Microsoft.Agents.BotBuilder
             throw new NotImplementedException();
         }
 
+        public virtual Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        {
+            throw new NotImplementedException();
+        }
+
         public virtual Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
@@ -160,11 +159,14 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     await MiddlewareSet.ReceiveActivityWithStatusAsync(turnContext, callback, cancellationToken).ConfigureAwait(false);
                 }
+                catch (OperationCanceledException)
+                {
+                    throw; // Do not try to send another request if the failure is an operation cancel. 
+                }
                 catch (Exception e)
                 {
                     if (OnTurnError != null)
                     {
-                        _logger?.LogError(exception: e, $"Handled Exception in {this.GetType().Name}");
                         await OnTurnError.Invoke(turnContext, e).ConfigureAwait(false);
                     }
                     else

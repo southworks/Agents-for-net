@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
 using System.IO;
 using System.Threading;
@@ -13,6 +14,14 @@ namespace Microsoft.Agents.Connector
     /// </summary>
     public interface IAttachments
     {
+        /// <summary>
+        /// Get the URI of an attachment view.
+        /// </summary>
+        /// <param name="attachmentId">id of the attachment.</param>
+        /// <param name="viewId">default is "original".</param>
+        /// <returns>uri.</returns>
+        string GetAttachmentUri(string attachmentId, string viewId = "original");
+
         /// <summary>
         /// Get AttachmentInfo structure describing the attachment views.
         /// </summary>

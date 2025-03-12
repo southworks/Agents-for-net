@@ -8,10 +8,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Configuration;
 using WeatherBot.Agents;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using Azure.Identity;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
+using Microsoft.Agents.BotBuilder.App;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,14 +53,17 @@ builder.Services.AddTransient<WeatherForecastAgent>();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add basic bot functionality
+// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
+builder.Services.AddTransient<AgentApplicationOptions>();
+
+// Add the bot (which is transient)
 builder.AddBot<MyBot>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

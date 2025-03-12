@@ -3,10 +3,13 @@
 
 #nullable disable
 
+using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -14,18 +17,35 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class AttachmentsRestClient(Uri endpoint,
-        IHttpClientFactory httpClientFactory,
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IAttachments
+    internal class AttachmentsRestClient(IRestTransport transport) : IAttachments
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
+
+        /// <summary>
+        /// Get the URI of an attachment view.
+        /// </summary>
+        /// <param name="attachmentId">id of the attachment.</param>
+        /// <param name="viewId">default is "original".</param>
+        /// <returns>uri.</returns>
+#pragma warning disable CA1055 // Uri return values should not be strings (we can't change this without breaking binary compat)
+        public string GetAttachmentUri(string attachmentId, string viewId = "original")
+#pragma warning restore CA1055 // Uri return values should not be strings
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(attachmentId);
+
+            // Construct URL
+            var baseUrl = _transport.Endpoint.ToString();
+            var url = new Uri(new Uri(baseUrl + (baseUrl.EndsWith("/", StringComparison.OrdinalIgnoreCase) ? string.Empty : "/", StringComparison.OrdinalIgnoreCase)), "v3/attachments/{attachmentId}/views/{viewId}").ToString();
+            url = url.Replace("{attachmentId}", Uri.EscapeDataString(attachmentId));
+            url = url.Replace("{viewId}", Uri.EscapeDataString(viewId));
+            return url;
+        }
 
         internal HttpRequestMessage CreateGetAttachmentInfoRequest(string attachmentId)
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}");
+            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}");
             request.Headers.Add("Accept", "application/json");
             return request;
         }
@@ -43,7 +63,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             using var message = CreateGetAttachmentInfoRequest(attachmentId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int) httpResponse.StatusCode)
             {
@@ -53,20 +73,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachmentInfo operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (System.Text.Json.JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentInfoError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -75,7 +82,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
+            request.RequestUri = new Uri(_transport.Endpoint, $"v3/attachments/{attachmentId}/views/{viewId}");
             request.Headers.Add("Accept", "application/octet-stream, application/json");
             return request;
         }
@@ -98,7 +105,7 @@ namespace Microsoft.Agents.Connector.RestClients
             }
 
             using var message = CreateGetAttachmentRequest(attachmentId, viewId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -115,20 +122,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return null;
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (System.Text.Json.JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw ErrorResponseException.CreateErrorResponseException(httpResponse, ErrorHelper.GetAttachmentError, null, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }

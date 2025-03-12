@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -43,7 +44,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
-            Core.Interfaces.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
@@ -60,19 +61,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Log any leaked exception from the application.
                 StringBuilder sbError = new StringBuilder(1024);
-                sbError.Append(exception.Message);
+                int iLevel = 0;
+                exception.GetExceptionDetail(sbError,iLevel); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
                     sbError.Append(errorResponse.Body.ToString());
                 }
                 string resolvedErrorMessage = sbError.ToString();
-                logger.LogError(exception, "Exception caught : {ExceptionMessage}", resolvedErrorMessage);
+                
+                // Writing formatted exception message to log with error codes and help links. 
+                logger.LogError(resolvedErrorMessage);
 
-                await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage));
-
-                // Send a trace activity
-                await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text(resolvedErrorMessage), CancellationToken.None);
+                    // Send a trace activity
+                    await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
+                }
                 sbError.Clear();
             };
         }
@@ -105,7 +111,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             else
             {
                 // Deserialize the incoming Activity
-                var activity = await HttpHelper.ReadRequestAsync<Activity>(httpRequest).ConfigureAwait(false);
+                var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
                 if (!IsValidChannelActivity(activity, httpResponse))
@@ -142,7 +148,28 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        private bool IsValidChannelActivity(Activity activity, HttpResponse httpResponse)
+        /// <summary>
+        /// CloudAdapter handles this override asynchronously.
+        /// </summary>
+        /// <param name="claimsIdentity"></param>
+        /// <param name="continuationActivity"></param>
+        /// <param name="bot"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="audience"></param>
+        /// <returns></returns>
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        {
+            if (_adapterOptions.Async)
+            {
+                // Queue the activity to be processed by the ActivityBackgroundService
+                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, continuationActivity, proactive: true, proactiveAudience: audience);
+                return Task.CompletedTask;
+            }
+
+            return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
+        }
+
+        private bool IsValidChannelActivity(IActivity activity, HttpResponse httpResponse)
         {
             if (activity == null)
             {

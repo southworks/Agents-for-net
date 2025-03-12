@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -49,21 +51,9 @@ namespace Microsoft.Agents.Core.Connector.Tests
         }
 
         [Fact]
-        public void Constructor_ShouldThrowOnNullFactory()
+        public void Constructor_ShouldThrowOnNullTransport()
         {
-            Assert.Throws<ArgumentNullException>(() => new AttachmentsRestClient(UriEndpoint, null, null));
-        }
-
-        [Fact]
-        public void Constructor_ShouldThrowOnNullEndpoint()
-        {
-            Assert.Throws<ArgumentNullException>(() => new AttachmentsRestClient(null, null, null));
-        }
-
-        [Fact]
-        public void Constructor_ShouldNotThrowOnNullTokenProvider()
-        {
-            _ = new AttachmentsRestClient(UriEndpoint, new Mock<IHttpClientFactory>().Object, null);
+            Assert.Throws<ArgumentNullException>(() => new AttachmentsRestClient(null));
         }
 
         [Fact]
@@ -125,7 +115,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
             
-            var exMessage = $"GetAttachmentInfo operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetAttachmentInfo operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -217,7 +207,7 @@ namespace Microsoft.Agents.Core.Connector.Tests
 
             MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(InternalErrorResponse);
 
-            var exMessage = $"GetAttachment operation returned an invalid status code '{InternalErrorResponse.StatusCode}'";
+            var exMessage = $"GetAttachment operation returned an invalid status code '(500) {InternalErrorResponse.StatusCode}'";
 
             try
             {
@@ -232,11 +222,13 @@ namespace Microsoft.Agents.Core.Connector.Tests
 
         private AttachmentsRestClient UseAttachment()
         {
-            var httpFactory = new Mock<IHttpClientFactory>();
-            httpFactory.Setup(a => a.CreateClient(It.IsAny<string>()))
-                .Returns(MockHttpClient.Object);
+            var transport = new Mock<IRestTransport>();
+            transport.Setup(x => x.Endpoint)
+                .Returns(UriEndpoint);
+            transport.Setup(a => a.GetHttpClientAsync())
+                .Returns(Task.FromResult(MockHttpClient.Object));
 
-            return new AttachmentsRestClient(UriEndpoint, httpFactory.Object, null);
+            return new AttachmentsRestClient(transport.Object);
         }
     }
 }

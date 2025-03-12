@@ -26,7 +26,7 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />
-    <PackageVersion Include="Azure.Core" Version="1.43.0" />
+    <PackageVersion Include="Azure.Core" Version="1.44.1" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.67.2" />
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.67.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Abstractions" Version="8.1.2" />
@@ -40,12 +40,13 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(Microsoft_Extentions_PkgVer)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(Microsoft_Extentions_PkgVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
+    <PackageVersion Include="System.Text.Json" Version="9.0.2" />
+    <PackageVersion Include="System.Memory.Data" Version="8.0.1" />
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <!-- ASP.net Core support -->
     <PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="$(Microsoft_AspNetCore_PkgVer)" />
@@ -89,5 +90,9 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.29.0-alpha" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.29.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.29.0" />
+    <!-- Required until we move ModelContextProtocol libraries to net9 -->
+    <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+	<!-- Azure OpenAI -->
+	<PackageVersion Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using CopilotStudioEchoSkill;
+using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
@@ -20,8 +21,11 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
-// Add basic bot functionality
-builder.AddBot<CopilotStudioBot, BotAdapterWithErrorHandler>();
+// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
+builder.Services.AddTransient<AgentApplicationOptions>();
+
+// Add the bot (which is transient)
+builder.AddBot<MyBot, BotAdapterWithErrorHandler>();
 
 var app = builder.Build();
 
@@ -31,7 +35,7 @@ app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Copilot SDK Sample - EchoSkill");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample - EchoSkill");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }

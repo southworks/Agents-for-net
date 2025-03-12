@@ -9,10 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.Connector.Teams;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Agents.BotBuilder.Errors;
 
 namespace Microsoft.Agents.BotBuilder
 {
@@ -72,14 +72,22 @@ namespace Microsoft.Agents.BotBuilder
             ArgumentException.ThrowIfNullOrWhiteSpace(audience);
 
             // Intentionally create the TeamsConnectorClient since it supports the same operations as for ABS plus the Teams operations.
-            return Task.FromResult<IConnectorClient>(new RestTeamsConnectorClient(
+            return Task.FromResult<IConnectorClient>(new RestConnectorClient(
                 new Uri(serviceUrl),
                 _httpClientFactory,
                 useAnonymous ? null : () =>
                 {
-                    var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl)
-                        ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
-                    return tokenAccess.GetAccessTokenAsync(audience, scopes);
+                    try
+                    {
+                        var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl);
+                        return tokenAccess.GetAccessTokenAsync(audience, scopes);
+                    }
+                    catch (Exception ex)
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+                    }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
         }
@@ -92,14 +100,22 @@ namespace Microsoft.Agents.BotBuilder
             var appId = BotClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 
             return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
-                appId, 
+                appId,
                 new Uri(_tokenServiceEndpoint),
                 _httpClientFactory,
                 useAnonymous ? null : () =>
                 {
-                    var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint)
-                        ?? throw new InvalidOperationException($"An instance of IAccessTokenProvider not found for {BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
-                    return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                    try
+                    {
+                        var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                    }
+                    catch(Exception ex)
+                    {
+                        // have to do it this way b/c of the lambda expression. 
+                        throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                    }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,
                 _logger));

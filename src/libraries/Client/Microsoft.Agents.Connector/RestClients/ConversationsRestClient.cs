@@ -6,24 +6,21 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class ConversationsRestClient(
-        Uri endpoint, 
-        IHttpClientFactory httpClientFactory, 
-        Func<Task<string>> tokenProviderFunction,
-        string httpClientName = nameof(RestUserTokenClient)) : RestClientBase(httpClientFactory, httpClientName, tokenProviderFunction), IConversations
+    internal class ConversationsRestClient(IRestTransport transport) : IConversations
     {
-        private readonly Uri _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
-
-
+        private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
         internal HttpRequestMessage CreateGetConversationsRequest(string continuationToken)
         {
@@ -31,7 +28,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 Method = HttpMethod.Get,
 
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
                     .AppendQuery("continuationToken", continuationToken)
             };
 
@@ -43,7 +40,7 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ConversationsResult> GetConversationsAsync(string continuationToken = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateGetConversationsRequest(continuationToken);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -53,22 +50,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversations operation returned an invalid status code '{httpResponse.StatusCode}'");
-
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationsError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -78,7 +60,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -92,7 +74,7 @@ namespace Microsoft.Agents.Connector.RestClients
         public async Task<ConversationResourceResponse> CreateConversationAsync(ConversationParameters body = null, CancellationToken cancellationToken = default)
         {
             using var message = CreateCreateConversationRequest(body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -104,20 +86,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"CreateConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendCreateConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -127,7 +96,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -148,7 +117,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentNullException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendToConversationRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -160,20 +129,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendToConversation operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendSendConversationError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -183,7 +139,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/history")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -199,7 +155,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateSendConversationHistoryRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -211,20 +167,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"SendConversationHistory operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendConversationHistoryError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -234,7 +177,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Put,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -256,7 +199,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateUpdateActivityRequest(conversationId, activityId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -268,20 +211,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UpdateActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUpdateActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -291,7 +221,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -315,7 +245,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateReplyToActivityRequest(conversationId, activityId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -332,20 +262,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"ReplyToActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendReplyToActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -355,7 +272,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -368,7 +285,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateDeleteActivityRequest(conversationId, activityId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -377,20 +294,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteActivity operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteActivityError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -400,7 +304,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -412,7 +316,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationMembersRequest(conversationId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -422,20 +326,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -445,7 +336,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{userId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -458,7 +349,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(userId);
 
             using var message = CreateGetConversationMemberRequest(conversationId, userId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -468,20 +359,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -491,7 +369,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Delete,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/members/{memberId}")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -504,7 +382,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(memberId);
 
             using var message = CreateDeleteConversationMemberRequest(conversationId, memberId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -513,20 +391,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return;
                 default:
                     {
-                        var ex = new ErrorResponseException($"DeleteConversationMember operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendDeleteConversationMemberError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -535,7 +400,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
+            request.RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/pagedmembers")
                 .AppendQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
                 .AppendQuery("continuationToken", continuationToken);
 
@@ -549,7 +414,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateGetConversationPagedMembersRequest(conversationId, pageSize, continuationToken);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -559,20 +424,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetConversationPagedMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetConversationPagedMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -582,7 +434,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/activities/{activityId}/members")
             };
             request.Headers.Add("Accept", "application/json");
             return request;
@@ -595,7 +447,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(activityId);
 
             using var message = CreateGetActivityMembersRequest(conversationId, activityId);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -605,20 +457,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"GetActivityMembers operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendGetActivityMembersError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
         }
@@ -628,7 +467,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
+                RequestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), $"v3/conversations/{conversationId}/attachments")
             };
             request.Headers.Add("Accept", "application/json");
             if (body != null)
@@ -644,7 +483,7 @@ namespace Microsoft.Agents.Connector.RestClients
             ArgumentException.ThrowIfNullOrEmpty(conversationId);
 
             using var message = CreateUploadAttachmentRequest(conversationId, body);
-            using var httpClient = await GetHttpClientAsync().ConfigureAwait(false);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
             using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -656,22 +495,30 @@ namespace Microsoft.Agents.Connector.RestClients
                     }
                 default:
                     {
-                        var ex = new ErrorResponseException($"UploadAttachment operation returned an invalid status code '{httpResponse.StatusCode}'");
-                        try
-                        {
-                            ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                            if (errorBody != null && errorBody.Error != null)
-                            {
-                                ex.Body = errorBody;
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            // Ignore the exception
-                        }
-                        throw ex;
+                        throw HandleExceptionResponse(httpResponse, ErrorHelper.SendUploadAttachmentError, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
                     }
             }
+        }
+
+        /// <summary>
+        /// Common handler for Non Successful responses.
+        /// </summary>
+        /// <param name="httpResponse"></param>
+        /// <param name="errorMessage"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="errors"></param>
+        private static Exception HandleExceptionResponse(HttpResponseMessage httpResponse, AgentErrorDefinition errorMessage, CancellationToken cancellationToken, params string[] errors)
+        {
+            ArgumentNullException.ThrowIfNull(httpResponse);
+
+            var ex = ErrorResponseException.CreateErrorResponseException(httpResponse, errorMessage, cancellationToken: cancellationToken, errors: errors);
+
+            if (httpResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                    ErrorHelper.InvalidAccessTokenForAgentCallback, ex);
+            }
+            throw ex;
         }
     }
 }
