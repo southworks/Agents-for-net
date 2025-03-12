@@ -56,7 +56,7 @@ namespace StreamingMessageBot
             }
             finally
             {
-                await response.EndStreamAsync(cancellationToken);
+                await response.EndStreamAsync(cancellationToken:cancellationToken);
             }
         }
     }

@@ -74,15 +74,6 @@ namespace Microsoft.Agents.BotBuilder
         public int Interval { get; set; }
 
         /// <summary>
-        /// The amount of time in milliseconds EndStreamSync will wait.
-        /// </summary>
-        /// <remarks>
-        /// This should be adjusted based on Interval and the amount of
-        /// text being chunked.
-        /// </remarks>
-        public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
-
-        /// <summary>
         /// Indicate if the current channel supports intermediate messages.
         /// </summary>
         /// <remarks>
@@ -201,7 +192,7 @@ namespace Microsoft.Agents.BotBuilder
         /// </remarks>
         /// <returns>A Task representing the async operation</returns>
         /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task EndStreamAsync(CancellationToken cancellationToken = default)
+        public async Task EndStreamAsync(int timeout = Timeout.Infinite, CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
@@ -242,7 +233,14 @@ namespace Microsoft.Agents.BotBuilder
                 if (StreamStarted())
                 {
                     // Wait for queue items to be sent per Interval
-                    _queueEmpty.WaitOne(Timeout);
+                    try
+                    {
+                        _queueEmpty.WaitOne(timeout);
+                    }
+                    catch(AbandonedMutexException)
+                    {
+                        StopStream();
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(Message) || Attachments != null && Attachments.Count > 0)
