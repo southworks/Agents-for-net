@@ -13,8 +13,8 @@ using System.Collections.Generic;
 
 namespace Microsoft.Agents.BotBuilder.App.UserAuth
 {
-    public delegate Task AuthorizationSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, CancellationToken cancellationToken);
-    public delegate Task AuthorizationFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, CancellationToken cancellationToken);
+    public delegate Task AuthorizationSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, IActivity initiatingActivity, CancellationToken cancellationToken);
+    public delegate Task AuthorizationFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken);
 
     /// <summary>
     /// UserAuthorization supports and extensible number of OAuth flows.
@@ -100,9 +100,11 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <param name="turnContext"> The turn context.</param>
         /// <param name="turnState"></param>
         /// <param name="handlerName">The name of the authorization setting.</param>
+        /// <param name="exchangeConnection"></param>
+        /// <param name="exchangeScopes"></param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <exception cref="InvalidOperationException">If a flow is already active.</exception>
-        public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, CancellationToken cancellationToken = default)
+        public async Task SignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentNullException.ThrowIfNull(turnState);
@@ -121,11 +123,11 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 // call the handler directly
                 if (_userSignInSuccessHandler != null)
                 {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, existingCachedToken, cancellationToken).ConfigureAwait(false);
+                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, existingCachedToken, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
             }
 
-            SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, cancellationToken).ConfigureAwait(false);
+            SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
 
             if (response.Status == SignInStatus.Pending)
             {
@@ -140,10 +142,12 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                     ServiceUrl = turnContext.Activity.ServiceUrl,
                     ChannelId = turnContext.Activity.ChannelId,
                     ChannelData = turnContext.Activity.ChannelData,
+                    Value = new SignInEventValue() { OBOConnectionName = exchangeConnection, OBOScopes = exchangeScopes, InitiatingActivity = turnContext.Activity }
+                    
                 };
                 continuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true);
 
-                SetSingInContinuationActivity(turnState, continuationActivity);
+                SetSignInContinuationActivity(turnState, continuationActivity);
 
                 return;
             }
@@ -152,7 +156,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             {
                 if (_userSignInFailureHandler != null)
                 {
-                    await _userSignInFailureHandler(turnContext, turnState, handlerName, response, cancellationToken).ConfigureAwait(false);
+                    await _userSignInFailureHandler(turnContext, turnState, handlerName, response, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -169,7 +173,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 // call the handler directly
                 if (_userSignInSuccessHandler != null)
                 {
-                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.Token, cancellationToken).ConfigureAwait(false);
+                    await _userSignInSuccessHandler(turnContext, turnState, handlerName, response.Token, turnContext.Activity, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -197,7 +201,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
 
             await _dispatcher.ResetStateAsync(turnContext, handlerName, cancellationToken).ConfigureAwait(false);
             DeleteActiveFlow(turnState);
-            DeleteSingInContinuationActivity(turnState);
+            DeleteSignInContinuationActivity(turnState);
         }
 
         /// <summary>
@@ -253,15 +257,31 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 // Auth flow hasn't start yet.
                 activeFlowName ??= handlerName ?? Default;
 
+                string exchangeConnection = null;
+                IList<string> exchangeScopes = null;
+
+                var signInContinuation = GetSignInContinuationActivity(turnState);
+                if (IsSignInCompletionEvent(signInContinuation))
+                {
+                    var signInEvent = ProtocolJsonSerializer.ToObject<SignInEventValue>(signInContinuation.Value);
+                    exchangeConnection = signInEvent.OBOConnectionName;
+                    exchangeScopes = signInEvent.OBOScopes;
+                }
+
                 // Get token or start flow for specified flow.
-                SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
+                SignInResponse response = await _dispatcher.SignUserInAsync(
+                    turnContext, 
+                    activeFlowName, 
+                    exchangeConnection: exchangeConnection, 
+                    exchangeScopes: exchangeScopes, 
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 if (response.Status == SignInStatus.Pending)
                 {
                     if (!flowContinuation)
                     {
                         // Bank the incoming Activity so it can be executed after sign in is complete.
-                        SetSingInContinuationActivity(turnState, turnContext.Activity);
+                        SetSignInContinuationActivity(turnState, turnContext.Activity);
 
                         // Requires user action, save state and stop processing current activity.  Done with this turn.
                         SetActiveFlow(turnState, activeFlowName);
@@ -276,24 +296,28 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                     // Clear user auth state
                     await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
                     DeleteActiveFlow(turnState);
-
-                    var signInContinuation = DeleteSingInContinuationActivity(turnState);
+                    DeleteSignInContinuationActivity(turnState);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
+                    // Handle manual signin error callback
                     if (IsSignInCompletionEvent(signInContinuation))
                     {
+                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
                         // This will execute OnUserSignInFailure in a new TurnContext.  This is for manual sign in only.
                         // This could be optimized to execute the OnUserSignInFailure directly if the we're not currently
                         // handling an Invoke.
-                        signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response };
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        var signInEvent = ProtocolJsonSerializer.ToObject<SignInEventValue>(signInContinuation.Value);
+                        signInEvent.Response = response;
+                        signInContinuation.Value = signInEvent;
+
                         await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInContinuation, _app, cancellationToken).ConfigureAwait(false);
                         return false;
                     }
 
                     if (_userSignInFailureHandler != null)
                     {
-                        await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, cancellationToken).ConfigureAwait(false);
+                        await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, signInContinuation, cancellationToken).ConfigureAwait(false);
                         return false;
                     }
 
@@ -308,9 +332,10 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                     DeleteActiveFlow(turnState);
                     CacheToken(activeFlowName, response.Token);
 
-                    var signInContinuation = DeleteSingInContinuationActivity(turnState);
                     if (signInContinuation != null)
                     {
+                        DeleteSignInContinuationActivity(turnState);
+
                         if (IsSignInCompletionEvent(signInContinuation))
                         {
                             // Continue a manual sign in completion.
@@ -322,7 +347,8 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                             //
                             // Note:  This should be optimized to only do this if the current TurnContext.Activity is Invoke.  Otherwise,
                             // the OnUserSignInSuccess can be called directly?
-                            signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response };
+                            var signInEvent = ProtocolJsonSerializer.ToObject<SignInEventValue>(signInContinuation.Value);
+                            signInContinuation.Value = new SignInEventValue() { HandlerName = activeFlowName, Response = response, InitiatingActivity = signInEvent.InitiatingActivity };
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await _app.Options.Adapter.ProcessProactiveAsync(turnContext.Identity, signInContinuation, _app, cancellationToken).ConfigureAwait(false);
                             return false;
@@ -364,11 +390,23 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 if (signInCompletion.Response.Status == SignInStatus.Complete && _userSignInSuccessHandler != null)
                 {
                     CacheToken(signInCompletion.HandlerName, signInCompletion.Response.Token);
-                    await _userSignInSuccessHandler(turnContext, turnState, signInCompletion.HandlerName, signInCompletion.Response.Token, cancellationToken).ConfigureAwait(false);
+                    await _userSignInSuccessHandler(
+                        turnContext, 
+                        turnState, 
+                        signInCompletion.HandlerName, 
+                        signInCompletion.Response.Token,
+                        signInCompletion.InitiatingActivity, 
+                        cancellationToken).ConfigureAwait(false);
                 }
                 else if (_userSignInFailureHandler != null)
                 {
-                    await _userSignInFailureHandler(turnContext, turnState, signInCompletion.HandlerName, signInCompletion.Response, cancellationToken).ConfigureAwait(false);
+                    await _userSignInFailureHandler(
+                        turnContext, 
+                        turnState, 
+                        signInCompletion.HandlerName, 
+                        signInCompletion.Response, 
+                        signInCompletion.InitiatingActivity,
+                        cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -379,7 +417,6 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         {
             return string.Equals(activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(activity?.Name, SignInCompletionEventName);
-
         }
 
         /// <summary>
@@ -441,12 +478,17 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         }
 
         // Sign In continuation is the Activity that will be processed when the flow is complete.
-        private static void SetSingInContinuationActivity(ITurnState turnState, IActivity activity)
+        private static void SetSignInContinuationActivity(ITurnState turnState, IActivity activity)
         {
             turnState.User.SetValue(SIGNIN_ACTIVITY_KEY, activity);
         }
 
-        private static IActivity DeleteSingInContinuationActivity(ITurnState turnState)
+        private static IActivity GetSignInContinuationActivity(ITurnState turnState)
+        {
+            return turnState.User.GetValue<IActivity>(SIGNIN_ACTIVITY_KEY);
+        }
+
+        private static IActivity DeleteSignInContinuationActivity(ITurnState turnState)
         {
             var activity = turnState.User.GetValue<IActivity>(SIGNIN_ACTIVITY_KEY);
             if (activity != null)
@@ -461,5 +503,8 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
     {
         public string HandlerName { get; set; }
         public SignInResponse Response { get; set; }
+        public IActivity InitiatingActivity { get; set; }
+        public string OBOConnectionName { get; set; }
+        public IList<string> OBOScopes { get; set; }
     }
 }

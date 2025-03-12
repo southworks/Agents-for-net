@@ -6,6 +6,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,13 +57,8 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
 
         public string Name { get; private set; }
 
-        /// <summary>
-        /// Sign in current user
-        /// </summary>
-        /// <param name="turnContext">The turn turnContext</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The sign in response</returns>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public async Task<string> SignInUserAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             /*
             if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
@@ -74,22 +70,19 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             if (_botAuthentication != null && _botAuthentication.IsValidActivity(turnContext))
             {
                 var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
-                return await HandleOBO(turnContext, token, cancellationToken).ConfigureAwait(false);
+                return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
 
             return null;
         }
 
+        /// <inheritdoc/>
         public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await _botAuthentication.ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Sign out current user
-        /// </summary>
-        /// <param name="turnContext">The turn turnContext</param>
-        /// <param name="cancellationToken">The cancellation token</param>
+        /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
@@ -104,24 +97,25 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             return await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, "", cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<string> HandleOBO(ITurnContext turnContext, string token, CancellationToken cancellationToken)
+        private async Task<string> HandleOBO(ITurnContext turnContext, string token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(token))
             {
                 return null;
             }
 
-            if (string.IsNullOrEmpty(_settings.OBOConnectionName))
+            if (string.IsNullOrEmpty(_settings.OBOConnectionName) && string.IsNullOrEmpty(exchangeConnection))
             {
                 return token;
             }
 
             try
             {
-                var tokenProvider = _connections.GetConnection(_settings.OBOConnectionName);
+                var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+                var tokenProvider = _connections.GetConnection(connectionName);
                 if (tokenProvider is IOBOExchange oboExchange)
                 {
-                    var oboToken = await oboExchange.AcquireTokenOnBehalfOf(_settings.OBOScopes, token).ConfigureAwait(false);
+                    var oboToken = await oboExchange.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
 
                     return oboToken;
                 }

@@ -4,7 +4,6 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +25,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
     /// </remarks>
     public class UserAuthorizationDispatcher : IUserAuthorizationDispatcher
     {
-        private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = [];
+        private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = new(StringComparer.OrdinalIgnoreCase);
         private readonly ILogger<UserAuthorizationDispatcher> _logger;
         private readonly IStorage _storage;
         private readonly IConnections _connections;
@@ -79,7 +78,9 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _connections = sp.GetService<IConnections>();
 
-            _userAuthHandlers = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>() ?? [];
+            var configDict = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>();
+            _userAuthHandlers = new(configDict, StringComparer.OrdinalIgnoreCase);
+
             if (_userAuthHandlers.Count == 0)
             {
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
@@ -93,20 +94,21 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             }
         }
 
+        /// <inheritdoc/>
         public IUserAuthorization Default => _userAuthHandlers.Count > 0 
             ? GetHandlerInstance(_userAuthHandlers.First().Key) 
             : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationHandlerNotFound, null);
 
         /// <inheritdoc/>
-        public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string flowName, CancellationToken cancellationToken = default)
+        public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
-            IUserAuthorization auth = Get(flowName);
+            IUserAuthorization auth = Get(handlerName);
             string token;
             try
             {
-                token = await auth.SignInUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                token = await auth.SignInUserAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -135,18 +137,18 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         }
 
         /// <inheritdoc/>
-        public async Task SignOutUserAsync(ITurnContext turnContext, string flowName, CancellationToken cancellationToken = default)
+        public async Task SignOutUserAsync(ITurnContext turnContext, string handlerName, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
-            IUserAuthorization auth = Get(flowName);
+            IUserAuthorization auth = Get(handlerName);
             await auth.SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task ResetStateAsync(ITurnContext turnContext, string flowName, CancellationToken cancellationToken = default)
+        public async Task ResetStateAsync(ITurnContext turnContext, string handlerName, CancellationToken cancellationToken = default)
         {
-            await Get(flowName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+            await Get(handlerName).ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         public IUserAuthorization Get(string name)
