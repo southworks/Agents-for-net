@@ -13,6 +13,23 @@ namespace Microsoft.Agents.BotBuilder.App.BotResponses
 {
     public delegate Task BotResponseHandler(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Handles routing response from another Agent to AgentApplication.
+    /// </summary>
+    /// <code>
+    /// class MyAgent : AgentApplication
+    /// {
+    ///     public MyAgent(AgentApplicationOptions options) : base(options)
+    ///     {
+    ///         BotResponses.OnBotResponse(OnBotResponseAsync);
+    ///     }
+    ///     
+    ///     private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
+    ///     {
+    ///         // do something with the response
+    ///     }
+    /// }
+    /// </code>
     public class BotResponsesFeature
     {
         private readonly AgentApplication _app;

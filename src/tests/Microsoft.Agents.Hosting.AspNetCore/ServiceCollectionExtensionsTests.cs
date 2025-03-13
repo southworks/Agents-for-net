@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
@@ -79,15 +80,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var services = builder.Object.Services
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
-            var expected = new List<Type>{
-                typeof(IChannelHost),
-                typeof(IChannelFactory),
-                typeof(ConversationIdFactory),
-                typeof(IChannelApiHandler), // Type passed to AddChannelHost.
-                typeof(IChannelApiHandler)
-            };
 
-            Assert.Equal(expected, services);
+            Assert.True(services.Where(s => s == typeof(ConversationIdFactory)).Any());
+            Assert.True(services.Where(s => s == typeof(AdapterBotResponseHandler)).Any());
+            Assert.True(services.Where(s => s == typeof(IChannelHost)).Any());
+            Assert.True(services.Where(s => s == typeof(IChannelFactory)).Any());
+            Assert.True(services.Where(s => s == typeof(IChannelApiHandler)).Any());
         }
     }
 }

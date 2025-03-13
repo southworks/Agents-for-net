@@ -32,7 +32,7 @@ namespace Bot1
             OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
-            BotResponses.OnBotResponse(OnBotResponse);
+            BotResponses.OnBotResponse(OnBotResponseAsync);
 
             OnTurnError = BotTurnErrorHandlerAsync;
         }
@@ -77,7 +77,7 @@ namespace Bot1
         }
 
         // Handles response from Bot2.
-        private async Task OnBotResponse(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
+        private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
         {
             // Get active conversationId being used for the other bot.  If null, a conversation hasn't been started.
             var state = turnState.GetValue<State>(StateProperty, () => new State());
