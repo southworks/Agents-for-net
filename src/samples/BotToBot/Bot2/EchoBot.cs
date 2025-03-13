@@ -6,6 +6,7 @@ using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,16 +37,20 @@ namespace Bot2
 
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
+            var result = turnState.Conversation.GetValue("log", () => new EchoResult());
+
             if (turnContext.Activity.Text.Contains("end") || turnContext.Activity.Text.Contains("stop"))
             {
                 // Send End of conversation at the end.
                 await turnContext.SendActivityAsync(MessageFactory.Text("Ending conversation..."), cancellationToken);
                 var endOfConversation = Activity.CreateEndOfConversationActivity();
                 endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
+                endOfConversation.Value = result;
                 await turnContext.SendActivityAsync(endOfConversation, cancellationToken);
             }
             else
             {
+                result.Messages.Add(turnContext.Activity.Text);
                 await turnContext.SendActivityAsync(MessageFactory.Text(turnContext.Activity.Text), cancellationToken);
                 var messageText = "Say \"end\" or \"stop\" and I'll end the conversation and return to the parent.";
                 await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
@@ -74,5 +79,10 @@ namespace Bot2
             endOfConversation.Text = exception.Message;
             await turnContext.SendActivityAsync(endOfConversation, CancellationToken.None);
         }
+    }
+
+    class EchoResult
+    {
+        public List<string> Messages { get; set; } = [];
     }
 }

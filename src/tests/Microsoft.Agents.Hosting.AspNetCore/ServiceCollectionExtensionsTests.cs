@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var builder = new Mock<IHostApplicationBuilder>();
             builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
-            ServiceCollectionExtensions.AddChannelHost<IChannelApiHandler>(builder.Object);
+            ServiceCollectionExtensions.AddChannelHost(builder.Object);
 
             var services = builder.Object.Services
                 .Select(e => e.ImplementationType ?? e.ServiceType)

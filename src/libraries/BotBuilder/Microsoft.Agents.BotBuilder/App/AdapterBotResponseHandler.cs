@@ -12,7 +12,7 @@ using System;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
 
-namespace Bot1
+namespace Microsoft.Agents.BotBuilder.App
 {
     /// <summary>
     /// Routes Bot response to the Adapter incoming pipeline.  This is the same route a bot normally gets incoming Activities.

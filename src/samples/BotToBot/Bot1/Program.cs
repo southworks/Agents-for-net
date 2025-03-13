@@ -23,8 +23,9 @@ builder.Services.AddTransient<AgentApplicationOptions>();
 // Add basic bot functionality
 builder.AddBot<HostBot>();
 
-// Add ChannelHost to enable calling other Agents
-builder.AddChannelHost<AdapterBotResponseHandler>();
+// Add ChannelHost to enable calling other Agents.  This is also required for
+// AgentApplication.BotResponses use.
+builder.AddChannelHost();
 
 var app = builder.Build();
 
