@@ -5,6 +5,7 @@ using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,6 +19,8 @@ namespace Bot2
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
             OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+
+            OnTurnError = BotTurnErrorHandlerAsync;
         }
 
         private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -55,6 +58,21 @@ namespace Bot2
             // avoided as the conversation may have been deleted.
             // Perform cleanup of resources if needed.
             return Task.CompletedTask;
+        }
+
+        private async Task BotTurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
+        {
+            // Send a message to the user.
+            var errorMessageText = "Bot2 encountered an error or bug.";
+            var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
+            await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
+
+            // Send an EndOfConversation activity to the caller with the error to end the conversation,
+            // and let the caller decide what to do.
+            var endOfConversation = Activity.CreateEndOfConversationActivity();
+            endOfConversation.Code = "Error";
+            endOfConversation.Text = exception.Message;
+            await turnContext.SendActivityAsync(endOfConversation, CancellationToken.None);
         }
     }
 }
