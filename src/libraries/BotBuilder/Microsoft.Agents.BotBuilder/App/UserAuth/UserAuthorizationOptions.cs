@@ -61,20 +61,18 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// <param name="sp"></param>
         /// <param name="configuration"></param>
         /// <param name="storage"></param>
-        /// <param name="dispatcher"></param>
         /// <param name="autoSignInSelector"></param>
         /// <param name="configKey"></param>
         public UserAuthorizationOptions(
             IServiceProvider sp, 
             IConfiguration configuration, 
             IStorage storage = null,
-            IUserAuthorizationDispatcher dispatcher = null, 
             AutoSignInSelectorAsync autoSignInSelector = null, 
             string configKey = "UserAuthorization")
         {
             var section = configuration.GetSection(configKey);
             Default = section.GetValue<string>(nameof(Default));
-            Dispatcher = dispatcher ?? new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
+            Dispatcher = new UserAuthorizationDispatcher(sp, configuration, storage ?? sp.GetService<IStorage>(), configKey: $"{configKey}:Handlers");
 
             var selectorInstance = autoSignInSelector ?? sp.GetService<AutoSignInSelectorAsync>();
             var autoSignIn = section.GetValue<bool>(nameof(AutoSignIn), true);
@@ -86,10 +84,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
         }
 
-        /// <summary>
-        /// The IUserAuthorization handlers.
-        /// </summary>
-        public IUserAuthorizationDispatcher Dispatcher { get; set; }
+        internal IUserAuthorizationDispatcher Dispatcher { get; set; }
 
         /// <summary>
         /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is

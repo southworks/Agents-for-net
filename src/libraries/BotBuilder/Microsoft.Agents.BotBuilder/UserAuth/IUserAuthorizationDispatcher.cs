@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.UserAuth
 {
-    public interface IUserAuthorizationDispatcher
+    internal interface IUserAuthorizationDispatcher
     {
         IUserAuthorization Default {  get; }
 

@@ -39,7 +39,7 @@ namespace AuthenticationBot
 
         private async Task SignInAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            await Authorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken);
+            await Authorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken: cancellationToken);
         }
 
         private async Task SignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -68,12 +68,12 @@ namespace AuthenticationBot
             }
         }
 
-        private async Task OnUserSignInSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, CancellationToken cancellationToken)
+        private async Task OnUserSignInSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, IActivity initiatingActivity, CancellationToken cancellationToken)
         {
             await turnContext.SendActivityAsync($"Manual Sign In: Successfully logged in to '{handlerName}'", cancellationToken: cancellationToken);
         }
 
-        private async Task OnUserSignInFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, CancellationToken cancellationToken)
+        private async Task OnUserSignInFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken)
         {
             await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
         }

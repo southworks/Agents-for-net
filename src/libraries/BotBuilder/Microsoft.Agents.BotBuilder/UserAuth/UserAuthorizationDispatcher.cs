@@ -23,7 +23,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
     /// <remarks>
     /// This utilizes type loading to support extensibility.
     /// </remarks>
-    public class UserAuthorizationDispatcher : IUserAuthorizationDispatcher
+    internal class UserAuthorizationDispatcher : IUserAuthorizationDispatcher
     {
         private readonly Dictionary<string, UserAuthorizationDefinition> _userAuthHandlers = new(StringComparer.OrdinalIgnoreCase);
         private readonly ILogger<UserAuthorizationDispatcher> _logger;
