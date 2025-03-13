@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -140,7 +141,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
             else
             {
-                builder.Services.AddSingleton<IStorage, MemoryStorage>();
+                var diStorage = builder.Services.Where(s => s.ServiceType == typeof(IStorage)).Any();
+                if (!diStorage)
+                {
+                    builder.Services.AddSingleton<IStorage, MemoryStorage>();
+                }
             }
 
             // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.
