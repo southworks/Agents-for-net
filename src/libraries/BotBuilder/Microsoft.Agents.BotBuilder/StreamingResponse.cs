@@ -294,6 +294,7 @@ namespace Microsoft.Agents.BotBuilder
                 _queue.Clear();
                 FinalMessage = null;
                 _nextSequence = 1;
+                StreamId = null;
             }
         }
 
