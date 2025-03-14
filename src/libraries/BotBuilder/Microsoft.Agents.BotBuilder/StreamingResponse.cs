@@ -5,6 +5,7 @@ using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.BotBuilder
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
     /// </remarks>
-    public class StreamingResponse
+    public class StreamingResponse : IStreamingResponse
     {
         private readonly ITurnContext _context;
         private int _nextSequence = 1;
@@ -49,9 +50,9 @@ namespace Microsoft.Agents.BotBuilder
         private readonly AutoResetEvent _queueEmpty = new(false);
 
         /// <summary>
-        /// Set Attachments to be included on the final message.
+        /// Set IActivity that will be (optionally) used for the final streaming message.
         /// </summary>
-        public List<Attachment>? Attachments { get; set; } = new();
+        public IActivity FinalMessage { get; set; }
 
         /// <summary>
         /// Gets the stream ID of the current response.
@@ -105,7 +106,7 @@ namespace Microsoft.Agents.BotBuilder
         /// </summary>
         /// <param name="text">Text of the update to send.</param>
         /// <param name="cancellationToken"></param>
-        /// <exception cref="TeamsAIException">Throws if the stream has already ended.</exception>
+        /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
         public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
@@ -138,7 +139,7 @@ namespace Microsoft.Agents.BotBuilder
                     };
                 };
 
-                if (StreamStarted())
+                if (IsStreamStarted())
                 {
                     QueueActivity(queueFunc);
                     return;
@@ -207,9 +208,9 @@ namespace Microsoft.Agents.BotBuilder
                 }
 
                 // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
-                if (!string.IsNullOrWhiteSpace(Message))
+                if (!string.IsNullOrWhiteSpace(Message) || FinalMessage != null)
                 {
-                    await _context.SendActivityAsync(new Activity() { Type = ActivityTypes.Message, Text = Message, Attachments = Attachments }, cancellationToken).ConfigureAwait(false);
+                    await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
             }
             else
@@ -218,7 +219,7 @@ namespace Microsoft.Agents.BotBuilder
                 {
                     if (_ended)
                     {
-                        throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
+                        return;
                     }
 
                     _ended = true;
@@ -230,31 +231,69 @@ namespace Microsoft.Agents.BotBuilder
                     }
                 }
 
-                if (StreamStarted())
+                if (IsStreamStarted())
                 {
                     // Wait for queue items to be sent per Interval
                     try
                     {
                         _queueEmpty.WaitOne(timeout);
                     }
-                    catch(AbandonedMutexException)
+                    catch (AbandonedMutexException)
                     {
                         StopStream();
                     }
                 }
 
-                if (!string.IsNullOrEmpty(Message) || Attachments != null && Attachments.Count > 0)
+                if (!string.IsNullOrEmpty(Message) || FinalMessage != null)
                 {
-                    var activity = new Activity()
-                    {
-                        Type = ActivityTypes.Message,
-                        Text = Message,
-                        Entities = [new StreamInfo() { StreamType = StreamTypes.Final }],
-                        Attachments = Attachments
-                    };
-
-                    await SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                    await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
                 }
+            }
+        }
+
+        private IActivity CreateFinalMessage()
+        {
+            var activity = FinalMessage ?? new Activity();
+
+            activity.Type = ActivityTypes.Message;
+            activity.Text = Message;
+            activity.Entities ??= [];
+
+            // make sure the supplied Activity doesn't have a streamInfo already.
+            var existingStreamInfos = activity.Entities.Where(e => string.Equals(EntityTypes.StreamInfo, e.Type, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (existingStreamInfos.Count != 0)
+            {
+                foreach (var existing in existingStreamInfos)
+                {
+                    activity.Entities.Remove(existing);
+                }
+            }
+
+            activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final });
+
+            return activity;
+        }
+
+        /// <summary>
+        /// Reset an already used stream.  If the stream is still running, this will wait for completion.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task ResetAsync(int timeout = Timeout.Infinite, CancellationToken cancellationToken = default)
+        {
+            if (IsStreamStarted())
+            {
+                await EndStreamAsync(timeout, cancellationToken).ConfigureAwait(false);
+            }
+
+            lock (this)
+            {
+                StopStream();
+                _ended = false;
+                _queue.Clear();
+                FinalMessage = null;
+                _nextSequence = 1;
             }
         }
 
@@ -334,7 +373,7 @@ namespace Microsoft.Agents.BotBuilder
             }
         }
 
-        private bool StreamStarted()
+        public bool IsStreamStarted()
         {
             return _timer != null;
         }

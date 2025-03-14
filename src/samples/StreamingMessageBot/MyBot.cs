@@ -36,23 +36,21 @@ public class MyBot : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        StreamingResponse response = new(turnContext);
-
         try
         {
-            await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
+            await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
 
             await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
                 "Write a poem about why Microsoft Agents SDK is so great.",
                 new ChatOptions { MaxOutputTokens = 1000 },
                 cancellationToken: cancellationToken))
             {
-                response.QueueTextChunk(update?.ToString());
+                turnContext.StreamingResponse.QueueTextChunk(update?.ToString());
             }
         }
         finally
         {
-            await response.EndStreamAsync(cancellationToken:cancellationToken);
+            await turnContext.StreamingResponse.EndStreamAsync(cancellationToken:cancellationToken);
         }
     }
 }

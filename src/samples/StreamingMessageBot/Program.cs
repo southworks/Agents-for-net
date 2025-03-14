@@ -28,8 +28,8 @@ builder.Services.AddTransient<AgentApplicationOptions>();
 
 builder.Services.AddTransient<IChatClient>(sp =>
 {
-    return new AzureOpenAIClient(new Uri(builder.Configuration["AzureOpenAI:Endpoint"]), new ApiKeyCredential(builder.Configuration["AzureOpenAI:OpenAIKey"]))
-        .AsChatClient(builder.Configuration["AzureOpenAI:ModelName"]);
+    return new AzureOpenAIClient(new Uri(builder.Configuration["AIServices:AzureOpenAI:Endpoint"]), new ApiKeyCredential(builder.Configuration["AIServices:AzureOpenAI:ApiKey"]))
+        .AsChatClient(builder.Configuration["AIServices:AzureOpenAI:DeploymentName"]);
 });
 
 // Add the bot (which is transient)
