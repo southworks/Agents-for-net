@@ -11,9 +11,10 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -27,12 +28,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public class CloudAdapter
         : ChannelServiceAdapterBase, IBotHttpAdapter
     {
+        private readonly IServiceProvider _serviceProvider;
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="provider">Service provider used to gather DI related classes.</param>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
         /// <param name="logger"></param>
@@ -40,12 +43,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="middlewares"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public CloudAdapter(
+            IServiceProvider provider,
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
             BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
+            _serviceProvider = provider ?? throw new ArgumentNullException(nameof(provider));
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
 
@@ -124,6 +129,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
+                        var httpClientFactory = _serviceProvider.GetService<IHttpClientFactory>();
+                        (httpClientFactory as AgentsHttpClientFactory)?.AddHeaders(httpRequest.Headers);
+
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot
                         var invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, bot.OnTurnAsync, cancellationToken).ConfigureAwait(false);
@@ -134,7 +142,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     else
                     {
                         // Queue the activity to be processed by the ActivityBackgroundService
-                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity);
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, headers: httpRequest.Headers);
 
                         // Activity has been queued to process, so return immediately
                         httpResponse.StatusCode = (int)HttpStatusCode.Accepted;

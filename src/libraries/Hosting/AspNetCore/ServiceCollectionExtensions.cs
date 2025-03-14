@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -42,6 +43,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TBot : class, IBot
             where TAdapter : CloudAdapter
         {
+            AddHttpClientFactory(builder);
             AddCore<TAdapter>(builder, storage);
 
             // Add the Bot,  this is the primary worker for the bot. 
@@ -124,6 +126,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
 
+        /// <summary>
+        /// Adds services required for propagating headers to a <see cref="HttpClient"/>.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
+        /// <param name="configureOptions">A delegate used to configure the <see cref="HeaderPropagationOptions"/>.</param>
+        /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
+        public static IServiceCollection AddHeaderPropagation(this IServiceCollection services, Action<HeaderPropagationOptions> configureOptions)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(configureOptions);
+
+            services.Configure(configureOptions);
+
+            return services;
+        }
+
         private static void AddCore<TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TAdapter : CloudAdapter
         {
@@ -158,6 +176,37 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // the enqueueing activities or tasks to be processed by the BackgroundService.
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
+        }
+
+        private static void AddHttpClientFactory(this IHostApplicationBuilder builder)
+        {
+            var defaultDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(IHttpClientFactory));
+            if (defaultDescriptor == null)
+            {
+                builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp));
+                return;
+            }
+
+            // Remove the default registration.
+            builder.Services.Remove(defaultDescriptor);
+
+            // Capture a factory delegate that can create the default IHttpClientFactory instance.
+            Func<IServiceProvider, IHttpClientFactory> defaultFactory;
+            if (defaultDescriptor.ImplementationFactory != null)
+            {
+                defaultFactory = provider => (IHttpClientFactory)defaultDescriptor.ImplementationFactory(provider);
+            }
+            else if (defaultDescriptor.ImplementationInstance != null)
+            {
+                defaultFactory = _ => (IHttpClientFactory)defaultDescriptor.ImplementationInstance;
+            }
+            else
+            {
+                defaultFactory = provider => ActivatorUtilities.CreateInstance(provider, defaultDescriptor.ImplementationType) as IHttpClientFactory;
+            }
+
+            // Register your custom factory that wraps the default.
+            builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp, defaultFactory(sp)));
         }
     }
 }
