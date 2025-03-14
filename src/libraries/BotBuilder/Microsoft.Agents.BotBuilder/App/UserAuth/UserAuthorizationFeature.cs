@@ -87,7 +87,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// </summary>
         /// <param name="handlerName"></param>
         /// <returns></returns>
-        public string GetToken(string handlerName)
+        public string GetTurnToken(string handlerName)
         {
             return _authTokens.TryGetValue(handlerName, out var token) ? token : default(string);
         }
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
             }
 
             // Handle the case where we already have a token for this handler and the bot is calling this again.
-            var existingCachedToken = GetToken(handlerName);
+            var existingCachedToken = GetTurnToken(handlerName);
             if (existingCachedToken != null)
             {
                 // call the handler directly
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This should be called to start or continue the user auth until true is returned, which indicates sign in is complete.
-        /// When complete, the token is cached and can be access via <see cref="GetToken"/>.  For manual sign in, the <see cref="OnUserSignInSuccess"/> or 
+        /// When complete, the token is cached and can be access via <see cref="GetTurnToken"/>.  For manual sign in, the <see cref="OnUserSignInSuccess"/> or 
         /// <see cref="OnUserSignInFailure"/> are called at completion.
         /// </remarks>
         /// <param name="turnContext"></param>

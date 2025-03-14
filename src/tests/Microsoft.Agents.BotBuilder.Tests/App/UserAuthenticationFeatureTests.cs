@@ -83,8 +83,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
-            Assert.Equal(GraphToken, app.Authorization.GetToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.Equal(GraphToken, app.Authorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -106,8 +106,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.Authorization.GetToken(SharePointName));
-            Assert.Equal(SharePointToken, app.Authorization.GetToken(SharePointName));
+            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
+            Assert.Equal(SharePointToken, app.Authorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
@@ -152,8 +152,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             await app.Authorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(app.Authorization.GetToken(GraphName));
-            Assert.NotNull(app.Authorization.GetToken(SharePointName));
+            Assert.Null(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
@@ -175,8 +175,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             await app.Authorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(app.Authorization.GetToken(SharePointName));
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
+            Assert.Null(app.Authorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -332,7 +332,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -387,7 +387,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetToken(GraphName));
+            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
         }
 
         private static TurnContext MockTurnContext()
