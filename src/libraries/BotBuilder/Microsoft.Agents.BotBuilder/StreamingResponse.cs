@@ -35,9 +35,9 @@ namespace Microsoft.Agents.BotBuilder
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
     /// </remarks>
-    public class StreamingResponse : IStreamingResponse
+    internal class StreamingResponse : IStreamingResponse
     {
-        private readonly ITurnContext _context;
+        private readonly TurnContext _context;
         private int _nextSequence = 1;
         private bool _ended = false;
         private Timer _timer;
@@ -93,7 +93,7 @@ namespace Microsoft.Agents.BotBuilder
         /// Creates a new instance of the <see cref="StreamingResponse"/> class.
         /// </summary>
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
-        public StreamingResponse(ITurnContext turnContext)
+        public StreamingResponse(TurnContext turnContext)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
 
