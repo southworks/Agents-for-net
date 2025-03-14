@@ -28,11 +28,11 @@ namespace Microsoft.Agents.BotBuilder.App
     ///    Activity,       // { ActivityType | RegEx | Selector}, Rank
     ///    Message,        // { ActivityText | RegEx | Selector}, Rank
     ///    Conversation,   // { Event | Selector}, Rank
-    ///    BeforeTurn,     // Selector, Rank = order added/defined
-    ///    AfterTurn,      // Selector, Rank = order added/defined
+    ///    BeforeTurn,     // order added/defined
+    ///    AfterTurn,      // order added/defined
     ///    HandOff,        // Selector, Rank
-    ///    ReactionAdded,  // Selector, Rank
-    ///    ReactionRemoved // Selector, Rank
+    ///    ReactionAdded,  // Rank
+    ///    ReactionRemoved // Rank
     /// </code>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
@@ -52,22 +52,23 @@ namespace Microsoft.Agents.BotBuilder.App
 
         public ushort Rank { get; set; } = RouteRank.Unspecified;
 
-        public void AddRoute(AgentApplication app, MethodInfo routeMethod)
+        public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
             if (Type == RouteType.Activity)
             {
                 if (!string.IsNullOrWhiteSpace(ActivityType))
                 {
-                    app.OnActivity(ActivityType, routeMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnActivity(ActivityType, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
-                    app.OnActivity(new Regex(Regex), routeMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnActivity(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
-                    CreateDelegates<RouteSelectorAsync, RouteHandler>(app, routeMethod, selectorMethod, out var delegateSelector, out var delegateHandler);
+                    CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
+                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
                     app.OnActivity(delegateSelector, delegateHandler, rank: Rank);
                 }
@@ -76,16 +77,17 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 if (!string.IsNullOrWhiteSpace(ActivityText))
                 {
-                    app.OnMessage(ActivityText, routeMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnMessage(ActivityText, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
-                    app.OnMessage(new Regex(Regex), routeMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnMessage(new Regex(Regex), attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
-                    CreateDelegates<RouteSelectorAsync, RouteHandler>(app, routeMethod, selectorMethod, out var delegateSelector, out var delegateHandler);
+                    CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
+                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
                     app.OnMessage(delegateSelector, delegateHandler, rank: Rank);
                 }
@@ -94,15 +96,41 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 if (!string.IsNullOrWhiteSpace(Event))
                 {
-                    app.OnConversationUpdate(Event, routeMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnConversationUpdate(Event, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Selector))
                 {
                     GetSelectorMethodInfo(app, Selector, out var selectorMethod);
-                    CreateDelegates<RouteSelectorAsync, RouteHandler>(app, routeMethod, selectorMethod, out var delegateSelector, out var delegateHandler);
+                    CreateSelectorDelegate<RouteSelector>(app, Selector, selectorMethod, out var delegateSelector);
+                    CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
                     app.OnConversationUpdate(delegateSelector, delegateHandler, rank: Rank);
                 }
+            }
+            else if (Type == RouteType.ReactionAdded)
+            {
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnMessageReactionsAdded(delegateHandler, rank: Rank);
+            }
+            else if (Type == RouteType.ReactionRemoved)
+            {
+                CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnMessageReactionsRemoved(delegateHandler, rank: Rank);
+            }
+            else if (Type == RouteType.HandOff)
+            {
+                CreateHandlerDelegate<HandoffHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnHandoff(delegateHandler, rank: Rank);
+            }
+            else if (Type == RouteType.BeforeTurn)
+            {
+                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnBeforeTurn(delegateHandler);
+            }
+            else if (Type == RouteType.AfterTurn)
+            {
+                CreateHandlerDelegate<TurnEventHandler>(app, attributedMethod, out var delegateHandler);
+                app.OnAfterTurn(delegateHandler);
             }
         }
 
@@ -112,18 +140,29 @@ namespace Microsoft.Agents.BotBuilder.App
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeSelectorNotFound, null);
         }
 
-        private static void CreateDelegates<TDelegate, THandler>(AgentApplication app, MethodInfo routeMethod, MethodInfo selectorMethod, out TDelegate delegateSelector, out THandler delegateHandler) 
-            where TDelegate : class, Delegate
-            where THandler : class, Delegate
+        private static void CreateSelectorDelegate<T>(AgentApplication app, string selectorName, MethodInfo selectorMethod, out T delegateSelector) 
+            where T : class, Delegate
         {
             try
             {
-                delegateSelector = selectorMethod.CreateDelegate<TDelegate>(app);
-                delegateHandler = routeMethod.CreateDelegate<THandler>(app);
+                delegateSelector = selectorMethod.CreateDelegate<T>(app);
             }
             catch (ArgumentException ex)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeSelectorInvalid, ex);
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeSelectorInvalid, ex, selectorName);
+            }
+        }
+
+        private static void CreateHandlerDelegate<T>(AgentApplication app, MethodInfo attributedMethod, out T delegateHandler)
+            where T : class, Delegate
+        {
+            try
+            {
+                delegateHandler = attributedMethod.CreateDelegate<T>(app);
+            }
+            catch (ArgumentException ex)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex);
             }
         }
     }

@@ -41,6 +41,7 @@ namespace Microsoft.Agents.BotBuilder.Errors
         // ActivityRouteAttribute
         internal static AgentErrorDefinition AttributeSelectorNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.AttributeSelectorNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AttributeSelectorInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.AttributeSelectorInvalid, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AttributeHandlerInvalid = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.AttributeHandlerInvalid, "https://aka.ms/AgentsSDK-Error01");
 
         // Application
     }
