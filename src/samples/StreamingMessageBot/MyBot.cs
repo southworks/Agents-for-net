@@ -8,56 +8,51 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.AI;
-using Microsoft.VisualBasic;
-using static System.Net.Mime.MediaTypeNames;
 
-namespace StreamingMessageBot
+namespace StreamingMessageBot;
+
+public class MyBot : AgentApplication
 {
-    public class MyBot : AgentApplication
+    private readonly IChatClient _chatClient;
+
+    public MyBot(AgentApplicationOptions options, IChatClient chatClient) : base(options)
     {
-        private readonly IChatClient _chatClient;
+        _chatClient = chatClient;
 
-        public MyBot(AgentApplicationOptions options, IChatClient chatClient) : base(options)
+        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+    }
+
+    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
-            _chatClient = chatClient;
-
-            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-
-            // Listen for ANY message to be received. MUST BE AFTER ANY OTHER MESSAGE HANDLERS
-            OnActivity(ActivityTypes.Message, OnMessageAsync);
-        }
-
-        protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+            if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                if (member.Id != turnContext.Activity.Recipient.Id)
-                {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Say anything and I'll recite poetry."), cancellationToken);
-                }
+                await turnContext.SendActivityAsync(MessageFactory.Text("Say anything and I'll recite poetry."), cancellationToken);
             }
         }
+    }
 
-        protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        StreamingResponse response = new(turnContext);
+
+        try
         {
-            StreamingResponse response = new(turnContext);
+            await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
 
-            try
+            await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
+                "Write a poem about why Microsoft Agents SDK is so great.",
+                new ChatOptions { MaxOutputTokens = 1000 },
+                cancellationToken: cancellationToken))
             {
-                await response.QueueInformativeUpdateAsync("Hold on for an awesome poem...", cancellationToken);
-
-                await foreach (StreamingChatCompletionUpdate update in _chatClient.CompleteStreamingAsync(
-                    "Write a poem about why Microsoft Agents SDK is so great.",
-                    new ChatOptions { MaxOutputTokens = 1000 },
-                    cancellationToken: cancellationToken))
-                {
-                    response.QueueTextChunk(update?.ToString());
-                }
+                response.QueueTextChunk(update?.ToString());
             }
-            finally
-            {
-                await response.EndStreamAsync(cancellationToken:cancellationToken);
-            }
+        }
+        finally
+        {
+            await response.EndStreamAsync(cancellationToken:cancellationToken);
         }
     }
 }
