@@ -70,6 +70,15 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A RouteAttribute is missing required arguments..
+        /// </summary>
+        internal static string AttributeMissingArgs {
+            get {
+                return ResourceManager.GetString("AttributeMissingArgs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The RouteAttribute.Selector method &apos;{0}&apos; does not match the RouteSelector delegate definition..
         /// </summary>
         internal static string AttributeSelectorInvalid {

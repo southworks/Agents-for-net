@@ -72,6 +72,10 @@ namespace Microsoft.Agents.BotBuilder.App
 
                     app.OnActivity(delegateSelector, delegateHandler, rank: Rank);
                 }
+                else
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
+                }
             }
             else if (Type == RouteType.Message)
             {
@@ -91,6 +95,10 @@ namespace Microsoft.Agents.BotBuilder.App
 
                     app.OnMessage(delegateSelector, delegateHandler, rank: Rank);
                 }
+                else
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
+                }
             }
             else if (Type == RouteType.Conversation)
             {
@@ -105,6 +113,10 @@ namespace Microsoft.Agents.BotBuilder.App
                     CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
 
                     app.OnConversationUpdate(delegateSelector, delegateHandler, rank: Rank);
+                }
+                else
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeMissingArgs, null);
                 }
             }
             else if (Type == RouteType.ReactionAdded)
@@ -137,7 +149,7 @@ namespace Microsoft.Agents.BotBuilder.App
         private static void GetSelectorMethodInfo(AgentApplication app, string selectorName, out MethodInfo selectorMethod)
         {
             selectorMethod = app.GetType().GetMethod(selectorName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeSelectorNotFound, null);
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeSelectorNotFound, null, selectorName);
         }
 
         private static void CreateSelectorDelegate<T>(AgentApplication app, string selectorName, MethodInfo selectorMethod, out T delegateSelector) 

@@ -21,7 +21,6 @@ namespace Microsoft.Agents.BotBuilder.App
     /// </summary>
     public class AgentApplication : IBot
     {
-        private static MethodInfo[] s_methods = null;
         private readonly UserAuthenticationFeature _authentication;
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
@@ -675,10 +674,9 @@ namespace Microsoft.Agents.BotBuilder.App
 
         private void ApplyRouteAttributes()
         {
-            s_methods ??= GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
             // This will evaluate all methods that have an attribute, in declaration order (grouped by inheritance chain)
-            foreach (var method in s_methods)
+            var methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            foreach (var method in methods)
             {
                 var activityRoutes = method.GetCustomAttributes<Attribute>(true);
                 foreach (var attribute in activityRoutes)
