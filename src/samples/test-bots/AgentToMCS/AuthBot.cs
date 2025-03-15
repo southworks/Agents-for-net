@@ -95,7 +95,7 @@ namespace AuthenticationBot
         {
             if (turnContext.Activity.Text == "auto")
             {
-                await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authorization.Default}', token length: {Authorization.GetToken(Authorization.Default).Length}", cancellationToken: cancellationToken);
+                await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authorization.Default}', token length: {Authorization.GetTurnToken(Authorization.Default).Length}", cancellationToken: cancellationToken);
             }
             else
             {
@@ -112,9 +112,9 @@ namespace AuthenticationBot
                 CopilotClient cpsClient = new CopilotClient(
                     _mcsSettings,
                     _httpClientFactory,
-                    tokenProviderFunction: async (s) =>
+                    tokenProviderFunction: (s) =>
                     {
-                        return token;
+                        return Task.FromResult(token);
                     },
                     NullLogger.Instance,
                     "mcs");
