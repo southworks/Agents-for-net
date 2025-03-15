@@ -22,6 +22,9 @@ namespace Microsoft.Agents.Client
     /// bot replies to the originating channel.  This is the legacy behavior for the Root bot in a Skill scenario, including 
     /// for Dialogs SkillDialog.
     /// </summary>
+    /// <remarks>
+    /// This is provided for compatibility with Dialogs SkillDialog.  It is not intended for use with AgentApplication.
+    /// </remarks>
     public class ProxyChannelApiHandler : IChannelApiHandler
     {
         public static readonly string SkillConversationReferenceKey = "Microsoft.Agents.BotBuilder.Skills.SkillConversationReference";

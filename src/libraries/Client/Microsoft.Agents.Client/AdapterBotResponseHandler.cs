@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Client
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.
     /// </remarks>
-    public class AdapterBotResponseHandler : IChannelApiHandler
+    internal class AdapterBotResponseHandler : IChannelApiHandler
     {
         public class BotReply
         {
