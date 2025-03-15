@@ -9,9 +9,10 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Client
 {
@@ -20,58 +21,71 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class ConfigurationChannelHost : IChannelHost
     {
+        private const string ConversationsStateProperty = "conversation.channelHost.channelConversations";
+
         private readonly IServiceProvider _serviceProvider;
-        private readonly IConnections _connections;
         private readonly IConversationIdFactory _conversationIdFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConnections _connections;
 
-        public ConfigurationChannelHost(IServiceProvider systemServiceProvider, IConversationIdFactory conversationIdFactory, IConnections connections, IConfiguration configuration, string defaultChannelName, string configSection = "ChannelHost")
+        public ConfigurationChannelHost(
+            IConfiguration configuration,
+            IServiceProvider systemServiceProvider, 
+            IConversationIdFactory conversationIdFactory, 
+            IConnections connections,
+            IHttpClientFactory httpClientFactory,
+            string configSection = "ChannelHost")
         {
-            ArgumentException.ThrowIfNullOrEmpty(configSection);
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             _conversationIdFactory = conversationIdFactory ?? throw new ArgumentNullException(nameof(conversationIdFactory));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+            ArgumentException.ThrowIfNullOrEmpty(configSection);
 
-            var section = configuration?.GetSection($"{configSection}:Channels");
-            var bots = section?.Get<ChannelInfo[]>();
-            if (bots != null)
-            {
-                foreach (var bot in bots)
-                {
-                    if (string.IsNullOrEmpty(bot.ChannelFactory))
-                    {
-                        bot.ChannelFactory = defaultChannelName; // Default the channel name to a know name if its not populated in the incoming configuration
-                    }
-                    Channels.Add(bot.Id, bot);
-                }
-            }
-
-            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:HostEndpoint");
+            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint");
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
-                HostEndpoint = new Uri(hostEndpoint);
+                DefaultHostEndpoint = new Uri(hostEndpoint);
             }
 
-            var hostAppId = configuration?.GetValue<string>($"{configSection}:HostAppId");
-            if (!string.IsNullOrWhiteSpace(hostAppId))
+            var hostClientId = configuration?.GetValue<string>($"{configSection}:HostClientId");
+            if (!string.IsNullOrWhiteSpace(hostClientId))
             {
-                HostAppId = hostAppId;
+                HostClientId = hostClientId;
+            }
+
+            var section = configuration?.GetSection($"{configSection}:Channels");
+            var channels = section?.Get<HttpBotChannelSettings[]>();
+            if (channels != null)
+            {
+                foreach (var channel in channels)
+                {
+                    if (string.IsNullOrEmpty(channel.ConnectionSettings.ServiceUrl))
+                    {
+                        channel.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
+                    }
+
+                    channel.ValidateChannelSettings();
+                    Channels.Add(channel.Alias, channel);
+                }
             }
         }
 
         /// <inheritdoc />
-        public Uri HostEndpoint { get; }
+        public Uri DefaultHostEndpoint { get; }
 
         /// <inheritdoc />
-        public string HostAppId { get; }
+        public string HostClientId { get; }
 
         /// <inheritdoc />
-        public IDictionary<string, IChannelInfo> Channels { get; } = new Dictionary<string, IChannelInfo>();
+        internal IDictionary<string, HttpBotChannelSettings> Channels { get; } = new Dictionary<string, HttpBotChannelSettings>();
 
+        /// <inheritdoc/>
         public IChannel GetChannel(string name)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(name);
+            ArgumentException.ThrowIfNullOrEmpty(name);
 
-            if (!Channels.TryGetValue(name, out IChannelInfo channelInfo))
+            if (!Channels.TryGetValue(name, out HttpBotChannelSettings channelInfo))
             {
                 throw new InvalidOperationException($"IChannelInfo not found for '{name}'");
             }
@@ -79,82 +93,89 @@ namespace Microsoft.Agents.Client
             return GetChannel(channelInfo);
         }
 
-        public IChannel GetChannel(IChannelInfo channelInfo)
+        /// <inheritdoc/>
+        private IChannel GetChannel(HttpBotChannelSettings channelSettings)
         {
-            ArgumentNullException.ThrowIfNull(channelInfo);
+            ArgumentNullException.ThrowIfNull(channelSettings);
 
-            return GetClientFactory(channelInfo).CreateChannel(GetTokenProvider(channelInfo));
+            return CreateChannel(channelSettings);
         }
 
-        public async Task<string> CreateConversationId(string channelName, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public string GetExistingConversation(string channelName, ITurnState turnState)
         {
+            var conversations = turnState.GetValue<IDictionary<string, string>>(ConversationsStateProperty, () => new Dictionary<string, string>());
+            if (conversations.TryGetValue(channelName, out var conversationId)) 
+            { 
+                return conversationId;
+            }
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetOrCreateConversationAsync(string channelName, ITurnState turnState, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default)
+        {
+            var conversations = turnState.GetValue<IDictionary<string, string>>(ConversationsStateProperty, () => new Dictionary<string, string>());
+            if (conversations.TryGetValue(channelName, out var conversationId)) { return conversationId; }
+
             var options = new ConversationIdFactoryOptions
             {
                 FromBotOAuthScope = BotClaims.GetTokenScopes(identity)?.First(),
-                FromBotId = HostAppId,
+                FromBotId = HostClientId,
                 Activity = activity,
-                Bot = Channels[channelName]
+                Channel = Channels[channelName]
             };
-            return await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken);
+
+            var channelConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
+            conversations.Add(channelName, channelConversationId);
+            return channelConversationId;
         }
 
-        public async Task SendToChannel(string channelConversationId, string channelName, IActivity activity, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public async Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken)
+        {
+            await _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken).ConfigureAwait(false);
+
+            var conversations = state.GetValue<IDictionary<string, string>>("conversation.botConversations", () => new Dictionary<string, string>());
+            var botAlias = conversations.Where(kv => kv.Value.Equals(channelConversationId)).Select((kv) => kv.Key).FirstOrDefault();
+            if (botAlias != null)
+            {
+                conversations.Remove(botAlias);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             var targetChannelInfo = Channels[channelName];
             using var channel = GetChannel(channelName);
 
-            // route the activity to the skill
-            var response = await channel.PostActivityAsync(
-                targetChannelInfo.AppId, 
-                targetChannelInfo.ResourceUrl,
-                targetChannelInfo.Endpoint, 
-                HostEndpoint,
-                channelConversationId, 
-                activity, 
-                cancellationToken);
+            var response = await channel.SendActivityAsync<InvokeResponse>(channelConversationId, activity, cancellationToken).ConfigureAwait(false);
 
             // Check response status
             if (!(response.Status >= 200 && response.Status <= 299))
             {
-                throw new HttpRequestException($"Error invoking the bot id: \"{targetChannelInfo.Id}\" at \"{targetChannelInfo.Endpoint}\" (status is {response.Status}). \r\n {response.Body}");
+                throw new HttpRequestException($"Error invoking the bot id: \"{targetChannelInfo.Alias}\" at \"{targetChannelInfo.ConnectionSettings.Endpoint}\" (status is {response.Status}). \r\n {response.Body}");
             }
         }
 
+        /// <inheritdoc/>
         public Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken)
         {
             return _conversationIdFactory.GetBotConversationReferenceAsync(channelConversationId, cancellationToken);
         }
 
-        public Task DeleteConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken)
+        private IChannel CreateChannel(HttpBotChannelSettings channelInfo)
         {
-            return _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken);
-        }
+            HttpClient httpClient = _httpClientFactory.CreateClient(nameof(HttpBotChannel));
 
+            var tokenProviderName = channelInfo.ConnectionSettings.TokenProvider;
+            if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
+            {
+                throw new ArgumentException($"TokenProvider {tokenProviderName} not found for Channel {channelInfo.Alias}");
+            }
 
-        private IChannelFactory GetClientFactory(IChannelInfo channel)
-        {
-            ArgumentNullException.ThrowIfNullOrEmpty(channel.ChannelFactory);
-
-            return _serviceProvider.GetKeyedService<IChannelFactory>(channel.ChannelFactory) 
-                ?? throw new InvalidOperationException($"IBotClientFactory not found for channel '{channel.Id}'");
-        }
-
-        private IAccessTokenProvider GetTokenProvider(IChannelInfo channel)
-        {
-            ArgumentNullException.ThrowIfNullOrEmpty(channel.TokenProvider);
-
-            return _connections.GetConnection(channel.TokenProvider) 
-                ?? throw new InvalidOperationException($"IAccessTokenProvider not found for channel '{channel.Id}'");
-        }
-
-        private class ChannelInfo : IChannelInfo
-        {
-            public string Id { get; set; }
-            public string AppId { get; set; }
-            public string ResourceUrl { get; set; }
-            public Uri Endpoint { get; set; }
-            public string TokenProvider { get; set; }
-            public string ChannelFactory { get; set; }
+            return new HttpBotChannel(channelInfo, httpClient, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
         }
     }
 }

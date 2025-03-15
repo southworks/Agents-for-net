@@ -217,8 +217,6 @@ namespace Microsoft.Agents.Client.Tests
             private static readonly string TestBotId = Guid.NewGuid().ToString("N");
             private static readonly string TestBotEndpoint = "http://testbot.com/api/messages";
 
-            private static readonly string TestSkillEndpoint = "http://testskill.com/api/messages";
-
             public BotFrameworkSkillHandlerTestMocks(ILogger logger)
             {
                 Adapter = CreateMockAdapter(logger);
@@ -270,9 +268,7 @@ namespace Microsoft.Agents.Client.Tests
 
                 var skill = new BotFrameworkSkill
                 {
-                    AppId = TestSkillId,
-                    Id = "skill",
-                    Endpoint = new Uri(TestSkillEndpoint)
+                    Alias = "skill",
                 };
 
                 var options = new ConversationIdFactoryOptions
@@ -280,7 +276,7 @@ namespace Microsoft.Agents.Client.Tests
                     FromBotOAuthScope = TestBotId,
                     FromBotId = TestBotId,
                     Activity = activity,
-                    Bot = skill
+                    Channel = skill
                 };
 
                 return await ConversationIdFactory.CreateConversationIdAsync(options, CancellationToken.None);
@@ -401,7 +397,8 @@ namespace Microsoft.Agents.Client.Tests
 
         private class BotFrameworkSkill : IChannelInfo
         {
-            public string Id { get; set; }
+            public string Alias { get; set; }
+            public string DisplayName { get; set; }
             public string AppId { get; set; }
             public string AuthorityEndpoint { get; set; }
             public Uri Endpoint { get; set; }
@@ -421,7 +418,7 @@ namespace Microsoft.Agents.Client.Tests
                     ConversationReference = options.Activity.GetConversationReference(),
                     OAuthScope = options.FromBotOAuthScope
                 };
-                var key = $"{options.FromBotId}-{options.Bot.AppId}-{BotConversationReference.ConversationReference.Conversation.Id}-{BotConversationReference.ConversationReference.ChannelId}-skillconvo";
+                var key = $"{options.FromBotId}-{options.Channel.Alias}-{BotConversationReference.ConversationReference.Conversation.Id}-{BotConversationReference.ConversationReference.ChannelId}-skillconvo";
                 _conversationRefs.GetOrAdd(key, ProtocolJsonSerializer.ToJson(BotConversationReference));
                 return Task.FromResult(key);
             }

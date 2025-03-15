@@ -110,8 +110,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert results and data sent to the SkillClient for fist turn
             Assert.Equal(1, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
-            Assert.Equal(dialogOptions.Skill.AppId, toBotIdSent);
-            Assert.Equal(dialogOptions.Skill.Endpoint.ToString(), toUriSent.ToString());
             Assert.Equal(activityToSend.Text, activitySent.Text);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
 
@@ -163,8 +161,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await client.SendActivityAsync<Activity>("irrelevant");
 
             // Assert results and data sent to the SkillClient for fist turn
-            Assert.Equal(dialogOptions.Skill.AppId, toBotIdSent);
-            Assert.Equal(dialogOptions.Skill.Endpoint.ToString(), toUriSent.ToString());
             Assert.Equal(activityToSend.Name, activitySent.Name);
             Assert.Equal(DeliveryModes.ExpectReplies, activitySent.DeliveryMode);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
@@ -244,7 +240,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .SetupSequence(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -282,7 +278,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -309,7 +305,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -338,7 +334,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -367,7 +363,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var firstResponse = new ExpectedReplies(new List<IActivity> { CreateOAuthCardAttachmentActivity("https://test") });
             var mockSkillClient = new Mock<IChannel>();
             mockSkillClient
-                .SetupSequence(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                 {
                     Status = 200,
@@ -570,7 +566,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
         private class TestBotInfo : IChannelInfo
         {
-            public string Id { get; set; }
+            public string Alias { get; set; }
+            public string DisplayName { get; set; }
             public string AppId { get; set; }
             public string ResourceUrl { get; set; }
             public Uri Endpoint { get; set; }
@@ -586,7 +583,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             if (captureAction != null)
             {
                 mockSkillClient
-                    .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                     .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                     {
                         Status = returnStatus,
@@ -597,7 +594,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             else
             {
                 mockSkillClient
-                    .Setup(x => x.PostActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<Uri>(), It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.SendActivityAsync<ExpectedReplies>(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>(), It.IsAny<IActivity>()))
                     .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies>
                     {
                         Status = returnStatus,
@@ -668,14 +665,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _context.Setup(e => e.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceResponse())
                 .Verifiable(Times.AtMostOnce);
-            _channel.Setup(e => e.PostActivityAsync<ExpectedReplies>(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<Uri>(),
-                    It.IsAny<Uri>(),
+            _channel.Setup(e => e.SendActivityAsync<ExpectedReplies>(
                     It.IsAny<string>(),
                     It.IsAny<IActivity>(),
-                    It.IsAny<CancellationToken>()))
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<IActivity>()))
                 .ReturnsAsync(invokeResponse)
                 .Verifiable(Times.Once);
         }

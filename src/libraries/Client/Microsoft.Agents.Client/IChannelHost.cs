@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
-using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,25 +16,30 @@ namespace Microsoft.Agents.Client
     public interface IChannelHost
     {
         /// <summary>
-        /// The endpoint to use in Activity.ServiceUrl.
+        /// The endpoint to use in Activity.ServiceUrl if unspecified in a Channels settings.
         /// </summary>
-        Uri HostEndpoint { get; }
+        Uri DefaultHostEndpoint { get; }
 
-        string HostAppId { get; }
-
-        /// <summary>
-        /// The bots the host knows about.
-        /// </summary>
-        IDictionary<string, IChannelInfo> Channels { get; }
-
-        IChannel GetChannel(IChannelInfo channelInfo);
+        string HostClientId { get; }
 
         IChannel GetChannel(string name);
 
-        Task<string> CreateConversationId(string channelName, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default);
-        Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
-        Task DeleteConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
+        /// <summary>
+        /// Returns the conversationId for an existing conversation with channel.
+        /// </summary>
+        /// <remarks>
+        /// IChannelHost currently only supports a single active conversation per Channel (for the current Host conversation).
+        /// </remarks>
+        /// <param name="channelName"></param>
+        /// <param name="state"></param>
+        /// <returns>conversationId for an existing conversation, or null.</returns>
+        string GetExistingConversation(string channelName, ITurnState state);
 
-        Task SendToChannel(string channelConversationId, string channelName, IActivity activity, CancellationToken cancellationToken = default);
+        Task<string> GetOrCreateConversationAsync(string channelName, ITurnState state, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default);
+        Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken);
+
+        Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
+
+        Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default);
     }
 }

@@ -18,6 +18,8 @@ namespace Microsoft.Agents.Authentication
         /// <returns>IAccessTokenProvider</returns>
         IAccessTokenProvider GetConnection(string name);
 
+        bool TryGetConnection(string name, out IAccessTokenProvider connection);
+
         /// <summary>
         /// Gets the default connection.
         /// </summary>

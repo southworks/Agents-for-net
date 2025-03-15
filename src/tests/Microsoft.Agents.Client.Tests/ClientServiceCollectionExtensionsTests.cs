@@ -28,7 +28,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.True(services.Where(s => s == typeof(ConversationIdFactory)).Any());
             Assert.True(services.Where(s => s == typeof(AdapterBotResponseHandler)).Any());
             Assert.True(services.Where(s => s == typeof(IChannelHost)).Any());
-            Assert.True(services.Where(s => s == typeof(IChannelFactory)).Any());
             Assert.True(services.Where(s => s == typeof(IChannelApiHandler)).Any());
         }
     }

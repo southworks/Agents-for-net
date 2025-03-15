@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Client
             app.OnActivity(
                 (turnContext, CancellationToken) =>
                     Task.FromResult(string.Equals(ActivityTypes.Event, turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(AdapterBotResponseHandler.BotResponseEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase)),
+                        && string.Equals(AdapterBotResponseHandler.BotReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase)),
                 routeHandler,
                 rank);
         }

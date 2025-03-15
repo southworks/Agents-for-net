@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Client
     /// the Send/Reply from the other bot.
     /// 
     /// This implementation will send a custom Event to the Adapter, and the AgentApplication can add a route for
-    /// <see cref="AdapterBotResponseHandler.BotResponseEventName"/>.  The Event Activity.Value will be an instance of <see cref="BotReply"/>.
+    /// <see cref="AdapterBotResponseHandler.BotReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="BotReply"/>.
     /// </remarks>
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Client
             public IActivity Activity { get; set; }
         }
 
-        public const string BotResponseEventName = "application/vnd.microsoft.BotResponse";
+        public const string BotReplyEventName = "application/vnd.microsoft.agents.BotReply";
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Client
             var eventActivity = new Activity()
             {
                 Type = ActivityTypes.Event,
-                Name = BotResponseEventName,
+                Name = BotReplyEventName,
                 Value = new BotReply() { BotConversationReference = botConversationReference, Activity = activity },
             };
             eventActivity.ApplyConversationReference(botConversationReference.ConversationReference, isIncoming: true);
@@ -76,8 +76,8 @@ namespace Microsoft.Agents.Client
             // Perhaps a better way to do this, but what ChannelServiceAdapterBase does in ContinueConversation.
             var hostClaimsIdentity = new ClaimsIdentity(
             [
-                new(AuthenticationConstants.AudienceClaim, _channelHost.HostAppId),
-                new(AuthenticationConstants.AppIdClaim, _channelHost.HostAppId),
+                new(AuthenticationConstants.AudienceClaim, _channelHost.HostClientId),
+                new(AuthenticationConstants.AppIdClaim, _channelHost.HostClientId),
             ]);
 
             await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _bot.OnTurnAsync, cancellationToken);

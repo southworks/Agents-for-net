@@ -19,8 +19,7 @@ namespace Bot1
     public class HostBot : AgentApplication
     {
         private readonly IChannelHost _channelHost;
-
-        private const string StateProperty = "conversation.state";
+        
         private const string Bot2Alias = "EchoBot";
 
         public HostBot(AgentApplicationOptions options, IChannelHost channelHost) : base(options)
@@ -49,13 +48,11 @@ namespace Bot1
 
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            // Get active conversationId being used for the other bot.  If null, a conversation hasn't been started.
-            var state = turnState.GetValue<State>(StateProperty, () => new State());
-
-            if (state.Bot2ConversationId != null)
+            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
+            if (echoBotConversation != null)
             {
                 // Already talking with Bot2.  Forward whatever the user says to Bot2.
-                await _channelHost.SendToChannel(state.Bot2ConversationId, Bot2Alias, turnContext.Activity, cancellationToken);
+                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, turnContext.Activity, cancellationToken);
             }
             else if (turnContext.Activity.Text.Contains("agent"))
             {
@@ -63,10 +60,10 @@ namespace Bot1
 
                 // Create the ConversationId to use with Bot2.  This same conversationId should be used for all
                 // subsequent SendToBot calls.  State is automatically saved after the turn is over.
-                state.Bot2ConversationId = await _channelHost.CreateConversationId(Bot2Alias, turnContext.Identity, turnContext.Activity, cancellationToken);
+                echoBotConversation = await _channelHost.GetOrCreateConversationAsync(Bot2Alias, turnState, turnContext.Identity, turnContext.Activity, cancellationToken);
 
                 // Forward whatever the user said to Bot2.
-                await _channelHost.SendToChannel(state.Bot2ConversationId, Bot2Alias, turnContext.Activity, cancellationToken);
+                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, turnContext.Activity, cancellationToken);
             }
             else
             {
@@ -78,10 +75,8 @@ namespace Bot1
         // Handles response from Bot2.
         private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
         {
-            // Get active conversationId being used for the other bot.  If null, a conversation hasn't been started.
-            var state = turnState.GetValue<State>(StateProperty, () => new State());
-
-            if (!string.Equals(state.Bot2ConversationId, botActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
+            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
+            if (!string.Equals(echoBotConversation, botActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
             {
                 // This sample only deals with one active bot at a time.
                 // We don't think we have an active conversation with this bot.  Ignore it.
@@ -93,12 +88,11 @@ namespace Bot1
                 // In this sample, the Bot2 will send an EndOfConversation with a result when "end" is sent.
                 if (botActivity.Value != null)
                 {
+                    // Remove the channels conversation reference
+                    await _channelHost.DeleteConversationAsync(echoBotConversation, turnState, cancellationToken);
+
                     var resultMessage = $"The channel returned:\n\n: {ProtocolJsonSerializer.ToJson(botActivity.Value)}";
                     await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
-
-                    // Remove the channels conversation reference
-                    await _channelHost.DeleteConversationReferenceAsync(state.Bot2ConversationId, cancellationToken);
-                    turnState.DeleteValue(StateProperty);
                 }
 
                 // Done with calling the remote Agent.
@@ -116,17 +110,15 @@ namespace Bot1
         // Called either by the Channel-side sending EOC, or in the case of a TurnError.
         private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var state = turnState.GetValue<State>(StateProperty, () => new State());
-
-            if (state.Bot2ConversationId != null)
+            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
+            if (echoBotConversation != null)
             {
                 // Send EndOfConversation to Bot2.
                 var eoc = Activity.CreateEndOfConversationActivity().ApplyConversationReference(turnContext.Activity.GetConversationReference());
-                await _channelHost.SendToChannel(state.Bot2ConversationId, Bot2Alias, eoc, cancellationToken);
+                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, eoc, cancellationToken);
 
                 // This conversation is over.
-                await _channelHost.DeleteConversationReferenceAsync(state.Bot2ConversationId, cancellationToken);
-                state.Bot2ConversationId = null;
+                await _channelHost.DeleteConversationAsync(echoBotConversation, turnState, cancellationToken);
             }
         }
 
@@ -143,13 +135,7 @@ namespace Bot1
             await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
             // Send a trace activity, which will be displayed in the Bot Framework Emulator
-            await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError");
+            await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError", cancellationToken: cancellationToken);
         }
     }
-
-    class State
-    {
-        public string Bot2ConversationId { get; set; }
-    }
-
 }

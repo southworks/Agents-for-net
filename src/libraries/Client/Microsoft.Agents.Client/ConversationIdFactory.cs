@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Client
             {
                 ConversationReference = conversationReference,
                 OAuthScope = options.FromBotOAuthScope,
-                BotName = options.Bot.Id
+                ChannelAlias = options.Channel.Alias
             };
 
             // Store the BotConversationReference using the conversationId as a key.
