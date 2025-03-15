@@ -115,6 +115,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
             if (!IsExchangeableToken(token))
             {
+                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
             }
 
