@@ -39,7 +39,7 @@ namespace AuthenticationBot
             OnMessage("/signin", SignInAsync);
             OnMessage(new Regex("/signout*."), SignOutAsync);
             OnMessage("/reset", ResetAsync);
-            OnMessage("/mcs", OBOSignInAsync);
+            OnMessage("/obo", OBOSignInAsync);
             Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
             Authorization.OnUserSignInFailure(OnUserSignInFailure);
 

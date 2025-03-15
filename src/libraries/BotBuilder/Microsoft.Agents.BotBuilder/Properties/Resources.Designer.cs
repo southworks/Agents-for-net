@@ -106,6 +106,24 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to OBO TokenExchange for &apos;{0}&apos; cannot exchange an application that does not have an api:// audience..
+        /// </summary>
+        internal static string OBONotExchangeableToken {
+            get {
+                return ResourceManager.GetString("OBONotExchangeableToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OBO Exchange not supported on &apos;{0}&apos;.
+        /// </summary>
+        internal static string OBONotSupported {
+            get {
+                return ResourceManager.GetString("OBONotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to UserAuthorization already has an active handler..
         /// </summary>
         internal static string UserAuthorizationAlreadyActive {

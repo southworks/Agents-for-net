@@ -49,6 +49,8 @@ namespace Microsoft.Agents.BotBuilder.Errors
         internal static AgentErrorDefinition UserAuthorizationTypeNotFound = new AgentErrorDefinition(baseBotBuilderErrorCode - 9, Properties.Resources.UserAuthorizationTypeNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationFailed = new AgentErrorDefinition(baseBotBuilderErrorCode - 10, Properties.Resources.UserAuthorizationFailed, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationAlreadyActive = new AgentErrorDefinition(baseBotBuilderErrorCode - 11, Properties.Resources.UserAuthorizationAlreadyActive, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition OBONotExchangeableToken = new AgentErrorDefinition(baseBotBuilderErrorCode - 12, Properties.Resources.OBONotExchangeableToken, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition OBONotSupported = new AgentErrorDefinition(baseBotBuilderErrorCode - 13, Properties.Resources.OBONotSupported, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

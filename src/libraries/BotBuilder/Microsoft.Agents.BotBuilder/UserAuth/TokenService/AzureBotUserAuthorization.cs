@@ -2,11 +2,14 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -109,26 +112,34 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 return token;
             }
 
+            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            if (!IsExchangeableToken(token))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
+            }
+
             try
             {
-                var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
                 var tokenProvider = _connections.GetConnection(connectionName);
                 if (tokenProvider is IOBOExchange oboExchange)
                 {
-                    var oboToken = await oboExchange.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                    return await oboExchange.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                }
 
-                    return oboToken;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"IOBOExchange not supported on {_settings.OBOConnectionName}");
-                }
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotSupported, null, [connectionName]);
             }
             catch (Exception)
             {
                 await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
                 throw;
             }
+        }
+
+        private static bool IsExchangeableToken(string token)
+        {
+            JwtSecurityToken jwtToken = new(token);
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
+            return (bool)(aud?.StartsWith("api://"));
         }
     }
 }
