@@ -107,33 +107,48 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
                 return null;
             }
 
+            // If OBO is not set return token as-is.
             if (string.IsNullOrEmpty(_settings.OBOConnectionName) && string.IsNullOrEmpty(exchangeConnection))
             {
                 return token;
             }
 
+            string exchangedToken = null;
             var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
-            if (!IsExchangeableToken(token))
-            {
-                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
-            }
 
             try
             {
-                var tokenProvider = _connections.GetConnection(connectionName);
-                if (tokenProvider is IOBOExchange oboExchange)
+                // Can we even exchange this?
+                if (!IsExchangeableToken(token))
                 {
-                    return await oboExchange.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
                 }
 
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotSupported, null, [connectionName]);
+                // Can the named Connection even do this?
+                if (!TryGetOBOProvider(connectionName, out var oboExchangeProvider))
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotSupported, null, [connectionName]);
+                }
+
+                // Do exchange.
+                try
+                {
+                    exchangedToken = await oboExchangeProvider.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
+                }
             }
-            catch (Exception)
+            finally
             {
-                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
-                throw;
+                if (exchangedToken == null)
+                {
+                    await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                }
             }
+
+            return exchangedToken;
         }
 
         private static bool IsExchangeableToken(string token)
@@ -141,6 +156,21 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             JwtSecurityToken jwtToken = new(token);
             var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
             return (bool)(aud?.StartsWith("api://"));
+        }
+
+        private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)
+        {
+            if (_connections.TryGetConnection(connectionName, out var tokenProvider))
+            {
+                if (tokenProvider is IOBOExchange oboExchange)
+                {
+                    oboExchangeProvider = oboExchange;
+                    return true;
+                }
+            }
+
+            oboExchangeProvider = null;
+            return false;
         }
     }
 }

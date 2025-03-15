@@ -142,7 +142,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                     ServiceUrl = turnContext.Activity.ServiceUrl,
                     ChannelId = turnContext.Activity.ChannelId,
                     ChannelData = turnContext.Activity.ChannelData,
-                    Value = new SignInEventValue() { OBOConnectionName = exchangeConnection, OBOScopes = exchangeScopes, InitiatingActivity = turnContext.Activity }
+                    Value = new SignInEventValue() { HandlerName = handlerName, PassedOBOConnectionName = exchangeConnection, PassedOBOScopes = exchangeScopes, InitiatingActivity = turnContext.Activity }
                     
                 };
                 continuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true);
@@ -264,8 +264,8 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 if (IsSignInCompletionEvent(signInContinuation))
                 {
                     var signInEvent = ProtocolJsonSerializer.ToObject<SignInEventValue>(signInContinuation.Value);
-                    exchangeConnection = signInEvent.OBOConnectionName;
-                    exchangeScopes = signInEvent.OBOScopes;
+                    exchangeConnection = signInEvent.PassedOBOConnectionName;
+                    exchangeScopes = signInEvent.PassedOBOScopes;
                 }
 
                 // Get token or start flow for specified flow.
@@ -308,6 +308,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                         // This could be optimized to execute the OnUserSignInFailure directly if the we're not currently
                         // handling an Invoke.
                         var signInEvent = ProtocolJsonSerializer.ToObject<SignInEventValue>(signInContinuation.Value);
+                        signInEvent.HandlerName = activeFlowName;
                         signInEvent.Response = response;
                         signInContinuation.Value = signInEvent;
 
@@ -504,7 +505,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
         public string HandlerName { get; set; }
         public SignInResponse Response { get; set; }
         public IActivity InitiatingActivity { get; set; }
-        public string OBOConnectionName { get; set; }
-        public IList<string> OBOScopes { get; set; }
+        public string PassedOBOConnectionName { get; set; }
+        public IList<string> PassedOBOScopes { get; set; }
     }
 }

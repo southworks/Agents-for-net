@@ -106,7 +106,16 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO TokenExchange for &apos;{0}&apos; cannot exchange an application that does not have an api:// audience..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}..
+        /// </summary>
+        internal static string OBOExchangeFailed {
+            get {
+                return ResourceManager.GetString("OBOExchangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OBO for &apos;{0}&apos; cannot exchange an application that does not have an api:// audience..
         /// </summary>
         internal static string OBONotExchangeableToken {
             get {
@@ -115,7 +124,7 @@ namespace Microsoft.Agents.BotBuilder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO Exchange not supported on &apos;{0}&apos;.
+        ///   Looks up a localized string similar to OBO not supported on &apos;{0}&apos;.
         /// </summary>
         internal static string OBONotSupported {
             get {
