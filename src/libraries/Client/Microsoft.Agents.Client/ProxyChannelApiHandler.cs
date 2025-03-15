@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,8 +13,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.BotBuilder;
 
-namespace Microsoft.Agents.BotBuilder
+namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// This IChannelApiHandler is primarily used when calling another bot using DeliveryModes.Normal, and forwarding most

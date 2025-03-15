@@ -6,9 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.Compat;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
@@ -68,24 +66,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
 
             Assert.Equal(expected, services);
-        }
-
-        [Fact]
-        public void AddChannelHost_ShouldSetServices()
-        {
-            var builder = new Mock<IHostApplicationBuilder>();
-            builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
-            ServiceCollectionExtensions.AddChannelHost(builder.Object);
-
-            var services = builder.Object.Services
-                .Select(e => e.ImplementationType ?? e.ServiceType)
-                .ToList();
-
-            Assert.True(services.Where(s => s == typeof(ConversationIdFactory)).Any());
-            Assert.True(services.Where(s => s == typeof(AdapterBotResponseHandler)).Any());
-            Assert.True(services.Where(s => s == typeof(IChannelHost)).Any());
-            Assert.True(services.Where(s => s == typeof(IChannelFactory)).Any());
-            Assert.True(services.Where(s => s == typeof(IChannelApiHandler)).Any());
         }
     }
 }

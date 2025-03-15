@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Client
                 {
                     if (string.IsNullOrEmpty(bot.ChannelFactory))
                     {
-                        bot.ChannelFactory = defaultChannelName; // Default the channel name to a know name if its not populated in the incomming configuraiton
+                        bot.ChannelFactory = defaultChannelName; // Default the channel name to a know name if its not populated in the incoming configuration
                     }
                     Channels.Add(bot.Id, bot);
                 }

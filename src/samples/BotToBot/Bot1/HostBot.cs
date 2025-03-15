@@ -26,13 +26,12 @@ namespace Bot1
         public HostBot(AgentApplicationOptions options, IChannelHost channelHost) : base(options)
         {
             _channelHost = channelHost ?? throw new ArgumentNullException(nameof(channelHost));
+            BotResponses.OnBotReply(this, OnBotResponseAsync);
 
             // Add Activity routes
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
             OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-
-            BotResponses.OnBotResponse(OnBotResponseAsync);
 
             OnTurnError = BotTurnErrorHandlerAsync;
         }

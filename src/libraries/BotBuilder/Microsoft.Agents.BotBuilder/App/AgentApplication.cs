@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
-using Microsoft.Agents.BotBuilder.App.BotResponses;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.BotBuilder.Errors;
 using Microsoft.Agents.BotBuilder.State;
@@ -54,7 +53,6 @@ namespace Microsoft.Agents.BotBuilder.App
             // Application Features
 
             AdaptiveCards = new AdaptiveCardsFeature(this);
-            BotResponses = new BotResponsesFeature(this);
 
             if (options.UserAuthentication != null)
             {
@@ -72,8 +70,6 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCardsFeature AdaptiveCards { get; }
-
-        public BotResponsesFeature BotResponses { get; }
 
         /// <summary>
         /// The application's configured options.

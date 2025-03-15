@@ -5,11 +5,12 @@ using Microsoft.Agents.BotBuilder.State;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App;
 
-namespace Microsoft.Agents.BotBuilder.App.BotResponses
+namespace Microsoft.Agents.Client
 {
     public delegate Task BotResponseHandler(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken);
 
@@ -21,7 +22,7 @@ namespace Microsoft.Agents.BotBuilder.App.BotResponses
     /// {
     ///     public MyAgent(AgentApplicationOptions options) : base(options)
     ///     {
-    ///         BotResponses.OnBotResponse(OnBotResponseAsync);
+    ///         BotResponses.OnBotReply(OnBotResponseAsync);
     ///     }
     ///     
     ///     private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
@@ -30,24 +31,23 @@ namespace Microsoft.Agents.BotBuilder.App.BotResponses
     ///     }
     /// }
     /// </code>
-    public class BotResponsesFeature
+    public static class BotResponses
     {
-        private readonly AgentApplication _app;
-
-        public BotResponsesFeature(AgentApplication app)
-        {
-            _app = app ?? throw new ArgumentNullException(nameof(app));
-        }
-
-        public void OnBotResponse(BotResponseHandler handler, ushort rank = RouteRank.First)
+        /// <summary>
+        /// Provides a handler for when an bot sends an Activity when Activity.DeliverMode == `normal` (asynchronous HTTP POST back to the channel host.
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="handler"></param>
+        /// <param name="rank"></param>
+        public static void OnBotReply(this AgentApplication app, BotResponseHandler handler, ushort rank = RouteRank.First)
         {
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                var botResponse = ProtocolJsonSerializer.ToObject<AdapterBotResponseHandler.BotResponse>(turnContext.Activity.Value);
+                var botResponse = ProtocolJsonSerializer.ToObject<AdapterBotResponseHandler.BotReply>(turnContext.Activity.Value);
                 await handler(turnContext, turnState, botResponse.BotConversationReference, botResponse.Activity, cancellationToken).ConfigureAwait(false);
             };
 
-            _app.OnActivity(
+            app.OnActivity(
                 (turnContext, CancellationToken) =>
                     Task.FromResult(string.Equals(ActivityTypes.Event, turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase)
                         && string.Equals(AdapterBotResponseHandler.BotResponseEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase)),

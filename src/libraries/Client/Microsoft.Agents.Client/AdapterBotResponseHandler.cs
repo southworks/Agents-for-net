@@ -9,10 +9,9 @@ using System.Threading;
 using System.Collections.Generic;
 using Microsoft.Agents.Connector.Types;
 using System;
-using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
 
-namespace Microsoft.Agents.BotBuilder.App
+namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// Routes Bot response to the Adapter incoming pipeline.  This is the same route a bot normally gets incoming Activities.
@@ -25,14 +24,14 @@ namespace Microsoft.Agents.BotBuilder.App
     /// the Send/Reply from the other bot.
     /// 
     /// This implementation will send a custom Event to the Adapter, and the AgentApplication can add a route for
-    /// <see cref="AdapterBotResponseHandler.BotResponseEventName"/>.  The Event Activity.Value will be an instance of <see cref="BotResponse"/>.
+    /// <see cref="AdapterBotResponseHandler.BotResponseEventName"/>.  The Event Activity.Value will be an instance of <see cref="BotReply"/>.
     /// </remarks>
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.
     /// </remarks>
     public class AdapterBotResponseHandler : IChannelApiHandler
     {
-        public class BotResponse
+        public class BotReply
         {
             public BotConversationReference BotConversationReference { get; set; }
             public IActivity Activity { get; set; }
@@ -69,7 +68,7 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 Type = ActivityTypes.Event,
                 Name = BotResponseEventName,
-                Value = new BotResponse() { BotConversationReference = botConversationReference, Activity = activity },
+                Value = new BotReply() { BotConversationReference = botConversationReference, Activity = activity },
             };
             eventActivity.ApplyConversationReference(botConversationReference.ConversationReference, isIncoming: true);
 
