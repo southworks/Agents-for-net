@@ -77,15 +77,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task BeginDialogCallsSkill(string deliveryMode)
         {
             IActivity activitySent = null;
-            string toBotIdSent = null;
-            Uri toUriSent = null;
+            string toConversationId = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
-                toBotIdSent = toBotId;
-                toUriSent = toUri;
+                toConversationId = conversationId;
                 activitySent = activity;
             }
 
@@ -132,15 +130,13 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         public async Task ShouldHandleInvokeActivities()
         {
             IActivity activitySent = null;
-            string toBotIdSent = null;
-            Uri toUriSent = null;
+            string toConversationId = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
-                toBotIdSent = toBotId;
-                toUriSent = toUri;
+                toConversationId = conversationId;
                 activitySent = activity;
             }
 
@@ -185,7 +181,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             IActivity activitySent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
                 activitySent = activity;
@@ -391,7 +387,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             IActivity activitySent = null;
 
             // Callback to capture the parameters sent to the skill
-            void CaptureAction(string toBotId, string toBotResource, Uri toUri, Uri serviceUrl, string conversationId, IActivity activity, CancellationToken cancellationToken)
+            void CaptureAction(string conversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo)
             {
                 // Capture values sent to the skill so we can assert the right parameters were used.
                 activitySent = activity;
@@ -575,7 +571,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             public string ChannelFactory { get; set; }
         }
 
-        private static Mock<IChannel> CreateMockSkillClient(Action<string, string, Uri, Uri, string, IActivity, CancellationToken> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
+        private static Mock<IChannel> CreateMockSkillClient(Action<string, IActivity, CancellationToken, IActivity> captureAction, int returnStatus = 200, IList<IActivity> expectedReplies = null)
         {
             var mockSkillClient = new Mock<IChannel>();
             var activityList = new ExpectedReplies(expectedReplies ?? new List<IActivity> { MessageFactory.Text("dummy activity") });

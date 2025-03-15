@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Client
         {
         }
 
-        public ConnectionSettings ConnectionSettings { get; set; }
+        public ConnectionSettings ConnectionSettings { get; set; } = new ConnectionSettings();
 
 
         public override void ValidateChannelSettings()

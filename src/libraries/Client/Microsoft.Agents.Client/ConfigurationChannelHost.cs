@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Client
             var tokenProviderName = channelInfo.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
-                throw new ArgumentException($"TokenProvider {tokenProviderName} not found for Channel {channelInfo.Alias}");
+                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Channel '{channelInfo.Alias}'");
             }
 
             return new HttpBotChannel(channelInfo, httpClient, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
