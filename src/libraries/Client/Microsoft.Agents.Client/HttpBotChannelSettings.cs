@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Client.Errors;
 using System;
 
 namespace Microsoft.Agents.Client
@@ -18,10 +19,25 @@ namespace Microsoft.Agents.Client
         {
             base.ValidateChannelSettings();
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(ConnectionSettings.ClientId);
-            ArgumentNullException.ThrowIfNull(ConnectionSettings.Endpoint);
-            ArgumentException.ThrowIfNullOrWhiteSpace(ConnectionSettings.TokenProvider);
-            ArgumentException.ThrowIfNullOrWhiteSpace(ConnectionSettings.ServiceUrl);
+            if (string.IsNullOrWhiteSpace(ConnectionSettings.ClientId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.ClientId)}");
+            }
+
+            if (ConnectionSettings.Endpoint == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.Endpoint)}");
+            }
+
+            if (string.IsNullOrWhiteSpace(ConnectionSettings.TokenProvider))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.TokenProvider)}");
+            }
+
+            if (string.IsNullOrWhiteSpace(ConnectionSettings.ServiceUrl))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.ServiceUrl)}");
+            }
 
             if (string.IsNullOrEmpty(ConnectionSettings.ResourceUrl))
             {

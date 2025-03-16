@@ -36,9 +36,9 @@ namespace Microsoft.Agents.Client
         string GetExistingConversation(string channelName, ITurnState state);
 
         Task<string> GetOrCreateConversationAsync(string channelName, ITurnState state, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default);
-        Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken);
+        Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken = default);
 
-        Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
+        Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default);
 
         Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default);
     }

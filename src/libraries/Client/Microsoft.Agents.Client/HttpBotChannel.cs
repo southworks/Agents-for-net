@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -26,11 +25,6 @@ namespace Microsoft.Agents.Client
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
         private bool _disposed;
-
-        //public HttpBotChannel(IConfigurationSection configurationSection, HttpClient httpClient, IAccessTokenProvider tokenProvider, ILogger<HttpBotChannel> logger = null) 
-        //   : this(configurationSection.Get<HttpBotChannelSettings>(), httpClient, tokenProvider, logger)
-        //{
-        //}
 
         /// <param name="channelSettings"></param>
         /// <param name="httpClient"></param>
@@ -50,15 +44,19 @@ namespace Microsoft.Agents.Client
             channelSettings.ValidateChannelSettings();
         }
 
+        /// <inheritdoc/>
         public string Alias => _settings.Alias;
 
+        /// <inheritdoc/>
         public string DisplayName => _settings.DisplayName;
 
+        /// <inheritdoc/>
         public async Task SendActivityAsync(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null)
         {
             await SendActivityAsync<object>(channelConversationId, activity, cancellationToken, relatesTo).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public async Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelConversationId);

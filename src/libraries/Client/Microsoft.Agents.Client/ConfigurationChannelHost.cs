@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class ConfigurationChannelHost : IChannelHost
     {
-        private const string ConversationsStateProperty = "conversation.channelHost.channelConversations";
+        private const string ChannelConversationsProperty = "conversation.channelHost.channelConversations";
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
@@ -47,11 +48,19 @@ namespace Microsoft.Agents.Client
             {
                 DefaultHostEndpoint = new Uri(hostEndpoint);
             }
+            else
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultHostEndpoint));
+            }
 
             var hostClientId = configuration?.GetValue<string>($"{configSection}:HostClientId");
             if (!string.IsNullOrWhiteSpace(hostClientId))
             {
                 HostClientId = hostClientId;
+            }
+            else
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(HostClientId));
             }
 
             var section = configuration?.GetSection($"{configSection}:Channels");
@@ -60,6 +69,8 @@ namespace Microsoft.Agents.Client
             {
                 foreach (var channel in channels)
                 {
+                    // If the ServiceUrl isn't supplied at the Channel:ConnectionSettings use
+                    // the DefaultHostEndpoint.
                     if (string.IsNullOrEmpty(channel.ConnectionSettings.ServiceUrl))
                     {
                         channel.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
@@ -104,7 +115,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public string GetExistingConversation(string channelName, ITurnState turnState)
         {
-            var conversations = turnState.GetValue<IDictionary<string, string>>(ConversationsStateProperty, () => new Dictionary<string, string>());
+            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             if (conversations.TryGetValue(channelName, out var conversationId)) 
             { 
                 return conversationId;
@@ -115,7 +126,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<string> GetOrCreateConversationAsync(string channelName, ITurnState turnState, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var conversations = turnState.GetValue<IDictionary<string, string>>(ConversationsStateProperty, () => new Dictionary<string, string>());
+            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             if (conversations.TryGetValue(channelName, out var conversationId)) { return conversationId; }
 
             var options = new ConversationIdFactoryOptions
@@ -132,11 +143,11 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken)
+        public async Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken = default)
         {
             await _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken).ConfigureAwait(false);
 
-            var conversations = state.GetValue<IDictionary<string, string>>("conversation.botConversations", () => new Dictionary<string, string>());
+            var conversations = state.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             var botAlias = conversations.Where(kv => kv.Value.Equals(channelConversationId)).Select((kv) => kv.Key).FirstOrDefault();
             if (botAlias != null)
             {

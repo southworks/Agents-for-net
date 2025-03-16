@@ -41,20 +41,18 @@ namespace Microsoft.Agents.Client
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
-        private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IChannelHost _channelHost;
 
-        public AdapterBotResponseHandler(IChannelAdapter adapter, IBot bot, IConversationIdFactory idFactory, IChannelHost channelHost)
+        public AdapterBotResponseHandler(IChannelAdapter adapter, IBot bot, IChannelHost channelHost)
         {
             _adapter = adapter;
             _bot = bot;
-            _conversationIdFactory = idFactory;
             _channelHost = channelHost;
         }
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var botConversationReference = await _conversationIdFactory.GetBotConversationReferenceAsync(conversationId, cancellationToken);
+            var botConversationReference = await _channelHost.GetBotConversationReferenceAsync(conversationId, cancellationToken);
             if (botConversationReference == null)
             {
                 // Received a conversationId that isn't known.
