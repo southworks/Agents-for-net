@@ -58,16 +58,17 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void Constructor_ShouldSetProperties()
         {
+            var botName = "botName";
             var botAlias = "bot1";
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {"ChannelHost:Channels:0:Alias", botAlias},
-                {"ChannelHost:Channels:0:ConnectionSettings:ClientId", botClientId},
-                {"ChannelHost:Channels:0:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"ChannelHost:Channels:0:ConnectionSettings:Endpoint", botEndpoint},
+                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
                 {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
                 {"ChannelHost:HostClientId", botClientId},
             };
@@ -77,9 +78,9 @@ namespace Microsoft.Agents.Client.Tests
 
             var host = new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object);
 
-            Assert.Single(host.Channels);
-            Assert.Equal(botAlias, host.Channels[botAlias].Alias);
-            Assert.Equal(botClientId, host.Channels[botAlias].ConnectionSettings.ClientId);
+            Assert.Single(host._channels);
+            Assert.Equal(botAlias, host._channels[botName].Alias);
+            Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
             Assert.Equal(defaultHostEndpoint, host.DefaultHostEndpoint.ToString());
             Assert.Equal(botClientId, host.HostClientId);
         }
@@ -103,16 +104,17 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void GetChannel_ShouldThrowOnUnknownChannel()
         {
+            var botName = "botName";
             var botAlias = "bot1";
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "BotServiceConnection";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {"ChannelHost:Channels:0:Alias", botAlias},
-                {"ChannelHost:Channels:0:ConnectionSettings:ClientId", botClientId},
-                {"ChannelHost:Channels:0:ConnectionSettings:Endpoint", botEndpoint},
-                {"ChannelHost:Channels:0:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
                 {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
                 {"ChannelHost:HostClientId", botClientId},
             };
@@ -122,22 +124,23 @@ namespace Microsoft.Agents.Client.Tests
 
             var host = new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object);
 
-            Assert.Throws<InvalidOperationException>(() => host.GetChannel("random"));
+            Assert.Throws<ArgumentException>(() => host.GetChannel("random"));
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnEmptyChannelTokenProvider()
         {
+            var botName = "botName";
             var botAlias = "bot1";
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {"ChannelHost:Channels:0:Alias", botAlias},
-                {"ChannelHost:Channels:0:ConnectionSettings:ClientId", botClientId},
-                {"ChannelHost:Channels:0:ConnectionSettings:Endpoint", botEndpoint},
-                {"ChannelHost:Channels:0:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
                 {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
                 {"ChannelHost:HostClientId", botClientId},
             };
@@ -158,6 +161,7 @@ namespace Microsoft.Agents.Client.Tests
         public async Task Conversation_CreateDelete()
         {
             // arrange
+            var botName = "botName";
             var botAlias = "bot1";
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
@@ -165,10 +169,10 @@ namespace Microsoft.Agents.Client.Tests
             var defaultHostEndpoint = "http://localhost/";
             var hostId = "hostId";
             var sections = new Dictionary<string, string>{
-                {"ChannelHost:Channels:0:Alias", botAlias},
-                {"ChannelHost:Channels:0:ConnectionSettings:ClientId", botClientId},
-                {"ChannelHost:Channels:0:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"ChannelHost:Channels:0:ConnectionSettings:Endpoint", botEndpoint},
+                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
                 {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
                 {"ChannelHost:HostClientId", hostId},
             };
@@ -209,12 +213,12 @@ namespace Microsoft.Agents.Client.Tests
             ]);
 
             // should be no conversation for bot
-            Assert.Null(host.GetExistingConversation(botAlias, turnState));
+            Assert.Null(host.GetExistingConversation(botName, turnState));
 
             // create a new conversation
-            var conversationId = await host.GetOrCreateConversationAsync(botAlias, turnState, hostClaimsIdentity, turnContext.Activity);
+            var conversationId = await host.GetOrCreateConversationAsync(botName, turnState, hostClaimsIdentity, turnContext.Activity);
             Assert.NotNull(conversationId);
-            Assert.Equal(conversationId, host.GetExistingConversation(botAlias, turnState));
+            Assert.Equal(conversationId, host.GetExistingConversation(botName, turnState));
 
             // Verify ConversationIdFactory stored the reference
             var idState = await storage.ReadAsync([conversationId], CancellationToken.None);
@@ -222,11 +226,11 @@ namespace Microsoft.Agents.Client.Tests
 
             // Verify ConversationState has the conversationId for the bot
             var conversations = turnState.GetValue<IDictionary<string, string>>("conversation.channelHost.channelConversations", () => new Dictionary<string, string>());
-            Assert.Equal(conversationId, conversations[botAlias]);
+            Assert.Equal(conversationId, conversations[botName]);
 
             // delete conversation
             await host.DeleteConversationAsync(conversationId, turnState);
-            Assert.Null(host.GetExistingConversation(botAlias, turnState));
+            Assert.Null(host.GetExistingConversation(botName, turnState));
 
             // Verify ConversationIdFactory deleted the reference
             idState = await storage.ReadAsync([conversationId], CancellationToken.None);

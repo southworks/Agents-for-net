@@ -40,8 +40,6 @@ namespace Microsoft.Agents.Client
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? NullLogger<HttpBotChannel>.Instance;
-
-            channelSettings.ValidateChannelSettings();
         }
 
         /// <inheritdoc/>
@@ -51,13 +49,13 @@ namespace Microsoft.Agents.Client
         public string DisplayName => _settings.DisplayName;
 
         /// <inheritdoc/>
-        public async Task SendActivityAsync(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null)
+        public async Task SendActivityAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            await SendActivityAsync<object>(channelConversationId, activity, cancellationToken, relatesTo).ConfigureAwait(false);
+            await SendActivityAsync<object>(channelConversationId, activity, relatesTo, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null)
+        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelConversationId);
             ArgumentNullException.ThrowIfNull(activity);

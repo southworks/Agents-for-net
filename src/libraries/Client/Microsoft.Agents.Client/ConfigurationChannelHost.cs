@@ -22,25 +22,63 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class ConfigurationChannelHost : IChannelHost
     {
-        private const string ChannelConversationsProperty = "conversation.channelHost.channelConversations";
+        public const string ChannelConversationsProperty = "conversation.channelHost.channelConversations";
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
+        internal IDictionary<string, HttpBotChannelSettings> _channels;
 
+        public ConfigurationChannelHost(
+            IServiceProvider systemServiceProvider,
+            IConversationIdFactory conversationIdFactory,
+            IConnections connections,
+            IHttpClientFactory httpClientFactory,
+            IDictionary<string, HttpBotChannelSettings> channels)
+        {
+            _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
+            _conversationIdFactory = conversationIdFactory ?? throw new ArgumentNullException(nameof(conversationIdFactory));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+
+            LoadChannels(channels);
+        }
+
+        /// <summary>
+        /// Creates from IConfiguration.
+        /// </summary>
+        /// <code>
+        /// "ChannelHost": {
+        ///   "HostClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote bot to call you back with.,
+        ///   "DefaultHostEndpoint": "http://localhost:3978/api/botresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
+        ///   "Channels": {
+        ///      "EchoBot": {
+        ///        "Alias": "echo",
+        ///        "DisplayName": "EchoBot",
+        ///        "ConnectionSettings": {
+        ///          "ClientId": "{{Bot2ClientId}}",                     // This is the Client ID of the other agent.
+        ///          "Endpoint": "http://localhost:39783/api/messages",  // The endpoint of the other agent
+        ///          "TokenProvider" : "{{Connections:{{name}}"
+        ///        }
+        ///     }
+        ///   }
+        /// }
+        /// </code>
+        /// <param name="configuration"></param>
+        /// <param name="systemServiceProvider"></param>
+        /// <param name="conversationIdFactory"></param>
+        /// <param name="connections"></param>
+        /// <param name="httpClientFactory"></param>
+        /// <param name="configSection"></param>
         public ConfigurationChannelHost(
             IConfiguration configuration,
             IServiceProvider systemServiceProvider, 
             IConversationIdFactory conversationIdFactory, 
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            string configSection = "ChannelHost")
+            string configSection = "ChannelHost") : this(systemServiceProvider, conversationIdFactory, connections, httpClientFactory, null)
         {
-            _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _conversationIdFactory = conversationIdFactory ?? throw new ArgumentNullException(nameof(conversationIdFactory));
-            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             ArgumentException.ThrowIfNullOrEmpty(configSection);
 
             var hostEndpoint = configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint");
@@ -64,52 +102,46 @@ namespace Microsoft.Agents.Client
             }
 
             var section = configuration?.GetSection($"{configSection}:Channels");
-            var channels = section?.Get<HttpBotChannelSettings[]>();
+            var channels = section?.Get<IDictionary<string, HttpBotChannelSettings>>();
+            LoadChannels(channels);
+        }
+
+        private void LoadChannels(IDictionary<string, HttpBotChannelSettings> channels)
+        {
+            _channels = channels ?? new Dictionary<string, HttpBotChannelSettings>();
             if (channels != null)
             {
-                foreach (var channel in channels)
+                foreach (var kv in _channels)
                 {
                     // If the ServiceUrl isn't supplied at the Channel:ConnectionSettings use
                     // the DefaultHostEndpoint.
-                    if (string.IsNullOrEmpty(channel.ConnectionSettings.ServiceUrl))
+                    if (string.IsNullOrEmpty(kv.Value.ConnectionSettings.ServiceUrl))
                     {
-                        channel.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
+                        kv.Value.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
                     }
 
-                    channel.ValidateChannelSettings();
-                    Channels.Add(channel.Alias, channel);
+                    kv.Value.ValidateChannelSettings(kv.Key);
                 }
             }
         }
 
         /// <inheritdoc />
-        public Uri DefaultHostEndpoint { get; }
+        public Uri DefaultHostEndpoint { get; set; }
 
         /// <inheritdoc />
-        public string HostClientId { get; }
-
-        /// <inheritdoc />
-        internal IDictionary<string, HttpBotChannelSettings> Channels { get; } = new Dictionary<string, HttpBotChannelSettings>();
+        public string HostClientId { get; set; }
 
         /// <inheritdoc/>
         public IChannel GetChannel(string name)
         {
             ArgumentException.ThrowIfNullOrEmpty(name);
 
-            if (!Channels.TryGetValue(name, out HttpBotChannelSettings channelInfo))
+            if (!_channels.TryGetValue(name, out HttpBotChannelSettings channelSettings))
             {
-                throw new InvalidOperationException($"IChannelInfo not found for '{name}'");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelNotFound, null, name);
             }
 
-            return GetChannel(channelInfo);
-        }
-
-        /// <inheritdoc/>
-        private IChannel GetChannel(HttpBotChannelSettings channelSettings)
-        {
-            ArgumentNullException.ThrowIfNull(channelSettings);
-
-            return CreateChannel(channelSettings);
+            return CreateChannel(name, channelSettings);
         }
 
         /// <inheritdoc/>
@@ -134,7 +166,7 @@ namespace Microsoft.Agents.Client
                 FromBotOAuthScope = BotClaims.GetTokenScopes(identity)?.First(),
                 FromBotId = HostClientId,
                 Activity = activity,
-                Channel = Channels[channelName]
+                Channel = _channels[channelName]
             };
 
             var channelConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
@@ -158,35 +190,42 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var targetChannelInfo = Channels[channelName];
             using var channel = GetChannel(channelName);
 
-            var response = await channel.SendActivityAsync<InvokeResponse>(channelConversationId, activity, cancellationToken).ConfigureAwait(false);
+            InvokeResponse<object> response = null;
+            try
+            {
+                response = await channel.SendActivityAsync<object>(channelConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch(Exception ex)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, ex, channelName);
+            }
 
             // Check response status
             if (!(response.Status >= 200 && response.Status <= 299))
             {
-                throw new HttpRequestException($"Error invoking the bot id: \"{targetChannelInfo.Alias}\" at \"{targetChannelInfo.ConnectionSettings.Endpoint}\" (status is {response.Status}). \r\n {response.Body}");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, null, channelName, response.Status.ToString());
             }
         }
 
         /// <inheritdoc/>
-        public Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken)
+        public Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default)
         {
             return _conversationIdFactory.GetBotConversationReferenceAsync(channelConversationId, cancellationToken);
         }
 
-        private IChannel CreateChannel(HttpBotChannelSettings channelInfo)
+        private IChannel CreateChannel(string name, HttpBotChannelSettings channelSettings)
         {
             HttpClient httpClient = _httpClientFactory.CreateClient(nameof(HttpBotChannel));
 
-            var tokenProviderName = channelInfo.ConnectionSettings.TokenProvider;
+            var tokenProviderName = channelSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
-                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Channel '{channelInfo.Alias}'");
+                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Channel '{name}'");
             }
 
-            return new HttpBotChannel(channelInfo, httpClient, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
+            return new HttpBotChannel(channelSettings, httpClient, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
         }
     }
 }

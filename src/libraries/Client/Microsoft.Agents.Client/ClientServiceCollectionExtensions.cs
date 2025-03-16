@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Client
             // Add bot callback handler.  This is AgentApplication specific.
             // This is the object that handles callback endpoints for bot responses.
             builder.Services.AddTransient<AdapterBotResponseHandler>();
-            builder.Services.AddTransient<IChannelApiHandler>((sp) => sp.GetService<AdapterBotResponseHandler>());
+            builder.Services.AddTransient<IChannelApiHandler, AdapterBotResponseHandler>();
 
             // Add the bots configuration class.  This loads client info and known bots.
             builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>();

@@ -6,7 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    internal class ChannelSettings : IChannelInfo
+    public class ChannelSettings : IChannelInfo
     {
         public ChannelSettings()
         {
@@ -23,11 +23,11 @@ namespace Microsoft.Agents.Client
 
         public string DisplayName { get; set; }
 
-        public virtual void ValidateChannelSettings() 
+        public virtual void ValidateChannelSettings(string name) 
         { 
             if (string.IsNullOrWhiteSpace(Alias))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, nameof(Alias));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, name, $"Channels:{name}:{nameof(Alias)}");
             }
         }
     }

@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Client
         /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
         /// <returns></returns>
-        Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null);
+        Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends an Activity with DeliveryMode "normal" or "expectReplies". Convenience method when a result is not expected.
@@ -33,6 +33,6 @@ namespace Microsoft.Agents.Client
         /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
         /// <returns></returns>
-        Task SendActivityAsync(string channelConversationId, IActivity activity, CancellationToken cancellationToken, IActivity relatesTo = null);
+        Task SendActivityAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
     }
 }

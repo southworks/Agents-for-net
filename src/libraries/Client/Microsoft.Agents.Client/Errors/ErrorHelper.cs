@@ -35,6 +35,9 @@ namespace Microsoft.Agents.Client.Errors
 
         internal static AgentErrorDefinition ChannelHostMissingProperty = new AgentErrorDefinition(baseClientErrorCode, Properties.Resources.ChannelHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition ChannelMissingProperty = new AgentErrorDefinition(baseClientErrorCode - 1, Properties.Resources.ChannelMissingProperty, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition ChannelNotFound = new AgentErrorDefinition(baseClientErrorCode - 2, Properties.Resources.ChannelNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToChannelFailed = new AgentErrorDefinition(baseClientErrorCode - 3, Properties.Resources.SendToChannelFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToChannelUnsuccessful = new AgentErrorDefinition(baseClientErrorCode - 4, Properties.Resources.SendToChannelUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

@@ -244,7 +244,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             await DialogOptions.ConversationState.SaveChangesAsync(context, true, cancellationToken).ConfigureAwait(false);
 
             var skillInfo = DialogOptions.Skill;
-            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(skillConversationId, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
 
             // Inspect the skill response status
             if (!response.IsSuccessStatusCode())
@@ -367,7 +367,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             };
 
             // route the activity to the skill
-            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken).ConfigureAwait(false);
+            var response = await DialogOptions.SkillClient.SendActivityAsync<ExpectedReplies>(incomingActivity.Conversation.Id, activity, cancellationToken:cancellationToken).ConfigureAwait(false);
 
             // Check response status: true if success, false if failure
             return response.IsSuccessStatusCode();

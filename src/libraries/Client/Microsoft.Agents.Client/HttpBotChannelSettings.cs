@@ -6,7 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    internal class HttpBotChannelSettings : ChannelSettings
+    public class HttpBotChannelSettings : ChannelSettings
     {
         public HttpBotChannelSettings() 
         {
@@ -15,28 +15,28 @@ namespace Microsoft.Agents.Client
         public ConnectionSettings ConnectionSettings { get; set; } = new ConnectionSettings();
 
 
-        public override void ValidateChannelSettings()
+        public override void ValidateChannelSettings(string name)
         {
-            base.ValidateChannelSettings();
+            base.ValidateChannelSettings(name);
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.ClientId))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.ClientId)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, name, $"Channel:{name}:ConnectionSettings:{nameof(ConnectionSettings.ClientId)}");
             }
 
             if (ConnectionSettings.Endpoint == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.Endpoint)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, name, $"Channel:{name}:ConnectionSettings:{nameof(ConnectionSettings.Endpoint)}");
             }
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.TokenProvider))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.TokenProvider)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, name, $"Channel:{name}:ConnectionSettings:{nameof(ConnectionSettings.TokenProvider)}");
             }
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.ServiceUrl))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, $"Channel:{Alias}:ConnectionSettings:{nameof(ConnectionSettings.ServiceUrl)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, name, $"Channel:{name}:ConnectionSettings:{nameof(ConnectionSettings.ServiceUrl)}");
             }
 
             if (string.IsNullOrEmpty(ConnectionSettings.ResourceUrl))
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Client
         }
     }
 
-    internal class ConnectionSettings
+    public class ConnectionSettings
     {
         /// <summary>
         /// Gets or sets clientId/appId of the channel.

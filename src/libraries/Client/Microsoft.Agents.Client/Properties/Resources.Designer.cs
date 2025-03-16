@@ -70,11 +70,38 @@ namespace Microsoft.Agents.Client.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A required property on Channel settings is missing: {0}.
+        ///   Looks up a localized string similar to A required property on Channel &apos;{0}&apos; settings is missing: {1}.
         /// </summary>
         internal static string ChannelMissingProperty {
             get {
                 return ResourceManager.GetString("ChannelMissingProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Channel &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string ChannelNotFound {
+            get {
+                return ResourceManager.GetString("ChannelNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SendToChannel &apos;{0}&apos; failed..
+        /// </summary>
+        internal static string SendToChannelFailed {
+            get {
+                return ResourceManager.GetString("SendToChannelFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SendToChannel &apos;{0} failed with an unsucessful response &apos;{1}&apos;..
+        /// </summary>
+        internal static string SendToChannelUnsuccessful {
+            get {
+                return ResourceManager.GetString("SendToChannelUnsuccessful", resourceCulture);
             }
         }
     }

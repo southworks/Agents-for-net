@@ -122,7 +122,19 @@
     <comment>Raised when initializing ChannelHost and settings are missing.</comment>
   </data>
   <data name="ChannelMissingProperty" xml:space="preserve">
-    <value>A required property on Channel settings is missing: {0}</value>
+    <value>A required property on Channel '{0}' settings is missing: {1}</value>
     <comment>Raised when initializing ChannelHost and Channel settings are missing.</comment>
+  </data>
+  <data name="ChannelNotFound" xml:space="preserve">
+    <value>Channel '{0}' not found.</value>
+    <comment>Raised when calling IChannelHost.GetChannel.</comment>
+  </data>
+  <data name="SendToChannelFailed" xml:space="preserve">
+    <value>SendToChannel '{0}' failed.</value>
+    <comment>Raised when calling IChannelHost.SendToChannel.</comment>
+  </data>
+  <data name="SendToChannelUnsuccessful" xml:space="preserve">
+    <value>SendToChannel '{0} failed with an unsucessful response '{1}'.</value>
+    <comment>Raised when calling IChannelHost.SendToChannel.</comment>
   </data>
 </root>
