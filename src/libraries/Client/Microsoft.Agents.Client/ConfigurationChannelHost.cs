@@ -156,6 +156,18 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
+        public IList<ChannelConversation> GetExistingConversations(ITurnState turnState)
+        {
+            var result = new List<ChannelConversation>();
+            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            foreach (var conversation in conversations)
+            {
+                result.Add(new ChannelConversation() { ChannelName = conversation.Key, ChannelConversationId = conversation.Value });
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
         public async Task<string> GetOrCreateConversationAsync(string channelName, ITurnState turnState, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default)
         {
             var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());

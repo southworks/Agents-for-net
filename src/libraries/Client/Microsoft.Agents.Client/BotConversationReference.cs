@@ -26,6 +26,6 @@ namespace Microsoft.Agents.Client
         /// </value>
         public string OAuthScope { get; set; }
 
-        public string ChannelAlias { get; set; }
+        public string ChannelName { get; set; }
     }
 }

@@ -18,9 +18,11 @@ namespace Bot1
     /// </summary>
     public class HostBot : AgentApplication
     {
+        // This provides access to Agent Channels operations.
         private readonly IChannelHost _channelHost;
         
-        private const string Bot2Alias = "EchoBot";
+        // The ChannelHost Channel this sample will communicate with.
+        private const string Bot2Name = "EchoBot";
 
         public HostBot(AgentApplicationOptions options, IChannelHost channelHost) : base(options)
         {
@@ -32,7 +34,7 @@ namespace Bot1
             OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
-            OnTurnError = BotTurnErrorHandlerAsync;
+            OnTurnError = TurnErrorHandlerAsync;
         }
 
         private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -48,22 +50,22 @@ namespace Bot1
 
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
-            if (echoBotConversation != null)
+            var echoBotConversationId = _channelHost.GetExistingConversation(Bot2Name, turnState);
+            if (echoBotConversationId != null)
             {
                 // Already talking with Bot2.  Forward whatever the user says to Bot2.
-                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, turnContext.Activity, cancellationToken);
+                await _channelHost.SendToChannel(Bot2Name, echoBotConversationId, turnContext.Activity, cancellationToken);
             }
             else if (turnContext.Activity.Text.Contains("agent"))
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text("Got it, connecting you to the agent..."), cancellationToken);
 
-                // Create the ConversationId to use with Bot2.  This same conversationId should be used for all
+                // Create the Conversation to use with Bot2.  This same conversationId should be used for all
                 // subsequent SendToBot calls.  State is automatically saved after the turn is over.
-                echoBotConversation = await _channelHost.GetOrCreateConversationAsync(Bot2Alias, turnState, turnContext.Identity, turnContext.Activity, cancellationToken);
+                echoBotConversationId = await _channelHost.GetOrCreateConversationAsync(Bot2Name, turnState, turnContext.Identity, turnContext.Activity, cancellationToken);
 
                 // Forward whatever the user said to Bot2.
-                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, turnContext.Activity, cancellationToken);
+                await _channelHost.SendToChannel(Bot2Name, echoBotConversationId, turnContext.Activity, cancellationToken);
             }
             else
             {
@@ -75,11 +77,13 @@ namespace Bot1
         // Handles response from Bot2.
         private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
         {
-            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
-            if (!string.Equals(echoBotConversation, botActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
+            var echoBotConversationId = _channelHost.GetExistingConversation(Bot2Name, turnState);
+            if (!string.Equals(echoBotConversationId, botActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
             {
                 // This sample only deals with one active bot at a time.
                 // We don't think we have an active conversation with this bot.  Ignore it.
+                // For an AgentApplication that is handling replies from more that one channel, then the BotConversationReference.ChannelName
+                // can be used to determine which Channel it's from. 
                 return;
             }
              
@@ -89,7 +93,7 @@ namespace Bot1
                 if (botActivity.Value != null)
                 {
                     // Remove the channels conversation reference
-                    await _channelHost.DeleteConversationAsync(echoBotConversation, turnState, cancellationToken);
+                    await _channelHost.DeleteConversationAsync(echoBotConversationId, turnState, cancellationToken);
 
                     var resultMessage = $"The channel returned:\n\n: {ProtocolJsonSerializer.ToJson(botActivity.Value)}";
                     await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
@@ -103,36 +107,34 @@ namespace Bot1
                 // Forward whatever the user sent to the channel until a result is returned.
                 // Note that the botActivity is actually for a different conversation (contains a different ConversationReference).  It
                 // cannot be sent directly to ABS without modification.  Here we are just extracting values we need.
-                await turnContext.SendActivityAsync(MessageFactory.Text($"({Bot2Alias}) {botActivity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"({Bot2Name}) {botActivity.Text}"), cancellationToken);
             }
         }
 
-        // Called either by the Channel-side sending EOC, or in the case of a TurnError.
+        // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
         private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var echoBotConversation = _channelHost.GetExistingConversation(Bot2Alias, turnState);
-            if (echoBotConversation != null)
+            var activeConversations = _channelHost.GetExistingConversations(turnState);
+            if (activeConversations.Count > 0)
             {
-                // Send EndOfConversation to Bot2.
-                var eoc = Activity.CreateEndOfConversationActivity().ApplyConversationReference(turnContext.Activity.GetConversationReference());
-                await _channelHost.SendToChannel(Bot2Alias, echoBotConversation, eoc, cancellationToken);
+                foreach (var conversation in activeConversations)
+                {
+                    // This conversation is over.
+                    await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState, cancellationToken);
 
-                // This conversation is over.
-                await _channelHost.DeleteConversationAsync(echoBotConversation, turnState, cancellationToken);
+                    // Send EndOfConversation to Bot2.
+                    await _channelHost.SendToChannel(Bot2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
+                }
             }
         }
 
-        // This is the AgentApplication level OnTurnError handler.
-        // Exceptions here will bubble-up to Adapter.OnTurnError.  If the exception isn't rethrown, then
-        // the Turn will complete normally.
-        private async Task BotTurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
+        // This is the AgentApplication level OnTurnError handler.  See: AgentApplication.OnTurnError.
+        private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
         {
             await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);
             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
 
-            var errorMessageText = "The bot encountered an error or bug.";
-            var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
-            await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"The bot encountered an error: {exception.Message}"), CancellationToken.None);
 
             // Send a trace activity, which will be displayed in the Bot Framework Emulator
             await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError", cancellationToken: cancellationToken);

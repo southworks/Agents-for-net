@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading;
@@ -239,6 +240,83 @@ namespace Microsoft.Agents.Client.Tests
             // Verify conversation for the bot was removed from ConversationState
             conversations = turnState.GetValue<IDictionary<string, string>>("conversation.channelHost.channelConversations");
             Assert.Empty(conversations);
+        }
+
+        [Fact]
+        public async Task Conversation_MultiChannel()
+        {
+            // arrange
+            var channel1Name = "bot1Name";
+            var channel2Name = "bot2Name";
+            var sections = new Dictionary<string, string>{
+                {$"ChannelHost:Channels:{channel1Name}:Alias", channel1Name},
+                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:ClientId", "123"},
+                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {$"ChannelHost:Channels:{channel2Name}:Alias", channel2Name},
+                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:ClientId", "456"},
+                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {"ChannelHost:DefaultHostEndpoint", "http://localhost/"},
+                {"ChannelHost:HostClientId", "hostId"},
+            };
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(sections)
+                .Build();
+
+            var storage = new MemoryStorage();
+            var idFactory = new ConversationIdFactory(storage);
+
+            var host = new ConfigurationChannelHost(config, _provider.Object, idFactory, _connections.Object, _httpClientFactory.Object);
+
+
+            // act
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Id = "1234",
+                ChannelId = "webchat",
+                Conversation = new ConversationAccount()
+                {
+                    Id = "1"
+                },
+                From = new ChannelAccount()
+                {
+                    Id = "me@from.com"
+                }
+            };
+            var turnContext = new TurnContext(new TestAdapter(), activity);
+
+            var turnState = new TurnState(storage);
+            await turnState.LoadStateAsync(turnContext);
+
+            var hostClaimsIdentity = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.AudienceClaim, host.HostClientId),
+                new(AuthenticationConstants.AppIdClaim, host.HostClientId),
+            ]);
+
+            // create a new conversation for channel1
+            var conversationId1 = await host.GetOrCreateConversationAsync(channel1Name, turnState, hostClaimsIdentity, turnContext.Activity);
+            Assert.NotNull(conversationId1);
+            Assert.Equal(conversationId1, host.GetExistingConversation(channel1Name, turnState));
+
+            // create a new conversation for channel2
+            var conversationId2 = await host.GetOrCreateConversationAsync(channel2Name, turnState, hostClaimsIdentity, turnContext.Activity);
+            Assert.NotNull(conversationId2);
+            Assert.Equal(conversationId2, host.GetExistingConversation(channel2Name, turnState));
+
+            // Should have two existing conversations
+            var conversations = host.GetExistingConversations(turnState);
+            Assert.Equal(2, conversations.Count);
+            Assert.Equal(conversationId1, conversations.Where(c => c.ChannelName == channel1Name).First().ChannelConversationId);
+            Assert.Equal(conversationId2, conversations.Where(c => c.ChannelName == channel2Name).First().ChannelConversationId);
+
+            // delete conversation
+            await host.DeleteConversationAsync(conversationId1, turnState);
+            await host.DeleteConversationAsync(conversationId2, turnState);
+            Assert.Null(host.GetExistingConversation(channel1Name, turnState));
+            Assert.Null(host.GetExistingConversation(channel2Name, turnState));
         }
     }
 }

@@ -64,6 +64,14 @@ namespace Microsoft.Agents.BotBuilder.App
 
         #region Application Features
 
+        /// <summary>
+        /// Allows the AgentApplication to provide error handling without having to change the Adapter.OnTurnError.  This
+        /// is beneficial since the application has more context.
+        /// </summary>
+        /// <remarks>
+        /// Exceptions here will bubble-up to Adapter.OnTurnError.  Since it isn't know where in the turn the exception
+        /// was thrown, it is possible that OnAfterTurn handlers, and ITurnState saving has NOT happened.
+        /// </remarks>
         public Func<ITurnContext, ITurnState, Exception, CancellationToken, Task> OnTurnError { get; set; }
 
         /// <summary>
