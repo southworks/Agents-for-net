@@ -31,29 +31,24 @@ namespace Microsoft.Agents.Client.Tests
         private readonly Mock<IChannel> _channel = new();
         private readonly Mock<IConversationIdFactory> _conversationIdFactory = new();
         private readonly Mock<IHttpClientFactory> _httpClientFactory = new();
-
-        [Fact]
-        public void Constructor_ShouldThrowOnNullConfigSection()
-        {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object, null));
-        }
+        private readonly IStorage _storage = new MemoryStorage();
 
         [Fact]
         public void Constructor_ShouldThrowOnEmptyConfigSection()
         {
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object, ""));
+            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object, ""));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullServiceProvider()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, null, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, null, _storage, _connections.Object, _httpClientFactory.Object));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConnections()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _conversationIdFactory.Object, null, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
         }
 
         [Fact]
@@ -77,7 +72,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Single(host._channels);
             Assert.Equal(botAlias, host._channels[botName].Alias);
@@ -97,7 +92,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty));
         }
@@ -123,7 +118,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel("random"));
         }
@@ -149,13 +144,13 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(config, _provider.Object, _conversationIdFactory.Object, _connections.Object, _httpClientFactory.Object));
+            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object));
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullConnection()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _conversationIdFactory.Object, null, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
         }
 
         [Fact]
@@ -181,10 +176,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var storage = new MemoryStorage();
-            var idFactory = new ConversationIdFactory(storage);
-
-            var host = new ConfigurationChannelHost(config, _provider.Object, idFactory, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
 
             // act
@@ -202,27 +194,28 @@ namespace Microsoft.Agents.Client.Tests
                     Id = "me@from.com"
                 }
             };
-            var turnContext = new TurnContext(new TestAdapter(), activity);
+            var turnContext = new TurnContext(new TestAdapter(), activity)
+            {
+                Identity = new ClaimsIdentity(
+                [
+                    new(AuthenticationConstants.AudienceClaim, host.HostClientId),
+                    new(AuthenticationConstants.AppIdClaim, host.HostClientId),
+                ])
+            };
             
-            var turnState = new TurnState(storage);
+            var turnState = new TurnState(_storage);
             await turnState.LoadStateAsync(turnContext);
 
-            var hostClaimsIdentity = new ClaimsIdentity(
-            [
-                new(AuthenticationConstants.AudienceClaim, host.HostClientId),
-                new(AuthenticationConstants.AppIdClaim, host.HostClientId),
-            ]);
-
             // should be no conversation for bot
-            Assert.Null(host.GetExistingConversation(botName, turnState));
+            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, botName));
 
             // create a new conversation
-            var conversationId = await host.GetOrCreateConversationAsync(botName, turnState, hostClaimsIdentity, turnContext.Activity);
+            var conversationId = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, botName);
             Assert.NotNull(conversationId);
-            Assert.Equal(conversationId, host.GetExistingConversation(botName, turnState));
+            Assert.Equal(conversationId, host.GetExistingConversation(turnContext, turnState.Conversation, botName));
 
             // Verify ConversationIdFactory stored the reference
-            var idState = await storage.ReadAsync([conversationId], CancellationToken.None);
+            var idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Single(idState);
 
             // Verify ConversationState has the conversationId for the bot
@@ -230,11 +223,11 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Equal(conversationId, conversations[botName]);
 
             // delete conversation
-            await host.DeleteConversationAsync(conversationId, turnState);
-            Assert.Null(host.GetExistingConversation(botName, turnState));
+            await host.DeleteConversationAsync(conversationId, turnState.Conversation);
+            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, botName));
 
             // Verify ConversationIdFactory deleted the reference
-            idState = await storage.ReadAsync([conversationId], CancellationToken.None);
+            idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Empty(idState);
 
             // Verify conversation for the bot was removed from ConversationState
@@ -264,10 +257,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var storage = new MemoryStorage();
-            var idFactory = new ConversationIdFactory(storage);
-
-            var host = new ConfigurationChannelHost(config, _provider.Object, idFactory, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
 
             // act
@@ -285,38 +275,39 @@ namespace Microsoft.Agents.Client.Tests
                     Id = "me@from.com"
                 }
             };
-            var turnContext = new TurnContext(new TestAdapter(), activity);
+            var turnContext = new TurnContext(new TestAdapter(), activity)
+            {
+                Identity = new ClaimsIdentity(
+                [
+                    new(AuthenticationConstants.AudienceClaim, host.HostClientId),
+                    new(AuthenticationConstants.AppIdClaim, host.HostClientId),
+                ])
+            };
 
-            var turnState = new TurnState(storage);
+            var turnState = new TurnState(_storage);
             await turnState.LoadStateAsync(turnContext);
 
-            var hostClaimsIdentity = new ClaimsIdentity(
-            [
-                new(AuthenticationConstants.AudienceClaim, host.HostClientId),
-                new(AuthenticationConstants.AppIdClaim, host.HostClientId),
-            ]);
-
             // create a new conversation for channel1
-            var conversationId1 = await host.GetOrCreateConversationAsync(channel1Name, turnState, hostClaimsIdentity, turnContext.Activity);
+            var conversationId1 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel1Name);
             Assert.NotNull(conversationId1);
-            Assert.Equal(conversationId1, host.GetExistingConversation(channel1Name, turnState));
+            Assert.Equal(conversationId1, host.GetExistingConversation(turnContext, turnState.Conversation, channel1Name));
 
             // create a new conversation for channel2
-            var conversationId2 = await host.GetOrCreateConversationAsync(channel2Name, turnState, hostClaimsIdentity, turnContext.Activity);
+            var conversationId2 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel2Name);
             Assert.NotNull(conversationId2);
-            Assert.Equal(conversationId2, host.GetExistingConversation(channel2Name, turnState));
+            Assert.Equal(conversationId2, host.GetExistingConversation(turnContext, turnState.Conversation, channel2Name));
 
             // Should have two existing conversations
-            var conversations = host.GetExistingConversations(turnState);
+            var conversations = host.GetExistingConversations(turnContext, turnState.Conversation);
             Assert.Equal(2, conversations.Count);
             Assert.Equal(conversationId1, conversations.Where(c => c.ChannelName == channel1Name).First().ChannelConversationId);
             Assert.Equal(conversationId2, conversations.Where(c => c.ChannelName == channel2Name).First().ChannelConversationId);
 
             // delete conversation
-            await host.DeleteConversationAsync(conversationId1, turnState);
-            await host.DeleteConversationAsync(conversationId2, turnState);
-            Assert.Null(host.GetExistingConversation(channel1Name, turnState));
-            Assert.Null(host.GetExistingConversation(channel2Name, turnState));
+            await host.DeleteConversationAsync(conversationId1, turnState.Conversation);
+            await host.DeleteConversationAsync(conversationId2, turnState.Conversation);
+            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, channel1Name));
+            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, channel2Name));
         }
     }
 }

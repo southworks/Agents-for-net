@@ -5,13 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -22,25 +23,48 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class ConfigurationChannelHost : IChannelHost
     {
-        public const string ChannelConversationsProperty = "conversation.channelHost.channelConversations";
+        public const string ChannelConversationsProperty = "channelHost.channelConversations";
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
+        private readonly IStorage _storage;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
         internal IDictionary<string, HttpBotChannelSettings> _channels;
 
         public ConfigurationChannelHost(
             IServiceProvider systemServiceProvider,
-            IConversationIdFactory conversationIdFactory,
+            IStorage storage,
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            IDictionary<string, HttpBotChannelSettings> channels)
+            IDictionary<string, HttpBotChannelSettings> channels,
+            string hostEndpoint,
+            string hostClientId)
         {
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _conversationIdFactory = conversationIdFactory ?? throw new ArgumentNullException(nameof(conversationIdFactory));
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+
+            _conversationIdFactory = new ConversationIdFactory(storage);
+
+            if (!string.IsNullOrWhiteSpace(hostEndpoint))
+            {
+                DefaultHostEndpoint = new Uri(hostEndpoint);
+            }
+            else
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultHostEndpoint));
+            }
+
+            if (!string.IsNullOrWhiteSpace(hostClientId))
+            {
+                HostClientId = hostClientId;
+            }
+            else
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(HostClientId));
+            }
 
             LoadChannels(channels);
         }
@@ -67,43 +91,25 @@ namespace Microsoft.Agents.Client
         /// </code>
         /// <param name="configuration"></param>
         /// <param name="systemServiceProvider"></param>
-        /// <param name="conversationIdFactory"></param>
+        /// <param name="storage"></param>
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
         /// <param name="configSection"></param>
         public ConfigurationChannelHost(
             IConfiguration configuration,
-            IServiceProvider systemServiceProvider, 
-            IConversationIdFactory conversationIdFactory, 
+            IServiceProvider systemServiceProvider,
+            IStorage storage, 
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            string configSection = "ChannelHost") : this(systemServiceProvider, conversationIdFactory, connections, httpClientFactory, null)
+            string configSection = "ChannelHost") : this(
+                systemServiceProvider, 
+                storage, 
+                connections, 
+                httpClientFactory,
+                configuration?.GetSection($"{configSection}:Channels").Get<IDictionary<string, HttpBotChannelSettings>>(), 
+                configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint"), 
+                configuration?.GetValue<string>($"{configSection}:HostClientId"))
         {
-            ArgumentException.ThrowIfNullOrEmpty(configSection);
-
-            var hostEndpoint = configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint");
-            if (!string.IsNullOrWhiteSpace(hostEndpoint))
-            {
-                DefaultHostEndpoint = new Uri(hostEndpoint);
-            }
-            else
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultHostEndpoint));
-            }
-
-            var hostClientId = configuration?.GetValue<string>($"{configSection}:HostClientId");
-            if (!string.IsNullOrWhiteSpace(hostClientId))
-            {
-                HostClientId = hostClientId;
-            }
-            else
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(HostClientId));
-            }
-
-            var section = configuration?.GetSection($"{configSection}:Channels");
-            var channels = section?.Get<IDictionary<string, HttpBotChannelSettings>>();
-            LoadChannels(channels);
         }
 
         private void LoadChannels(IDictionary<string, HttpBotChannelSettings> channels)
@@ -145,9 +151,9 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public string GetExistingConversation(string channelName, ITurnState turnState)
+        public string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string channelName)
         {
-            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             if (conversations.TryGetValue(channelName, out var conversationId)) 
             { 
                 return conversationId;
@@ -156,10 +162,10 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public IList<ChannelConversation> GetExistingConversations(ITurnState turnState)
+        public IList<ChannelConversation> GetExistingConversations(ITurnContext turnContext, ConversationState conversationState)
         {
             var result = new List<ChannelConversation>();
-            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             foreach (var conversation in conversations)
             {
                 result.Add(new ChannelConversation() { ChannelName = conversation.Key, ChannelConversationId = conversation.Value });
@@ -168,16 +174,17 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task<string> GetOrCreateConversationAsync(string channelName, ITurnState turnState, ClaimsIdentity identity, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string channelName, CancellationToken cancellationToken = default)
         {
-            var conversations = turnState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            //ClaimsIdentity identity, IActivity activity
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             if (conversations.TryGetValue(channelName, out var conversationId)) { return conversationId; }
 
             var options = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = BotClaims.GetTokenScopes(identity)?.First(),
+                FromBotOAuthScope = BotClaims.GetTokenScopes(turnContext.Identity)?.First(),
                 FromBotId = HostClientId,
-                Activity = activity,
+                Activity = turnContext.Activity,
                 Channel = _channels[channelName]
             };
 
@@ -187,11 +194,11 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task DeleteConversationAsync(string channelConversationId, ITurnState state, CancellationToken cancellationToken = default)
+        public async Task DeleteConversationAsync(string channelConversationId, ConversationState conversationState, CancellationToken cancellationToken = default)
         {
             await _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken).ConfigureAwait(false);
 
-            var conversations = state.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
             var botAlias = conversations.Where(kv => kv.Value.Equals(channelConversationId)).Select((kv) => kv.Key).FirstOrDefault();
             if (botAlias != null)
             {

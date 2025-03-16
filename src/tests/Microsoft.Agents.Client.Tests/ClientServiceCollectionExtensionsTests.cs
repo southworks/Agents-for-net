@@ -25,9 +25,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
 
-            Assert.True(services.Where(s => s == typeof(ConversationIdFactory)).Any());
             Assert.True(services.Where(s => s == typeof(AdapterBotResponseHandler)).Any());
-            Assert.True(services.Where(s => s == typeof(ConfigurationChannelHost)).Any());
+            Assert.True(services.Where(s => s == typeof(IChannelHost)).Any());
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Bot1
 
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var echoBotConversationId = _channelHost.GetExistingConversation(Bot2Name, turnState);
+            var echoBotConversationId = _channelHost.GetExistingConversation(turnContext, turnState.Conversation, Bot2Name);
             if (echoBotConversationId != null)
             {
                 // Already talking with Bot2.  Forward whatever the user says to Bot2.
@@ -62,7 +62,7 @@ namespace Bot1
 
                 // Create the Conversation to use with Bot2.  This same conversationId should be used for all
                 // subsequent SendToBot calls.  State is automatically saved after the turn is over.
-                echoBotConversationId = await _channelHost.GetOrCreateConversationAsync(Bot2Name, turnState, turnContext.Identity, turnContext.Activity, cancellationToken);
+                echoBotConversationId = await _channelHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Bot2Name, cancellationToken);
 
                 // Forward whatever the user said to Bot2.
                 await _channelHost.SendToChannel(Bot2Name, echoBotConversationId, turnContext.Activity, cancellationToken);
@@ -77,7 +77,7 @@ namespace Bot1
         // Handles response from Bot2.
         private async Task OnBotResponseAsync(ITurnContext turnContext, ITurnState turnState, BotConversationReference reference, IActivity botActivity, CancellationToken cancellationToken)
         {
-            var echoBotConversationId = _channelHost.GetExistingConversation(Bot2Name, turnState);
+            var echoBotConversationId = _channelHost.GetExistingConversation(turnContext, turnState.Conversation, Bot2Name);
             if (!string.Equals(echoBotConversationId, botActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
             {
                 // This sample only deals with one active bot at a time.
@@ -93,7 +93,7 @@ namespace Bot1
                 if (botActivity.Value != null)
                 {
                     // Remove the channels conversation reference
-                    await _channelHost.DeleteConversationAsync(echoBotConversationId, turnState, cancellationToken);
+                    await _channelHost.DeleteConversationAsync(echoBotConversationId, turnState.Conversation, cancellationToken);
 
                     var resultMessage = $"The channel returned:\n\n: {ProtocolJsonSerializer.ToJson(botActivity.Value)}";
                     await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
@@ -114,13 +114,13 @@ namespace Bot1
         // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
         private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var activeConversations = _channelHost.GetExistingConversations(turnState);
+            var activeConversations = _channelHost.GetExistingConversations(turnContext, turnState.Conversation);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
                 {
                     // This conversation is over.
-                    await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState, cancellationToken);
+                    await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
                     // Send EndOfConversation to Bot2.
                     await _channelHost.SendToChannel(Bot2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
