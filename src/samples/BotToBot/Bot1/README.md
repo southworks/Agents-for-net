@@ -92,6 +92,25 @@ Find the section labeled `Connections`,  it should appear similar to this:
 1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
 1. Set the **ClientSecret** to the Secret that was created for your identity.
 
+1. Update the ChannelHost configuration
+  ```json
+    "ChannelHost": {
+      "HostClientId": "{{ClientId}}", // This is the Client ID used for the remote bot to call you back with.,
+      "DefaultHostEndpoint": "http://localhost:3978/api/botresponse/", // Default host serviceUrl.  This is the Url to this bot and BotResponseController path.
+      "Channels": {
+        "EchoBot": {
+          "ConnectionSettings": {
+            "ClientId": "{{Bot2ClientId}}", // This is the Client ID of the other agent.
+            "Endpoint": "http://localhost:39783/api/messages", // The endpoint of the other agent
+            "TokenProvider":  "BotServiceConnection"
+          }
+        }
+      }
+    },
+  ```
+  1. Replace **{{Bot2ClientId}}** with the AppId of Bot2.
+  1. Replace **{{ClientId}}** with the AppId of the Bot1.
+
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
     
 ## Running the Agent for the first time
