@@ -27,7 +27,6 @@ namespace Microsoft.Agents.Client
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
-        private readonly IStorage _storage;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
         internal IDictionary<string, HttpBotChannelSettings> _channels;
@@ -42,7 +41,6 @@ namespace Microsoft.Agents.Client
             string hostClientId)
         {
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
 

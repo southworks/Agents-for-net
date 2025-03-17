@@ -126,9 +126,11 @@ namespace Bot1
                     // Send EndOfConversation to Bot2.
                     await _channelHost.SendToChannel(Bot2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
                 }
-
-                await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
             }
+
+            // No longer need this conversations state.
+            await turnState.GetScope(ConversationState.ScopeName).DeleteStateAsync(turnContext, cancellationToken);
+            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
         }
 
         // This is the AgentApplication level OnTurnError handler.  See: AgentApplication.OnTurnError.
