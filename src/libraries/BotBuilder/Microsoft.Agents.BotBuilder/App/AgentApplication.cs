@@ -690,5 +690,21 @@ namespace Microsoft.Agents.BotBuilder.App
         }
 
         #endregion
+
+        #region Extension
+
+        /// <summary>
+        /// Registers extension with application, providing callback to specify extension features.
+        /// </summary>
+        /// <typeparam name="TExtension"></typeparam>
+        /// <param name="extension"></param>
+        /// <param name="extensionRegistration"></param>
+        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+            where TExtension : IAgentExtension
+        {
+            ArgumentNullException.ThrowIfNull(extensionRegistration);
+            extensionRegistration(extension);
+        }
+        #endregion
     }
 }
