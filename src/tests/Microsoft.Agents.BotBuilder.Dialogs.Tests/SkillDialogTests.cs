@@ -14,29 +14,22 @@ using Xunit;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Storage;
-using System.Text.Json;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Authentication;
 using System.Security.Claims;
-using Microsoft.Agents.Connector.Types;
 using System.Net;
 
 namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 {
     public class SkillDialogTests
     {
-        static readonly IStorage _storage = new MemoryStorage();
-        static readonly HttpBotChannelSettings _httpBotChannelSettings;
         static readonly Mock<IAccessTokenProvider> _accessTokenProvider;
-        static readonly IChannelHost _channelHost;
         static readonly string _hostAppId = Guid.NewGuid().ToString();
         static readonly Mock<IConnections> _connections;
-        static readonly Mock<IHttpClientFactory> _httpFactory;
-        static HttpResponseMessage _httpResponse;
-        static readonly Mock<HttpClient> _httpClient;
+
         static SkillDialogTests()
         {
             _accessTokenProvider = new Mock<IAccessTokenProvider>();
@@ -54,28 +47,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Setup(c => c.TryGetConnection(It.IsAny<string>(), out provider))
                 .Returns(true);
 
-            _httpResponse = new HttpResponseMessage(HttpStatusCode.OK);
-            _httpClient = new Mock<HttpClient>();
-            _httpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(_httpResponse);
-
-            _httpFactory = new Mock<IHttpClientFactory>();
-            _httpFactory
-                .Setup(f => f.CreateClient(It.IsAny<string>()))
-                .Returns(_httpClient.Object);
-
-            _httpBotChannelSettings = new HttpBotChannelSettings() { Alias = "test" };
-            _httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
-            _httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
-            _httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
-
-            _channelHost = new ConfigurationChannelHost(
-                new Mock<IServiceProvider>().Object,
-                _storage,
-                _connections.Object,
-                _httpFactory.Object,
-                new Dictionary<string, HttpBotChannelSettings> { { "test", _httpBotChannelSettings } },
-                "https://localhost",
-                _hostAppId);
         }
 
         private readonly Mock<ITurnContext> _context = new();
@@ -98,13 +69,45 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 new (AuthenticationConstants.AppIdClaim, _hostAppId),
             ]);
 
+        private readonly TestHttpMessageHandler _httpMessageHandler;
+        private readonly Mock<IHttpClientFactory> _httpFactory;
+        private readonly HttpBotChannelSettings _httpBotChannelSettings;
+        private readonly IChannelHost _channelHost;
+        private readonly IStorage _storage = new MemoryStorage();
+
         public SkillDialogTests()
         {
+            var state = new ConversationState(_storage);
+
+            _httpMessageHandler = new TestHttpMessageHandler()
+            {
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            };
+
+            _httpFactory = new Mock<IHttpClientFactory>();
+            _httpFactory
+                .Setup(f => f.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(_httpMessageHandler));
+
+            _httpBotChannelSettings = new HttpBotChannelSettings() { Alias = "test" };
+            _httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
+            _httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
+            _httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+
+            _channelHost = new ConfigurationChannelHost(
+                new Mock<IServiceProvider>().Object,
+                _storage,
+                _connections.Object,
+                _httpFactory.Object,
+                new Dictionary<string, HttpBotChannelSettings> { { "test", _httpBotChannelSettings } },
+                "https://localhost",
+                _hostAppId);
+
             _dialogContext = new(new DialogSet(), _context.Object, _dialogState);
             _dialog = new(new SkillDialogOptions()
             {
                 Skill = "test",
-                ConversationState = new ConversationState(new MemoryStorage()),
+                ConversationState = state,
                 ChannelHost = _channelHost
             });
         }
@@ -130,59 +133,71 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(async () => await client.SendActivityAsync<Activity>("irrelevant"));
         }
 
-        [Theory(Skip = "Need full IChannetHost.SendToChannel Mock")]
+        [Theory]
         [InlineData(null)]
         [InlineData(DeliveryModes.ExpectReplies)]
         public async Task BeginDialogCallsSkill(string deliveryMode)
         {
-            IActivity activitySent = null;
-            string toConversationId = null;
-
-            // Callback to capture the parameters sent to the skill
-            void CaptureAction(string conversationId, IActivity activity, IActivity relatesTo, CancellationToken cancellationToken)
-            {
-                // Capture values sent to the skill so we can assert the right parameters were used.
-                toConversationId = conversationId;
-                activitySent = activity;
-            }
-
-            // Create a mock skill client to intercept calls and capture what is sent.
-            var mockSkillClient = CreateMockSkillClient(CaptureAction);
-
             // Use Memory for conversation state
-            var conversationState = new ConversationState(new MemoryStorage());
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var conversationState = new ConversationState(_storage);   //DialogTestClient loads this via AutoSaveStateMiddleware
+            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
+            
             var activityToSend = (Activity)Activity.CreateMessageActivity();
             activityToSend.DeliveryMode = deliveryMode;
             activityToSend.Text = Guid.NewGuid().ToString();
+
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
-            //!!! Assert.Equal(0, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
+            _httpMessageHandler.SendAssert = (activitySent, count) =>
+            {
+                if (count == 1)
+                {
+                    Assert.Equal(activitySent.Text, activitySent.Text);
+                }
+                else if (count == 2)
+                {
+                    Assert.Equal("Second message", activitySent.Text);
+                }
+            };
 
-            // Send something to the dialog to start it
+            // Send first message to the dialog to start it
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ProtocolJsonSerializer.ToJson(new ExpectedReplies([new Activity()])), System.Text.Encoding.UTF8, "application/json")
+            };
             await client.SendActivityAsync<Activity>("irrelevant");
 
             // Assert results and data sent to the SkillClient for fist turn
-            //!!! Assert.Equal(1, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
-            Assert.Equal(activityToSend.Text, activitySent.Text);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
+            Assert.NotNull(_channelHost.GetExistingConversation(_context.Object, conversationState, "test"));
 
             // Send a second message to continue the dialog
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ProtocolJsonSerializer.ToJson(new ExpectedReplies([new Activity()])), System.Text.Encoding.UTF8, "application/json")
+            };
             await client.SendActivityAsync<Activity>("Second message");
-            //!!! Assert.Equal(1, ((SimpleConversationIdFactory)dialogOptions.ConversationIdFactory).CreateCount);
 
             // Assert results for second turn
-            Assert.Equal("Second message", activitySent.Text);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
 
             // Send EndOfConversation to the dialog
-            await client.SendActivityAsync<Activity>((Activity)Activity.CreateEndOfConversationActivity());
+            var eoc = new Activity()
+            {
+                Type = ActivityTypes.EndOfConversation
+            };
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ProtocolJsonSerializer.ToJson(new ExpectedReplies([eoc])), System.Text.Encoding.UTF8, "application/json")
+            };
+            await client.SendActivityAsync<Activity>(eoc);
 
             // Assert we are done.
             Assert.Equal(DialogTurnStatus.Complete, client.DialogTurnResult.Status);
+            Assert.Null(_channelHost.GetExistingConversation(_context.Object, conversationState, "test"));
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -249,6 +264,14 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             // Create a mock skill client to intercept calls and capture what is sent.
             var mockSkillClient = CreateMockSkillClient(CaptureAction);
 
+            /*
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ProtocolJsonSerializer.ToJson(new ExpectedReplies([activity])), System.Text.Encoding.UTF8, "application/json")
+            };
+            */
+
+
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);
             var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
@@ -271,12 +294,11 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         [Fact]
         public async Task ShouldThrowHttpExceptionOnPostFailure()
         {
-            // Create a mock skill client to intercept calls and capture what is sent.
-            var mockSkillClient = CreateMockSkillClient(null, 500);
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
@@ -493,15 +515,15 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Mock.Verify(_context);
         }
 
-        [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
+        [Fact]
         public async Task ContinueDialogAsync_ShouldSendInvokeActivity()
         {
             var resultInvoke = new InvokeResponse { Status = 200, Body = "testing" };
-            var activity = new Activity { Type = ActivityTypes.InvokeResponse, Value = JsonSerializer.Serialize(resultInvoke) };
+            var activity = new Activity { Type = ActivityTypes.InvokeResponse, Value = resultInvoke, ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
-                .Verifiable(Times.Exactly(3));
+                .Verifiable(Times.Exactly(7));
             _context.SetupGet(e => e.Services)
                 .Returns([])
                 .Verifiable(Times.Exactly(1));
@@ -510,6 +532,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             MockSendToSkillAsync(activity);
 
+            await _dialog.State.LoadAsync(_context.Object);
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
 
             Assert.Equal(DialogTurnStatus.Waiting, result.Status);
@@ -518,20 +541,22 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Mock.Verify(_context);
         }
 
-        [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
+        [Fact]
         public async Task ContinueDialogAsync_ShouldReturnEndOfDialog()
         {
             var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "EOC testing" };
 
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity())
-                .Verifiable(Times.Exactly(3));
+                .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1"} })
+                .Verifiable(Times.Exactly(7));
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.StackState)
                 .Returns([]);
+
             MockSendToSkillAsync(activity);
 
+            await _dialog.State.LoadAsync(_context.Object);
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
 
             Assert.Equal(DialogTurnStatus.Complete, result.Status);
@@ -539,39 +564,43 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             Mock.Verify(_context);
         }
 
-        [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
+        [Fact]
         public async Task RepromptDialogAsync_ShouldSendActivity()
         {
-            var activity = new Activity();
+            var activity = new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
-                .Verifiable(Times.Once);
+                .Verifiable(Times.Exactly(5));
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.StackState)
                 .Returns([]);
+
             MockSendToSkillAsync(activity);
 
+            await _dialog.State.LoadAsync(_context.Object);
             await _dialog.RepromptDialogAsync(_context.Object, _dialogState.DialogStack[0]);
 
             Mock.Verify(_context);
         }
 
-        [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
+        [Fact]
         public async Task ResumeDialogAsync_ShouldSendActivity()
         {
-            var activity = new Activity();
+            var activity = new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
-                .Verifiable(Times.Once);
+                .Verifiable(Times.Exactly(5));
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.StackState)
                 .Returns([]);
+
             MockSendToSkillAsync(activity);
 
+            await _dialog.State.LoadAsync(_context.Object);
             var result = await _dialog.ResumeDialogAsync(_dialogContext.Object, DialogReason.BeginCalled);
 
             Assert.Equal(DialogTurnStatus.Waiting, result.Status);
@@ -584,7 +613,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var attachment = new Attachment
             {
                 ContentType = OAuthCard.ContentType,
-                Content = JsonSerializer.SerializeToNode(oauthCard, ProtocolJsonSerializer.SerializationOptions)
+                Content = oauthCard
             };
 
             var attachmentActivity = MessageFactory.Attachment(attachment);
@@ -600,7 +629,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         /// <param name="conversationState"> The conversation state object.</param>
         /// <param name="mockSkillClient"> The skill client mock.</param>
         /// <returns> A Skill Dialog Options object.</returns>
-        private static SkillDialogOptions CreateSkillDialogOptions(IChannelHost channelHost, ConversationState conversationState, Mock<IChannel> mockSkillClient, string connectionName = null)
+        private static SkillDialogOptions CreateSkillDialogOptions(IChannelHost channelHost, ConversationState conversationState, Mock<IChannel> mockSkillClient = null, string connectionName = null)
         {
             var dialogOptions = new SkillDialogOptions
             {
@@ -694,14 +723,41 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 return !(activity.Text == "shouldNotValidate");
             }
+
+            public BotState State => DialogOptions.ConversationState;
         }
         private void MockSendToSkillAsync(Activity activity)
         {
-            var invokeResponse = new InvokeResponse<ExpectedReplies> { Status = 200, Body = new ExpectedReplies([activity]) };
+            _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ProtocolJsonSerializer.ToJson(new ExpectedReplies([activity])), System.Text.Encoding.UTF8, "application/json")
+            };
 
             _context.Setup(e => e.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ResourceResponse())
                 .Verifiable(Times.AtMostOnce);
+        }
+    }
+
+    class TestHttpMessageHandler : HttpMessageHandler
+    {
+        private int _sendRequest = 0;
+
+        public HttpResponseMessage HttpResponseMessage { get; set; }
+
+        public Action<IActivity, int> SendAssert { get; set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            _sendRequest++;
+
+            if (SendAssert != null)
+            {
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+                SendAssert(activity, _sendRequest);
+            }
+
+            return Task.FromResult(HttpResponseMessage);
         }
     }
 }

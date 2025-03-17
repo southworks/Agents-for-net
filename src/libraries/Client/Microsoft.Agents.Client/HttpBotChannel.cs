@@ -143,6 +143,8 @@ namespace Microsoft.Agents.Client
             activityClone.ServiceUrl = _settings.ConnectionSettings.ServiceUrl;
             activityClone.Recipient ??= new ChannelAccount();
             activityClone.Recipient.Role = RoleTypes.Skill;
+            activityClone.From ??= new ChannelAccount();
+            activityClone.From.Role = RoleTypes.Skill;
 
             activityClone.Conversation ??= new ConversationAccount();
             if (!string.IsNullOrEmpty(activityClone.Conversation.Id))

@@ -100,9 +100,12 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                 return EndOfTurn;
             }
 
+            var skillConversationId = dc.ActiveDialog.State[SkillConversationIdStateKey]?.ToString();
+
             // Handle EndOfConversation from the skill (this will be sent to the this dialog by the SkillHandler if received from the Skill)
             if (dc.Context.Activity.Type == ActivityTypes.EndOfConversation)
             {
+                await DialogOptions.ChannelHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
                 return await dc.EndDialogAsync(dc.Context.Activity.Value, cancellationToken).ConfigureAwait(false);
             }
 
@@ -110,8 +113,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             var skillActivity = ObjectPath.Clone((Activity) dc.Context.Activity);
 
             skillActivity.DeliveryMode = dc.ActiveDialog.State[DeliverModeStateKey] as string;
-
-            var skillConversationId = dc.ActiveDialog.State[SkillConversationIdStateKey]?.ToString();
 
             // Just forward to the remote skill
             var eocActivity = await SendToSkillAsync(dc.Context, skillActivity, skillConversationId, cancellationToken).ConfigureAwait(false);
