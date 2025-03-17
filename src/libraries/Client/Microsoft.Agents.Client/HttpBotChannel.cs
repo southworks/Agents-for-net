@@ -22,31 +22,28 @@ namespace Microsoft.Agents.Client
     {
         private readonly HttpBotChannelSettings _settings;
         private readonly IAccessTokenProvider _tokenProvider;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
         private bool _disposed;
 
         /// <param name="channelSettings"></param>
-        /// <param name="httpClient"></param>
+        /// <param name="httpClientFactory"></param>
         /// <param name="tokenProvider"></param>
         /// <param name="logger"></param>
         public HttpBotChannel(
             HttpBotChannelSettings channelSettings,
-            HttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IAccessTokenProvider tokenProvider,
             ILogger<HttpBotChannel> logger = null)
         {
             _settings = channelSettings ?? throw new ArgumentNullException(nameof(channelSettings));
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _logger = logger ?? NullLogger<HttpBotChannel>.Instance;
         }
 
         /// <inheritdoc/>
-        public string Alias => _settings.Alias;
-
-        /// <inheritdoc/>
-        public string DisplayName => _settings.DisplayName;
+        public string Name => _settings.Name;
 
         /// <inheritdoc/>
         public async Task SendActivityAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
@@ -104,12 +101,14 @@ namespace Microsoft.Agents.Client
 
             httpRequestMessage.Headers.Add(ConversationConstants.ConversationIdHttpHeaderName, channelConversationId);
 
+            using var httpClient = _httpClientFactory.CreateClient(nameof(HttpBotChannel));
+
             // Add the auth header to the HTTP request.
             var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);
             httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
 
             var completionOption = HttpCompletionOption.ResponseContentRead; // activity.DeliveryMode == DeliveryModes.Stream ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead;
-            return await _httpClient.SendAsync(httpRequestMessage, completionOption, cancellationToken).ConfigureAwait(false);
+            return await httpClient.SendAsync(httpRequestMessage, completionOption, cancellationToken).ConfigureAwait(false);
         }
 
         private IActivity CreateSendActivity(string channelConversationId, IActivity activity, IActivity relatesTo)
@@ -176,7 +175,6 @@ namespace Microsoft.Agents.Client
                 return;
             }
 
-            _httpClient.Dispose();
             _disposed = true;
         }
     }

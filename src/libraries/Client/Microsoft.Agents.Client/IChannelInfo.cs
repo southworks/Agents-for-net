@@ -3,9 +3,9 @@
 
 namespace Microsoft.Agents.Client
 {
-    public interface IChannelInfo
+    internal interface IChannelInfo
     {
-        public string Alias { get; set; }
+        public string Name { get; internal set; }
 
         public string DisplayName { get; set; }
     }

@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Client.Tests
 
             private IChannelHost CreateChannelHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
             {
-                var httpBotChannelSettings = new HttpBotChannelSettings() { Alias = "test" };
+                var httpBotChannelSettings = new HttpBotChannelSettings();
                 httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
                 httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri(TestBotEndpoint);
                 httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
@@ -462,35 +462,6 @@ namespace Microsoft.Agents.Client.Tests
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 return Task.FromResult(_send(request));
-            }
-        }
-
-        private class TestSkillConversationIdFactory : IConversationIdFactory
-        {
-            private readonly ConcurrentDictionary<string, string> _conversationRefs = new ConcurrentDictionary<string, string>();
-
-            public Task<string> CreateConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken)
-            {
-                var BotConversationReference = new BotConversationReference
-                {
-                    ConversationReference = options.Activity.GetConversationReference(),
-                    OAuthScope = options.FromBotOAuthScope
-                };
-                var key = $"{options.FromBotId}-{options.Channel.Alias}-{BotConversationReference.ConversationReference.Conversation.Id}-{BotConversationReference.ConversationReference.ChannelId}-skillconvo";
-                _conversationRefs.GetOrAdd(key, ProtocolJsonSerializer.ToJson(BotConversationReference));
-                return Task.FromResult(key);
-            }
-
-            public Task<BotConversationReference> GetBotConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
-            {
-                var conversationReference = ProtocolJsonSerializer.ToObject<BotConversationReference>(_conversationRefs[skillConversationId]);
-                return Task.FromResult(conversationReference);
-            }
-
-            public Task DeleteConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
-            {
-                _conversationRefs.TryRemove(skillConversationId, out _);
-                return Task.CompletedTask;
             }
         }
     }

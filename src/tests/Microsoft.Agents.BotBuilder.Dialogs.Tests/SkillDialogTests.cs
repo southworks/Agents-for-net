@@ -88,7 +88,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_httpMessageHandler));
 
-            _httpBotChannelSettings = new HttpBotChannelSettings() { Alias = "test" };
+            _httpBotChannelSettings = new HttpBotChannelSettings();
             _httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
             _httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
             _httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";

@@ -78,8 +78,7 @@ namespace Microsoft.Agents.Client
         ///   "DefaultHostEndpoint": "http://localhost:3978/api/botresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
         ///   "Channels": {
         ///      "EchoBot": {
-        ///        "Alias": "echo",
-        ///        "DisplayName": "EchoBot",
+        ///        "DisplayName": {{optional-displayName}},              // Defaults to node name ("EchoBot")
         ///        "ConnectionSettings": {
         ///          "ClientId": "{{Bot2ClientId}}",                     // This is the Client ID of the other agent.
         ///          "Endpoint": "http://localhost:39783/api/messages",  // The endpoint of the other agent
@@ -126,7 +125,14 @@ namespace Microsoft.Agents.Client
                         kv.Value.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
                     }
 
-                    kv.Value.ValidateChannelSettings(kv.Key);
+                    kv.Value.Name = kv.Key;
+
+                    if (string.IsNullOrEmpty(kv.Value.DisplayName))
+                    {
+                        kv.Value.DisplayName = kv.Value.Name;
+                    }
+
+                    kv.Value.ValidateChannelSettings();
                 }
             }
         }
@@ -236,15 +242,13 @@ namespace Microsoft.Agents.Client
 
         private IChannel CreateChannel(string name, HttpBotChannelSettings channelSettings)
         {
-            HttpClient httpClient = _httpClientFactory.CreateClient(nameof(HttpBotChannel));
-
             var tokenProviderName = channelSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
                 throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Channel '{name}'");
             }
 
-            return new HttpBotChannel(channelSettings, httpClient, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
+            return new HttpBotChannel(channelSettings, _httpClientFactory, tokenProvider, (ILogger<HttpBotChannel>) _serviceProvider.GetService(typeof(ILogger<HttpBotChannel>)));
         }
     }
 }

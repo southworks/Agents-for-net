@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             return new BotFrameworkSkill
             {
-                Alias = SkillId,
+                Name = SkillId
             };
         }
 
@@ -117,6 +117,7 @@ namespace Microsoft.Agents.Client.Tests
 		{
 			public string Alias { get; set; }
 			public string DisplayName { get; set; }
+            public string Name { get; set; }
         }
 
 		private class ConversationReferenceEqualityComparer : EqualityComparer<ConversationReference>

@@ -54,14 +54,12 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void Constructor_ShouldSetProperties()
         {
-            var botName = "botName";
-            var botAlias = "bot1";
+            var botName = "bot1";
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
                 {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
                 {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
                 {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
@@ -75,7 +73,6 @@ namespace Microsoft.Agents.Client.Tests
             var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Single(host._channels);
-            Assert.Equal(botAlias, host._channels[botName].Alias);
             Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
             Assert.Equal(defaultHostEndpoint, host.DefaultHostEndpoint.ToString());
             Assert.Equal(botClientId, host.HostClientId);

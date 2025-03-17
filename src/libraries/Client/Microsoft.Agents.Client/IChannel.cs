@@ -10,9 +10,7 @@ namespace Microsoft.Agents.Client
 {
     public interface IChannel : IDisposable
     {
-        string Alias { get; }
-
-        string DisplayName { get; }
+        string Name { get; }
 
         /// <summary>
         /// Sends an Activity with DeliveryMode "normal" or "expectReplies".  For `normal`, this would require handling of async replies via IChannelApiHandler via ChannelApiController.
