@@ -26,10 +26,6 @@ namespace Microsoft.Agents.Client.Tests
         private readonly Mock<IKeyedServiceProvider> _provider = new();
         private readonly Mock<IConnections> _connections = new();
         private readonly IConfigurationRoot _config = new ConfigurationBuilder().Build();
-        private readonly Mock<HttpBotChannelSettings> _channelInfo = new();
-        private readonly Mock<IAccessTokenProvider> _token = new();
-        private readonly Mock<IChannel> _channel = new();
-        private readonly Mock<IConversationIdFactory> _conversationIdFactory = new();
         private readonly Mock<IHttpClientFactory> _httpClientFactory = new();
         private readonly IStorage _storage = new MemoryStorage();
 

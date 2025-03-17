@@ -21,7 +21,8 @@ namespace Bot1
         // This provides access to Agent Channels operations.
         private readonly IChannelHost _channelHost;
         
-        // The ChannelHost Channel this sample will communicate with.
+        // The ChannelHost Channel this sample will communicate with.  This name matches
+        // ChannelHost:Channels config.
         private const string Bot2Name = "EchoBot";
 
         public HostBot(AgentApplicationOptions options, IChannelHost channelHost) : base(options)
@@ -125,19 +126,18 @@ namespace Bot1
                     // Send EndOfConversation to Bot2.
                     await _channelHost.SendToChannel(Bot2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
                 }
+
+                await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
             }
         }
 
         // This is the AgentApplication level OnTurnError handler.  See: AgentApplication.OnTurnError.
         private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
         {
-            await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);
-            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
-
             await turnContext.SendActivityAsync(MessageFactory.Text($"The bot encountered an error: {exception.Message}"), CancellationToken.None);
 
-            // Send a trace activity, which will be displayed in the Bot Framework Emulator
-            await turnContext.TraceActivityAsync("OnTurnError Trace", exception.ToString(), "https://www.botframework.com/schemas/error", "TurnError", cancellationToken: cancellationToken);
+            // End any active channel conversations
+            await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);
         }
     }
 }
