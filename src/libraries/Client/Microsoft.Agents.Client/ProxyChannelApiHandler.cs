@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.Client
 {
@@ -31,22 +32,26 @@ namespace Microsoft.Agents.Client
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
-        private readonly IConversationIdFactory _conversationIdFactory;
+        private readonly IChannelHost _channelHost;
+        private readonly ConversationState _conversationState;
         private readonly ILogger _logger;
 
         public ProxyChannelApiHandler(
             IChannelAdapter adapter,
             IBot bot,
-            IConversationIdFactory conversationIdFactory,
+            IChannelHost channelHost,
+            ConversationState conversationState,
             ILogger logger = null)
         {
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(bot);
-            ArgumentNullException.ThrowIfNull(conversationIdFactory);
+            ArgumentNullException.ThrowIfNull(channelHost);
+            ArgumentNullException.ThrowIfNull(conversationState);
 
             _bot = bot;
             _adapter = adapter;
-            _conversationIdFactory = conversationIdFactory;
+            _channelHost = channelHost;
+            _conversationState = conversationState;
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -202,7 +207,7 @@ namespace Microsoft.Agents.Client
 
         private async Task<BotConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
-            var botConversationReference = await _conversationIdFactory.GetBotConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+            var botConversationReference = await _channelHost.GetBotConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             if (botConversationReference == null)
 
             {
@@ -228,7 +233,7 @@ namespace Microsoft.Agents.Client
                 switch (activity.Type)
                 {
                     case ActivityTypes.EndOfConversation:
-                        await _conversationIdFactory.DeleteConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+                        await _channelHost.DeleteConversationAsync(conversationId, _conversationState, cancellationToken).ConfigureAwait(false);
                         await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Event:

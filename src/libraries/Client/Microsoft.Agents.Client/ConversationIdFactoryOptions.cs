@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// A class defining the parameters used in <see cref="IConversationIdFactory.CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.
     /// </summary>
-    public class ConversationIdFactoryOptions
+    internal class ConversationIdFactoryOptions
     {
         /// <summary>
         /// Gets or sets the oauth audience scope, used during token retrieval (either https://api.botframework.com or bot app id).

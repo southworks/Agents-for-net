@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Client
     /// <param name="storage">
     /// <see cref="IStorage"/> instance to write and read <see cref="BotConversationReference"/> with.
     /// </param>
-    public class ConversationIdFactory(IStorage storage) : IConversationIdFactory
+    internal class ConversationIdFactory(IStorage storage) : IConversationIdFactory
     {
         private readonly IStorage _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 

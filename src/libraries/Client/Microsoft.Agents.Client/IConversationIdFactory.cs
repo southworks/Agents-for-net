@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// Defines the interface of a factory that is used to create unique conversation IDs for bot conversations.
     /// </summary>
-    public interface IConversationIdFactory
+    internal interface IConversationIdFactory
     {
         /// <summary>
         /// Creates a conversation id for a bot conversation.

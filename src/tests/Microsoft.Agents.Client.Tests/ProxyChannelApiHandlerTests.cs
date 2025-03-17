@@ -20,6 +20,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using Microsoft.Agents.Storage;
+using System.Collections.Generic;
+using Microsoft.Agents.BotBuilder.State;
 
 namespace Microsoft.Agents.Client.Tests
 {
@@ -70,7 +73,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
@@ -125,7 +128,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
@@ -162,7 +165,7 @@ namespace Microsoft.Agents.Client.Tests
             var activityToDelete = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
             await sut.OnDeleteActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToDelete);
 
             // Assert
@@ -180,7 +183,7 @@ namespace Microsoft.Agents.Client.Tests
             var activityToUpdate = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
             var response = await sut.OnUpdateActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToUpdate, activity);
 
             // Assert
@@ -199,7 +202,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ConversationIdFactory);
+            var sut = new ProxyChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
             var member = await sut.OnGetConversationMemberAsync(mockObjects.CreateTestClaims(), TestMember.Id, conversationId);
 
             // Assert
@@ -221,17 +224,78 @@ namespace Microsoft.Agents.Client.Tests
             {
                 Adapter = CreateMockAdapter(logger);
                 Bot = CreateMockBot();
-                ConversationIdFactory = new TestSkillConversationIdFactory();
-                Client = CreateMockConnectorClient(); 
+                Storage = new MemoryStorage();
+                ConversationState = new ConversationState(Storage);
+                Client = CreateMockConnectorClient();
+                HttpMessageHandler = new TestHttpMessageHandler();
+                HttpClientFactory = CreateHttpClientFactory(HttpMessageHandler);
+
+                TokenProvider = new Mock<IAccessTokenProvider>();
+                TokenProvider
+                    .Setup(p => p.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<String>>(), It.IsAny<bool>()))
+                    .Returns(Task.FromResult("token"));
+
+                Connections = new Mock<IConnections>();
+                Connections
+                    .Setup(c => c.GetConnection(It.IsAny<string>()))
+                    .Returns(TokenProvider.Object);
+
+                IAccessTokenProvider provider = TokenProvider.Object;
+                Connections
+                    .Setup(c => c.TryGetConnection(It.IsAny<string>(), out provider))
+                    .Returns(true);
+
+                ChannelHost = CreateChannelHost(Storage, HttpClientFactory.Object, Connections.Object);
             }
 
-            public IConversationIdFactory ConversationIdFactory { get; }
+            private IChannelHost CreateChannelHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
+            {
+                var httpBotChannelSettings = new HttpBotChannelSettings() { Alias = "test" };
+                httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
+                httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri(TestBotEndpoint);
+                httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+
+                var channelHost = new ConfigurationChannelHost(
+                    new Mock<IServiceProvider>().Object,
+                    storage,
+                    connections,
+                    clientFactory,
+                    new Dictionary<string, HttpBotChannelSettings> { { "test", httpBotChannelSettings } },
+                    "https://localhost",
+                    TestBotId);
+
+                return channelHost;
+            }
+
+            private Mock<IHttpClientFactory> CreateHttpClientFactory(TestHttpMessageHandler handler)
+            {
+                var httpFactory = new Mock<IHttpClientFactory>();
+                httpFactory
+                    .Setup(f => f.CreateClient(It.IsAny<string>()))
+                    .Returns(new HttpClient(handler));
+                return httpFactory;
+            }
+
+            public Mock<IAccessTokenProvider> TokenProvider { get; }
+
+            public Mock<IConnections> Connections { get; }
+
+
+            public IChannelHost ChannelHost { get; }
+
+            public TestHttpMessageHandler HttpMessageHandler { get; }
 
             public Mock<ChannelAdapter> Adapter { get; }
 
             public Mock<IChannelServiceClientFactory> Auth { get;  }
 
+            public Mock<IHttpClientFactory> HttpClientFactory { get; }
+
             public Mock<IBot> Bot { get;  }
+
+            public IStorage Storage { get; }
+
+            public ConversationState ConversationState { get; }
 
             public IConnectorClient Client { get; }
 
@@ -265,21 +329,27 @@ namespace Microsoft.Agents.Client.Tests
                     Conversation = new ConversationAccount(id: TestBotId),
                     ServiceUrl = TestBotEndpoint
                 });
+                activity.ChannelId = Channels.Test;
 
-                var skill = new BotFrameworkSkill
-                {
-                    Alias = "skill",
-                };
+                var turnContext = new Mock<ITurnContext>();
+                turnContext.SetupGet(e => e.Activity)
+                    .Returns(activity);
+                turnContext.SetupGet(e => e.Services)
+                    .Returns([])
+                    .Verifiable(Times.Exactly(1));
+                turnContext.SetupGet(e => e.StackState)
+                    .Returns([]);
+                turnContext
+                    .SetupGet(i => i.Identity)
+                    .Returns(new ClaimsIdentity(
+                    [
+                        new (AuthenticationConstants.AudienceClaim, ChannelHost.HostClientId),
+                        new (AuthenticationConstants.AppIdClaim, ChannelHost.HostClientId),
+                    ]));
 
-                var options = new ConversationIdFactoryOptions
-                {
-                    FromBotOAuthScope = TestBotId,
-                    FromBotId = TestBotId,
-                    Activity = activity,
-                    Channel = skill
-                };
+                await ConversationState.LoadAsync(turnContext.Object);
 
-                return await ConversationIdFactory.CreateConversationIdAsync(options, CancellationToken.None);
+                return await ChannelHost.GetOrCreateConversationAsync(turnContext.Object, ConversationState, "test");
             }
             public ClaimsIdentity CreateTestClaims()
             {
@@ -395,18 +465,6 @@ namespace Microsoft.Agents.Client.Tests
             }
         }
 
-        private class BotFrameworkSkill : IChannelInfo
-        {
-            public string Alias { get; set; }
-            public string DisplayName { get; set; }
-            public string AppId { get; set; }
-            public string AuthorityEndpoint { get; set; }
-            public Uri Endpoint { get; set; }
-            public string ResourceUrl { get; set; }
-            public string TokenProvider { get; set; }
-            public string ChannelFactory {  get; set; }
-        }
-
         private class TestSkillConversationIdFactory : IConversationIdFactory
         {
             private readonly ConcurrentDictionary<string, string> _conversationRefs = new ConcurrentDictionary<string, string>();
@@ -436,4 +494,27 @@ namespace Microsoft.Agents.Client.Tests
             }
         }
     }
+
+    class TestHttpMessageHandler : HttpMessageHandler
+    {
+        private int _sendRequest = 0;
+
+        public HttpResponseMessage HttpResponseMessage { get; set; }
+
+        public Action<IActivity, int> SendAssert { get; set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            _sendRequest++;
+
+            if (SendAssert != null)
+            {
+                var activity = ProtocolJsonSerializer.ToObject<Activity>(request.Content.ReadAsStream());
+                SendAssert(activity, _sendRequest);
+            }
+
+            return Task.FromResult(HttpResponseMessage);
+        }
+    }
+
 }

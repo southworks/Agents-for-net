@@ -46,7 +46,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             _connections
                 .Setup(c => c.TryGetConnection(It.IsAny<string>(), out provider))
                 .Returns(true);
-
         }
 
         private readonly Mock<ITurnContext> _context = new();
@@ -677,44 +676,6 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             activityToSend.DeliveryMode = DeliveryModes.ExpectReplies;
             activityToSend.Text = Guid.NewGuid().ToString();
             return activityToSend;
-        }
-
-        // Simple conversation ID factory for testing.
-        private class SimpleConversationIdFactory : IConversationIdFactory
-        {
-            public SimpleConversationIdFactory()
-            {
-                ConversationRefs = new ConcurrentDictionary<string, BotConversationReference>();
-            }
-
-            public ConcurrentDictionary<string, BotConversationReference> ConversationRefs { get; private set; }
-
-            // Helper property to assert how many times is CreateSkillConversationIdAsync called.
-            public int CreateCount { get; private set; }
-
-            public Task<string> CreateConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken)
-            {
-                CreateCount++;
-
-                var key = (options.Activity.Conversation.Id + options.Activity.ServiceUrl).GetHashCode().ToString(CultureInfo.InvariantCulture);
-                ConversationRefs.GetOrAdd(key, new BotConversationReference
-                {
-                    ConversationReference = options.Activity.GetConversationReference(),
-                    OAuthScope = options.FromBotOAuthScope
-                });
-                return Task.FromResult(key);
-            }
-
-            public Task<BotConversationReference> GetBotConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
-            {
-                return Task.FromResult(ConversationRefs[skillConversationId]);
-            }
-
-            public Task DeleteConversationReferenceAsync(string skillConversationId, CancellationToken cancellationToken)
-            {
-                ConversationRefs.TryRemove(skillConversationId, out _);
-                return Task.CompletedTask;
-            }
         }
 
         private class MockSkillDialog(SkillDialogOptions dialogOptions, string dialogId = null) : SkillDialog(dialogOptions, dialogId)
