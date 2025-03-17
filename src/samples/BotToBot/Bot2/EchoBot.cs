@@ -17,42 +17,34 @@ namespace Bot2
         public EchoBot(AgentApplicationOptions options) : base(options)
         {
             // Add Activity routes
-            OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
             OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
             OnTurnError = BotTurnErrorHandlerAsync;
         }
 
-        private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
-            {
-                if (member.Id != turnContext.Activity.Recipient.Id)
-                {
-                    await turnContext.SendActivityAsync(MessageFactory.Text("Hi, This is Bot2"), cancellationToken);
-                }
-            }
-        }
-
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             var result = turnState.Conversation.GetValue("log", () => new EchoResult());
 
-            if (turnContext.Activity.Text.Contains("end") || turnContext.Activity.Text.Contains("stop"))
+            if (turnContext.Activity.Text.Contains("end"))
             {
                 // Send End of conversation at the end.
+                result.Messages.Add(turnContext.Activity.Text);
                 await turnContext.SendActivityAsync(MessageFactory.Text("Ending conversation..."), cancellationToken);
                 var endOfConversation = Activity.CreateEndOfConversationActivity();
                 endOfConversation.Code = EndOfConversationCodes.CompletedSuccessfully;
                 endOfConversation.Value = result;
                 await turnContext.SendActivityAsync(endOfConversation, cancellationToken);
+
+                // No longer need to keep state for this conversation.
+                await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
             }
             else
             {
                 result.Messages.Add(turnContext.Activity.Text);
                 await turnContext.SendActivityAsync(MessageFactory.Text(turnContext.Activity.Text), cancellationToken);
-                var messageText = "Say \"end\" or \"stop\" and I'll end the conversation and return to the parent.";
+                var messageText = "Say \"end\" and I'll end the conversation and return to the parent.";
                 await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
             }
         }

@@ -115,12 +115,13 @@ namespace Bot1
         // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
         private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
+            // End all active channel conversations.
             var activeConversations = _channelHost.GetExistingConversations(turnContext, turnState.Conversation);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
                 {
-                    // This conversation is over.
+                    // Delete the ChannelHost conversation.
                     await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
                     // Send EndOfConversation to Bot2.
