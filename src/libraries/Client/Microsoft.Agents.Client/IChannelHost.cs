@@ -49,8 +49,29 @@ namespace Microsoft.Agents.Client
         Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string channelName, CancellationToken cancellationToken = default);
         Task DeleteConversationAsync(string channelConversationId, ConversationState conversationState, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Returns the conversation information for the specified channel conversation.
+        /// </summary>
+        /// <param name="channelConversationId"></param>
+        /// <param name="cancellationToken"></param>
         Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Sends an activity to a Channel.
+        /// </summary>
+        /// <remarks>
+        /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Channel, the
+        /// <see cref="BotResponses.OnBotReply"/> handler must be set.
+        /// </remarks>
+        /// <remarks>
+        /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetChannel(string)"/> and 
+        /// use the returned <see cref="IChannel"/> directly.
+        /// </remarks>
+        /// <param name="channelName"></param>
+        /// <param name="channelConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetExistingConversation"/></param>
+        /// <param name="activity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
         Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default);
     }
 }

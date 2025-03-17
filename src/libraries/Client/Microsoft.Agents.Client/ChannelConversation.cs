@@ -5,7 +5,7 @@ namespace Microsoft.Agents.Client
 {
     public class ChannelConversation
     {
-        public string ChannelName { get; set; }
-        public string ChannelConversationId { get; set; }
+        public string ChannelName { get; internal set; }
+        public string ChannelConversationId { get; internal set; }
     }
 }

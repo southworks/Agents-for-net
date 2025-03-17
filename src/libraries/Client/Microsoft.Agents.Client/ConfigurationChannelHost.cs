@@ -146,7 +146,10 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public IChannel GetChannel(string name)
         {
-            ArgumentException.ThrowIfNullOrEmpty(name);
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelNotFound, null, "<null>");
+            }
 
             if (!_channels.TryGetValue(name, out HttpBotChannelSettings channelSettings))
             {
@@ -220,6 +223,12 @@ namespace Microsoft.Agents.Client
             InvokeResponse<object> response = null;
             try
             {
+                if (string.IsNullOrEmpty(activity.DeliveryMode)
+                    || !string.Equals(DeliveryModes.Normal, activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
+                {
+                    activity.DeliveryMode = DeliveryModes.Normal;
+                }
+
                 response = await channel.SendActivityAsync<object>(channelConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch(Exception ex)
