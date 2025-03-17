@@ -20,5 +20,4 @@ public class BotController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)
         => adapter.ProcessAsync(Request, Response, bot, cancellationToken);
-
 }

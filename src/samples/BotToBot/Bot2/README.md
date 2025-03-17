@@ -62,35 +62,35 @@ To configure authentication into the Bot2 Sample Project you will need the follo
 1. Client ID of the Application identity you wish to use.
 1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
 
-Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
+1. Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
 
-Find the section labeled `Connections`,  it should appear similar to this:
+   Find the section labeled `Connections`,  it should appear similar to this:
 
-```json
-"TokenValidation": {
-  "Audiences": [
-    "{{ClientId}}" // this is the Client ID used for the Azure Bot
-  ],
-  "TenantId": "{{TenantId}}"
-},
+   ```json
+   "TokenValidation": {
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID for Bot2
+     ],
+     "TenantId": "{{TenantId}}"
+   },
 
-"Connections": {
-    "BotServiceConnection": {
-    "Settings": {
-        "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-        "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-        "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
-        "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-        "Scopes": [
-        "https://api.botframework.com/.default"
-        ]
-    }
-}
-```
+   "Connections": {
+     "BotServiceConnection": {
+       "Settings": {
+         "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+         "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
+         "ClientId": "{{ClientId}}", // this is the Client ID for Bot2
+         "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
+         "Scopes": [
+           "https://api.botframework.com/.default"
+         ]
+      }
+   }
+   ```
     
-1. Replace all **{{ClientId}}** with the AppId of the bot.
-1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
-1. Set the **ClientSecret** to the Secret that was created for your identity.
+   1. Replace all **{{ClientId}}** with the AppId of Bot2.
+   1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
+   1. Set the **ClientSecret** to the Secret that was created for your identity.
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 

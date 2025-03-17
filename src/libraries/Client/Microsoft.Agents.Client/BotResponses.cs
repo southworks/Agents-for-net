@@ -41,11 +41,11 @@ namespace Microsoft.Agents.Client
         /// <param name="rank"></param>
         public static void OnBotReply(this AgentApplication app, BotResponseHandler handler, ushort rank = RouteRank.First)
         {
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
+            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
                 var botResponse = ProtocolJsonSerializer.ToObject<AdapterBotResponseHandler.BotReply>(turnContext.Activity.Value);
                 await handler(turnContext, turnState, botResponse.BotConversationReference, botResponse.Activity, cancellationToken).ConfigureAwait(false);
-            };
+            }
 
             app.OnActivity(
                 (turnContext, CancellationToken) =>

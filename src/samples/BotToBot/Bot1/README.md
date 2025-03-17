@@ -69,7 +69,7 @@ To configure authentication into the Bot1 Sample Project you will need the follo
    ```json
    "TokenValidation": {
      "Audiences": [
-       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+       "{{ClientId}}" // this is the Client ID for Bot1
      ],
      "TenantId": "{{TenantId}}"
    },
@@ -79,7 +79,7 @@ To configure authentication into the Bot1 Sample Project you will need the follo
        "Settings": {
            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-           "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
+           "ClientId": "{{ClientId}}", // this is the Client ID for Bot1
            "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
            "Scopes": [
               "https://api.botframework.com/.default"
@@ -88,20 +88,20 @@ To configure authentication into the Bot1 Sample Project you will need the follo
    }
    ```
     
-   1. Replace all **{{ClientId}}** with the AppId of the bot.
+   1. Replace all **{{ClientId}}** with the AppId of Bot1.
    1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
    1. Set the **ClientSecret** to the Secret that was created for your identity.
 
 1. Update the ChannelHost configuration in `appsettings.json`
    ```json
      "ChannelHost": {
-       "HostClientId": "{{ClientId}}", // This is the Client ID used for the remote bot to call you back with.,
+       "HostClientId": "{{ClientId}}", // this is the Client ID for Bot1
        "DefaultHostEndpoint": "http://localhost:3978/api/botresponse/", // Default host serviceUrl.  This is the Url to this bot and BotResponseController path.
        "Channels": {
          "EchoBot": {
            "ConnectionSettings": {
-             "ClientId": "{{Bot2ClientId}}", // This is the Client ID of the other agent.
-             "Endpoint": "http://localhost:39783/api/messages", // The endpoint of the other agent
+             "ClientId": "{{Bot2ClientId}}", // this is the Client ID for Bot2
+             "Endpoint": "http://localhost:39783/api/messages", // The endpoint of Bot2
              "TokenProvider":  "BotServiceConnection"
            }
          }
@@ -109,7 +109,7 @@ To configure authentication into the Bot1 Sample Project you will need the follo
      },
    ```
    1. Replace **{{Bot2ClientId}}** with the AppId of Bot2.
-   1. Replace **{{ClientId}}** with the AppId of the Bot1.
+   1. Replace **{{ClientId}}** with the AppId of Bot1.
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
     

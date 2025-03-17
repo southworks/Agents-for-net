@@ -4,11 +4,14 @@
 using Bot1;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Client;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Net.Http.Headers;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +30,14 @@ builder.AddBot<HostBot>();
 // Add ChannelHost to enable calling other Agents.  This is also required for
 // AgentApplication.BotResponses use.
 builder.AddChannelHost();
+
+builder.Services.AddSingleton<IHeaderPropagationFilter>(sp =>
+{
+    string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+    ProductInfoHeaderValue productInfo = new("teamsai-dotnet", version);
+
+    return new HeaderPropagationFilter([], productInfo.ToString());
+});
 
 var app = builder.Build();
 

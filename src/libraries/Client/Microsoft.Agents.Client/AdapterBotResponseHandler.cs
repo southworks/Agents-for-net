@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Client
             }
 
             // Need to get this over to the calling bots identity.  We will do it by packaging it in a custom event
-            // and the AgentApplication will need to route to a handler.
+            // and the AgentApplication will need to route to a handler.  See BotResponses.OnBotReply.
             var eventActivity = new Activity()
             {
                 Type = ActivityTypes.Event,
