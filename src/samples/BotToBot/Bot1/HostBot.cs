@@ -129,7 +129,7 @@ namespace Bot1
             }
 
             // No longer need this conversations state.
-            await turnState.GetScope(ConversationState.ScopeName).DeleteStateAsync(turnContext, cancellationToken);
+            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
         }
 

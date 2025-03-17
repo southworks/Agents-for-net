@@ -57,12 +57,12 @@ namespace Bot2
             }
         }
 
-        private Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             // This will be called if the root bot is ending the conversation.  Sending additional messages should be
             // avoided as the conversation may have been deleted.
             // Perform cleanup of resources if needed.
-            return Task.CompletedTask;
+            await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
         }
 
         private async Task BotTurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
@@ -72,8 +72,7 @@ namespace Bot2
             var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
             await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
-            // Send an EndOfConversation activity to the caller with the error to end the conversation,
-            // and let the caller decide what to do.
+            // Send an EndOfConversation activity to the caller with the error to end the conversation.
             var endOfConversation = Activity.CreateEndOfConversationActivity();
             endOfConversation.Code = "Error";
             endOfConversation.Text = exception.Message;
