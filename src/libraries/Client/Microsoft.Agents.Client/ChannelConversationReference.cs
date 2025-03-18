@@ -6,26 +6,23 @@ using Microsoft.Agents.Core.Models;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// A conversation reference type for a channel.
+    /// A conversation reference type for an Agent channel.
     /// </summary>
     public class ChannelConversationReference
     {
         /// <summary>
         /// Gets or sets the conversation reference.
         /// </summary>
-        /// <value>
-        /// The conversation reference.
-        /// </value>
         public ConversationReference ConversationReference { get; set; }
 
         /// <summary>
         /// Gets or sets the OAuth scope.
         /// </summary>
-        /// <value>
-        /// The OAuth scope.
-        /// </value>
         public string OAuthScope { get; set; }
 
+        /// <summary>
+        /// The name of the Agent Channel.
+        /// </summary>
         public string ChannelName { get; set; }
     }
 }

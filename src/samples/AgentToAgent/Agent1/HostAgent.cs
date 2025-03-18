@@ -82,7 +82,7 @@ public class HostAgent : AgentApplication
         {
             // This sample only deals with one active Agent at a time.
             // We don't think we have an active conversation with this Agent.  Ignore it.
-            // For an AgentApplication that is handling replies from more that one channel, then the ChannelConversationReference.ChannelName
+            // For an AgentApplication that is handling replies from more that one Agent channel, then the ChannelConversationReference.ChannelName
             // can be used to determine which Channel it's from. 
             return;
         }
@@ -104,7 +104,7 @@ public class HostAgent : AgentApplication
         }
         else
         {
-            // Forward whatever the user sent to the channel until EndOfConversation is received from Agent2.
+            // Forward whatever the user sent to the channel until EndOfConversation is received from an Agent channel.
             // Note that the channelActivity is actually for a different conversation (contains a different ConversationReference).  It
             // cannot be sent directly to ABS without modification.  Here we are just extracting values we need.
             await turnContext.SendActivityAsync(MessageFactory.Text($"({reference.ChannelName}) {channelActivity.Text}"), cancellationToken);
@@ -120,10 +120,10 @@ public class HostAgent : AgentApplication
         {
             foreach (var conversation in activeConversations)
             {
-                // Delete the ChannelHost conversation.
+                // Delete the conversation because we're done with it.
                 await _agentHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
-                // Send EndOfConversation to Agent2.
+                // Send EndOfConversation to the Agent.
                 await _agentHost.SendToAgent(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
             }
         }
