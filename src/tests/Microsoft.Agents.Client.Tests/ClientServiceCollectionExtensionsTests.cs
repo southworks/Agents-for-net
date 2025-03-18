@@ -19,14 +19,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var builder = new Mock<IHostApplicationBuilder>();
             builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
-            ClientServiceCollectionExtensions.AddChannelHost(builder.Object);
+            ClientServiceCollectionExtensions.AddAgentHost(builder.Object);
 
             var services = builder.Object.Services
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
 
             Assert.True(services.Where(s => s == typeof(AdapterChannelResponseHandler)).Any());
-            Assert.True(services.Where(s => s == typeof(IChannelHost)).Any());
+            Assert.True(services.Where(s => s == typeof(IAgentHost)).Any());
         }
     }
 }

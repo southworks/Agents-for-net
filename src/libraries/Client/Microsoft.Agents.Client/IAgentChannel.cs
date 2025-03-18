@@ -8,7 +8,7 @@ using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Client
 {
-    public interface IChannel : IDisposable
+    public interface IAgentChannel : IDisposable
     {
         string Name { get; }
 

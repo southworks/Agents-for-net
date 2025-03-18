@@ -19,16 +19,16 @@ namespace Agent1;
 public class HostAgent : AgentApplication
 {
     // This provides access to Agent Channels operations.
-    private readonly IChannelHost _channelHost;
+    private readonly IAgentHost _channelHost;
     
     // The ChannelHost Channel this sample will communicate with.  This name matches
     // ChannelHost:Channels config.
     private const string Agent2Name = "Echo";
 
-    public HostAgent(AgentApplicationOptions options, IChannelHost channelHost) : base(options)
+    public HostAgent(AgentApplicationOptions options, IAgentHost channelHost) : base(options)
     {
         _channelHost = channelHost ?? throw new ArgumentNullException(nameof(channelHost));
-        ChannelResponses.OnChannelReply(this, OnChannelResponseAsync);
+        AgentResponses.OnAgentReply(this, OnAgentResponseAsync);
 
         // Add Activity routes
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
@@ -55,7 +55,7 @@ public class HostAgent : AgentApplication
         if (echoConversationId != null)
         {
             // Already talking with Agent2.  Forward whatever the user says to Agent2.
-            await _channelHost.SendToChannel(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
+            await _channelHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
         }
         else if (turnContext.Activity.Text.Contains("agent"))
         {
@@ -66,7 +66,7 @@ public class HostAgent : AgentApplication
             echoConversationId = await _channelHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
 
             // Forward whatever the user said to Agent2.
-            await _channelHost.SendToChannel(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
+            await _channelHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
         }
         else
         {
@@ -76,7 +76,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles response from Agent2.
-    private async Task OnChannelResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
+    private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
     {
         var echoConversationId = _channelHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
         if (!string.Equals(echoConversationId, channelActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
@@ -96,12 +96,12 @@ public class HostAgent : AgentApplication
                 // Remove the channels conversation reference
                 await _channelHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
 
-                var resultMessage = $"The channel returned:\n\n: {ProtocolJsonSerializer.ToJson(channelActivity.Value)}";
+                var resultMessage = $"The {Agent2Name} Agent returned:\n\n: {ProtocolJsonSerializer.ToJson(channelActivity.Value)}";
                 await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
             }
 
             // Done with calling the remote Agent.
-            await turnContext.SendActivityAsync(MessageFactory.Text("Back in the root bot. Say \"agent\" and I'll patch you through"), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"Back in {nameof(HostAgent)}. Say \"agent\" and I'll patch you through"), cancellationToken);
         }
         else
         {
@@ -125,7 +125,7 @@ public class HostAgent : AgentApplication
                 await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
                 // Send EndOfConversation to Agent2.
-                await _channelHost.SendToChannel(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
+                await _channelHost.SendToAgent(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
             }
         }
 
@@ -137,7 +137,7 @@ public class HostAgent : AgentApplication
     // This is the AgentApplication level OnTurnError handler.  See: AgentApplication.OnTurnError.
     private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync(MessageFactory.Text($"This Agent encountered an error: {exception.Message}"), CancellationToken.None);
+        await turnContext.SendActivityAsync(MessageFactory.Text($"{nameof(HostAgent)} encountered an error: {exception.Message}"), CancellationToken.None);
 
         // End any active channel conversations
         await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);

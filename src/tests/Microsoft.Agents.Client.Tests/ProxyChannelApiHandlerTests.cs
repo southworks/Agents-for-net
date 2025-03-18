@@ -248,14 +248,14 @@ namespace Microsoft.Agents.Client.Tests
                 ChannelHost = CreateChannelHost(Storage, HttpClientFactory.Object, Connections.Object);
             }
 
-            private IChannelHost CreateChannelHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
+            private IAgentHost CreateChannelHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
             {
                 var httpBotChannelSettings = new HttpAgentChannelSettings();
                 httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
                 httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri(TestBotEndpoint);
                 httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
 
-                var channelHost = new ConfigurationChannelHost(
+                var channelHost = new ConfigurationAgentHost(
                     new Mock<IServiceProvider>().Object,
                     storage,
                     connections,
@@ -281,7 +281,7 @@ namespace Microsoft.Agents.Client.Tests
             public Mock<IConnections> Connections { get; }
 
 
-            public IChannelHost ChannelHost { get; }
+            public IAgentHost ChannelHost { get; }
 
             public TestHttpMessageHandler HttpMessageHandler { get; }
 

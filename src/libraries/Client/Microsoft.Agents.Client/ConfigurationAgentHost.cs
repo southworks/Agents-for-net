@@ -21,9 +21,9 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// Loads channel information from configuration.
     /// </summary>
-    public class ConfigurationChannelHost : IChannelHost
+    public class ConfigurationAgentHost : IAgentHost
     {
-        public const string ChannelConversationsProperty = "channelHost.channelConversations";
+        public const string ChannelConversationsProperty = "agentHost.channelConversations";
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Client
         private readonly IConnections _connections;
         internal IDictionary<string, HttpAgentChannelSettings> _channels;
 
-        public ConfigurationChannelHost(
+        public ConfigurationAgentHost(
             IServiceProvider systemServiceProvider,
             IStorage storage,
             IConnections connections,
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Client
         /// Creates from IConfiguration.
         /// </summary>
         /// <code>
-        /// "ChannelHost": {
+        /// "AgentHost": {
         ///   "HostClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote agent to call you back with.,
         ///   "DefaultHostEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
         ///   "Channels": {
@@ -92,13 +92,13 @@ namespace Microsoft.Agents.Client
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
         /// <param name="configSection"></param>
-        public ConfigurationChannelHost(
+        public ConfigurationAgentHost(
             IConfiguration configuration,
             IServiceProvider systemServiceProvider,
             IStorage storage, 
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            string configSection = "ChannelHost") : this(
+            string configSection = "AgentHost") : this(
                 systemServiceProvider, 
                 storage, 
                 connections, 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Client
         public string HostClientId { get; set; }
 
         /// <inheritdoc/>
-        public IChannel GetChannel(string name)
+        public IAgentChannel GetChannel(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task SendToAgent(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
             using var channel = GetChannel(channelName);
 
@@ -247,7 +247,7 @@ namespace Microsoft.Agents.Client
             return _conversationIdFactory.GetChannelConversationReferenceAsync(channelConversationId, cancellationToken);
         }
 
-        private IChannel CreateChannel(string name, HttpAgentChannelSettings channelSettings)
+        private IAgentChannel CreateChannel(string name, HttpAgentChannelSettings channelSettings)
         {
             var tokenProviderName = channelSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))

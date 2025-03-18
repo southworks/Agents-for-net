@@ -41,9 +41,9 @@ namespace Microsoft.Agents.Client
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
-        private readonly IChannelHost _channelHost;
+        private readonly IAgentHost _channelHost;
 
-        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IChannelHost channelHost)
+        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IAgentHost channelHost)
         {
             _adapter = adapter;
             _bot = bot;

@@ -22,16 +22,16 @@ namespace Microsoft.Agents.Client
     /// {
     ///     public MyAgent(AgentApplicationOptions options) : base(options)
     ///     {
-    ///         ChannelResponses.OnChannelReply(OnChannelResponseAsync);
+    ///         AgentResponses.OnChannelReply(OnAgentResponseAsync);
     ///     }
     ///     
-    ///     private async Task OnChannelResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
+    ///     private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
     ///     {
     ///         // do something with the response
     ///     }
     /// }
     /// </code>
-    public static class ChannelResponses
+    public static class AgentResponses
     {
         /// <summary>
         /// Provides a handler for when an Agent sends an Activity when Activity.DeliverMode == `normal` (asynchronous HTTP POST back to the channel host.
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Client
         /// <param name="app"></param>
         /// <param name="handler"></param>
         /// <param name="rank"></param>
-        public static void OnChannelReply(this AgentApplication app, AgentResponseHandler handler, ushort rank = RouteRank.First)
+        public static void OnAgentReply(this AgentApplication app, AgentResponseHandler handler, ushort rank = RouteRank.First)
         {
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {

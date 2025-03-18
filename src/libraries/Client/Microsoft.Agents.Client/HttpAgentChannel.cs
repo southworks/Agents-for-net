@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// Sends Activities to a remote Agent.
     /// </summary>
-    internal class HttpAgentChannel : IChannel
+    internal class HttpAgentChannel : IAgentChannel
     {
         private readonly HttpAgentChannelSettings _settings;
         private readonly IAccessTokenProvider _tokenProvider;
@@ -98,8 +98,6 @@ namespace Microsoft.Agents.Client
                 RequestUri = _settings.ConnectionSettings.Endpoint,
                 Content = jsonContent
             };
-
-            httpRequestMessage.Headers.Add(ConversationConstants.ConversationIdHttpHeaderName, channelConversationId);
 
             using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentChannel));
 

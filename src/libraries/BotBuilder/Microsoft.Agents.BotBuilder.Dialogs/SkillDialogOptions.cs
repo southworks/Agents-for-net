@@ -14,7 +14,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
     public class SkillDialogOptions
     {
         [JsonIgnore]
-        public IChannelHost ChannelHost { get; set; }
+        public IAgentHost ChannelHost { get; set; }
 
         /// <summary>
         /// Gets or sets the Channel name the dialog will call.
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// The <see cref="BotFrameworkClient"/> used to call the remote skill.
         /// </value>
         [JsonIgnore]
-        public IChannel SkillClient => ChannelHost?.GetChannel(Skill);
+        public IAgentChannel SkillClient => ChannelHost?.GetChannel(Skill);
 
         /// <summary>
         /// Gets or sets the <see cref="ConversationState"/> to be used by the dialog.

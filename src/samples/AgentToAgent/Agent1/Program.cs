@@ -26,7 +26,7 @@ builder.AddBot<HostAgent>();
 
 // Add ChannelHost to enable calling other Agents.  This is also required for
 // AgentApplication.ChannelResponses use.
-builder.AddChannelHost();
+builder.AddAgentHost();
 
 var app = builder.Build();
 

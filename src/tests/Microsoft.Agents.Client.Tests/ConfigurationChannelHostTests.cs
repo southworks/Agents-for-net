@@ -32,19 +32,19 @@ namespace Microsoft.Agents.Client.Tests
         [Fact]
         public void Constructor_ShouldThrowOnEmptyConfigSection()
         {
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object, ""));
+            Assert.Throws<ArgumentException>(() => new ConfigurationAgentHost(_config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object, ""));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullServiceProvider()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, null, _storage, _connections.Object, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationAgentHost(_config, null, _storage, _connections.Object, _httpClientFactory.Object));
         }
 
         [Fact]
         public void Constructor_ShouldThrowOnNullConnections()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationAgentHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Single(host._channels);
             Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty));
         }
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
             Assert.Throws<ArgumentException>(() => host.GetChannel("random"));
         }
@@ -137,13 +137,13 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            Assert.Throws<ArgumentException>(() => new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object));
+            Assert.Throws<ArgumentException>(() => new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object));
         }
 
         [Fact]
         public void GetChannel_ShouldThrowOnNullConnection()
         {
-            Assert.Throws<ArgumentNullException>(() => new ConfigurationChannelHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
+            Assert.Throws<ArgumentNullException>(() => new ConfigurationAgentHost(_config, _provider.Object, _storage, null, _httpClientFactory.Object));
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
 
             // act
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Client.Tests
                 .AddInMemoryCollection(sections)
                 .Build();
 
-            var host = new ConfigurationChannelHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
+            var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
 
             // act

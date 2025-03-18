@@ -32,14 +32,14 @@ namespace Microsoft.Agents.Client
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
-        private readonly IChannelHost _channelHost;
+        private readonly IAgentHost _channelHost;
         private readonly ConversationState _conversationState;
         private readonly ILogger _logger;
 
         public ProxyChannelApiHandler(
             IChannelAdapter adapter,
             IBot bot,
-            IChannelHost channelHost,
+            IAgentHost channelHost,
             ConversationState conversationState,
             ILogger logger = null)
         {

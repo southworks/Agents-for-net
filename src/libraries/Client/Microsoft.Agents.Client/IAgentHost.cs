@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Represents a host the contains IChannels for Agent-to-Agent.
+    /// Represents a host the contains IAgentChannels for multi-Agent.
     /// </summary>
-    public interface IChannelHost
+    public interface IAgentHost
     {
         /// <summary>
         /// The endpoint to use in Activity.ServiceUrl if unspecified in a Channels settings.
@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Client
 
         string HostClientId { get; set; }
 
-        IChannel GetChannel(string name);
+        IAgentChannel GetChannel(string name);
 
         /// <summary>
         /// Returns the conversationId for an existing conversation for a Channel, relative to to the current Turns Conversation.
@@ -80,21 +80,21 @@ namespace Microsoft.Agents.Client
         Task<ChannelConversationReference> GetChannelConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Sends an activity to a Channel.
+        /// Sends an activity to an Agent.
         /// </summary>
         /// <remarks>
-        /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Channel, the
-        /// <see cref="ChannelResponses.OnChannelReply"/> handler must be set.
+        /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Agent, the
+        /// <see cref="AgentResponses.OnAgentReply"/> handler must be set.
         /// </remarks>
         /// <remarks>
         /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetChannel(string)"/> and 
-        /// use the returned <see cref="IChannel"/> directly for those.
+        /// use the returned <see cref="IAgentChannel"/> directly for those.
         /// </remarks>
         /// <param name="channelName">A Channel name from configuration.</param>
         /// <param name="channelConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetExistingConversation"/></param>
         /// <param name="activity"></param>
         /// <param name="cancellationToken"></param>
         /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
-        Task SendToChannel(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default);
+        Task SendToAgent(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default);
     }
 }

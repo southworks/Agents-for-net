@@ -13,21 +13,21 @@ namespace Microsoft.Agents.Client
     public static class ClientServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds agent-to-agent functionality.
+        /// Adds multi-Agent functionality.
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="storage">Used for IChannelHost.  If null, the registered IStorage will be used.</param>
+        /// <param name="storage">Used for IAgentHost.  If null, the registered IStorage will be used.</param>
         /// <returns></returns>
-        public static IHostApplicationBuilder AddChannelHost(this IHostApplicationBuilder builder, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgentHost(this IHostApplicationBuilder builder, IStorage storage = null)
         {
             // Add channel callback handler.  This is AgentApplication specific.
             // This handles HTTP request for Connector API calls from another Agent.
             builder.Services.AddTransient<IChannelApiHandler, AdapterChannelResponseHandler>();
 
             // Add IChannelHost implementation.
-            builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>(sp =>
+            builder.Services.AddSingleton<IAgentHost, ConfigurationAgentHost>(sp =>
             {
-                return new ConfigurationChannelHost(
+                return new ConfigurationAgentHost(
                     builder.Configuration,
                     sp,
                     storage ?? sp.GetService<IStorage>(),
