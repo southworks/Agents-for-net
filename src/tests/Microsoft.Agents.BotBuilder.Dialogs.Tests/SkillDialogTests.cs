@@ -70,8 +70,8 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
         private readonly TestHttpMessageHandler _httpMessageHandler;
         private readonly Mock<IHttpClientFactory> _httpFactory;
-        private readonly HttpAgentChannelSettings _httpBotChannelSettings;
-        private readonly IAgentHost _channelHost;
+        private readonly HttpAgentChannelSettings _httpAgentChannelSettings;
+        private readonly IAgentHost _agentHost;
         private readonly IStorage _storage = new MemoryStorage();
 
         public SkillDialogTests()
@@ -88,17 +88,17 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_httpMessageHandler));
 
-            _httpBotChannelSettings = new HttpAgentChannelSettings();
-            _httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
-            _httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
-            _httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+            _httpAgentChannelSettings = new HttpAgentChannelSettings();
+            _httpAgentChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
+            _httpAgentChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
+            _httpAgentChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
 
-            _channelHost = new ConfigurationAgentHost(
+            _agentHost = new ConfigurationAgentHost(
                 new Mock<IServiceProvider>().Object,
                 _storage,
                 _connections.Object,
                 _httpFactory.Object,
-                new Dictionary<string, HttpAgentChannelSettings> { { "test", _httpBotChannelSettings } },
+                new Dictionary<string, HttpAgentChannelSettings> { { "test", _httpAgentChannelSettings } },
                 "https://localhost",
                 _hostAppId);
 
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 Skill = "test",
                 ConversationState = state,
-                ChannelHost = _channelHost
+                ChannelHost = _agentHost
             });
         }
 
@@ -139,7 +139,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);   //DialogTestClient loads this via AutoSaveStateMiddleware
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert results and data sent to the SkillClient for fist turn
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
-            Assert.NotNull(_channelHost.GetExistingConversation(_context.Object, conversationState, "test"));
+            Assert.NotNull(_agentHost.GetExistingConversation(_context.Object, conversationState, "test"));
 
             // Send a second message to continue the dialog
             _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert we are done.
             Assert.Equal(DialogTurnStatus.Complete, client.DialogTurnResult.Status);
-            Assert.Null(_channelHost.GetExistingConversation(_context.Object, conversationState, "test"));
+            Assert.Null(_agentHost.GetExistingConversation(_context.Object, conversationState, "test"));
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Use Memory for conversation state
             var conversationState = new ConversationState(new MemoryStorage());
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient);
 
             // Create the SkillDialogInstance and the activity to send.
             var activityToSend = Activity.CreateInvokeActivity();
@@ -273,7 +273,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
@@ -338,7 +338,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var testAdapter = new TestAdapter(Channels.Test)
                 .Use(new AutoSaveStateMiddleware(conversationState));
 
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient, connectionName);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient, connectionName);
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = CreateSendActivity();
             var client = new DialogTestClient(testAdapter, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
@@ -362,7 +362,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 }));
 
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient);
 
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = CreateSendActivity();
@@ -389,7 +389,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 }));
 
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient);
 
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = CreateSendActivity();
@@ -418,7 +418,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 }));
 
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient, connectionName);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient, connectionName);
 
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = CreateSendActivity();
@@ -448,7 +448,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Returns(Task.FromResult(new InvokeResponse<ExpectedReplies> { Status = 409 }));
 
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient, connectionName);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient, connectionName);
 
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = CreateSendActivity();
@@ -485,7 +485,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Use Memory for conversation state
             var conversationState = new ConversationState(_storage);
-            var dialogOptions = CreateSkillDialogOptions(_channelHost, conversationState, mockSkillClient);
+            var dialogOptions = CreateSkillDialogOptions(_agentHost, conversationState, mockSkillClient);
 
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);

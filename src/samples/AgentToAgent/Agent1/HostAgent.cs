@@ -18,16 +18,15 @@ namespace Agent1;
 /// </summary>
 public class HostAgent : AgentApplication
 {
-    // This provides access to Agent Channels operations.
-    private readonly IAgentHost _channelHost;
+    // This provides access to other Agents.
+    private readonly IAgentHost _agentHost;
     
-    // The ChannelHost Channel this sample will communicate with.  This name matches
-    // ChannelHost:Channels config.
+    // The Agent this sample will communicate with.  This name matches AgentHost:Agents config.
     private const string Agent2Name = "Echo";
 
-    public HostAgent(AgentApplicationOptions options, IAgentHost channelHost) : base(options)
+    public HostAgent(AgentApplicationOptions options, IAgentHost agentHost) : base(options)
     {
-        _channelHost = channelHost ?? throw new ArgumentNullException(nameof(channelHost));
+        _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
         AgentResponses.OnAgentReply(this, OnAgentResponseAsync);
 
         // Add Activity routes
@@ -51,11 +50,11 @@ public class HostAgent : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var echoConversationId = _channelHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
         if (echoConversationId != null)
         {
             // Already talking with Agent2.  Forward whatever the user says to Agent2.
-            await _channelHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
+            await _agentHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
         }
         else if (turnContext.Activity.Text.Contains("agent"))
         {
@@ -63,10 +62,10 @@ public class HostAgent : AgentApplication
 
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
             // subsequent SendToBot calls.  State is automatically saved after the turn is over.
-            echoConversationId = await _channelHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
+            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
 
             // Forward whatever the user said to Agent2.
-            await _channelHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
+            await _agentHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
         }
         else
         {
@@ -78,7 +77,7 @@ public class HostAgent : AgentApplication
     // Handles response from Agent2.
     private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
     {
-        var echoConversationId = _channelHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
         if (!string.Equals(echoConversationId, channelActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
         {
             // This sample only deals with one active Agent at a time.
@@ -94,7 +93,7 @@ public class HostAgent : AgentApplication
             if (channelActivity.Value != null)
             {
                 // Remove the channels conversation reference
-                await _channelHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
+                await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
 
                 var resultMessage = $"The {Agent2Name} Agent returned:\n\n: {ProtocolJsonSerializer.ToJson(channelActivity.Value)}";
                 await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
@@ -116,16 +115,16 @@ public class HostAgent : AgentApplication
     private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // End all active channel conversations.
-        var activeConversations = _channelHost.GetExistingConversations(turnContext, turnState.Conversation);
+        var activeConversations = _agentHost.GetExistingConversations(turnContext, turnState.Conversation);
         if (activeConversations.Count > 0)
         {
             foreach (var conversation in activeConversations)
             {
                 // Delete the ChannelHost conversation.
-                await _channelHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
+                await _agentHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
                 // Send EndOfConversation to Agent2.
-                await _channelHost.SendToAgent(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
+                await _agentHost.SendToAgent(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
             }
         }
 

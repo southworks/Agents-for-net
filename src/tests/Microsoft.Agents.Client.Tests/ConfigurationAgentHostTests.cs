@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Client.Tests
 {
-    public class ConfigurationChannelHostTests
+    public class ConfigurationAgentHostTests
     {
         private readonly Mock<IKeyedServiceProvider> _provider = new();
         private readonly Mock<IConnections> _connections = new();
@@ -56,11 +56,11 @@ namespace Microsoft.Agents.Client.Tests
             var botEndpoint = "http://localhost/api/messages";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"ChannelHost:HostClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
+                {"AgentHost:HostClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -78,8 +78,8 @@ namespace Microsoft.Agents.Client.Tests
         public void GetChannel_ShouldThrowOnEmptyName()
         {
             var sections = new Dictionary<string, string>{
-                {"ChannelHost:DefaultHostEndpoint", "http://localhost"},
-                {"ChannelHost:HostClientId", "hostClientId"},
+                {"AgentHost:DefaultHostEndpoint", "http://localhost"},
+                {"AgentHost:HostClientId", "hostClientId"},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -100,12 +100,12 @@ namespace Microsoft.Agents.Client.Tests
             var botTokenProvider = "BotServiceConnection";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"ChannelHost:HostClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:Alias", botAlias},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
+                {"AgentHost:HostClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -126,12 +126,12 @@ namespace Microsoft.Agents.Client.Tests
             var botTokenProvider = "";
             var defaultHostEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"ChannelHost:HostClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:Alias", botAlias},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
+                {"AgentHost:HostClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -158,12 +158,12 @@ namespace Microsoft.Agents.Client.Tests
             var defaultHostEndpoint = "http://localhost/";
             var hostId = "hostId";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{botName}:Alias", botAlias},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {$"ChannelHost:Channels:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"ChannelHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"ChannelHost:HostClientId", hostId},
+                {$"AgentHost:Agents:{botName}:Alias", botAlias},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
+                {"AgentHost:HostClientId", hostId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Single(idState);
 
             // Verify ConversationState has the conversationId for the bot
-            var conversations = turnState.GetValue<IDictionary<string, string>>("conversation.channelHost.channelConversations", () => new Dictionary<string, string>());
+            var conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.ChannelConversationsProperty}", () => new Dictionary<string, string>());
             Assert.Equal(conversationId, conversations[botName]);
 
             // delete conversation
@@ -224,7 +224,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Empty(idState);
 
             // Verify conversation for the bot was removed from ConversationState
-            conversations = turnState.GetValue<IDictionary<string, string>>("conversation.channelHost.channelConversations");
+            conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.ChannelConversationsProperty}");
             Assert.Empty(conversations);
         }
 
@@ -235,16 +235,16 @@ namespace Microsoft.Agents.Client.Tests
             var channel1Name = "bot1Name";
             var channel2Name = "bot2Name";
             var sections = new Dictionary<string, string>{
-                {$"ChannelHost:Channels:{channel1Name}:Alias", channel1Name},
-                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:ClientId", "123"},
-                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"ChannelHost:Channels:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {$"ChannelHost:Channels:{channel2Name}:Alias", channel2Name},
-                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:ClientId", "456"},
-                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"ChannelHost:Channels:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {"ChannelHost:DefaultHostEndpoint", "http://localhost/"},
-                {"ChannelHost:HostClientId", "hostId"},
+                {$"AgentHost:Agents:{channel1Name}:Alias", channel1Name},
+                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:ClientId", "123"},
+                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {$"AgentHost:Agents:{channel2Name}:Alias", channel2Name},
+                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:ClientId", "456"},
+                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {"AgentHost:DefaultHostEndpoint", "http://localhost/"},
+                {"AgentHost:HostClientId", "hostId"},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
