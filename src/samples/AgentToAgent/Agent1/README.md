@@ -1,8 +1,8 @@
-﻿# Bot1 Sample
+﻿# Agent1 Sample
 
-This is a sample of a simple Agent hosted on an Asp.net core web service, That represents the entry point of a multiBot configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller or relay them to Bot2.
+This is a sample of a simple Agent hosted on an Asp.net core web service, That represents the entry point of a multi-agent configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller or relay them to Agent2.
 
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Microsoft 365 Agent SDK bot.
+This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Agent.
 
 ## Prerequisites
 
@@ -16,11 +16,11 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 
 - Access to an Azure Subscription with access to preform the following tasks:
     - Create and configure Entra ID Application Identities
-    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your bot
+    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your Agent.
     - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
-## Getting Started with Bot1 Sample
+## Getting Started with Agent1 Sample
 
 ### Local development
 
@@ -55,9 +55,9 @@ However there are a few key items to consider when configuring authentication fo
 1. Once you are ready to deploy to Azure App Services, you can use all types of Identity supported.
     1. Its often more efficient to have an Azure Bot Service Registration for Local Development and a separate one configured for your App Services Deployment.
 
-#### Configuring authentication in the Bot1 Sample Project
+#### Configuring authentication in the Agent1 Sample Project
 
-To configure authentication into the Bot1 Sample Project you will need the following information:
+To configure authentication into the Agent1 Sample Project you will need the following information:
 
 1. Client ID of the Application identity you wish to use.
 1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
@@ -69,7 +69,7 @@ To configure authentication into the Bot1 Sample Project you will need the follo
    ```json
    "TokenValidation": {
      "Audiences": [
-       "{{ClientId}}" // this is the Client ID for Bot1
+       "{{ClientId}}" // this is the Client ID for Agent1
      ],
      "TenantId": "{{TenantId}}"
    },
@@ -79,7 +79,7 @@ To configure authentication into the Bot1 Sample Project you will need the follo
        "Settings": {
            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-           "ClientId": "{{ClientId}}", // this is the Client ID for Bot1
+           "ClientId": "{{ClientId}}", // this is the Client ID for Agent1
            "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
            "Scopes": [
               "https://api.botframework.com/.default"
@@ -88,36 +88,36 @@ To configure authentication into the Bot1 Sample Project you will need the follo
    }
    ```
     
-   1. Replace all **{{ClientId}}** with the AppId of Bot1.
+   1. Replace all **{{ClientId}}** with the AppId of Agent1.
    1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
    1. Set the **ClientSecret** to the Secret that was created for your identity.
 
 1. Update the ChannelHost configuration in `appsettings.json`
    ```json
      "ChannelHost": {
-       "HostClientId": "{{ClientId}}", // this is the Client ID for Bot1
-       "DefaultHostEndpoint": "http://localhost:3978/api/botresponse/", // Default host serviceUrl.  This is the Url to this bot and BotResponseController path.
+       "HostClientId": "{{ClientId}}", // this is the Client ID for Agent1
+       "DefaultHostEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  This is the Url to this Agent and ChannelResponseController path.
        "Channels": {
-         "EchoBot": {
+         "Echo": {
            "ConnectionSettings": {
-             "ClientId": "{{Bot2ClientId}}", // this is the Client ID for Bot2
-             "Endpoint": "http://localhost:39783/api/messages", // The endpoint of Bot2
+             "ClientId": "{{Agent2ClientId}}", // this is the Client ID for Agent2
+             "Endpoint": "http://localhost:39783/api/messages", // The endpoint of Agent2
              "TokenProvider":  "BotServiceConnection"
            }
          }
        }
      },
    ```
-   1. Replace **{{Bot2ClientId}}** with the AppId of Bot2.
-   1. Replace **{{ClientId}}** with the AppId of Bot1.
+   1. Replace **{{Agent2ClientId}}** with the AppId of Agent2.
+   1. Replace **{{ClientId}}** with the AppId of Agent1.
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
     
 ## Running the Agent for the first time
 
-To run the Bot1 Sample for the first time:
+To run the Agent1 Sample for the first time:
 
-1. Open the Bot1 Sample in Visual Studio 2022
+1. Open the Agent1 Sample in Visual Studio 2022
 1. Run it in Debug Mode (F5)
 1. A blank web page will open, note down the URL which should be similar too `https://localhost:65349/`
 1. Open the [BotFramework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
@@ -128,4 +128,4 @@ To run the Bot1 Sample for the first time:
 if all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Say “agent” and I’ll patch you through"**
 
 ## Further reading
-To learn more about building Bots and Agent, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

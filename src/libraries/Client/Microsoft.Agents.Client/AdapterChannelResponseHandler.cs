@@ -14,36 +14,36 @@ using Microsoft.Agents.Authentication;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Routes Bot response to the Adapter incoming pipeline.  This is the same route a bot normally gets incoming Activities.
+    /// Routes Channel responses to the Adapter incoming pipeline.  This is the same route an Agent normally gets incoming Activities.
     /// </summary>
     /// <remarks>
-    /// The default method a Bot responds is Activity.DeliverMode == `normal`.  This is an asynchronous response via an 
+    /// The default method a Agent responds with is Activity.DeliverMode == `normal`.  This is an asynchronous response via an 
     /// HTTP POST to the endpoints defined by ChannelApiController.
     /// 
     /// <see cref="IChannelApiHandler"/> is all of the Connector API endpoints.  This implementation is just handling
-    /// the Send/Reply from the other bot.
+    /// the Send/Reply from the other Agent.
     /// 
     /// This implementation will send a custom Event to the Adapter, and the AgentApplication can add a route for
-    /// <see cref="AdapterBotResponseHandler.BotReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="BotReply"/>.
+    /// <see cref="AdapterChannelResponseHandler.ChannelReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="ChannelReply"/>.
     /// </remarks>
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.
     /// </remarks>
-    internal class AdapterBotResponseHandler : IChannelApiHandler
+    internal class AdapterChannelResponseHandler : IChannelApiHandler
     {
-        public class BotReply
+        public class ChannelReply
         {
-            public BotConversationReference BotConversationReference { get; set; }
+            public ChannelConversationReference ChannelConversationReference { get; set; }
             public IActivity Activity { get; set; }
         }
 
-        public const string BotReplyEventName = "application/vnd.microsoft.agents.BotReply";
+        public const string ChannelReplyEventName = "application/vnd.microsoft.agents.ChannelReply";
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
         private readonly IChannelHost _channelHost;
 
-        public AdapterBotResponseHandler(IChannelAdapter adapter, IBot bot, IChannelHost channelHost)
+        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IChannelHost channelHost)
         {
             _adapter = adapter;
             _bot = bot;
@@ -52,23 +52,23 @@ namespace Microsoft.Agents.Client
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var botConversationReference = await _channelHost.GetBotConversationReferenceAsync(conversationId, cancellationToken);
-            if (botConversationReference == null)
+            var conversationReference = await _channelHost.GetChannelConversationReferenceAsync(conversationId, cancellationToken);
+            if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.
                 // Probably should throw an exception.
                 return null;
             }
 
-            // Need to get this over to the calling bots identity.  We will do it by packaging it in a custom event
-            // and the AgentApplication will need to route to a handler.  See BotResponses.OnBotReply.
+            // Need to get this over to the calling Agents identity.  We will do it by packaging it in a custom event
+            // and the AgentApplication will need to route to a handler.  See ChannelResponses.OnChannelReply.
             var eventActivity = new Activity()
             {
                 Type = ActivityTypes.Event,
-                Name = BotReplyEventName,
-                Value = new BotReply() { BotConversationReference = botConversationReference, Activity = activity },
+                Name = ChannelReplyEventName,
+                Value = new ChannelReply() { ChannelConversationReference = conversationReference, Activity = activity },
             };
-            eventActivity.ApplyConversationReference(botConversationReference.ConversationReference, isIncoming: true);
+            eventActivity.ApplyConversationReference(conversationReference.ConversationReference, isIncoming: true);
 
             // We can't use the incoming ClaimsIdentity to send to the Adapter.
             // Perhaps a better way to do this, but what ChannelServiceAdapterBase does in ContinueConversation.

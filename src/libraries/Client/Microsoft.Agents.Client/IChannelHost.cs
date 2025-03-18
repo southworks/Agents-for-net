@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Represents a host the contains IChannels for Bot-to-bot.
+    /// Represents a host the contains IChannels for Agent-to-Agent.
     /// </summary>
     public interface IChannelHost
     {
@@ -77,14 +77,14 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="channelConversationId"></param>
         /// <param name="cancellationToken"></param>
-        Task<BotConversationReference> GetBotConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default);
+        Task<ChannelConversationReference> GetChannelConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends an activity to a Channel.
         /// </summary>
         /// <remarks>
         /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Channel, the
-        /// <see cref="BotResponses.OnBotReply"/> handler must be set.
+        /// <see cref="ChannelResponses.OnChannelReply"/> handler must be set.
         /// </remarks>
         /// <remarks>
         /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetChannel(string)"/> and 

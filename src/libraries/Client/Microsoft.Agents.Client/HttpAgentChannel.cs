@@ -18,9 +18,9 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// Sends Activities to a remote Agent.
     /// </summary>
-    internal class HttpBotChannel : IChannel
+    internal class HttpAgentChannel : IChannel
     {
-        private readonly HttpBotChannelSettings _settings;
+        private readonly HttpAgentChannelSettings _settings;
         private readonly IAccessTokenProvider _tokenProvider;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
@@ -30,16 +30,16 @@ namespace Microsoft.Agents.Client
         /// <param name="httpClientFactory"></param>
         /// <param name="tokenProvider"></param>
         /// <param name="logger"></param>
-        public HttpBotChannel(
-            HttpBotChannelSettings channelSettings,
+        public HttpAgentChannel(
+            HttpAgentChannelSettings channelSettings,
             IHttpClientFactory httpClientFactory,
             IAccessTokenProvider tokenProvider,
-            ILogger<HttpBotChannel> logger = null)
+            ILogger<HttpAgentChannel> logger = null)
         {
             _settings = channelSettings ?? throw new ArgumentNullException(nameof(channelSettings));
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _logger = logger ?? NullLogger<HttpBotChannel>.Instance;
+            _logger = logger ?? NullLogger<HttpAgentChannel>.Instance;
         }
 
         /// <inheritdoc/>
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Client
             else
             {
                 // Otherwise we can assume we don't have a T to deserialize - so just log the content so it's not lost.
-                _logger.LogError($"SendActivityAsync: Bot request failed to '{_settings.ConnectionSettings.Endpoint.ToString()}' returning '{(int)response.StatusCode}' and '{content}'");
+                _logger.LogError($"SendActivityAsync: Channel request failed to '{_settings.ConnectionSettings.Endpoint.ToString()}' returning '{(int)response.StatusCode}' and '{content}'");
 
                 // We want to at least propagate the status code because that is what InvokeResponse expects.
                 return new InvokeResponse<T>
@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Client
 
             httpRequestMessage.Headers.Add(ConversationConstants.ConversationIdHttpHeaderName, channelConversationId);
 
-            using var httpClient = _httpClientFactory.CreateClient(nameof(HttpBotChannel));
+            using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentChannel));
 
             // Add the auth header to the HTTP request.
             var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);

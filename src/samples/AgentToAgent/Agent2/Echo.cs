@@ -10,11 +10,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Bot2;
+namespace Agent2;
 
-public class EchoBot : AgentApplication
+public class Echo : AgentApplication
 {
-    public EchoBot(AgentApplicationOptions options) : base(options)
+    public Echo(AgentApplicationOptions options) : base(options)
     {
         // Add Activity routes
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);

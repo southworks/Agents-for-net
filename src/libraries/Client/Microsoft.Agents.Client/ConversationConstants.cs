@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Client
     public static class ConversationConstants
     {
         /// <summary>
-        /// The name of Http Request Header to add Conversation Id to bot-to-bot requests.
+        /// The name of Http Request Header to add Conversation Id to multi-agent requests.
         /// </summary>
         public const string ConversationIdHttpHeaderName = "x-ms-conversation-id";
     }

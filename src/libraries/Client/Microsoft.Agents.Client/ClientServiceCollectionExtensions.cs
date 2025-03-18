@@ -13,17 +13,16 @@ namespace Microsoft.Agents.Client
     public static class ClientServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds bot-to-bot functionality.
+        /// Adds agent-to-agent functionality.
         /// </summary>
         /// <param name="builder"></param>
-        /// <param name="httpBotClientName"></param>
         /// <param name="storage">Used for IChannelHost.  If null, the registered IStorage will be used.</param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddChannelHost(this IHostApplicationBuilder builder, IStorage storage = null)
         {
-            // Add bot callback handler.  This is AgentApplication specific.
-            // This handles HTTP request for Connector API calls from another bot.
-            builder.Services.AddTransient<IChannelApiHandler, AdapterBotResponseHandler>();
+            // Add channel callback handler.  This is AgentApplication specific.
+            // This handles HTTP request for Connector API calls from another Agent.
+            builder.Services.AddTransient<IChannelApiHandler, AdapterChannelResponseHandler>();
 
             // Add IChannelHost implementation.
             builder.Services.AddSingleton<IChannelHost, ConfigurationChannelHost>(sp =>

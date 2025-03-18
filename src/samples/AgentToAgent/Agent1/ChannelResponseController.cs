@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.BotBuilder;
 
-namespace Bot1;
+namespace Agent1;
 
-// This Controller exposes the HTTP endpoints for the Connector that Bot2 hits to
-// send replies.
+// This Controller exposes the HTTP endpoints for the Connector that Agent2 uses to
+// communicate (send replies) with Agent1.
 [Authorize]
 [ApiController]
-[Route("api/botresponse")]
-public class BotResponseController(IChannelApiHandler handler) : ChannelApiController(handler)
+[Route("api/channelresponse")]
+public class ChannelResponseController(IChannelApiHandler handler) : ChannelApiController(handler)
 {
 }

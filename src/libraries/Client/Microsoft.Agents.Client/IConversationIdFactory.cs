@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Defines the interface of a factory that is used to create unique conversation IDs for bot conversations.
+    /// Defines the interface of a factory that is used to create unique conversation IDs for Channel conversations.
     /// </summary>
     internal interface IConversationIdFactory
     {
@@ -16,26 +16,26 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="options">A <see cref="ConversationIdFactoryOptions"/> instance containing parameters for creating the conversation ID.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A unique conversation ID used to communicate with a bot.</returns>
+        /// <returns>A unique conversation ID used to communicate with an Agent.</returns>
         /// <remarks>
         /// It should be possible to use the returned string on a request URL and it should not contain special characters. 
         /// </remarks>
         Task<string> CreateConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Gets the <see cref="BotConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for a bot ConversationId.
+        /// Gets the <see cref="ChannelConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for a Channel ConversationId.
         /// </summary>
-        /// <param name="botConversationId">A conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
+        /// <param name="channelConversationId">A conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The caller's <see cref="ConversationReference"/> for a conversationId, with originatingAudience. Null if not found.</returns>
-        Task<BotConversationReference> GetBotConversationReferenceAsync(string botConversationId, CancellationToken cancellationToken);
+        Task<ChannelConversationReference> GetChannelConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes a <see cref="ConversationReference"/>.
         /// </summary>
-        /// <param name="botConversationId">A bot conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
+        /// <param name="channelConversationId">A channel conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task DeleteConversationReferenceAsync(string botConversationId, CancellationToken cancellationToken);
+        Task DeleteConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken);
     }
 }

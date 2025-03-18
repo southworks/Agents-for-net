@@ -6,9 +6,9 @@ using Microsoft.Agents.Core.Models;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// A conversation reference type for bot-to-bot.
+    /// A conversation reference type for a channel.
     /// </summary>
-    public class BotConversationReference
+    public class ChannelConversationReference
     {
         /// <summary>
         /// Gets or sets the conversation reference.

@@ -257,7 +257,7 @@ namespace Microsoft.Agents.BotBuilder
 
             if (BotClaims.IsBotClaim(claimsIdentity))
             {
-                activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
+                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
             }
             else
             {

@@ -31,21 +31,21 @@ namespace Microsoft.Agents.Client.Tests
                 {
                     Activity = BuildMessageActivity(conversationReference),
                     Channel = this.BuildBotFrameworkSkill(),
-                    FromBotId = _botId,
-                    FromBotOAuthScope = _botId,
+                    FromClientId = _botId,
+                    FromOAuthScope = _botId,
                 },
                 cancellationToken: CancellationToken.None);
             
             Assert.False(string.IsNullOrEmpty(skillConversationId), "Expected a valid skill conversation ID to be created");
 
             // Retrieve skill conversation
-            var retrievedConversationReference = await _conversationIdFactory.GetBotConversationReferenceAsync(skillConversationId, CancellationToken.None);
+            var retrievedConversationReference = await _conversationIdFactory.GetChannelConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             // Delete
             await _conversationIdFactory.DeleteConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             // Retrieve again
-            var deletedConversationReference = await _conversationIdFactory.GetBotConversationReferenceAsync(skillConversationId, CancellationToken.None);
+            var deletedConversationReference = await _conversationIdFactory.GetChannelConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             Assert.NotNull(retrievedConversationReference);
             Assert.NotNull(retrievedConversationReference.ConversationReference);
@@ -64,8 +64,8 @@ namespace Microsoft.Agents.Client.Tests
                 {
                     Activity = BuildMessageActivity(conversationReference),
                     Channel = this.BuildBotFrameworkSkill(),
-                    FromBotId = _botId,
-                    FromBotOAuthScope = _botId,
+                    FromClientId = _botId,
+                    FromOAuthScope = _botId,
                 },
                 cancellationToken: CancellationToken.None);
             
@@ -74,8 +74,8 @@ namespace Microsoft.Agents.Client.Tests
                 {
                     Activity = BuildMessageActivity(conversationReference),
                     Channel = this.BuildBotFrameworkSkill(),
-                    FromBotId = _botId,
-                    FromBotOAuthScope = _botId,
+                    FromClientId = _botId,
+                    FromOAuthScope = _botId,
                 },
                 cancellationToken: CancellationToken.None);
 

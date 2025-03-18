@@ -19,8 +19,8 @@ using Microsoft.Agents.BotBuilder.State;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// This IChannelApiHandler is primarily used when calling another bot using DeliveryModes.Normal, and forwarding most
-    /// bot replies to the originating channel.  This is the legacy behavior for the Root bot in a Skill scenario, including 
+    /// This IChannelApiHandler is primarily used when calling another Agent using DeliveryModes.Normal, and forwarding most
+    /// Agent replies to the originating channel.  This is the legacy behavior for the Root bot in a Skill scenario, including 
     /// for Dialogs SkillDialog.
     /// </summary>
     /// <remarks>
@@ -102,7 +102,7 @@ namespace Microsoft.Agents.Client
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = activityId;
-                turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
+                turnContext.Activity.CallerId = $"{CallerIdConstants.AgentPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
                 resourceResponse = await turnContext.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
             });
 
@@ -205,17 +205,17 @@ namespace Microsoft.Agents.Client
             turnContext.Activity.Value = activity.Value;
         }
 
-        private async Task<BotConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
+        private async Task<ChannelConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
-            var botConversationReference = await _channelHost.GetBotConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
-            if (botConversationReference == null)
+            var conversationReference = await _channelHost.GetChannelConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+            if (conversationReference == null)
 
             {
-                _logger.LogError($"Unable to get bot conversation reference for conversationId {conversationId}.");
+                _logger.LogError($"Unable to get conversation reference for conversationId {conversationId}.");
                 throw new KeyNotFoundException();
             }
 
-            return botConversationReference;
+            return conversationReference;
         }
 
         private async Task<ResourceResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, string conversationId, string replyToActivityId, IActivity activity, CancellationToken cancellationToken)
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Client
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = replyToActivityId;
-                turnContext.Activity.CallerId = $"{CallerIdConstants.BotToBotPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
+                turnContext.Activity.CallerId = $"{CallerIdConstants.AgentPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
                 switch (activity.Type)
                 {
                     case ActivityTypes.EndOfConversation:

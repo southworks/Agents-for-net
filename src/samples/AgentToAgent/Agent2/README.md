@@ -1,8 +1,8 @@
-﻿# Bot2 Sample
+﻿# Agent2 Sample
 
-This is a sample of a simple Agent hosted on an Asp.net core web service, That represents remote bot, or secondary bot of a multiBot configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller.
+This is a sample of a simple Agent hosted on an Asp.net core web service, That represents remote Agent, or secondary Agent of a multi-agent configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller.
 
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Agents SDK bot.
+This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Agent.
 
 ## Prerequisites
 
@@ -16,11 +16,11 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 
 - Access to an Azure Subscription with access to preform the following tasks:
     - Create and configure Entra ID Application Identities
-    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your bot
+    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your Agent
     - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
-## Getting Started with Bot2 Sample
+## Getting Started with Agent2 Sample
 
 ### Local development
 
@@ -55,9 +55,9 @@ However there are a few key items to consider when configuring authentication fo
 1. Once you are ready to deploy to Azure App Services, you can use all types of Identity supported.
     1. Its often more efficient to have an Azure Bot Service Registration for Local Development and a separate one configured for your App Services Deployment.
 
-#### Configuring authentication in the Bot2 Sample Project
+#### Configuring authentication in the Agent2 Sample Project
 
-To configure authentication into the Bot2 Sample Project you will need the following information:
+To configure authentication into the Agent2 Sample Project you will need the following information:
 
 1. Client ID of the Application identity you wish to use.
 1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
@@ -69,7 +69,7 @@ To configure authentication into the Bot2 Sample Project you will need the follo
    ```json
    "TokenValidation": {
      "Audiences": [
-       "{{ClientId}}" // this is the Client ID for Bot2
+       "{{ClientId}}" // this is the Client ID for Agent2
      ],
      "TenantId": "{{TenantId}}"
    },
@@ -79,7 +79,7 @@ To configure authentication into the Bot2 Sample Project you will need the follo
        "Settings": {
          "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
          "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-         "ClientId": "{{ClientId}}", // this is the Client ID for Bot2
+         "ClientId": "{{ClientId}}", // this is the Client ID for Agent2
          "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
          "Scopes": [
            "https://api.botframework.com/.default"
@@ -88,7 +88,7 @@ To configure authentication into the Bot2 Sample Project you will need the follo
    }
    ```
     
-   1. Replace all **{{ClientId}}** with the AppId of Bot2.
+   1. Replace all **{{ClientId}}** with the AppId of Agent2.
    1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
    1. Set the **ClientSecret** to the Secret that was created for your identity.
 
@@ -96,9 +96,9 @@ To configure authentication into the Bot2 Sample Project you will need the follo
 
 ## Running the Agent for the first time
 
-To run the Bot2 Sample for the first time:
+To run the Agent2 Sample for the first time:
 
-1. Open the Bot2 Sample in Visual Studio 2022
+1. Open the Agent2 Sample in Visual Studio 2022
 1. Run it in Debug Mode (F5)
 1. A blank web page will open, note down the URL which should be similar too `https://localhost:39783/`
 1. Open the [BotFramework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
@@ -106,9 +106,7 @@ To run the Bot2 Sample for the first time:
     1. In the bot URL field input the URL you noted down from the web page and add /api/messages to it. It should appear similar to `https://localhost:39783/api/messages`
     1. Click **Connect**
 
-if all is working correctly, the Bot Emulator should show you a Web Chat experience with the words **"Hi, This is Bot2"**
-
-If you type a message and hit enter, or the send arrow, your messages should be returned to you with **Echo(Bot2):your message** and **Echo(Bot2): Say “end” or “stop” and I’ll end the conversation and return to the parent.**
+If you type a message and hit enter, or the send arrow, your messages should be returned to you with **your message** and **Say “end” and I’ll end the conversation and return to the parent.**
 
 ## Further reading
-To learn more about building Bots and Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

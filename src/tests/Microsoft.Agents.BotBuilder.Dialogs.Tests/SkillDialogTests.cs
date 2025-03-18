@@ -70,7 +70,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
         private readonly TestHttpMessageHandler _httpMessageHandler;
         private readonly Mock<IHttpClientFactory> _httpFactory;
-        private readonly HttpBotChannelSettings _httpBotChannelSettings;
+        private readonly HttpAgentChannelSettings _httpBotChannelSettings;
         private readonly IChannelHost _channelHost;
         private readonly IStorage _storage = new MemoryStorage();
 
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 .Setup(f => f.CreateClient(It.IsAny<string>()))
                 .Returns(new HttpClient(_httpMessageHandler));
 
-            _httpBotChannelSettings = new HttpBotChannelSettings();
+            _httpBotChannelSettings = new HttpAgentChannelSettings();
             _httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
             _httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
             _httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
@@ -98,7 +98,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
                 _storage,
                 _connections.Object,
                 _httpFactory.Object,
-                new Dictionary<string, HttpBotChannelSettings> { { "test", _httpBotChannelSettings } },
+                new Dictionary<string, HttpAgentChannelSettings> { { "test", _httpBotChannelSettings } },
                 "https://localhost",
                 _hostAppId);
 
