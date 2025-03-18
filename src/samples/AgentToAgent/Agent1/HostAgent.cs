@@ -58,7 +58,7 @@ public class HostAgent : AgentApplication
         }
         else if (turnContext.Activity.Text.Contains("agent"))
         {
-            await turnContext.SendActivityAsync(MessageFactory.Text("Got it, connecting you to the agent..."), cancellationToken);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"Got it, connecting you to the '{Agent2Name}' Agent..."), cancellationToken);
 
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
             // subsequent SendToBot calls.  State is automatically saved after the turn is over.
@@ -95,7 +95,7 @@ public class HostAgent : AgentApplication
                 // Remove the channels conversation reference
                 await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
 
-                var resultMessage = $"The {Agent2Name} Agent returned:\n\n: {ProtocolJsonSerializer.ToJson(channelActivity.Value)}";
+                var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n: {ProtocolJsonSerializer.ToJson(channelActivity.Value)}";
                 await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
             }
 

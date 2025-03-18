@@ -44,7 +44,7 @@ public class Echo : AgentApplication
         {
             result.Messages.Add(turnContext.Activity.Text);
             await turnContext.SendActivityAsync(MessageFactory.Text(turnContext.Activity.Text), cancellationToken);
-            var messageText = "Say \"end\" and I'll end the conversation and return to the parent.";
+            var messageText = "Say \"end\" and I'll end the conversation.";
             await turnContext.SendActivityAsync(MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput.ToString()), cancellationToken);
         }
     }
@@ -60,7 +60,7 @@ public class Echo : AgentApplication
     private async Task BotTurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
     {
         // Send a message to the user.
-        var errorMessageText = "Bot2 encountered an error or bug.";
+        var errorMessageText = $"{nameof(Echo)} Agent encountered an error or bug.";
         var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
         await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
 
