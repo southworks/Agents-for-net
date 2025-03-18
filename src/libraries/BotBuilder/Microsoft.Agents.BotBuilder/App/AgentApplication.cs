@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.BotBuilder.App
 {
+    public delegate Task AgentApplicationTurnError(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken);
+
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
@@ -28,6 +30,7 @@ namespace Microsoft.Agents.BotBuilder.App
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
+        private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
 
         /// <summary>
         /// Creates a new AgentApplication instance.
@@ -49,6 +52,7 @@ namespace Microsoft.Agents.BotBuilder.App
             _routes = new RouteList();
             _beforeTurn = new ConcurrentQueue<TurnEventHandler>();
             _afterTurn = new ConcurrentQueue<TurnEventHandler>();
+            _turnErrorHandlers = new ConcurrentQueue<AgentApplicationTurnError>();
 
             // Application Features
 
@@ -72,7 +76,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Exceptions here will bubble-up to Adapter.OnTurnError.  Since it isn't know where in the turn the exception
         /// was thrown, it is possible that OnAfterTurn handlers, and ITurnState saving has NOT happened.
         /// </remarks>
-        public Func<ITurnContext, ITurnState, Exception, CancellationToken, Task> OnTurnError { get; set; }
+        public AgentApplicationTurnError OnTurnError { get; set; }
 
         /// <summary>
         /// Fluent interface for accessing Adaptive Card specific features.
