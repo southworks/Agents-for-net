@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Client.Errors
         /// <summary>
         /// Base error code for the authentication provider
         /// </summary>
-        private static readonly int baseClientErrorCode = -60000;
+        private static readonly int baseClientErrorCode = -90000;
 
         internal static AgentErrorDefinition ChannelHostMissingProperty = new AgentErrorDefinition(baseClientErrorCode, Properties.Resources.ChannelHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition ChannelMissingProperty = new AgentErrorDefinition(baseClientErrorCode - 1, Properties.Resources.ChannelMissingProperty, "https://aka.ms/AgentsSDK-Error01");
