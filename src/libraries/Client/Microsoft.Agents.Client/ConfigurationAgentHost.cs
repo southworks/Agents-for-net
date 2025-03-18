@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Client
         /// "AgentHost": {
         ///   "HostClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote agent to call you back with.,
         ///   "DefaultHostEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
-        ///   "Channels": {
+        ///   "Agents": {
         ///      "Echo": {
         ///        "DisplayName": {{optional-displayName}},              // Defaults to node name ("Echo")
         ///        "ConnectionSettings": {
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Client
                 storage, 
                 connections, 
                 httpClientFactory,
-                configuration?.GetSection($"{configSection}:Channels").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
+                configuration?.GetSection($"{configSection}:Agents").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
                 configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint"), 
                 configuration?.GetValue<string>($"{configSection}:HostClientId"))
         {

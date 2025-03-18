@@ -6,7 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public class HttpAgentChannelSettings : ChannelSettings
+    public class HttpAgentChannelSettings : AgentChannelSettings
     {
         public ConnectionSettings ConnectionSettings { get; set; } = new ConnectionSettings();
 

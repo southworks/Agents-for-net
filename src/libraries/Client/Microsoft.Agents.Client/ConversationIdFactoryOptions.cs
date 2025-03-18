@@ -40,6 +40,6 @@ namespace Microsoft.Agents.Client
         /// <value>
         /// The skill to create the conversation Id for.
         /// </value>
-        public IChannelInfo Channel { get; set; }
+        public IAgentChannelInfo Channel { get; set; }
     }
 }

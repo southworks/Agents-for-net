@@ -6,7 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public class ChannelSettings() : IChannelInfo
+    public class AgentChannelSettings() : IAgentChannelInfo
     {
         public string Name { get; set; }
 

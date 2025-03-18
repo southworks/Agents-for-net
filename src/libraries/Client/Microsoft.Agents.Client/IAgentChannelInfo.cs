@@ -3,7 +3,7 @@
 
 namespace Microsoft.Agents.Client
 {
-    internal interface IChannelInfo
+    internal interface IAgentChannelInfo
     {
         public string Name { get; internal set; }
 

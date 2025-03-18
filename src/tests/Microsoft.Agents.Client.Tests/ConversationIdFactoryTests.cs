@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Client.Tests
             return activity;
         }
 
-        private IChannelInfo BuildBotFrameworkSkill()
+        private IAgentChannelInfo BuildBotFrameworkSkill()
         {
             return new BotFrameworkSkill
             {
@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Client.Tests
             };
         }
 
-		private class BotFrameworkSkill : IChannelInfo
+		private class BotFrameworkSkill : IAgentChannelInfo
 		{
 			public string Alias { get; set; }
 			public string DisplayName { get; set; }
