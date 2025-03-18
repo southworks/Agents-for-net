@@ -50,7 +50,7 @@ public class MyBot : AgentApplication
         }
         finally
         {
-            await turnContext.StreamingResponse.EndStreamAsync(cancellationToken:cancellationToken);
+            await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
         }
     }
 }

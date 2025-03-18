@@ -24,6 +24,12 @@ namespace Microsoft.Agents.BotBuilder
         int Interval { get; set; }
 
         /// <summary>
+        /// The time in milliseconds that EndStream or Reset wait.  After this period expires, the
+        /// final message will be sent.
+        /// </summary>
+        int EndStreamTimeout { get; set; }
+
+        /// <summary>
         /// Indicate if the current channel supports intermediate messages.
         /// </summary>
         /// <remarks>
@@ -46,7 +52,7 @@ namespace Microsoft.Agents.BotBuilder
         /// </remarks>
         /// <returns>A Task representing the async operation</returns>
         /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
-        Task EndStreamAsync(int timeout = -1, CancellationToken cancellationToken = default);
+        Task EndStreamAsync(CancellationToken cancellationToken = default);
 
         bool IsStreamStarted();
 
@@ -69,10 +75,9 @@ namespace Microsoft.Agents.BotBuilder
         /// <summary>
         /// Reset an already used stream.  If the stream is still running, this will wait for completion.
         /// </summary>
-        /// <param name="timeout"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task ResetAsync(int timeout = -1, CancellationToken cancellationToken = default);
+        Task ResetAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the number of updates sent for the stream.

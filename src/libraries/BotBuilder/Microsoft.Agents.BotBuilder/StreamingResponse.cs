@@ -37,6 +37,8 @@ namespace Microsoft.Agents.BotBuilder
     /// </remarks>
     internal class StreamingResponse : IStreamingResponse
     {
+        public static readonly int DefaultEndStreamTimeout = (int) TimeSpan.FromMinutes(2).TotalMilliseconds;
+
         private readonly TurnContext _context;
         private int _nextSequence = 1;
         private bool _ended = false;
@@ -73,6 +75,8 @@ namespace Microsoft.Agents.BotBuilder
         /// WebChat default: 500
         /// </remarks>
         public int Interval { get; set; }
+
+        public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
 
         /// <summary>
         /// Indicate if the current channel supports intermediate messages.
@@ -193,7 +197,7 @@ namespace Microsoft.Agents.BotBuilder
         /// </remarks>
         /// <returns>A Task representing the async operation</returns>
         /// <exception cref="InvalidOperationException">Throws if the stream has already ended.</exception>
-        public async Task EndStreamAsync(int timeout = Timeout.Infinite, CancellationToken cancellationToken = default)
+        public async Task EndStreamAsync(CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
             {
@@ -236,7 +240,7 @@ namespace Microsoft.Agents.BotBuilder
                     // Wait for queue items to be sent per Interval
                     try
                     {
-                        _queueEmpty.WaitOne(timeout);
+                        _queueEmpty.WaitOne(EndStreamTimeout);
                     }
                     catch (AbandonedMutexException)
                     {
@@ -277,14 +281,13 @@ namespace Microsoft.Agents.BotBuilder
         /// <summary>
         /// Reset an already used stream.  If the stream is still running, this will wait for completion.
         /// </summary>
-        /// <param name="timeout"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task ResetAsync(int timeout = Timeout.Infinite, CancellationToken cancellationToken = default)
+        public async Task ResetAsync(CancellationToken cancellationToken = default)
         {
             if (IsStreamStarted())
             {
-                await EndStreamAsync(timeout, cancellationToken).ConfigureAwait(false);
+                await EndStreamAsync(cancellationToken).ConfigureAwait(false);
             }
 
             lock (this)
