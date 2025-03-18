@@ -124,7 +124,7 @@ public class HostAgent : AgentApplication
                 await _agentHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
 
                 // Send EndOfConversation to the Agent.
-                await _agentHost.SendToAgent(Agent2Name, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
+                await _agentHost.SendToAgent(conversation.ChannelName, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
             }
         }
 
