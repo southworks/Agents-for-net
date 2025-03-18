@@ -20,7 +20,7 @@ public class Echo : AgentApplication
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
-        OnTurnError = BotTurnErrorHandlerAsync;
+        OnTurnError(TurnErrorHandlerAsync);
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -57,13 +57,8 @@ public class Echo : AgentApplication
         await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
     }
 
-    private async Task BotTurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
+    private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
     {
-        // Send a message to the user.
-        var errorMessageText = $"{nameof(Echo)} Agent encountered an error or bug.";
-        var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.IgnoringInput.ToString());
-        await turnContext.SendActivityAsync(errorMessage, CancellationToken.None);
-
         // Send an EndOfConversation activity to the caller with the error to end the conversation.
         var endOfConversation = Activity.CreateEndOfConversationActivity();
         endOfConversation.Code = "Error";

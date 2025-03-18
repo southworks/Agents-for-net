@@ -69,16 +69,6 @@ namespace Microsoft.Agents.BotBuilder.App
         #region Application Features
 
         /// <summary>
-        /// Allows the AgentApplication to provide error handling without having to change the Adapter.OnTurnError.  This
-        /// is beneficial since the application has more context.
-        /// </summary>
-        /// <remarks>
-        /// Exceptions here will bubble-up to Adapter.OnTurnError.  Since it isn't know where in the turn the exception
-        /// was thrown, it is possible that OnAfterTurn handlers, and ITurnState saving has NOT happened.
-        /// </remarks>
-        public AgentApplicationTurnError OnTurnError { get; set; }
-
-        /// <summary>
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCardsFeature AdaptiveCards { get; }
@@ -516,6 +506,21 @@ namespace Microsoft.Agents.BotBuilder.App
             return this;
         }
 
+        /// <summary>
+        /// Allows the AgentApplication to provide error handling without having to change the Adapter.OnTurnError.  This
+        /// is beneficial since the application has more context.
+        /// </summary>
+        /// <remarks>
+        /// Exceptions here will bubble-up to Adapter.OnTurnError.  Since it isn't know where in the turn the exception
+        /// was thrown, it is possible that OnAfterTurn handlers, and ITurnState saving has NOT happened.
+        /// </remarks>
+        public AgentApplication OnTurnError(AgentApplicationTurnError handler)
+        {
+            ArgumentNullException.ThrowIfNull(handler);
+            _turnErrorHandlers.Enqueue(handler);
+            return this;
+        }
+
         #endregion
 
         #region ShowTyping
@@ -681,9 +686,9 @@ namespace Microsoft.Agents.BotBuilder.App
                 }
                 catch (Exception ex)
                 {
-                    if (OnTurnError != null)
+                    foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
                     {
-                        await OnTurnError(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
+                        await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
                     }
 
                     throw;

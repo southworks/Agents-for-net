@@ -73,6 +73,14 @@ namespace Microsoft.Agents.Client
         Task DeleteConversationAsync(string channelConversationId, ConversationState conversationState, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Ends all active conversations for the Turn conversation.
+        /// </summary>
+        /// <param name="turnContext"></param>
+        /// <param name="turnState"></param>
+        /// <param name="cancellationToken"></param>
+        Task EndAllActiveConversations(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Returns the conversation information for the specified channel conversation.
         /// </summary>
         /// <param name="channelConversationId"></param>

@@ -27,6 +27,8 @@ public class HostAgent : AgentApplication
     public HostAgent(AgentApplicationOptions options, IAgentHost agentHost) : base(options)
     {
         _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
+
+        // Add route to handle replies from another Agent.
         AgentResponses.OnAgentReply(this, OnAgentResponseAsync);
 
         // Add Activity routes
@@ -34,7 +36,8 @@ public class HostAgent : AgentApplication
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
-        OnTurnError = TurnErrorHandlerAsync;
+        // Add an AgentApplication turn error handler.
+        OnTurnError(TurnErrorHandlerAsync);
     }
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -114,31 +117,12 @@ public class HostAgent : AgentApplication
     // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
     private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // End all active channel conversations.
-        var activeConversations = _agentHost.GetExistingConversations(turnContext, turnState.Conversation);
-        if (activeConversations.Count > 0)
-        {
-            foreach (var conversation in activeConversations)
-            {
-                // Delete the conversation because we're done with it.
-                await _agentHost.DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
-
-                // Send EndOfConversation to the Agent.
-                await _agentHost.SendToAgent(conversation.ChannelName, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
-            }
-        }
-
-        // No longer need this conversations state.
+        await _agentHost.EndAllActiveConversations(turnContext, turnState, cancellationToken);
         await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
-        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
     }
 
-    // This is the AgentApplication level OnTurnError handler.  See: AgentApplication.OnTurnError.
     private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync(MessageFactory.Text($"{nameof(HostAgent)} encountered an error: {exception.Message}"), CancellationToken.None);
-
-        // End any active channel conversations
         await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);
     }
 }
