@@ -54,13 +54,13 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
-            var defaultHostEndpoint = "http://localhost/";
+            var DefaultEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"AgentHost:HostClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Client.Tests
 
             Assert.Single(host._channels);
             Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
-            Assert.Equal(defaultHostEndpoint, host.DefaultHostEndpoint.ToString());
+            Assert.Equal(DefaultEndpoint, host.DefaultHostEndpoint.ToString());
             Assert.Equal(botClientId, host.HostClientId);
         }
 
@@ -78,8 +78,8 @@ namespace Microsoft.Agents.Client.Tests
         public void GetChannel_ShouldThrowOnEmptyName()
         {
             var sections = new Dictionary<string, string>{
-                {"AgentHost:DefaultHostEndpoint", "http://localhost"},
-                {"AgentHost:HostClientId", "hostClientId"},
+                {"Agent:Host:DefaultEndpoint", "http://localhost"},
+                {"Agent:ClientId", "hostClientId"},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -98,14 +98,14 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "BotServiceConnection";
-            var defaultHostEndpoint = "http://localhost/";
+            var DefaultEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"AgentHost:Agents:{botName}:Alias", botAlias},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"AgentHost:HostClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:Alias", botAlias},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -124,14 +124,14 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "";
-            var defaultHostEndpoint = "http://localhost/";
+            var DefaultEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
-                {$"AgentHost:Agents:{botName}:Alias", botAlias},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"AgentHost:HostClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:Alias", botAlias},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -155,15 +155,15 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
-            var defaultHostEndpoint = "http://localhost/";
+            var DefaultEndpoint = "http://localhost/";
             var hostId = "hostId";
             var sections = new Dictionary<string, string>{
-                {$"AgentHost:Agents:{botName}:Alias", botAlias},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {$"AgentHost:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"AgentHost:DefaultHostEndpoint", defaultHostEndpoint},
-                {"AgentHost:HostClientId", hostId},
+                {$"Agent:Host:Agents:{botName}:Alias", botAlias},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
+                {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
+                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:ClientId", hostId},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)
@@ -235,16 +235,16 @@ namespace Microsoft.Agents.Client.Tests
             var channel1Name = "bot1Name";
             var channel2Name = "bot2Name";
             var sections = new Dictionary<string, string>{
-                {$"AgentHost:Agents:{channel1Name}:Alias", channel1Name},
-                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:ClientId", "123"},
-                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"AgentHost:Agents:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {$"AgentHost:Agents:{channel2Name}:Alias", channel2Name},
-                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:ClientId", "456"},
-                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"AgentHost:Agents:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {"AgentHost:DefaultHostEndpoint", "http://localhost/"},
-                {"AgentHost:HostClientId", "hostId"},
+                {$"Agent:Host:Agents:{channel1Name}:Alias", channel1Name},
+                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:ClientId", "123"},
+                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {$"Agent:Host:Agents:{channel2Name}:Alias", channel2Name},
+                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:ClientId", "456"},
+                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {"Agent:Host:DefaultEndpoint", "http://localhost/"},
+                {"Agent:ClientId", "hostId"},
             };
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(sections)

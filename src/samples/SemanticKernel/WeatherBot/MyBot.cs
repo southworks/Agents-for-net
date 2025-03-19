@@ -43,7 +43,7 @@ public class MyBot(AgentApplicationOptions options, WeatherForecastAgent weather
         await turnContext.SendActivityAsync(response, cancellationToken);
     }
 
-    [Route(RouteType = RouteType.Conversation, Event = ConversationUpdateEvents.MembersAdded)]
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)

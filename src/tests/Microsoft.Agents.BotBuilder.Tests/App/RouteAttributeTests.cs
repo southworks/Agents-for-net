@@ -87,36 +87,6 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         }
 
         [Fact]
-        public async Task RouteAttributeTest_BeforeAfterTurn()
-        {
-            // arrange
-            var storage = new MemoryStorage();
-            var adapter = new TestAdapter();
-
-            var options = new TestApplicationOptions()
-            {
-                Adapter = adapter,
-                TurnStateFactory = () => new TurnState(storage),
-            };
-            var app = new TestTurnApp(options);
-
-            // act
-            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
-            {
-                await app.OnTurnAsync(turnContext, cancellationToken);
-            })
-            .Send("hi")
-            .StartTestAsync();
-
-            // assert
-            Assert.Equal(4, app.calls.Count);
-            Assert.Equal("BeforeTurnOneAsync", app.calls[0]);
-            Assert.Equal("BeforeTurnTwoAsync", app.calls[1]);
-            Assert.Equal("AfterTurnOneAsync", app.calls[2]);
-            Assert.Equal("AfterTurnTwoAsync", app.calls[3]);
-        }
-
-        [Fact]
         public void RouteAttributeTest_SelectorNotFound()
         {
             // arrange
@@ -281,39 +251,6 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             calls.Add(nameof(MessageRegexAsync));
             return Task.CompletedTask;
-        }
-    }
-
-    class TestTurnApp(AgentApplicationOptions options) : AgentApplication(options)
-    {
-        public List<string> calls = [];
-
-        [Route(RouteType = RouteType.BeforeTurn)]
-        protected Task<bool> BeforeTurnOneAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            calls.Add(nameof(BeforeTurnOneAsync));
-            return Task.FromResult(true);
-        }
-
-        [Route(RouteType = RouteType.BeforeTurn)]
-        protected Task<bool> BeforeTurnTwoAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            calls.Add(nameof(BeforeTurnTwoAsync));
-            return Task.FromResult(true);
-        }
-
-        [Route(RouteType = RouteType.AfterTurn)]
-        protected Task<bool> AfterTurnOneAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            calls.Add(nameof(AfterTurnOneAsync));
-            return Task.FromResult(true);
-        }
-
-        [Route(RouteType = RouteType.AfterTurn)]
-        protected Task<bool> AfterTurnTwoAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-        {
-            calls.Add(nameof(AfterTurnTwoAsync));
-            return Task.FromResult(true);
         }
     }
 }
