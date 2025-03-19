@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
@@ -32,5 +34,30 @@ namespace Microsoft.Agents.Client
         /// <param name="relatesTo"></param>
         /// <returns></returns>
         Task SendActivityAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Send an Activity with streaming replies.
+        /// </summary>
+        /// <remarks>
+        /// This method will handle EndOfConversation Value and InvokeResponse.Body return values, specified by T.
+        /// </remarks>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelConversationId"></param>
+        /// <param name="activity"></param>
+        /// <param name="handler"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="relatesTo"></param>
+        /// <returns></returns>
+        Task<T> SendActivityStreamedAsync<T>(string channelConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="channelConversationId"></param>
+        /// <param name="activity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="relatesTo"></param>
+        /// <returns></returns>
+        IAsyncEnumerable<object> SendActivityStreamedAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
     }
 }

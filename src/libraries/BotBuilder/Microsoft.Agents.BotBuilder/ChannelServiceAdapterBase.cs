@@ -80,15 +80,18 @@ namespace Microsoft.Agents.BotBuilder
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                    if (!await StreamedResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
 
@@ -307,6 +310,11 @@ namespace Microsoft.Agents.BotBuilder
                 new(AuthenticationConstants.AudienceClaim, botAppId),
                 new(AuthenticationConstants.AppIdClaim, botAppId),
             ]);
+        }
+
+        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
         }
 
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)

@@ -14,6 +14,7 @@ using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -122,7 +123,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 try
                 {
-                    if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    if (activity.DeliveryMode == DeliveryModes.Stream)
+                    {
+                        InvokeResponse invokeResponse = null;
+
+                        // Queue the activity to be processed by the ActivityBackgroundService, and stop SynchronousRequestHandler when the
+                        // turn is done.
+                        _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
+                        {
+                            SynchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            invokeResponse = response;
+                        });
+
+                        // block until turn is complete
+                        await SynchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        {
+                            try
+                            {
+                                await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: activity\r\ndata: {ProtocolJsonSerializer.ToJson(activity)}\r\n"), cancellationToken);
+                                await httpResponse.Body.FlushAsync(cancellationToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                            }
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        if (invokeResponse?.Body != null)
+                        {
+                            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: invokeResponse\r\ndata: {ProtocolJsonSerializer.ToJson(invokeResponse)}\r\n"), cancellationToken);
+                            await httpResponse.Body.FlushAsync(cancellationToken);
+                        }
+                    }
+                    else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
                         // Invoke and ExpectReplies cannot be performed async, the response must be written before the calling thread is released.
                         // Process the inbound activity with the bot
@@ -167,6 +200,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, bot, cancellationToken, audience);
+        }
+
+        protected override async Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            if (incomingActivity.DeliveryMode != DeliveryModes.Stream)
+            {
+                return false;
+            }
+
+            await SynchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+
+            return true;
         }
 
         private bool IsValidChannelActivity(IActivity activity, HttpResponse httpResponse)

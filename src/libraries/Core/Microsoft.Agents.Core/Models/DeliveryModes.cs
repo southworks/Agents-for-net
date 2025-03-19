@@ -17,5 +17,7 @@ namespace Microsoft.Agents.Core.Models
         /// The value for expected replies delivery modes.
         /// </summary>
         public const string ExpectReplies = "expectReplies";
+
+        public const string Stream = "stream";
     }
 }

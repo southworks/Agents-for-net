@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,6 +92,121 @@ namespace Microsoft.Agents.Client
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<T> SendActivityStreamedAsync<T>(string channelConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(channelConversationId);
+            ArgumentNullException.ThrowIfNull(activity);
+            ArgumentNullException.ThrowIfNull(handler);
+
+            await foreach (var received in SendActivityStreamedAsync(channelConversationId, activity, relatesTo, cancellationToken))
+            {
+                if (received is IActivity receivedActivity)
+                {
+                    if (receivedActivity.Type == ActivityTypes.EndOfConversation)
+                    {
+                        if (receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
+                        {
+                            throw new ChannelOperationException($"Unsuccessful EOC from Channel: {receivedActivity.Code}");
+                        }
+
+                        return ProtocolJsonSerializer.ToObject<T>(receivedActivity.Value);
+                    }
+
+                    handler(receivedActivity);
+                }
+                else if (received is InvokeResponse invokeResponse)
+                {
+                    if (invokeResponse.Status >= 200 && invokeResponse.Status <= 299)
+                    {
+                        throw new ChannelOperationException($"Unsuccessful InvokeResponse from Channel: {invokeResponse.Status}");
+                    }
+
+                    if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
+                    {
+                        var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(invokeResponse.Body);
+                        foreach (var reply in expectedReplies.Activities)
+                        {
+                            handler(reply);
+                        }
+
+                        return ProtocolJsonSerializer.ToObject<T>(expectedReplies.Body);
+                    }
+                    else
+                    {
+                        return ProtocolJsonSerializer.ToObject<T>(invokeResponse.Body);
+                    }
+                }
+            }
+
+            return default;
+        }
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerable<object> SendActivityStreamedAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var activityClone = CreateSendActivity(channelConversationId, activity, relatesTo);
+            activityClone.DeliveryMode = DeliveryModes.Stream;
+
+            // Create the HTTP request from the cloned Activity and send it to the bot.
+            using var response = await SendRequest(channelConversationId, activityClone, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Error sending request: {Status}", response.StatusCode);
+                if (response.Content != null)
+                {
+                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogError("Error: {Error}", error);
+                    throw new HttpRequestException($"Error sending request: {response.StatusCode}. {error}");
+                }
+                throw new HttpRequestException($"Error sending request: {response.StatusCode}");
+            }
+
+            // Read streamed response
+            using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using StreamReader sr = new(stream);
+            string streamType = string.Empty;
+
+            string line;
+            while ((line = ReadLineSafe(sr)) != null)
+            {
+                if (line!.StartsWith("event:", StringComparison.InvariantCulture))
+                {
+                    streamType = line[7..];
+                }
+                else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "activity")
+                {
+                    string jsonRaw = line[6..];
+                    var inActivity = ProtocolJsonSerializer.ToObject<IActivity>(jsonRaw);
+                    yield return inActivity;
+                }
+                else if (line.StartsWith("data:", StringComparison.InvariantCulture) && streamType == "invokeResponse")
+                {
+                    string jsonRaw = line[6..];
+                    yield return ProtocolJsonSerializer.ToObject<InvokeResponse>(jsonRaw);
+                }
+                else
+                {
+                    _logger.LogWarning("Channel {ChannelInfoId}: Unexpected stream type {StreamType}, {LineValue}", streamType, Name, line.Trim());
+                }
+            }
+        }
+
+        private static string ReadLineSafe(StreamReader reader)
+        {
+            try
+            {
+                return reader.ReadLine();
+            }
+            catch (Exception)
+            {
+                // TBD:  Not sure how to resolve this yet.  It is because Readline will throw when the 
+                // other end closes the stream.
+                // (HttpIoException.HttpRequestError == HttpRequestError.ResponseEnded)
+                return null;
+            }
+        }
+
         private async Task<HttpResponseMessage> SendRequest(string channelConversationId, IActivity activity, CancellationToken cancellationToken)
         {
             var jsonContent = new StringContent(activity.ToJson(), Encoding.UTF8, "application/json");
@@ -105,7 +223,7 @@ namespace Microsoft.Agents.Client
             var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);
             httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
 
-            var completionOption = HttpCompletionOption.ResponseContentRead; // activity.DeliveryMode == DeliveryModes.Stream ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead;
+            var completionOption = activity.DeliveryMode == DeliveryModes.Stream ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead;
             return await httpClient.SendAsync(httpRequestMessage, completionOption, cancellationToken).ConfigureAwait(false);
         }
 
