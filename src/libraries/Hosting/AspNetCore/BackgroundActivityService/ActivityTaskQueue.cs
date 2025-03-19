@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 //
 using Microsoft.Agents.Core.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Concurrent;
 using System.Security.Claims;
@@ -20,12 +21,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
 
         /// <inheritdoc/>
-        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null)
+        public void QueueBackgroundActivity(ClaimsIdentity claimsIdentity, IActivity activity, bool proactive = false, string proactiveAudience = null, Type bot = null, IHeaderDictionary headers = null)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
             ArgumentNullException.ThrowIfNull(activity);
 
-            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience });
+            _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, Headers = headers });
             _signal.Release();
         }
 
