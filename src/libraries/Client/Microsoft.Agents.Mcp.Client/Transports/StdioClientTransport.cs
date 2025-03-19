@@ -19,16 +19,16 @@ namespace Microsoft.Agents.Mcp.Client.Transports
         private bool _isClosed = false;
         private Process? process;
         private readonly object _lock = new();
-        private readonly string program;
-        private readonly string arguments;
+        private readonly string command;
+        private readonly string[] arguments;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StdioServerTransport"/> class.
         /// </summary>
-        public StdioClientTransport(string program, string arguments)
+        public StdioClientTransport(string command, string[] arguments)
         {
             _jsonOptions = Serialization.GetDefaultMcpSerializationOptions();
-            this.program = program;
+            this.command = command;
             this.arguments = arguments;
         }
 
@@ -61,12 +61,12 @@ namespace Microsoft.Agents.Mcp.Client.Transports
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = program,
-                    Arguments = arguments,
+                    FileName = command,
+                    Arguments = string.Join(" ", arguments),
+                    UseShellExecute = false,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
+                    CreateNoWindow = true
                 },
             };
 

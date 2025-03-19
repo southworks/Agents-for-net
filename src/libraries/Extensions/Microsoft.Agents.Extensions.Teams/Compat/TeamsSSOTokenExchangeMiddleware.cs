@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
         public TeamsSSOTokenExchangeMiddleware(IStorage storage, string connectionName)
         {
             ArgumentNullException.ThrowIfNull(storage);
-            ArgumentNullException.ThrowIfNull(connectionName);
+            ArgumentNullException.ThrowIfNullOrEmpty(connectionName);
 
             _oAuthConnectionName = connectionName;
             _storage = storage;
