@@ -644,35 +644,13 @@ namespace Microsoft.Agents.BotBuilder.App
                         }
                     }
 
-                    bool eventHandlerCalled = false;
-
-                    // Run any Invoke RouteSelectors first if the incoming Teams activity.type is "Invoke".
-                    // Invoke Activities from Teams need to be responded to in less than 5 seconds.
-                    // This is mostly because the selectors are async and could incur delays, so we need to limit this possibility.
-                    if (ActivityTypes.Invoke.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                    // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
+                    foreach (Route route in _routes.Enumerate())
                     {
-                        foreach (Route route in _routes.Enumerate(true))
+                        if (await route.Selector(turnContext, cancellationToken))
                         {
-                            if (await route.Selector(turnContext, cancellationToken))
-                            {
-                                await route.Handler(turnContext, turnState, cancellationToken);
-                                eventHandlerCalled = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // All other ActivityTypes and any unhandled Invokes are run through the remaining routes.
-                    if (!eventHandlerCalled)
-                    {
-                        foreach (Route route in _routes.Enumerate())
-                        {
-                            if (await route.Selector(turnContext, cancellationToken))
-                            {
-                                await route.Handler(turnContext, turnState, cancellationToken);
-                                eventHandlerCalled = true;
-                                break;
-                            }
+                            await route.Handler(turnContext, turnState, cancellationToken);
+                            break;
                         }
                     }
 
