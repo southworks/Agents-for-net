@@ -21,10 +21,10 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
-builder.AddBot<TeamsBot<MainDialog>, AdapterWithErrorHandler>();
+builder.AddAgent<TeamsBot<MainDialog>, AdapterWithErrorHandler>();
 
 // Add Conversation and User state.
 builder.Services.AddSingleton<ConversationState>();

@@ -26,7 +26,7 @@ public static class AspNetExtensions
     private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _openIdMetadataCache = new();
 
     /// <summary>
-    /// Adds token validation typical for ABS/SMBA and Bot-to-bot.
+    /// Adds token validation typical for ABS/SMBA and agent-to-agent.
     /// default to Azure Public Cloud.
     /// </summary>
     /// <param name="services"></param>
@@ -38,7 +38,7 @@ public static class AspNetExtensions
     /// <code>
     ///   "TokenValidation": {
     ///     "Audiences": [
-    ///       "{required:bot-appid}"
+    ///       "{required:agent-appid}"
     ///     ],
     ///     "TenantId": "{recommended:tenant-id}",
     ///     "ValidIssuers": [
@@ -59,7 +59,7 @@ public static class AspNetExtensions
     /// `OpenIdMetadataUrl` can be omitted.  In which case default values in combination with `IsGov` is used.
     /// `AzureBotServiceTokenHandling` defaults to true and should always be true until Azure Bot Service sends Entra ID token.
     /// </remarks>
-    public static void AddBotAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
+    public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation", ILogger logger = null)
     {
         IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
         List<string> validTokenIssuers = tokenValidationSection.GetSection("ValidIssuers").Get<List<string>>();
@@ -169,7 +169,7 @@ public static class AspNetExtensions
 
                     if (azureBotServiceTokenHandling && AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
                     {
-                        // Use the Bot Framework authority for this configuration manager
+                        // Use the Azure Bot authority for this configuration manager
                         context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(azureBotServiceOpenIdMetadataUrl, key =>
                         {
                             return new ConfigurationManager<OpenIdConnectConfiguration>(azureBotServiceOpenIdMetadataUrl, new OpenIdConnectConfigurationRetriever(), new HttpClient())
