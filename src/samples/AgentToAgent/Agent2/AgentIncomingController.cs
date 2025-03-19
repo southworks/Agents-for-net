@@ -15,7 +15,7 @@ namespace Agent2;
 [Authorize]
 [ApiController]
 [Route("api/messages")]
-public class IncomingController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
+public class AgentIncomingController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)
