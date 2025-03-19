@@ -12,7 +12,7 @@ namespace Agent1;
 // communicate (send replies) with Agent1.
 [Authorize]
 [ApiController]
-[Route("api/channelresponse")]
-public class ChannelResponseController(IChannelApiHandler handler) : ChannelApiController(handler)
+[Route("api/agentresponse")]
+public class AgentResponseController(IChannelApiHandler handler) : ChannelApiController(handler)
 {
 }

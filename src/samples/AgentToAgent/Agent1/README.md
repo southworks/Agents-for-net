@@ -96,7 +96,7 @@ To configure authentication into the Agent1 Sample Project you will need the fol
    ```json
      "ChannelHost": {
        "HostClientId": "{{ClientId}}", // this is the Client ID for Agent1
-       "DefaultHostEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  This is the Url to this Agent and ChannelResponseController path.
+       "DefaultHostEndpoint": "http://localhost:3978/api/agentresponse/", // Default host serviceUrl.  This is the Url to this Agent and AgentResponseController path.
        "Channels": {
          "Echo": {
            "ConnectionSettings": {
