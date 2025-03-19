@@ -411,6 +411,65 @@ namespace Microsoft.Agents.BotBuilder.App
         }
 
         /// <summary>
+        /// Handles incoming Event with a specific Name.
+        /// </summary>
+        /// <param name="eventName">Substring of the incoming message text.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(string eventName, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            ArgumentNullException.ThrowIfNull(handler);
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+                => Task.FromResult
+                (
+                    string.Equals(ActivityTypes.Event, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity?.Name != null
+                    && context.Activity.Text.IndexOf(eventName, StringComparison.OrdinalIgnoreCase) >= 0
+                );
+            OnEvent(routeSelector, handler, rank: rank);
+            return this;
+        }
+
+        /// <summary>
+        /// Handles incoming Events matching a Name pattern.
+        /// </summary>
+        /// <param name="namePattern">Regular expression to match against the text of an incoming message.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(Regex namePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentNullException.ThrowIfNull(namePattern);
+            ArgumentNullException.ThrowIfNull(handler);
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+                => Task.FromResult
+                (
+                    string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity?.Text != null
+                    && namePattern.IsMatch(context.Activity.Text)
+                );
+            OnEvent(routeSelector, handler, rank: rank);
+            return this;
+        }
+
+        /// <summary>
+        /// Handles incoming Events.
+        /// </summary>
+        /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
+            AddRoute(routeSelector, handler, rank: rank);
+            return this;
+        }
+
+        /// <summary>
         /// Handles message reactions added events.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>

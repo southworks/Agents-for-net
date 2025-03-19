@@ -67,6 +67,13 @@ To configure authentication into the Agent2 Sample Project you will need the fol
    Find the section labeled `Connections`,  it should appear similar to this:
 
    ```json
+   "Agent": {
+     "ClientId": "{{ClientId}}", // this is the Client ID for Agent2
+     "Description": null,
+     "Publisher": null,
+     "Copyright": null
+   },
+
    "TokenValidation": {
      "Audiences": [
        "{{ClientId}}" // this is the Client ID for Agent2

@@ -71,17 +71,23 @@ namespace Microsoft.Agents.Client
         /// Creates from IConfiguration.
         /// </summary>
         /// <code>
-        /// "AgentHost": {
-        ///   "HostClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote agent to call you back with.,
-        ///   "DefaultHostEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
-        ///   "Agents": {
-        ///      "Echo": {
-        ///        "DisplayName": {{optional-displayName}},              // Defaults to node name ("Echo")
-        ///        "ConnectionSettings": {
-        ///          "ClientId": "{{Agent2ClientId}}",                     // This is the Client ID of the other agent.
-        ///          "Endpoint": "http://localhost:39783/api/messages",  // The endpoint of the other agent
-        ///          "TokenProvider" : "{{Connections:{{name}}"
-        ///        }
+        /// "Agent": {
+        ///   "ClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote agent to call you back with.,
+        ///   "Endpoint": "http://myagent.com/api/messages",               // Optional
+        ///   "Description": null,                                         // Optional
+        ///   "Publisher": null,                                           // Optional
+        ///   "Copyright": null,                                           // Optional
+        ///   "Host": {
+        ///     "DefaultEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
+        ///     "Agents": {
+        ///       "Echo": {
+        ///         "DisplayName": {{optional-displayName}},               // Defaults to node name ("Echo")
+        ///         "ConnectionSettings": {
+        ///           "ClientId": "{{Agent2ClientId}}",                    // This is the Client ID of the other agent.
+        ///           "Endpoint": "http://localhost:39783/api/messages",   // The endpoint of the other agent
+        ///           "TokenProvider" : "{{Connections:{{name}}"
+        ///         }
+        ///       }
         ///     }
         ///   }
         /// }
@@ -98,14 +104,14 @@ namespace Microsoft.Agents.Client
             IStorage storage, 
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            string configSection = "AgentHost") : this(
+            string configSection = "Agent") : this(
                 systemServiceProvider, 
                 storage, 
                 connections, 
                 httpClientFactory,
-                configuration?.GetSection($"{configSection}:Agents").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
-                configuration?.GetValue<string>($"{configSection}:DefaultHostEndpoint"), 
-                configuration?.GetValue<string>($"{configSection}:HostClientId"))
+                configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
+                configuration?.GetValue<string>($"{configSection}:Host:DefaultEndpoint"), 
+                configuration?.GetValue<string>($"{configSection}:ClientId"))
         {
         }
 

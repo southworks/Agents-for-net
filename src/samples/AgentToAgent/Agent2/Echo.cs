@@ -16,14 +16,11 @@ public class Echo : AgentApplication
 {
     public Echo(AgentApplicationOptions options) : base(options)
     {
-        // Add Activity routes
-        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-
         OnTurnError(TurnErrorHandlerAsync);
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last )]
+    protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var result = turnState.Conversation.GetValue("log", () => new EchoResult());
 
@@ -49,7 +46,8 @@ public class Echo : AgentApplication
         }
     }
 
-    private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    protected async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // This will be called if the root bot is ending the conversation.  Sending additional messages should be
         // avoided as the conversation may have been deleted.

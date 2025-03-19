@@ -94,19 +94,25 @@ To configure authentication into the Agent1 Sample Project you will need the fol
 
 1. Update the ChannelHost configuration in `appsettings.json`
    ```json
-     "ChannelHost": {
-       "HostClientId": "{{ClientId}}", // this is the Client ID for Agent1
-       "DefaultHostEndpoint": "http://localhost:3978/api/agentresponse/", // Default host serviceUrl.  This is the Url to this Agent and AgentResponseController path.
-       "Channels": {
+   "Agent": {
+     "ClientId": "{{ClientId}}", // this is the Client ID for Agent1
+     "Description": null,
+     "Publisher": null,
+     "Copyright": null,
+     "Host": {
+       "DefaultEndpoint": "http://localhost:3978/api/agentresponse/", // Default host serviceUrl.  This is the Url to this Agent and AgentResponseController path.
+       "Agents": {
          "Echo": {
            "ConnectionSettings": {
-             "ClientId": "{{Agent2ClientId}}", // this is the Client ID for Agent2
+             "ClientId": "{{Agent2ClientId}}", // This is the Client ID of Agent2
              "Endpoint": "http://localhost:39783/api/messages", // The endpoint of Agent2
-             "TokenProvider":  "BotServiceConnection"
+             "TokenProvider": "BotServiceConnection"
            }
          }
        }
-     },
+     }
+   },
+
    ```
    1. Replace **{{Agent2ClientId}}** with the AppId of Agent2.
    1. Replace **{{ClientId}}** with the AppId of Agent1.

@@ -193,7 +193,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(Type = RouteType.Activity, ActivityType = ActivityTypes.Event)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Event)]
         protected Task ActivityTypeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeAsync));
@@ -205,14 +205,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
         }
 
-        [Route(Type = RouteType.Activity, Selector = "ActivitySelector", Rank = RouteRank.First)]
+        [Route(RouteType = RouteType.Activity, Selector = "ActivitySelector", Rank = RouteRank.First)]
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeSelectorAsync));
             return Task.CompletedTask;
         }
 
-        [Route(Type = RouteType.Activity, Regex = "test*.")]
+        [Route(RouteType = RouteType.Activity, Regex = "test*.")]
         protected Task ActivityTypeRegexAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeRegexAsync));
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
     class TestSelectorNotFoundApp(AgentApplicationOptions options) : AgentApplication(options)
     {
-        [Route(Type = RouteType.Activity, Selector = "ActivitySelector")]
+        [Route(RouteType = RouteType.Activity, Selector = "ActivitySelector")]
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
         }
 
-        [Route(Type = RouteType.Activity, Selector = "BadActivitySelector")]
+        [Route(RouteType = RouteType.Activity, Selector = "BadActivitySelector")]
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
     class TestMissingArgsApp(AgentApplicationOptions options) : AgentApplication(options)
     {
-        [Route(Type = RouteType.Activity)]
+        [Route(RouteType = RouteType.Activity)]
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -257,7 +257,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(Type = RouteType.Message, ActivityText = "hi")]
+        [Route(RouteType = RouteType.Message, Text = "hi")]
         protected Task MessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageAsync));
@@ -269,14 +269,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             return Task.FromResult(turnContext.Activity.Text == "testSelector");
         }
 
-        [Route(Type = RouteType.Activity, Selector = "MessageSelector", Rank = RouteRank.First)]
+        [Route(RouteType = RouteType.Activity, Selector = "MessageSelector", Rank = RouteRank.First)]
         protected Task MessageSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageSelectorAsync));
             return Task.CompletedTask;
         }
 
-        [Route(Type = RouteType.Message, Regex = "test*.")]
+        [Route(RouteType = RouteType.Message, Regex = "test*.")]
         protected Task MessageRegexAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageRegexAsync));
@@ -288,28 +288,28 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(Type = RouteType.BeforeTurn)]
+        [Route(RouteType = RouteType.BeforeTurn)]
         protected Task<bool> BeforeTurnOneAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(BeforeTurnOneAsync));
             return Task.FromResult(true);
         }
 
-        [Route(Type = RouteType.BeforeTurn)]
+        [Route(RouteType = RouteType.BeforeTurn)]
         protected Task<bool> BeforeTurnTwoAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(BeforeTurnTwoAsync));
             return Task.FromResult(true);
         }
 
-        [Route(Type = RouteType.AfterTurn)]
+        [Route(RouteType = RouteType.AfterTurn)]
         protected Task<bool> AfterTurnOneAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(AfterTurnOneAsync));
             return Task.FromResult(true);
         }
 
-        [Route(Type = RouteType.AfterTurn)]
+        [Route(RouteType = RouteType.AfterTurn)]
         protected Task<bool> AfterTurnTwoAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(AfterTurnTwoAsync));
