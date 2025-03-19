@@ -15,10 +15,10 @@ namespace StreamingMessageAgent;
 [Authorize]
 [ApiController]
 [Route("api/messages")]
-public class AgentIncomingController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
+public class AgentIncomingController(IBotHttpAdapter adapter, IBot agent) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)
-        => adapter.ProcessAsync(Request, Response, bot, cancellationToken);
+        => adapter.ProcessAsync(Request, Response, agent, cancellationToken);
 
 }
