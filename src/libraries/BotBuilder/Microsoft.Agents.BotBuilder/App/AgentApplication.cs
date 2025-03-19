@@ -23,7 +23,7 @@ namespace Microsoft.Agents.BotBuilder.App
     /// </summary>
     public class AgentApplication : IBot
     {
-        private readonly UserAuthenticationFeature _authentication;
+        private readonly UserAuthorizationFeature _userAuth;
         private readonly int _typingTimerDelay = 1000;
         private TypingTimer? _typingTimer;
 
@@ -36,6 +36,7 @@ namespace Microsoft.Agents.BotBuilder.App
         /// Creates a new AgentApplication instance.
         /// </summary>
         /// <param name="options">Optional. Options used to configure the application.</param>
+        /// <param name="userAuthFeature"></param>
         /// <param name="state"></param>
         public AgentApplication(AgentApplicationOptions options)
         {
@@ -58,9 +59,9 @@ namespace Microsoft.Agents.BotBuilder.App
 
             AdaptiveCards = new AdaptiveCardsFeature(this);
 
-            if (options.UserAuthentication != null)
+            if (options.UserAuthorization != null)
             {
-                _authentication = new UserAuthenticationFeature(this, options.UserAuthentication);
+                _userAuth = new UserAuthorizationFeature(this, options.UserAuthorization);
             }
 
             ApplyRouteAttributes();
@@ -79,18 +80,18 @@ namespace Microsoft.Agents.BotBuilder.App
         public AgentApplicationOptions Options { get; }
 
         /// <summary>
-        /// Accessing authentication specific features.
+        /// Accessing user authorization features.
         /// </summary>
-        public UserAuthenticationFeature Authentication
+        public UserAuthorizationFeature Authorization
         {
             get
             {
-                if (_authentication == null)
+                if (_userAuth == null)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthenticationNotConfigured, null);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationNotConfigured, null);
                 }
 
-                return _authentication;
+                return _userAuth;
             }
         }
 
@@ -609,10 +610,10 @@ namespace Microsoft.Agents.BotBuilder.App
                 try
                 {
                     // Handle user auth
-                    if (_authentication != null)
+                    if (_userAuth != null)
                     {
                         // Start sign in for default flow
-                        if (await _authentication.SignUserInAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false))
+                        if (await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false))
                         {
                             return;
                         }

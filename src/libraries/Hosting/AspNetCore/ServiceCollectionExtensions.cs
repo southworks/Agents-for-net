@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.BotBuilder.App.UserAuth;
+using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 
@@ -51,6 +54,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
+        /// Registers AgentApplicationOptions for AgentApplication-based bots.
+        /// </summary>
+        /// <remarks>
+        /// This loads options from IConfiguration and DI.
+        /// </remarks>
+        /// <param name="builder"></param>
+        /// <param name="fileDownloaders"></param>
+        /// <param name="autoSignInSelector"></param>
+        /// <returns></returns>
+        public static IHostApplicationBuilder AddAgentApplicationOptions(
+            this IHostApplicationBuilder builder,
+            IList<IInputFileDownloader> fileDownloaders = null,
+            AutoSignInSelectorAsync autoSignInSelector = null)
+        {
+            if (autoSignInSelector != null)
+            {
+                builder.Services.AddSingleton<AutoSignInSelectorAsync>(sp => autoSignInSelector);
+            }
+
+            if (fileDownloaders != null)
+            {
+                builder.Services.AddSingleton(sp => fileDownloaders);
+            }
+
+            builder.Services.AddSingleton<AgentApplicationOptions>();
+
+            return builder;
+        }
+
+        /// <summary>
         /// Add the default CloudAdapter.
         /// </summary>
         /// <param name="services"></param>
@@ -73,6 +106,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IBotHttpAdapter>(sp => sp.GetService<CloudAdapter>());
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
+
+
 
         private static void AddCore<TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
             where TAdapter : CloudAdapter
