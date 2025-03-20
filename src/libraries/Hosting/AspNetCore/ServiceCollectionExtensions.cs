@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Adds a middleware that collect headers to be propagated to an <see cref="IHttpClientFactory"/> instance.
+        /// Adds a middleware that collects headers to be propagated to an <see cref="IHttpClientFactory"/> instance.
         /// </summary>
         /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
         /// <param name="configureOptions">The <see cref="HeaderPropagationOptions"/> configuration to select which headers to propagate from incoming to outgoing requests.</param>

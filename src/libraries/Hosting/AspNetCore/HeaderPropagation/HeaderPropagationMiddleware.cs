@@ -1,4 +1,3 @@
-
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
@@ -10,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 namespace Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
 
 /// <summary>
-/// A Middleware for propagating headers from incoming to outgoing requests using a custom <see cref="IHttpClientFactory"/> internally.
+/// A middleware to propagate incoming request headers to outgoing ones using internally a custom <see cref="IHttpClientFactory"/>.
 /// </summary>
 public class HeaderPropagationMiddleware
 {
