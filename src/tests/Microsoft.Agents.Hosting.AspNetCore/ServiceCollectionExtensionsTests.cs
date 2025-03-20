@@ -53,7 +53,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var expected = new List<Type>{
                 typeof(ConfigurationConnections),
                 typeof(RestChannelServiceClientFactory),
-                typeof(MemoryStorage),
                 // CloudAdapter services.
                 typeof(HostedActivityService),
                 typeof(HostedTaskService),
