@@ -47,14 +47,13 @@ public class HeaderPropagationContext(HeaderPropagationOptions options)
         }
 
         // Create a copy to ensure headers are not modified by the original request.
-        var headers = requestHeaders.ToDictionary();
+        var headers = requestHeaders.ToDictionary(StringComparer.InvariantCultureIgnoreCase);
 
         foreach (var key in options.Headers)
         {
-            var header = headers.FirstOrDefault(x => x.Key.Equals(key, StringComparison.InvariantCultureIgnoreCase));
-            if (header.Key != null)
+            if (headers.TryGetValue(key, out var header))
             {
-                result.TryAdd(header.Key, header.Value);
+                result.TryAdd(key, header);
             }
         }
 

@@ -137,23 +137,26 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // and disposed before this gets called.
                     var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
                     var headerValues = _serviceProvider.GetService<HeaderPropagationContext>();
-                    headerValues.Headers = activityWithClaims.Headers;
+                    if (headerValues != null)
+                    {
+                        headerValues.Headers = activityWithClaims.Headers;
+                    }
 
                     if (activityWithClaims.IsProactive)
                     {
                         await _adapter.ProcessProactiveAsync(
-                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? BotClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IBot)bot).OnTurnAsync, 
+                            ((IBot)bot).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
                     {
                         await _adapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity, 
+                            activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-                            ((IBot)bot).OnTurnAsync, 
+                            ((IBot)bot).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }
                 }
