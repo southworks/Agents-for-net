@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using CopilotStudioEchoSkill;
+using EchoAgent;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
@@ -14,9 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
 builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 // Add AspNet token validation
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
@@ -25,7 +23,7 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
-builder.AddAgent<EchoSkill, AdapterWithErrorHandler>();
+builder.AddAgent<Echo>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -35,13 +33,9 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-// Required for providing the bot manifest.
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Agents SDK Sample - EchoSkill");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }
@@ -49,5 +43,5 @@ else
 {
     app.MapControllers();
 }
-
 app.Run();
+

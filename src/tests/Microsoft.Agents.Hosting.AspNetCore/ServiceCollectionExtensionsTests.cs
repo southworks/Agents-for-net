@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var builder = new Mock<IHostApplicationBuilder>();
             builder.SetupGet(e => e.Services).Returns(new ServiceCollection());
-            ServiceCollectionExtensions.AddBot<ActivityHandler>(builder.Object);
+            ServiceCollectionExtensions.AddAgent<ActivityHandler>(builder.Object);
 
             var services = builder.Object.Services
                 .Select(e => e.ImplementationType ?? e.ServiceType)
