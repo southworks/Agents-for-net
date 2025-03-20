@@ -100,7 +100,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             : throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationHandlerNotFound, null);
 
         /// <inheritdoc/>
-        public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(nameof(turnContext));
 
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
             string token;
             try
             {
-                token = await auth.SignInUserAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+                token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

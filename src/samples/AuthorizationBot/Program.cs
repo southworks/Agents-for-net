@@ -18,12 +18,11 @@ builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-
 // Add AspNet token validation
 builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add AgentApplicationOptions from config.
-builder.AddAgentApplicationOptions(autoSignInSelector: (context, cancellationToken) => Task.FromResult(context.Activity.Text == "auto"));
+builder.AddAgentApplicationOptions(autoSignIn: (context, cancellationToken) => Task.FromResult(true)); // autoSignIn: (context, cancellationToken) => Task.FromResult(context.Activity.Text == "auto"));
 
 // Add the bot (which is transient)
 builder.AddBot<AuthBot>();

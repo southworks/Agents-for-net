@@ -61,16 +61,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </remarks>
         /// <param name="builder"></param>
         /// <param name="fileDownloaders"></param>
-        /// <param name="autoSignInSelector"></param>
+        /// <param name="autoSignIn"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
             this IHostApplicationBuilder builder, 
             IList<IInputFileDownloader> fileDownloaders = null, 
-            AutoSignInSelectorAsync autoSignInSelector = null)
+            AutoSignInSelectorAsync autoSignIn = null)
         {
-            if (autoSignInSelector != null)
+            if (autoSignIn != null)
             {
-                builder.Services.AddSingleton<AutoSignInSelectorAsync>(sp => autoSignInSelector);
+                builder.Services.AddSingleton<AutoSignInSelectorAsync>(sp => autoSignIn);
             }
 
             if (fileDownloaders != null)

@@ -19,12 +19,13 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// This method will be called automatically by the AgentApplication class.
         /// </summary>
         /// <param name="context">Current turn context.</param>
+        /// <param name="forceSignIn"></param>
         /// <param name="exchangeConnection"></param>
         /// <param name="exchangeScopes"></param>
         /// <param name="state">AgentApplication state.</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The authentication token if user is signed in. Otherwise returns null. In that case the bot will attempt to sign the user in.</returns>
-        Task<string> SignInUserAsync(ITurnContext context, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
+        Task<string> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Signs out a user.
