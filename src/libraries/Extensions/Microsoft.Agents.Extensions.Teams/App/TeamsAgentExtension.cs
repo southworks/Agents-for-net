@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             ArgumentNullException.ThrowIfNull(conversationUpdateEvent);
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector;
+            RouteSelector routeSelector;
             switch (conversationUpdateEvent)
             {
                 case TeamsConversationUpdateEvents.ChannelCreated:
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnMessageEdit(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnMessageUndelete(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
@@ -188,7 +188,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnMessageDelete(RouteHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
@@ -208,7 +208,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnTeamsReadReceipt(ReadReceiptHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnConfigFetch(ConfigHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
+            RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
@@ -256,7 +256,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public TeamsAgentExtension OnConfigSubmit(ConfigHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) => Task.FromResult(
+            RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
@@ -293,7 +293,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) =>
+            RouteSelector routeSelector = (context, _) =>
             {
                 FileConsentCardResponse? fileConsentCardResponse;
                 return Task.FromResult
@@ -328,7 +328,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         public AgentApplication OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
-            RouteSelectorAsync routeSelector = (context, _) => Task.FromResult
+            RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(context.Activity?.Name, "actionableMessage/executeAction")
@@ -359,7 +359,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             ArgumentNullException.ThrowIfNull(handler);
 
-            RouteSelectorAsync routeSelector = (context, _) =>
+            RouteSelector routeSelector = (context, _) =>
             {
                 var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
                 string? actionName = jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;

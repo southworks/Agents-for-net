@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
 
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -500,7 +500,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -644,7 +644,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -815,7 +815,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };

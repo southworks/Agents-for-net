@@ -160,7 +160,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 TurnStateFactory = () => turnState.Result,
             });
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };
@@ -320,8 +320,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
                 TurnStateFactory = () => turnState.Result,
             });
+
             var extension = new TeamsAgentExtension(app);
-            RouteSelectorAsync routeSelector = (turnContext, cancellationToken) =>
+            RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(true);
             };

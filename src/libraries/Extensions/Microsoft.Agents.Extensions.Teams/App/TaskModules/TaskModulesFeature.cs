@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(handler);
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
-            RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
+            RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
         }
 
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(handler);
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
-            RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
+            RouteSelector routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, FETCH_INVOKE_NAME);
             return OnFetch(routeSelector, handler);
         }
 
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnFetch(RouteSelectorAsync routeSelector, FetchHandlerAsync handler)
+        public AgentApplication OnFetch(RouteSelector routeSelector, FetchHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnFetch(routeSelector, handler);
                 }
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(handler);
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
-            RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
+            RouteSelector routeSelector = CreateTaskSelector((string input) => string.Equals(verb, input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
         }
 
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             ArgumentNullException.ThrowIfNull(handler);
 
             string filter = _taskModulesOptions?.TaskDataFilter ?? DEFAULT_TASK_DATA_FILTER;
-            RouteSelectorAsync routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
+            RouteSelector routeSelector = CreateTaskSelector((string input) => verbPattern.IsMatch(input), filter, SUBMIT_INVOKE_NAME);
             return OnSubmit(routeSelector, handler);
         }
 
@@ -181,7 +181,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSubmit(RouteSelectorAsync routeSelector, SubmitHandlerAsync handler)
+        public AgentApplication OnSubmit(RouteSelector routeSelector, SubmitHandlerAsync handler)
         {
             ArgumentNullException.ThrowIfNull(routeSelector);
             ArgumentNullException.ThrowIfNull(handler);
@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             }
             if (routeSelectors.RouteSelectors != null)
             {
-                foreach (RouteSelectorAsync routeSelector in routeSelectors.RouteSelectors)
+                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
                 {
                     OnSubmit(routeSelector, handler);
                 }
@@ -245,9 +245,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             return _app;
         }
 
-        private static RouteSelectorAsync CreateTaskSelector(Func<string, bool> isMatch, string filter, string invokeName)
+        private static RouteSelector CreateTaskSelector(Func<string, bool> isMatch, string filter, string invokeName)
         {
-            RouteSelectorAsync routeSelector = (ITurnContext turnContext, CancellationToken cancellationToken) =>
+            RouteSelector routeSelector = (ITurnContext turnContext, CancellationToken cancellationToken) =>
             {
                 bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(turnContext.Activity.Name, invokeName);
