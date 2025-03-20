@@ -306,7 +306,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
             // Send something to the dialog 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await client.SendActivityAsync<Activity>("irrelevant"));
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.SendActivityAsync<Activity>("irrelevant"));
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
