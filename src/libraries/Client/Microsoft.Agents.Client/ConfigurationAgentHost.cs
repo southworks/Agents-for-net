@@ -224,27 +224,13 @@ namespace Microsoft.Agents.Client
         {
             using var channel = GetChannel(channelName);
 
-            InvokeResponse<object> response = null;
-            try
+            if (string.IsNullOrEmpty(activity.DeliveryMode)
+                || !string.Equals(DeliveryModes.Normal, activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
-                if (string.IsNullOrEmpty(activity.DeliveryMode)
-                    || !string.Equals(DeliveryModes.Normal, activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
-                {
-                    activity.DeliveryMode = DeliveryModes.Normal;
-                }
-
-                response = await channel.SendActivityAsync<object>(channelConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
-            catch(Exception ex)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, ex, channelName);
+                activity.DeliveryMode = DeliveryModes.Normal;
             }
 
-            // Check response status
-            if (!(response.Status >= 200 && response.Status <= 299))
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, null, channelName, response.Status.ToString());
-            }
+            await channel.SendActivityAsync<object>(channelConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

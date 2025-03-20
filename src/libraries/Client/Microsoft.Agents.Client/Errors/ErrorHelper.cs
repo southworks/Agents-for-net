@@ -38,6 +38,7 @@ namespace Microsoft.Agents.Client.Errors
         internal static AgentErrorDefinition ChannelNotFound = new AgentErrorDefinition(baseClientErrorCode - 2, Properties.Resources.ChannelNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition SendToChannelFailed = new AgentErrorDefinition(baseClientErrorCode - 3, Properties.Resources.SendToChannelFailed, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition SendToChannelUnsuccessful = new AgentErrorDefinition(baseClientErrorCode - 4, Properties.Resources.SendToChannelUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToChannelUnauthorized = new AgentErrorDefinition(baseClientErrorCode - 5, Properties.Resources.SendToChannelUnauthorized, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

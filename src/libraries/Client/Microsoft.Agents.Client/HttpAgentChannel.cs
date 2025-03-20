@@ -4,13 +4,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -69,27 +72,12 @@ namespace Microsoft.Agents.Client
             using var response = await SendRequest(channelConversationId, activityClone, cancellationToken).ConfigureAwait(false);
             var content = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
 
-            if (response.IsSuccessStatusCode)
+            // On success assuming either JSON that can be deserialized to T or empty.
+            return new InvokeResponse<T>
             {
-                // On success assuming either JSON that can be deserialized to T or empty.
-                return new InvokeResponse<T>
-                {
-                    Status = (int)response.StatusCode,
-                    Body = content?.Length > 0 ? ProtocolJsonSerializer.ToObject<T>(content) : default
-                };
-            }
-            else
-            {
-                // Otherwise we can assume we don't have a T to deserialize - so just log the content so it's not lost.
-                _logger.LogError($"SendActivityAsync: Channel request failed to '{_settings.ConnectionSettings.Endpoint.ToString()}' returning '{(int)response.StatusCode}' and '{content}'");
-
-                // We want to at least propagate the status code because that is what InvokeResponse expects.
-                return new InvokeResponse<T>
-                {
-                    Status = (int)response.StatusCode,
-                    Body = typeof(T) == typeof(object) ? (T)(object)content : default,
-                };
-            }
+                Status = (int)response.StatusCode,
+                Body = content?.Length > 0 ? ProtocolJsonSerializer.ToObject<T>(content) : default
+            };
         }
 
         /// <inheritdoc/>
@@ -148,19 +136,8 @@ namespace Microsoft.Agents.Client
             var activityClone = CreateSendActivity(channelConversationId, activity, relatesTo);
             activityClone.DeliveryMode = DeliveryModes.Stream;
 
-            // Create the HTTP request from the cloned Activity and send it to the bot.
+            // Create the HTTP request from the cloned Activity and send it to the Agent.
             using var response = await SendRequest(channelConversationId, activityClone, cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogError("Error sending request: {Status}", response.StatusCode);
-                if (response.Content != null)
-                {
-                    string error = await response.Content.ReadAsStringAsync(cancellationToken);
-                    _logger.LogError("Error: {Error}", error);
-                    throw new HttpRequestException($"Error sending request: {response.StatusCode}. {error}");
-                }
-                throw new HttpRequestException($"Error sending request: {response.StatusCode}");
-            }
 
             // Read streamed response
             using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -224,7 +201,31 @@ namespace Microsoft.Agents.Client
             httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
 
             var completionOption = activity.DeliveryMode == DeliveryModes.Stream ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead;
-            return await httpClient.SendAsync(httpRequestMessage, completionOption, cancellationToken).ConfigureAwait(false);
+            HttpResponseMessage response;
+
+            try
+            {
+                response = await httpClient.SendAsync(httpRequestMessage, completionOption, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SendActivityAsync: Channel request failed to '{ChannelName}' at '{ChannelEndpoint}'", Name, _settings.ConnectionSettings.Endpoint.ToString());
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, ex, Name);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("SendActivityAsync: Channel request unsuccessful to '{ChannelName}' at '{ChannelEndpoint}' returned '{ChannelResponse}'", 
+                    Name, _settings.ConnectionSettings.Endpoint.ToString(), (int)response.StatusCode);
+
+                if (response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelUnauthorized, null, Name);
+                }
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelUnsuccessful, null, Name, response.StatusCode.ToString());
+            }
+
+            return response;
         }
 
         private IActivity CreateSendActivity(string channelConversationId, IActivity activity, IActivity relatesTo)

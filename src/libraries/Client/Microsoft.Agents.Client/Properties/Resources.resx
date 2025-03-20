@@ -130,8 +130,12 @@
     <comment>Raised when calling IAgentHost.GetChannel.</comment>
   </data>
   <data name="SendToChannelFailed" xml:space="preserve">
-    <value>SendToAgent '{0}' failed.</value>
+    <value>SendToAgent '{0}' failed</value>
     <comment>Raised when calling IAgentHost.SendToAgent.</comment>
+  </data>
+  <data name="SendToChannelUnauthorized" xml:space="preserve">
+    <value>SendToAgent '{0}' failed: Unauthorized</value>
+    <comment>Raised when sending to an Agent this is misconfigured or does not include requesting AppId in AllowedCallers.</comment>
   </data>
   <data name="SendToChannelUnsuccessful" xml:space="preserve">
     <value>SendToAgent '{0} failed with an unsucessful response '{1}'.</value>

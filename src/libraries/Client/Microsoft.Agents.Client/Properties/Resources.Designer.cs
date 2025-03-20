@@ -88,11 +88,20 @@ namespace Microsoft.Agents.Client.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed..
+        ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed.
         /// </summary>
         internal static string SendToChannelFailed {
             get {
                 return ResourceManager.GetString("SendToChannelFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed: Unauthorized.
+        /// </summary>
+        internal static string SendToChannelUnauthorized {
+            get {
+                return ResourceManager.GetString("SendToChannelUnauthorized", resourceCulture);
             }
         }
         

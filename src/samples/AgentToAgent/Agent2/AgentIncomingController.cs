@@ -12,7 +12,7 @@ namespace Agent2;
 
 // ASP.Net Controller that receives incoming HTTP requests from the Azure Bot Service or other configured event activity protocol sources.
 // When called, the request has already been authorized and credentials and tokens validated.
-[Authorize]
+[Authorize(Policy = "AllowedCallers")]
 [ApiController]
 [Route("api/messages")]
 public class AgentIncomingController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
