@@ -127,7 +127,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 }
             }
 
-            SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            SignInResponse response = await _dispatcher.SignUserInAsync(turnContext, handlerName, true, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
 
             if (response.Status == SignInStatus.Pending)
             {
@@ -272,6 +272,7 @@ namespace Microsoft.Agents.BotBuilder.App.UserAuth
                 SignInResponse response = await _dispatcher.SignUserInAsync(
                     turnContext, 
                     activeFlowName, 
+                    forceSignIn: !flowContinuation,
                     exchangeConnection: exchangeConnection, 
                     exchangeScopes: exchangeScopes, 
                     cancellationToken: cancellationToken).ConfigureAwait(false);

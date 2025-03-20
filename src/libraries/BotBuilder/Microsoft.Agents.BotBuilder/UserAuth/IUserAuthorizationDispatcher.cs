@@ -33,11 +33,12 @@ namespace Microsoft.Agents.BotBuilder.UserAuth
         /// </summary>
         /// <param name="turnContext">The turn context</param>
         /// <param name="handlerName">The name of the user authorization handler to use. If null, the default handler name is used.</param>
+        /// <param name="forceSignIn"></param>
         /// <param name="exchangeConnection">Optional, passed to the named IUserAuthorization</param>
         /// <param name="exchangeScopes">Optional, passed to the named IUserAuthorization</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The sign in status</returns>
-        Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
+        Task<SignInResponse> SignUserInAsync(ITurnContext turnContext, string handlerName, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Signs out a user.

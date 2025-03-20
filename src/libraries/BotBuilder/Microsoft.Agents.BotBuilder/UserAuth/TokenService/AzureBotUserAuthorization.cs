@@ -61,7 +61,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
         public string Name { get; private set; }
 
         /// <inheritdoc/>
-        public async Task<string> SignInUserAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<string> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             /*
             if ((_messageExtensionAuth != null && _messageExtensionAuth.IsValidActivity(turnContext)))
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.BotBuilder.UserAuth.TokenService
             }
             */
 
-            if (_botAuthentication != null && _botAuthentication.IsValidActivity(turnContext))
+            if (_botAuthentication != null && (_botAuthentication.IsValidActivity(turnContext) || forceSignIn))
             {
                 var token = await _botAuthentication.AuthenticateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return await HandleOBO(turnContext, token, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
