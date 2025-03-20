@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Azure.Identity;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
+using Microsoft.Agents.Storage;
 using WeatherAgent.Agents;
 using WeatherAgent;
 
@@ -57,6 +58,12 @@ builder.AddAgentApplicationOptions();
 
 // Add the Agent
 builder.AddAgent<Weather>();
+
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 

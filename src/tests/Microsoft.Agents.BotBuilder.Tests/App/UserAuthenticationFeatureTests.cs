@@ -34,7 +34,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         {
             MockGraph = new Mock<IUserAuthorization>();
             MockGraph
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(GraphToken));
             MockGraph
                 .Setup(e => e.Name)
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             MockSharePoint = new Mock<IUserAuthorization>();
             MockSharePoint
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(SharePointToken));
             MockSharePoint
                 .Setup(e => e.Name)
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
         public async Task Test_AutoSignIn_Pending()
         {
             MockGraph
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((string)null));
 
             var options = new TestApplicationOptions()
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             // a IUserAuthorization that already has a token (user already signed in)
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(GraphToken));
             graphMock
                 .Setup(e => e.Name)
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             int attempt = 0;
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(() =>
                 {
                     if (attempt++ == 0)
@@ -299,7 +299,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
 
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(GraphToken));
             graphMock
                 .Setup(e => e.Name)
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.App
             int attempt = 0;
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
-                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(() =>
                 {
                     if (attempt++ == 0)

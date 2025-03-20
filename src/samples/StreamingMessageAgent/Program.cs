@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using Azure.AI.OpenAI;
 using System;
 using System.ClientModel;
+using StreamingMessageBot;
+using Microsoft.Agents.Storage;
 using StreamingMessageAgent;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +36,11 @@ builder.AddAgentApplicationOptions();
 // Add the Agent
 builder.AddAgent<StreamingAgent>();
 
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
