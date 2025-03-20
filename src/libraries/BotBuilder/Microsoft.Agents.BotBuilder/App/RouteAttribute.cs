@@ -102,7 +102,7 @@ namespace Microsoft.Agents.BotBuilder.App
             {
                 if (!string.IsNullOrWhiteSpace(EventName))
                 {
-                    app.OnEvent(Text, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
+                    app.OnEvent(EventName, attributedMethod.CreateDelegate<RouteHandler>(app), rank: Rank);
                 }
                 else if (!string.IsNullOrWhiteSpace(Regex))
                 {
