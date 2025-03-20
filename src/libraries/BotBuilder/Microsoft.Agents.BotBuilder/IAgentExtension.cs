@@ -9,5 +9,5 @@ namespace Microsoft.Agents.BotBuilder;
 public interface IAgentExtension
 {
     string ChannelId { get; init; }
-    void AddRoute(AgentApplication agentApplication, RouteSelectorAsync routeSelectorAsync, RouteHandler routeHandler, bool isInvokeRoute = false);
+    void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false);
 }

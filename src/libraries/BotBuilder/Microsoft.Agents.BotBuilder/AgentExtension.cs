@@ -9,9 +9,9 @@ namespace Microsoft.Agents.BotBuilder;
 public abstract class AgentExtension : IAgentExtension
 {
     public virtual string ChannelId {get;init;}
-    public void AddRoute(AgentApplication agentApplication, RouteSelectorAsync routeSelectorAsync, RouteHandler routeHandler, bool isInvokeRoute = false) {
-        var ensureChannelMatches = new RouteSelectorAsync(async (turnContext, cancellationToken) => {
-            return turnContext.Activity.ChannelId == ChannelId && await routeSelectorAsync(turnContext, cancellationToken);
+    public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false) {
+        var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
+            return turnContext.Activity.ChannelId == ChannelId && await routeSelector(turnContext, cancellationToken);
         });
 
         agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute);
