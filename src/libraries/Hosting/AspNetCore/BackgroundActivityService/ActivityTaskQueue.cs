@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             ArgumentNullException.ThrowIfNull(activity);
             
             //Copy to prevent unexpected side effects from later mutations of the original headers.
-            var copyHeaders = new HeaderDictionary(headers.ToDictionary());
+            var copyHeaders = headers != null ? new HeaderDictionary(headers.ToDictionary()) : [];
 
             _activities.Enqueue(new ActivityWithClaims { BotType = bot, ClaimsIdentity = claimsIdentity, Activity = activity, IsProactive = proactive, ProactiveAudience = proactiveAudience, Headers = copyHeaders });
             _signal.Release();
