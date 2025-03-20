@@ -17,13 +17,13 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
 builder.Services.AddTransient<AgentApplicationOptions>();
 
 // Add basic Agent functionality
-builder.AddBot<StreamingHostAgent>();
+builder.AddAgent<StreamingHostAgent>();
 
 // Add ChannelHost to enable calling other Agents.  This is also required for
 // AgentApplication.ChannelResponses use.

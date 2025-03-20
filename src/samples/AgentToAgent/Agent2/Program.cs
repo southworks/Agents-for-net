@@ -20,13 +20,13 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
 builder.Services.AddTransient<AgentApplicationOptions>();
 
 // Add basic Agent functionality
-builder.AddBot<Echo>();
+builder.AddAgent<Echo>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so

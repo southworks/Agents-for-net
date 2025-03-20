@@ -1,31 +1,39 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using CopilotStudioEchoSkill;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Azure.AI.OpenAI;
+using System;
+using System.ClientModel;
+using Microsoft.Agents.Storage;
+using StreamingMessageAgent;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-
 builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 // Add AspNet token validation
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
-// Add AgentApplicationOptions from config.
+builder.Services.AddTransient<IChatClient>(sp =>
+{
+    return new AzureOpenAIClient(new Uri(builder.Configuration["AIServices:AzureOpenAI:Endpoint"]), new ApiKeyCredential(builder.Configuration["AIServices:AzureOpenAI:ApiKey"]))
+        .AsChatClient(builder.Configuration["AIServices:AzureOpenAI:DeploymentName"]);
+});
+
+// Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
-builder.AddAgent<EchoSkill, AdapterWithErrorHandler>();
+builder.AddAgent<StreamingAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -35,13 +43,9 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-// Required for providing the bot manifest.
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Microsoft Agents SDK Sample - EchoSkill");
+    app.MapGet("/", () => "Microsoft Agents SDK Sample - StreamingMessageAgent");
     app.UseDeveloperExceptionPage();
     app.MapControllers().AllowAnonymous();
 }
@@ -49,5 +53,5 @@ else
 {
     app.MapControllers();
 }
-
 app.Run();
+

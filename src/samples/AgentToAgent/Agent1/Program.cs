@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using Agent1;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.Client;
-using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -17,13 +17,13 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // Add AspNet token validation
-builder.Services.AddBotAspNetAuthentication(builder.Configuration);
+builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 // Add AgentApplicationOptions.  This will use DI'd services and IConfiguration for construction.
 builder.Services.AddTransient<AgentApplicationOptions>();
 
 // Add basic Agent functionality
-builder.AddBot<HostAgent>();
+builder.AddAgent<HostAgent>();
 
 // Add ChannelHost to enable calling other Agents.  This is also required for
 // AgentApplication.ChannelResponses use.
