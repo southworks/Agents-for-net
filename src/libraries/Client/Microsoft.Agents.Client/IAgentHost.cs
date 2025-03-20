@@ -25,6 +25,8 @@ namespace Microsoft.Agents.Client
 
         IAgentChannel GetChannel(string name);
 
+        IList<IAgentChannelInfo> GetChannels();
+
         /// <summary>
         /// Returns the conversationId for an existing conversation for a Channel, relative to to the current Turns Conversation.
         /// </summary>

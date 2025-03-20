@@ -107,7 +107,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
             {
                 Skill = "test",
                 ConversationState = state,
-                ChannelHost = _agentHost
+                AgentHost = _agentHost
             });
         }
 
@@ -632,7 +632,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
         {
             var dialogOptions = new SkillDialogOptions
             {
-                ChannelHost = channelHost,
+                AgentHost = channelHost,
                 Skill = "test",
                 ConversationState = conversationState,
                 ConnectionName = connectionName

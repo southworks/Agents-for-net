@@ -105,7 +105,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
             // Handle EndOfConversation from the skill (this will be sent to the this dialog by the SkillHandler if received from the Skill)
             if (dc.Context.Activity.Type == ActivityTypes.EndOfConversation)
             {
-                await DialogOptions.ChannelHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
+                await DialogOptions.AgentHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
                 return await dc.EndDialogAsync(dc.Context.Activity.Value, cancellationToken).ConfigureAwait(false);
             }
 
@@ -267,7 +267,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
                         eocActivity = activityFromSkill;
 
                         // The conversation has ended, so cleanup the conversation id.
-                        await DialogOptions.ChannelHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
+                        await DialogOptions.AgentHost.DeleteConversationAsync(skillConversationId, DialogOptions.ConversationState, cancellationToken).ConfigureAwait(false);
                     }
                     else if (!sentInvokeResponse && await InterceptOAuthCardsAsync(context, activityFromSkill, DialogOptions.ConnectionName, cancellationToken).ConfigureAwait(false))
                     {
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
 
         private async Task<string> CreateSkillConversationIdAsync(ITurnContext context, IActivity activity, CancellationToken cancellationToken)
         {
-            return await DialogOptions.ChannelHost.GetOrCreateConversationAsync(context, DialogOptions.ConversationState, DialogOptions.Skill, cancellationToken).ConfigureAwait(false);
+            return await DialogOptions.AgentHost.GetOrCreateConversationAsync(context, DialogOptions.ConversationState, DialogOptions.Skill, cancellationToken).ConfigureAwait(false);
         }
     }
 }

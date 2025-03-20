@@ -163,6 +163,18 @@ namespace Microsoft.Agents.Client
             return CreateChannel(name, channelSettings);
         }
 
+        public IList<IAgentChannelInfo> GetChannels()
+        {
+            var result = new List<IAgentChannelInfo>();
+
+            foreach (var channel in _channels.Values)
+            {
+                result.Add(channel);
+            }
+
+            return result;
+        }
+
         /// <inheritdoc/>
         public string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string channelName)
         {
