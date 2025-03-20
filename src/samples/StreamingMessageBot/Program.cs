@@ -13,6 +13,7 @@ using Azure.AI.OpenAI;
 using System;
 using System.ClientModel;
 using StreamingMessageBot;
+using Microsoft.Agents.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,11 @@ builder.Services.AddTransient<IChatClient>(sp =>
 // Add the bot (which is transient)
 builder.AddBot<MyBot>();
 
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
