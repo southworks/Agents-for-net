@@ -20,13 +20,13 @@ namespace Microsoft.Agents.Client
 {
     /// <summary>
     /// This IChannelApiHandler is primarily used when calling another Agent using DeliveryModes.Normal, and forwarding most
-    /// Agent replies to the originating channel.  This is the legacy behavior for the Root bot in a Skill scenario, including 
+    /// Agent replies to the originating channel.  This is the legacy behavior for the Root bot in a Bot Framework Skill scenario, including 
     /// for Dialogs SkillDialog.
     /// </summary>
     /// <remarks>
     /// This is provided for compatibility with Dialogs SkillDialog.  It is not intended for use with AgentApplication.
     /// </remarks>
-    public class ProxyChannelApiHandler : IChannelApiHandler
+    public class SkillChannelApiHandler : IChannelApiHandler
     {
         public static readonly string SkillConversationReferenceKey = "Microsoft.Agents.BotBuilder.Skills.SkillConversationReference";
 
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Client
         private readonly ConversationState _conversationState;
         private readonly ILogger _logger;
 
-        public ProxyChannelApiHandler(
+        public SkillChannelApiHandler(
             IChannelAdapter adapter,
             IBot bot,
             IAgentHost channelHost,
