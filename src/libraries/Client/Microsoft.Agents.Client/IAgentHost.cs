@@ -78,9 +78,9 @@ namespace Microsoft.Agents.Client
         /// Ends all active conversations for the Turn conversation.
         /// </summary>
         /// <param name="turnContext"></param>
-        /// <param name="turnState"></param>
+        /// <param name="conversationState"></param>
         /// <param name="cancellationToken"></param>
-        Task EndAllActiveConversations(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default);
+        Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the conversation information for the specified channel conversation.

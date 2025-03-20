@@ -246,23 +246,23 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task EndAllActiveConversations(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default)
+        public async Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
         {
             // End all active channel conversations.
-            var activeConversations = GetExistingConversations(turnContext, turnState.Conversation);
+            var activeConversations = GetExistingConversations(turnContext, conversationState);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
                 {
                     // Delete the conversation because we're done with it.
-                    await DeleteConversationAsync(conversation.ChannelConversationId, turnState.Conversation, cancellationToken);
+                    await DeleteConversationAsync(conversation.ChannelConversationId, conversationState, cancellationToken).ConfigureAwait(false);
 
                     // Send EndOfConversation to the Agent.
-                    await SendToAgent(conversation.ChannelName, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken);
+                    await SendToAgent(conversation.ChannelName, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
                 }
             }
 
-            await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken);
+            await conversationState.SaveChangesAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

@@ -117,7 +117,7 @@ public class HostAgent : AgentApplication
     // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
     private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await _agentHost.EndAllActiveConversations(turnContext, turnState, cancellationToken);
+        await _agentHost.EndAllActiveConversations(turnContext, turnState.Conversation, cancellationToken);
         await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
     }
 
