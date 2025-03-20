@@ -120,10 +120,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 builder.Services.AddSingleton<IConversationIdFactory>(sp => new ConversationIdFactory(storage));
             }
-            else
-            {
-                builder.Services.AddSingleton<IConversationIdFactory, ConversationIdFactory>();
-            }
 
             // Add bot callback handler.
             // This is the object that handles callback endpoints for bot responses.
@@ -170,10 +166,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             if (storage != null)
             {
                 builder.Services.AddSingleton(storage);
-            }
-            else
-            {
-                builder.Services.AddSingleton<IStorage, MemoryStorage>();
             }
 
             // Add the ChannelAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol.

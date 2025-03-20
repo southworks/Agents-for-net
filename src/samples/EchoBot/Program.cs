@@ -4,6 +4,7 @@
 using EchoBot;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
+using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,9 +22,14 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 // Add AgentApplicationOptions from config.
 builder.AddAgentApplicationOptions();
 
-// Add the bot (which is transient)
+// Add the bot
 builder.AddBot<MyBot>();
 
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 

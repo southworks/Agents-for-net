@@ -11,6 +11,7 @@ using Microsoft.Agents.BotBuilder.State;
 using TeamsConversationSsoQuickstart.Bots;
 using TeamsConversationSsoQuickstart;
 using TeamsConversationSsoQuickstart.Dialogs;
+using Microsoft.Agents.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,12 @@ builder.Services.AddBotAspNetAuthentication(builder.Configuration);
 
 // Add basic bot functionality
 builder.AddBot<TeamsBot<MainDialog>, AdapterWithErrorHandler>();
+
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operate correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Add Conversation and User state.
 builder.Services.AddSingleton<ConversationState>();
