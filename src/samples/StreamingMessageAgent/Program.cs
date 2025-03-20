@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Azure.AI.OpenAI;
 using System;
 using System.ClientModel;
-using StreamingMessageBot;
 using Microsoft.Agents.Storage;
 using StreamingMessageAgent;
 
