@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Client.Compat
     /// </remarks>
     public class SkillChannelApiHandler : IChannelApiHandler
     {
-        public static readonly string SkillConversationReferenceKey = "Microsoft.Agents.BotBuilder.Skills.SkillConversationReference";
+        public static readonly string SkillConversationReferenceKey = $"{nameof(SkillChannelApiHandler)}.SkillConversationReference";
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
