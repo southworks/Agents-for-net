@@ -11,7 +11,6 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Serialization;
@@ -131,29 +130,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            SynchronousRequestHandler.CompleteHandlerForConversation(activity.Conversation.Id);
+                            StreamedResponseHandler.CompleteHandlerForConversation(activity.Conversation.Id);
                             invokeResponse = response;
                         });
 
                         // block until turn is complete
-                        await SynchronousRequestHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await StreamedResponseHandler.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
                         {
-                            try
-                            {
-                                await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: activity\r\ndata: {ProtocolJsonSerializer.ToJson(activity)}\r\n"), cancellationToken);
-                                await httpResponse.Body.FlushAsync(cancellationToken);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.ToString());
-                            }
+                            await StreamedResponseHandler.StreamActivity(httpResponse, activity, Logger, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
-                        if (invokeResponse?.Body != null)
-                        {
-                            await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes($"event: invokeResponse\r\ndata: {ProtocolJsonSerializer.ToJson(invokeResponse)}\r\n"), cancellationToken);
-                            await httpResponse.Body.FlushAsync(cancellationToken);
-                        }
+                        await StreamedResponseHandler.StreamInvokeResponse(httpResponse, invokeResponse, Logger, cancellationToken).ConfigureAwait(false);
                     }
                     else if (!_adapterOptions.Async || activity.Type == ActivityTypes.Invoke || activity.DeliveryMode == DeliveryModes.ExpectReplies)
                     {
@@ -209,7 +196,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await SynchronousRequestHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await StreamedResponseHandler.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }
