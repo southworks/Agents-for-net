@@ -99,7 +99,7 @@ public class StreamingHostAgent : AgentApplication
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.EndOfConversation)]
     private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await _agentHost.EndAllActiveConversations(turnContext, turnState, cancellationToken);
+        await _agentHost.EndAllActiveConversations(turnContext, turnState.Conversation, cancellationToken);
         await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
     }
 

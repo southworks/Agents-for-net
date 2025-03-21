@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Client.Compat
 
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
-        private readonly IAgentHost _channelHost;
+        private readonly IAgentHost _agentHost;
         private readonly ConversationState _conversationState;
         private readonly ILogger _logger;
 
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Client.Compat
 
             _bot = bot;
             _adapter = adapter;
-            _channelHost = channelHost;
+            _agentHost = channelHost;
             _conversationState = conversationState;
             _logger = logger ?? NullLogger.Instance;
         }
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Client.Compat
 
         private async Task<ChannelConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
-            var conversationReference = await _channelHost.GetChannelConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+            var conversationReference = await _agentHost.GetChannelConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             if (conversationReference == null)
 
             {
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Client.Compat
                 switch (activity.Type)
                 {
                     case ActivityTypes.EndOfConversation:
-                        await _channelHost.DeleteConversationAsync(conversationId, _conversationState, cancellationToken).ConfigureAwait(false);
+                        await _agentHost.DeleteConversationAsync(conversationId, _conversationState, cancellationToken).ConfigureAwait(false);
                         await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Event:
