@@ -28,8 +28,12 @@ public class HostAgent : AgentApplication
     {
         _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
 
-        // Add route to handle replies from another Agent.
-        AgentResponses.OnAgentReply(this, OnAgentResponseAsync);
+        // Register extension to handle DeliveryMode.Normal Agent replies.
+        RegisterExtension(new AgentResponsesExtension(this), (extension) =>
+        {
+            // Add route to handle replies from another Agent.
+            extension.OnAgentReply(OnAgentResponseAsync);
+        });
 
         // Add Activity routes
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
