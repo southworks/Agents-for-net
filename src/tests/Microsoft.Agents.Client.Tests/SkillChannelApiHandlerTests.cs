@@ -23,12 +23,13 @@ using Xunit.Abstractions;
 using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Client.Compat;
 
 namespace Microsoft.Agents.Client.Tests
 {
-    public class ProxyChannelApiHandlerTests
+    public class SkillChannelApiHandlerTests
     {
-        private ILogger<ProxyChannelApiHandlerTests> _logger = null;
+        private ILogger<SkillChannelApiHandlerTests> _logger = null;
         private static readonly string TestSkillId = Guid.NewGuid().ToString("N");
         private static readonly string TestAuthHeader = string.Empty; // Empty since claims extraction is being mocked
         private static readonly ChannelAccount TestMember = new ChannelAccount()
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Client.Tests
         };
 
 
-        public ProxyChannelApiHandlerTests(ITestOutputHelper output)
+        public SkillChannelApiHandlerTests(ITestOutputHelper output)
         {
             IConfiguration config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -54,7 +55,7 @@ namespace Microsoft.Agents.Client.Tests
                     })
                     .AddConfiguration(config.GetSection("Logging"))
                     .AddProvider(new TraceConsoleLoggingProvider(output)));
-            _logger = loggerFactory.CreateLogger<ProxyChannelApiHandlerTests>();
+            _logger = loggerFactory.CreateLogger<SkillChannelApiHandlerTests>();
         }
 
 

@@ -163,6 +163,7 @@ namespace Microsoft.Agents.Client
             return CreateChannel(name, channelSettings);
         }
 
+        /// <inheritdoc />
         public IList<IAgentChannelInfo> GetChannels()
         {
             var result = new List<IAgentChannelInfo>();

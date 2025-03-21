@@ -16,7 +16,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.State;
 
-namespace Microsoft.Agents.Client
+namespace Microsoft.Agents.Client.Compat
 {
     /// <summary>
     /// This IChannelApiHandler is primarily used when calling another Agent using DeliveryModes.Normal, and forwarding most

@@ -23,8 +23,15 @@ namespace Microsoft.Agents.Client
 
         string HostClientId { get; set; }
 
+        /// <summary>
+        /// Gets the Agent Client used to send Activities to another Agent.
+        /// </summary>
+        /// <param name="name">The name of the Agent</param>
         IAgentChannel GetChannel(string name);
 
+        /// <summary>
+        /// Returns a list of configured Agents.
+        /// </summary>
         IList<IAgentChannelInfo> GetChannels();
 
         /// <summary>

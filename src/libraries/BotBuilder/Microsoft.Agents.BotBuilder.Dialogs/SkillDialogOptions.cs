@@ -33,7 +33,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// The the Microsoft app ID of the bot calling the skill.
         /// </value>
         [JsonIgnore]
-        public string BotId => AgentHost?.HostClientId;
+        public string ClientId => AgentHost?.HostClientId;
 
         /// <summary>
         /// Gets or sets the <see cref="BotFrameworkClient"/> used to call the remote skill.
