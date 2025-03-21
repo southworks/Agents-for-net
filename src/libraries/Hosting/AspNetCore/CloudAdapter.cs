@@ -13,7 +13,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.BotBuilder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -114,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
 
-                if (!IsValidChannelActivity(activity, httpResponse))
+                if (!IsValidChannelActivity(activity))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
@@ -201,7 +200,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return true;
         }
 
-        private bool IsValidChannelActivity(IActivity activity, HttpResponse httpResponse)
+        private bool IsValidChannelActivity(IActivity activity)
         {
             if (activity == null)
             {

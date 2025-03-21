@@ -493,7 +493,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="activityType">The activity type to check for.</param>
         /// <returns><c>true</c> if this activity is of the specified activity type; otherwise, <c>false</c>.</returns>
-        public bool IsActivity(string activityType)
+        internal bool IsActivity(string activityType)
         {
             /*
              * NOTE: While it is possible to come up with a fancy looking "one-liner" to solve
