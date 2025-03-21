@@ -5,14 +5,14 @@ using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.BotBuilderSamples.DialogRootBot.Bots;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.BotBuilderSamples.DialogRootBot.Dialogs;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Client.Compat;
+using DialogRootBot.Dialogs;
+using DialogRootBot.Bots;
 
 var builder = WebApplication.CreateBuilder(args);
 

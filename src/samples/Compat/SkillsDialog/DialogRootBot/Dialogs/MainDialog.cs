@@ -15,7 +15,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 
-namespace Microsoft.BotBuilderSamples.DialogRootBot.Dialogs
+namespace DialogRootBot.Dialogs
 {
     /// <summary>
     /// The main dialog for this bot. It uses a <see cref="SkillDialog"/> to call skills.
@@ -29,13 +29,14 @@ namespace Microsoft.BotBuilderSamples.DialogRootBot.Dialogs
         private const string SkillActionMessage = "Message";
 
         public static readonly string ActiveSkillPropertyName = $"{typeof(MainDialog).FullName}.ActiveSkillProperty";
+        private readonly IStatePropertyAccessor<string> _activeSkillProperty;
         private readonly IAgentHost _agentHost;
         private readonly ConversationState _conversationState;
-        private readonly IStatePropertyAccessor<string> _activeSkillProperty;
+        
         private readonly string _selectedSkillKey = $"{typeof(MainDialog).FullName}.SelectedSkillKey";
 
         // Dependency injection uses this constructor to instantiate MainDialog.
-        public MainDialog(IAgentHost agentHost, ConversationState conversationState, IConfiguration configuration)
+        public MainDialog(IAgentHost agentHost, ConversationState conversationState)
             : base(nameof(MainDialog))
         {
             _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));

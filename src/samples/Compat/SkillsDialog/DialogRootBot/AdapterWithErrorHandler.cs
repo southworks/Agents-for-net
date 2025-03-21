@@ -9,10 +9,9 @@ using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.BotBuilderSamples.DialogRootBot
+namespace DialogRootBot
 {
     public class AdapterWithErrorHandler : CloudAdapter
     {

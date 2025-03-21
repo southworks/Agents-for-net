@@ -48,11 +48,11 @@ namespace Microsoft.Agents.Client
 
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
-                DefaultHostEndpoint = new Uri(hostEndpoint);
+                DefaultResponseEndpoint = new Uri(hostEndpoint);
             }
             else
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultHostEndpoint));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultResponseEndpoint));
             }
 
             if (!string.IsNullOrWhiteSpace(hostClientId))
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Client
         ///   "Publisher": null,                                           // Optional
         ///   "Copyright": null,                                           // Optional
         ///   "Host": {
-        ///     "DefaultEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
+        ///     "DefaultResponseEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
         ///     "Agents": {
         ///       "Echo": {
         ///         "DisplayName": {{optional-displayName}},               // Defaults to node name ("Echo")
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Client
                 connections, 
                 httpClientFactory,
                 configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
-                configuration?.GetValue<string>($"{configSection}:Host:DefaultEndpoint"), 
+                configuration?.GetValue<string>($"{configSection}:Host:DefaultResponseEndpoint"), 
                 configuration?.GetValue<string>($"{configSection}:ClientId"))
         {
         }
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Client
                     // the DefaultHostEndpoint.
                     if (string.IsNullOrEmpty(kv.Value.ConnectionSettings.ServiceUrl))
                     {
-                        kv.Value.ConnectionSettings.ServiceUrl = DefaultHostEndpoint.ToString();
+                        kv.Value.ConnectionSettings.ServiceUrl = DefaultResponseEndpoint.ToString();
                     }
 
                     kv.Value.Name = kv.Key;
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc />
-        public Uri DefaultHostEndpoint { get; set; }
+        public Uri DefaultResponseEndpoint { get; set; }
 
         /// <inheritdoc />
         public string HostClientId { get; set; }

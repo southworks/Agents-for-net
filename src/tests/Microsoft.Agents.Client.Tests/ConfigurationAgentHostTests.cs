@@ -54,12 +54,12 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
-            var DefaultEndpoint = "http://localhost/";
+            var DefaultResponseEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:Host:DefaultResponseEndpoint", DefaultResponseEndpoint},
                 {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Client.Tests
 
             Assert.Single(host._channels);
             Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
-            Assert.Equal(DefaultEndpoint, host.DefaultHostEndpoint.ToString());
+            Assert.Equal(DefaultResponseEndpoint, host.DefaultResponseEndpoint.ToString());
             Assert.Equal(botClientId, host.HostClientId);
         }
 
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Client.Tests
         public void GetChannel_ShouldThrowOnEmptyName()
         {
             var sections = new Dictionary<string, string>{
-                {"Agent:Host:DefaultEndpoint", "http://localhost"},
+                {"Agent:Host:DefaultResponseEndpoint", "http://localhost"},
                 {"Agent:ClientId", "hostClientId"},
             };
             var config = new ConfigurationBuilder()
@@ -98,13 +98,13 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "BotServiceConnection";
-            var DefaultEndpoint = "http://localhost/";
+            var DefaultResponseEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{botName}:Alias", botAlias},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:Host:DefaultResponseEndpoint", DefaultResponseEndpoint},
                 {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
@@ -124,13 +124,13 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
             var botTokenProvider = "";
-            var DefaultEndpoint = "http://localhost/";
+            var DefaultResponseEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{botName}:Alias", botAlias},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
-                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:Host:DefaultResponseEndpoint", DefaultResponseEndpoint},
                 {"Agent:ClientId", botClientId},
             };
             var config = new ConfigurationBuilder()
@@ -155,14 +155,14 @@ namespace Microsoft.Agents.Client.Tests
             var botClientId = "123";
             var botTokenProvider = "BotServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
-            var DefaultEndpoint = "http://localhost/";
+            var DefaultResponseEndpoint = "http://localhost/";
             var hostId = "hostId";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{botName}:Alias", botAlias},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:ClientId", botClientId},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:TokenProvider", botTokenProvider},
                 {$"Agent:Host:Agents:{botName}:ConnectionSettings:Endpoint", botEndpoint},
-                {"Agent:Host:DefaultEndpoint", DefaultEndpoint},
+                {"Agent:Host:DefaultResponseEndpoint", DefaultResponseEndpoint},
                 {"Agent:ClientId", hostId},
             };
             var config = new ConfigurationBuilder()
@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Client.Tests
                 {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:ClientId", "456"},
                 {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
                 {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {"Agent:Host:DefaultEndpoint", "http://localhost/"},
+                {"Agent:Host:DefaultResponseEndpoint", "http://localhost/"},
                 {"Agent:ClientId", "hostId"},
             };
             var config = new ConfigurationBuilder()

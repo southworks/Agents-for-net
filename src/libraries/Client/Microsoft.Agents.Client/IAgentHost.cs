@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Client
         /// <summary>
         /// The endpoint to use in Activity.ServiceUrl if unspecified in a Channels settings.
         /// </summary>
-        Uri DefaultHostEndpoint { get; set; }
+        Uri DefaultResponseEndpoint { get; set; }
 
         string HostClientId { get; set; }
 

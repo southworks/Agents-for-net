@@ -11,7 +11,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.BotBuilderSamples.DialogRootBot.Bots
+namespace DialogRootBot.Bots
 {
     public class RootBot<T> : ActivityHandler
         where T : Dialog
