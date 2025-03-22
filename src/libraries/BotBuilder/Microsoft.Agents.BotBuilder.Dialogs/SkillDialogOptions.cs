@@ -42,7 +42,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs
         /// The <see cref="BotFrameworkClient"/> used to call the remote skill.
         /// </value>
         [JsonIgnore]
-        public IAgentChannel SkillClient => AgentHost?.GetChannel(Skill);
+        public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
 
         /// <summary>
         /// Gets or sets the <see cref="ConversationState"/> to be used by the dialog.

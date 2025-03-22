@@ -82,7 +82,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles response from Agent2.
-    private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
+    private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity channelActivity, CancellationToken cancellationToken)
     {
         var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
         if (!string.Equals(echoConversationId, channelActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))

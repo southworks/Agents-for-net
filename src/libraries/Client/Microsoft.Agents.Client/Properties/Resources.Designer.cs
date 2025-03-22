@@ -61,56 +61,56 @@ namespace Microsoft.Agents.Client.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A required property on ChannelHost is missing: {0}.
+        ///   Looks up a localized string similar to A required property on AgentHost is missing: {0}.
         /// </summary>
-        internal static string ChannelHostMissingProperty {
+        internal static string AgentHostMissingProperty {
             get {
-                return ResourceManager.GetString("ChannelHostMissingProperty", resourceCulture);
+                return ResourceManager.GetString("AgentHostMissingProperty", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A required property on Channel &apos;{0}&apos; settings is missing: {1}.
+        ///   Looks up a localized string similar to A required property on Agent &apos;{0}&apos; settings is missing: {1}.
         /// </summary>
-        internal static string ChannelMissingProperty {
+        internal static string AgentMissingProperty {
             get {
-                return ResourceManager.GetString("ChannelMissingProperty", resourceCulture);
+                return ResourceManager.GetString("AgentMissingProperty", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Agent &apos;{0}&apos; not found..
         /// </summary>
-        internal static string ChannelNotFound {
+        internal static string AgentNotFound {
             get {
-                return ResourceManager.GetString("ChannelNotFound", resourceCulture);
+                return ResourceManager.GetString("AgentNotFound", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed.
         /// </summary>
-        internal static string SendToChannelFailed {
+        internal static string SendToAgentFailed {
             get {
-                return ResourceManager.GetString("SendToChannelFailed", resourceCulture);
+                return ResourceManager.GetString("SendToAgentFailed", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed: Unauthorized.
         /// </summary>
-        internal static string SendToChannelUnauthorized {
+        internal static string SendToAgentUnauthorized {
             get {
-                return ResourceManager.GetString("SendToChannelUnauthorized", resourceCulture);
+                return ResourceManager.GetString("SendToAgentUnauthorized", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to SendToAgent &apos;{0} failed with an unsucessful response &apos;{1}&apos;..
         /// </summary>
-        internal static string SendToChannelUnsuccessful {
+        internal static string SendToAgentUnsuccessful {
             get {
-                return ResourceManager.GetString("SendToChannelUnsuccessful", resourceCulture);
+                return ResourceManager.GetString("SendToAgentUnsuccessful", resourceCulture);
             }
         }
     }

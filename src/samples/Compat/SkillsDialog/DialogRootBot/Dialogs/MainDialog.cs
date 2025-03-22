@@ -97,7 +97,7 @@ namespace DialogRootBot.Dialogs
             {
                 Prompt = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput),
                 RetryPrompt = MessageFactory.Text(repromptMessageText, repromptMessageText, InputHints.ExpectingInput),
-                Choices = _agentHost.GetChannels().Select(skill => new Choice(skill.Name)).ToList()
+                Choices = _agentHost.GetAgents().Select(skill => new Choice(skill.Name)).ToList()
             };
 
             // Prompt the user to select a skill.
@@ -190,7 +190,7 @@ namespace DialogRootBot.Dialogs
         // Helper method that creates and adds SkillDialog instances for the configured skills.
         private void AddSkillDialogs()
         {
-            foreach (var skillInfo in _agentHost.GetChannels())
+            foreach (var skillInfo in _agentHost.GetAgents())
             {
                 // Create the dialog options.
                 var skillDialogOptions = new SkillDialogOptions

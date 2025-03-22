@@ -6,17 +6,17 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public class AgentChannelSettings() : IAgentChannelInfo
+    public class AgentClientSettings() : IAgentInfo
     {
         public string Name { get; set; }
 
         public string DisplayName { get; set; }
 
-        public virtual void ValidateChannelSettings() 
+        public virtual void ValidateClientSettings() 
         { 
             if (string.IsNullOrWhiteSpace(Name))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelMissingProperty, null, nameof(Name));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, nameof(Name));
             }
         }
     }

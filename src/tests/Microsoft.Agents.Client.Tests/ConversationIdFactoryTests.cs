@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Channel = this.BuildBotFrameworkSkill(),
+                    Agent = this.BuildBotFrameworkSkill(),
                     FromClientId = _botId,
                     FromOAuthScope = _botId,
                 },
@@ -39,13 +39,13 @@ namespace Microsoft.Agents.Client.Tests
             Assert.False(string.IsNullOrEmpty(skillConversationId), "Expected a valid skill conversation ID to be created");
 
             // Retrieve skill conversation
-            var retrievedConversationReference = await _conversationIdFactory.GetChannelConversationReferenceAsync(skillConversationId, CancellationToken.None);
+            var retrievedConversationReference = await _conversationIdFactory.GetAgentConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             // Delete
             await _conversationIdFactory.DeleteConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             // Retrieve again
-            var deletedConversationReference = await _conversationIdFactory.GetChannelConversationReferenceAsync(skillConversationId, CancellationToken.None);
+            var deletedConversationReference = await _conversationIdFactory.GetAgentConversationReferenceAsync(skillConversationId, CancellationToken.None);
 
             Assert.NotNull(retrievedConversationReference);
             Assert.NotNull(retrievedConversationReference.ConversationReference);
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Channel = this.BuildBotFrameworkSkill(),
+                    Agent = this.BuildBotFrameworkSkill(),
                     FromClientId = _botId,
                     FromOAuthScope = _botId,
                 },
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Client.Tests
                 options: new ConversationIdFactoryOptions
                 {
                     Activity = BuildMessageActivity(conversationReference),
-                    Channel = this.BuildBotFrameworkSkill(),
+                    Agent = this.BuildBotFrameworkSkill(),
                     FromClientId = _botId,
                     FromOAuthScope = _botId,
                 },
@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Client.Tests
             return activity;
         }
 
-        private IAgentChannelInfo BuildBotFrameworkSkill()
+        private IAgentInfo BuildBotFrameworkSkill()
         {
             return new BotFrameworkSkill
             {
@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Client.Tests
             };
         }
 
-		private class BotFrameworkSkill : IAgentChannelInfo
+		private class BotFrameworkSkill : IAgentInfo
 		{
 			public string Alias { get; set; }
 			public string DisplayName { get; set; }

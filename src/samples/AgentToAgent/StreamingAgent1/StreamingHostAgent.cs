@@ -67,7 +67,7 @@ public class StreamingHostAgent : AgentApplication
         }
 
         // Forward whatever the user says to Agent2.
-        var channel = _agentHost.GetChannel(Agent2Name);
+        var channel = _agentHost.GetClient(Agent2Name);
 
         // Forward whatever C2 sent to the channel until a result is returned.
         var result = await channel.SendActivityStreamedAsync<object>(

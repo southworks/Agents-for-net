@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// A conversation reference type for an Agent channel.
     /// </summary>
-    public class ChannelConversationReference
+    public class AgentConversationReference
     {
         /// <summary>
         /// Gets or sets the conversation reference.

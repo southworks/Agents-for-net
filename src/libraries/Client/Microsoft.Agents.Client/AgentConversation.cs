@@ -4,15 +4,15 @@
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Contains the Agent Channel information for active Conversations.
+    /// Contains the Agent information for active Conversations.
     /// </summary>
-    public class ChannelConversation
+    public class AgentConversation
     {
-        public string ChannelName { get; internal set; }
+        public string AgentName { get; internal set; }
 
         /// <summary>
         /// This is the conversationId created with <see cref="IAgentHost.GetOrCreateConversationAsync(BotBuilder.ITurnContext, BotBuilder.State.ConversationState, string, System.Threading.CancellationToken)"/>.
         /// </summary>
-        public string ChannelConversationId { get; internal set; }
+        public string AgentConversationId { get; internal set; }
     }
 }

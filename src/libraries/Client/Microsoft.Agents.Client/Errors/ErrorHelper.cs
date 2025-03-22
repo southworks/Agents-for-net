@@ -33,12 +33,12 @@ namespace Microsoft.Agents.Client.Errors
         /// </summary>
         private static readonly int baseClientErrorCode = -90000;
 
-        internal static AgentErrorDefinition ChannelHostMissingProperty = new AgentErrorDefinition(baseClientErrorCode, Properties.Resources.ChannelHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition ChannelMissingProperty = new AgentErrorDefinition(baseClientErrorCode - 1, Properties.Resources.ChannelMissingProperty, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition ChannelNotFound = new AgentErrorDefinition(baseClientErrorCode - 2, Properties.Resources.ChannelNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToChannelFailed = new AgentErrorDefinition(baseClientErrorCode - 3, Properties.Resources.SendToChannelFailed, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToChannelUnsuccessful = new AgentErrorDefinition(baseClientErrorCode - 4, Properties.Resources.SendToChannelUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToChannelUnauthorized = new AgentErrorDefinition(baseClientErrorCode - 5, Properties.Resources.SendToChannelUnauthorized, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AgentHostMissingProperty = new AgentErrorDefinition(baseClientErrorCode, Properties.Resources.AgentHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AgentMissingProperty = new AgentErrorDefinition(baseClientErrorCode - 1, Properties.Resources.AgentMissingProperty, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AgentNotFound = new AgentErrorDefinition(baseClientErrorCode - 2, Properties.Resources.AgentNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToAgentFailed = new AgentErrorDefinition(baseClientErrorCode - 3, Properties.Resources.SendToAgentFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToAgentUnsuccessful = new AgentErrorDefinition(baseClientErrorCode - 4, Properties.Resources.SendToAgentUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendToAgentUnauthorized = new AgentErrorDefinition(baseClientErrorCode - 5, Properties.Resources.SendToAgentUnauthorized, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

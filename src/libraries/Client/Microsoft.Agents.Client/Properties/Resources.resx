@@ -117,27 +117,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ChannelHostMissingProperty" xml:space="preserve">
-    <value>A required property on ChannelHost is missing: {0}</value>
+  <data name="AgentHostMissingProperty" xml:space="preserve">
+    <value>A required property on AgentHost is missing: {0}</value>
     <comment>Raised when initializing AgentHost and settings are missing.</comment>
   </data>
-  <data name="ChannelMissingProperty" xml:space="preserve">
-    <value>A required property on Channel '{0}' settings is missing: {1}</value>
+  <data name="AgentMissingProperty" xml:space="preserve">
+    <value>A required property on Agent '{0}' settings is missing: {1}</value>
     <comment>Raised when initializing AgentHost and Agent settings are missing.</comment>
   </data>
-  <data name="ChannelNotFound" xml:space="preserve">
+  <data name="AgentNotFound" xml:space="preserve">
     <value>Agent '{0}' not found.</value>
-    <comment>Raised when calling IAgentHost.GetChannel.</comment>
+    <comment>Raised when calling IAgentHost.GetClient.</comment>
   </data>
-  <data name="SendToChannelFailed" xml:space="preserve">
+  <data name="SendToAgentFailed" xml:space="preserve">
     <value>SendToAgent '{0}' failed</value>
     <comment>Raised when calling IAgentHost.SendToAgent.</comment>
   </data>
-  <data name="SendToChannelUnauthorized" xml:space="preserve">
+  <data name="SendToAgentUnauthorized" xml:space="preserve">
     <value>SendToAgent '{0}' failed: Unauthorized</value>
     <comment>Raised when sending to an Agent this is misconfigured or does not include requesting AppId in AllowedCallers.</comment>
   </data>
-  <data name="SendToChannelUnsuccessful" xml:space="preserve">
+  <data name="SendToAgentUnsuccessful" xml:space="preserve">
     <value>SendToAgent '{0} failed with an unsucessful response '{1}'.</value>
     <comment>Raised when calling IAgentHost.SendToAgent.</comment>
   </data>

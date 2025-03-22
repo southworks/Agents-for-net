@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Client
     {
         public class ChannelReply
         {
-            public ChannelConversationReference ChannelConversationReference { get; set; }
+            public AgentConversationReference ChannelConversationReference { get; set; }
             public IActivity Activity { get; set; }
         }
 
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Client
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var conversationReference = await _channelHost.GetChannelConversationReferenceAsync(conversationId, cancellationToken);
+            var conversationReference = await _channelHost.GetAgentConversationReferenceAsync(conversationId, cancellationToken);
             if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.

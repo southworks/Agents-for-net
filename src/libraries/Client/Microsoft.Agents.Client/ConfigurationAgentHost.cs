@@ -19,24 +19,24 @@ using Microsoft.Extensions.Logging;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Loads channel information from configuration.
+    /// Loads Agent information from configuration.
     /// </summary>
     public class ConfigurationAgentHost : IAgentHost
     {
-        public const string ChannelConversationsProperty = "agentHost.channelConversations";
+        public const string AgentConversationsProperty = "agentHost.agentConversations";
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
-        internal IDictionary<string, HttpAgentChannelSettings> _channels;
+        internal IDictionary<string, HttpAgentClientSettings> _agents;
 
         public ConfigurationAgentHost(
             IServiceProvider systemServiceProvider,
             IStorage storage,
             IConnections connections,
             IHttpClientFactory httpClientFactory,
-            IDictionary<string, HttpAgentChannelSettings> channels,
+            IDictionary<string, HttpAgentClientSettings> agents,
             string hostEndpoint,
             string hostClientId)
         {
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Client
             }
             else
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(DefaultResponseEndpoint));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentHostMissingProperty, null, nameof(DefaultResponseEndpoint));
             }
 
             if (!string.IsNullOrWhiteSpace(hostClientId))
@@ -61,10 +61,10 @@ namespace Microsoft.Agents.Client
             }
             else
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelHostMissingProperty, null, nameof(HostClientId));
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentHostMissingProperty, null, nameof(HostClientId));
             }
 
-            LoadChannels(channels);
+            LoadAgents(agents);
         }
 
         /// <summary>
@@ -73,12 +73,11 @@ namespace Microsoft.Agents.Client
         /// <code>
         /// "Agent": {
         ///   "ClientId": "{{ClientId}}",                                  // This is the Client ID used for the remote agent to call you back with.,
-        ///   "Endpoint": "http://myagent.com/api/messages",               // Optional
         ///   "Description": null,                                         // Optional
         ///   "Publisher": null,                                           // Optional
         ///   "Copyright": null,                                           // Optional
         ///   "Host": {
-        ///     "DefaultResponseEndpoint": "http://localhost:3978/api/channelresponse/", // Default host serviceUrl.  Channel can override this via Channel:{{name}}:ConnectionSettings:ServiceUrl
+        ///     "DefaultResponseEndpoint": "http://localhost:3978/api/agentresponse/", // Default host serviceUrl.  Agent can override this via Agents:{{name}}:ConnectionSettings:ServiceUrl
         ///     "Agents": {
         ///       "Echo": {
         ///         "DisplayName": {{optional-displayName}},               // Defaults to node name ("Echo")
@@ -109,20 +108,20 @@ namespace Microsoft.Agents.Client
                 storage, 
                 connections, 
                 httpClientFactory,
-                configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentChannelSettings>>(), 
+                configuration?.GetSection($"{configSection}:Host:Agents").Get<IDictionary<string, HttpAgentClientSettings>>(), 
                 configuration?.GetValue<string>($"{configSection}:Host:DefaultResponseEndpoint"), 
                 configuration?.GetValue<string>($"{configSection}:ClientId"))
         {
         }
 
-        private void LoadChannels(IDictionary<string, HttpAgentChannelSettings> channels)
+        private void LoadAgents(IDictionary<string, HttpAgentClientSettings> agents)
         {
-            _channels = channels ?? new Dictionary<string, HttpAgentChannelSettings>();
-            if (channels != null)
+            _agents = agents ?? new Dictionary<string, HttpAgentClientSettings>();
+            if (agents != null)
             {
-                foreach (var kv in _channels)
+                foreach (var kv in _agents)
                 {
-                    // If the ServiceUrl isn't supplied at the Channel:ConnectionSettings use
+                    // If the ServiceUrl isn't supplied at the Agent:ConnectionSettings use
                     // the DefaultHostEndpoint.
                     if (string.IsNullOrEmpty(kv.Value.ConnectionSettings.ServiceUrl))
                     {
@@ -136,7 +135,7 @@ namespace Microsoft.Agents.Client
                         kv.Value.DisplayName = kv.Value.Name;
                     }
 
-                    kv.Value.ValidateChannelSettings();
+                    kv.Value.ValidateClientSettings();
                 }
             }
         }
@@ -148,39 +147,39 @@ namespace Microsoft.Agents.Client
         public string HostClientId { get; set; }
 
         /// <inheritdoc/>
-        public IAgentChannel GetChannel(string name)
+        public IAgentClient GetClient(string agentName)
         {
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(agentName))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelNotFound, null, "<null>");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentNotFound, null, "<null>");
             }
 
-            if (!_channels.TryGetValue(name, out HttpAgentChannelSettings channelSettings))
+            if (!_agents.TryGetValue(agentName, out HttpAgentClientSettings clientSettings))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ChannelNotFound, null, name);
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentNotFound, null, agentName);
             }
 
-            return CreateChannel(name, channelSettings);
+            return CreateClient(agentName, clientSettings);
         }
 
         /// <inheritdoc />
-        public IList<IAgentChannelInfo> GetChannels()
+        public IList<IAgentInfo> GetAgents()
         {
-            var result = new List<IAgentChannelInfo>();
+            var result = new List<IAgentInfo>();
 
-            foreach (var channel in _channels.Values)
+            foreach (var agent in _agents.Values)
             {
-                result.Add(channel);
+                result.Add(agent);
             }
 
             return result;
         }
 
         /// <inheritdoc/>
-        public string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string channelName)
+        public string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string agentName)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
-            if (conversations.TryGetValue(channelName, out var conversationId)) 
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
+            if (conversations.TryGetValue(agentName, out var conversationId)) 
             { 
                 return conversationId;
             }
@@ -188,78 +187,77 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public IList<ChannelConversation> GetExistingConversations(ITurnContext turnContext, ConversationState conversationState)
+        public IList<AgentConversation> GetExistingConversations(ITurnContext turnContext, ConversationState conversationState)
         {
-            var result = new List<ChannelConversation>();
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
+            var result = new List<AgentConversation>();
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
             foreach (var conversation in conversations)
             {
-                result.Add(new ChannelConversation() { ChannelName = conversation.Key, ChannelConversationId = conversation.Value });
+                result.Add(new AgentConversation() { AgentName = conversation.Key, AgentConversationId = conversation.Value });
             }
             return result;
         }
 
         /// <inheritdoc/>
-        public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string channelName, CancellationToken cancellationToken = default)
+        public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default)
         {
-            //ClaimsIdentity identity, IActivity activity
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
-            if (conversations.TryGetValue(channelName, out var conversationId)) { return conversationId; }
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
+            if (conversations.TryGetValue(agentName, out var conversationId)) { return conversationId; }
 
             var options = new ConversationIdFactoryOptions
             {
                 FromOAuthScope = BotClaims.GetTokenScopes(turnContext.Identity)?.First(),
                 FromClientId = HostClientId,
                 Activity = turnContext.Activity,
-                Channel = _channels[channelName]
+                Agent = _agents[agentName]
             };
 
-            var channelConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
-            conversations.Add(channelName, channelConversationId);
-            return channelConversationId;
+            var agentConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
+            conversations.Add(agentName, agentConversationId);
+            return agentConversationId;
         }
 
         /// <inheritdoc/>
-        public async Task DeleteConversationAsync(string channelConversationId, ConversationState conversationState, CancellationToken cancellationToken = default)
+        public async Task DeleteConversationAsync(string agentConversationId, ConversationState conversationState, CancellationToken cancellationToken = default)
         {
-            await _conversationIdFactory.DeleteConversationReferenceAsync(channelConversationId, cancellationToken).ConfigureAwait(false);
+            await _conversationIdFactory.DeleteConversationReferenceAsync(agentConversationId, cancellationToken).ConfigureAwait(false);
 
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(ChannelConversationsProperty, () => new Dictionary<string, string>());
-            var channelName = conversations.Where(kv => kv.Value.Equals(channelConversationId)).Select((kv) => kv.Key).FirstOrDefault();
-            if (channelName != null)
+            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
+            var agentName = conversations.Where(kv => kv.Value.Equals(agentConversationId)).Select((kv) => kv.Key).FirstOrDefault();
+            if (agentName != null)
             {
-                conversations.Remove(channelName);
+                conversations.Remove(agentName);
             }
         }
 
         /// <inheritdoc/>
-        public async Task SendToAgent(string channelName, string channelConversationId, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            using var channel = GetChannel(channelName);
-
+            using var client = GetClient(agentName);
+            
             if (string.IsNullOrEmpty(activity.DeliveryMode)
                 || !string.Equals(DeliveryModes.Normal, activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
                 activity.DeliveryMode = DeliveryModes.Normal;
             }
 
-            await channel.SendActivityAsync<object>(channelConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await client.SendActivityAsync<object>(agentConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
         {
-            // End all active channel conversations.
+            // End all active Agent conversations.
             var activeConversations = GetExistingConversations(turnContext, conversationState);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
                 {
                     // Delete the conversation because we're done with it.
-                    await DeleteConversationAsync(conversation.ChannelConversationId, conversationState, cancellationToken).ConfigureAwait(false);
+                    await DeleteConversationAsync(conversation.AgentConversationId, conversationState, cancellationToken).ConfigureAwait(false);
 
                     // Send EndOfConversation to the Agent.
-                    await SendToAgent(conversation.ChannelName, conversation.ChannelConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
+                    await SendToAgent(conversation.AgentName, conversation.AgentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -267,20 +265,20 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public Task<ChannelConversationReference> GetChannelConversationReferenceAsync(string channelConversationId, CancellationToken cancellationToken = default)
+        public Task<AgentConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
         {
-            return _conversationIdFactory.GetChannelConversationReferenceAsync(channelConversationId, cancellationToken);
+            return _conversationIdFactory.GetAgentConversationReferenceAsync(agentConversationId, cancellationToken);
         }
 
-        private IAgentChannel CreateChannel(string name, HttpAgentChannelSettings channelSettings)
+        private IAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)
         {
-            var tokenProviderName = channelSettings.ConnectionSettings.TokenProvider;
+            var tokenProviderName = clientSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
-                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Channel '{name}'");
+                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Agent '{agentName}'");
             }
 
-            return new HttpAgentChannel(channelSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentChannel>) _serviceProvider.GetService(typeof(ILogger<HttpAgentChannel>)));
+            return new HttpAgentClient(clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
         }
     }
 }

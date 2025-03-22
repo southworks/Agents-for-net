@@ -68,8 +68,8 @@ namespace Microsoft.Agents.Client.Tests
 
             var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
-            Assert.Single(host._channels);
-            Assert.Equal(botClientId, host._channels[botName].ConnectionSettings.ClientId);
+            Assert.Single(host._agents);
+            Assert.Equal(botClientId, host._agents[botName].ConnectionSettings.ClientId);
             Assert.Equal(DefaultResponseEndpoint, host.DefaultResponseEndpoint.ToString());
             Assert.Equal(botClientId, host.HostClientId);
         }
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Client.Tests
 
             var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
-            Assert.Throws<ArgumentException>(() => host.GetChannel(string.Empty));
+            Assert.Throws<ArgumentException>(() => host.GetClient(string.Empty));
         }
 
         [Fact]
@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Client.Tests
 
             var host = new ConfigurationAgentHost(config, _provider.Object, _storage, _connections.Object, _httpClientFactory.Object);
 
-            Assert.Throws<ArgumentException>(() => host.GetChannel("random"));
+            Assert.Throws<ArgumentException>(() => host.GetClient("random"));
         }
 
         [Fact]
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Single(idState);
 
             // Verify ConversationState has the conversationId for the bot
-            var conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.ChannelConversationsProperty}", () => new Dictionary<string, string>());
+            var conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}", () => new Dictionary<string, string>());
             Assert.Equal(conversationId, conversations[botName]);
 
             // delete conversation
@@ -224,7 +224,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Empty(idState);
 
             // Verify conversation for the bot was removed from ConversationState
-            conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.ChannelConversationsProperty}");
+            conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}");
             Assert.Empty(conversations);
         }
 
@@ -293,8 +293,8 @@ namespace Microsoft.Agents.Client.Tests
             // Should have two existing conversations
             var conversations = host.GetExistingConversations(turnContext, turnState.Conversation);
             Assert.Equal(2, conversations.Count);
-            Assert.Equal(conversationId1, conversations.Where(c => c.ChannelName == channel1Name).First().ChannelConversationId);
-            Assert.Equal(conversationId2, conversations.Where(c => c.ChannelName == channel2Name).First().ChannelConversationId);
+            Assert.Equal(conversationId1, conversations.Where(c => c.AgentName == channel1Name).First().AgentConversationId);
+            Assert.Equal(conversationId2, conversations.Where(c => c.AgentName == channel2Name).First().AgentConversationId);
 
             // delete conversation
             await host.DeleteConversationAsync(conversationId1, turnState.Conversation);

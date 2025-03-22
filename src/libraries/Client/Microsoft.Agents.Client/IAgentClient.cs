@@ -3,14 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Client
 {
-    public interface IAgentChannel : IDisposable
+    public interface IAgentClient : IDisposable
     {
         string Name { get; }
 

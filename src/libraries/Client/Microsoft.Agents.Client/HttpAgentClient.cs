@@ -7,7 +7,6 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -24,9 +23,9 @@ namespace Microsoft.Agents.Client
     /// <summary>
     /// Sends Activities to a remote Agent.
     /// </summary>
-    internal class HttpAgentChannel : IAgentChannel
+    internal class HttpAgentClient : IAgentClient
     {
-        private readonly HttpAgentChannelSettings _settings;
+        private readonly HttpAgentClientSettings _settings;
         private readonly IAccessTokenProvider _tokenProvider;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
@@ -36,16 +35,16 @@ namespace Microsoft.Agents.Client
         /// <param name="httpClientFactory"></param>
         /// <param name="tokenProvider"></param>
         /// <param name="logger"></param>
-        public HttpAgentChannel(
-            HttpAgentChannelSettings channelSettings,
+        public HttpAgentClient(
+            HttpAgentClientSettings channelSettings,
             IHttpClientFactory httpClientFactory,
             IAccessTokenProvider tokenProvider,
-            ILogger<HttpAgentChannel> logger = null)
+            ILogger<HttpAgentClient> logger = null)
         {
             _settings = channelSettings ?? throw new ArgumentNullException(nameof(channelSettings));
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _logger = logger ?? NullLogger<HttpAgentChannel>.Instance;
+            _logger = logger ?? NullLogger<HttpAgentClient>.Instance;
         }
 
         /// <inheritdoc/>
@@ -194,7 +193,7 @@ namespace Microsoft.Agents.Client
                 Content = jsonContent
             };
 
-            using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentChannel));
+            using var httpClient = _httpClientFactory.CreateClient(nameof(HttpAgentClient));
 
             // Add the auth header to the HTTP request.
             var tokenResult = await _tokenProvider.GetAccessTokenAsync(_settings.ConnectionSettings.ResourceUrl, [$"{_settings.ConnectionSettings.ClientId}/.default"]).ConfigureAwait(false);
@@ -210,7 +209,7 @@ namespace Microsoft.Agents.Client
             catch (Exception ex)
             {
                 _logger.LogError(ex, "SendActivityAsync: Channel request failed to '{ChannelName}' at '{ChannelEndpoint}'", Name, _settings.ConnectionSettings.Endpoint.ToString());
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelFailed, ex, Name);
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToAgentFailed, ex, Name);
             }
 
             if (!response.IsSuccessStatusCode)
@@ -220,9 +219,9 @@ namespace Microsoft.Agents.Client
 
                 if (response.StatusCode == HttpStatusCode.Forbidden)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelUnauthorized, null, Name);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToAgentUnauthorized, null, Name);
                 }
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToChannelUnsuccessful, null, Name, response.StatusCode.ToString());
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.SendToAgentUnsuccessful, null, Name, response.StatusCode.ToString());
             }
 
             return response;
