@@ -41,7 +41,7 @@ public class StreamingHostAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Say \"agent\" and I'll patch you through"), cancellationToken);
+                await turnContext.SendActivityAsync("Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
             }
         }
     }
@@ -54,19 +54,18 @@ public class StreamingHostAgent : AgentApplication
         {
             if (!turnContext.Activity.Text.Contains("agent"))
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Say \"agent\" and I'll patch you through"), cancellationToken);
+                await turnContext.SendActivityAsync("Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
                 return;
             }
 
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
             // subsequent SendToBot calls.
-            await turnContext.SendActivityAsync(MessageFactory.Text($"Got it, connecting you to the '{Agent2Name}' Agent..."), cancellationToken);
+            await turnContext.SendActivityAsync($"Got it, connecting you to the '{Agent2Name}' Agent...", cancellationToken: cancellationToken);
             echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
         }
 
-        // Send the message to the other Agent, and handles Agent2 replies.
-        var client = _agentHost.GetClient(Agent2Name);
-        await foreach (IActivity agentActivity in client.SendActivityStreamedAsync(echoConversationId, turnContext.Activity, cancellationToken: cancellationToken))
+        // Send the message to the other Agent, and handle Agent2 replies.
+        await foreach (IActivity agentActivity in _agentHost.SendToAgentStreamedAsync(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken))
         {
             // Agent2 sends EndOfConversation when "end" was received.
             if (agentActivity.IsType(ActivityTypes.EndOfConversation))
@@ -77,16 +76,16 @@ public class StreamingHostAgent : AgentApplication
                 if (agentActivity.Value != null)
                 {
                     var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
-                    await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
+                    await turnContext.SendActivityAsync(resultMessage, cancellationToken: cancellationToken);
                 }
 
                 // Done with calling the remote Agent.
-                await turnContext.SendActivityAsync(MessageFactory.Text($"Back in {nameof(StreamingHostAgent)}. Say \"agent\" and I'll patch you through"), cancellationToken);
+                await turnContext.SendActivityAsync($"Back in {nameof(StreamingHostAgent)}. Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
             }
             else
             {
                 // Just repeat message to C2
-                await turnContext.SendActivityAsync(MessageFactory.Text($"({client.Name}) {agentActivity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync($"({Agent2Name}) {agentActivity.Text}", cancellationToken: cancellationToken);
             }
         }
     }

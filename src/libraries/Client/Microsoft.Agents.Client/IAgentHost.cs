@@ -113,5 +113,15 @@ namespace Microsoft.Agents.Client
         /// <param name="cancellationToken"></param>
         /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
         Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="agentName">An Agent name from configuration.</param>
+        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetExistingConversation"/></param>
+        /// <param name="activity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
     }
 }

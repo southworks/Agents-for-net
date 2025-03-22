@@ -244,6 +244,12 @@ namespace Microsoft.Agents.Client
             await client.SendActivityAsync<object>(agentConversationId, activity, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        public IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default)
+        {
+            using var client = GetClient(agentName);
+            return client.SendActivityStreamedAsync(agentConversationId, activity, cancellationToken: cancellationToken);
+        }
+
         /// <inheritdoc/>
         public async Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
         {

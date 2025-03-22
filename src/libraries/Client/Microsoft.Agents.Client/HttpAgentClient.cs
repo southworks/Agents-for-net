@@ -51,24 +51,24 @@ namespace Microsoft.Agents.Client
         public string Name => _settings.Name;
 
         /// <inheritdoc/>
-        public async Task SendActivityAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            await SendActivityAsync<object>(channelConversationId, activity, relatesTo, cancellationToken).ConfigureAwait(false);
+            await SendActivityAsync<object>(agentConversationId, activity, relatesTo, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string channelConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelConversationId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
             ArgumentNullException.ThrowIfNull(activity);
 
             _logger.LogInformation($"SendActivityAsync: '{_settings.ConnectionSettings.ClientId}' at '{_settings.ConnectionSettings.Endpoint.ToString()}'");
 
             // Clone the activity so we can modify it before sending without impacting the original object.
-            var activityClone = CreateSendActivity(channelConversationId, activity, relatesTo);
+            var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
 
             // Create the HTTP request from the cloned Activity and send it to the bot.
-            using var response = await SendRequest(channelConversationId, activityClone, cancellationToken).ConfigureAwait(false);
+            using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
             var content = response.Content != null ? await response.Content.ReadAsStringAsync().ConfigureAwait(false) : null;
 
             // On success assuming either JSON that can be deserialized to T or empty.
@@ -80,13 +80,13 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task<T> SendActivityStreamedAsync<T>(string channelConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task<T> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(channelConversationId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
             ArgumentNullException.ThrowIfNull(activity);
             ArgumentNullException.ThrowIfNull(handler);
 
-            await foreach (var received in SendActivityStreamedAsync(channelConversationId, activity, relatesTo, cancellationToken))
+            await foreach (var received in SendActivityStreamedAsync(agentConversationId, activity, relatesTo, cancellationToken))
             {
                 if (received is IActivity receivedActivity)
                 {
@@ -130,13 +130,13 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<object> SendActivityStreamedAsync(string channelConversationId, IActivity activity, IActivity relatesTo = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var activityClone = CreateSendActivity(channelConversationId, activity, relatesTo);
+            var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
             activityClone.DeliveryMode = DeliveryModes.Stream;
 
             // Create the HTTP request from the cloned Activity and send it to the Agent.
-            using var response = await SendRequest(channelConversationId, activityClone, cancellationToken).ConfigureAwait(false);
+            using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
 
             // Read streamed response
             using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -183,7 +183,7 @@ namespace Microsoft.Agents.Client
             }
         }
 
-        private async Task<HttpResponseMessage> SendRequest(string channelConversationId, IActivity activity, CancellationToken cancellationToken)
+        private async Task<HttpResponseMessage> SendRequest(IActivity activity, CancellationToken cancellationToken)
         {
             var jsonContent = new StringContent(activity.ToJson(), Encoding.UTF8, "application/json");
             var httpRequestMessage = new HttpRequestMessage
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Client
             return response;
         }
 
-        private IActivity CreateSendActivity(string channelConversationId, IActivity activity, IActivity relatesTo)
+        private IActivity CreateSendActivity(string agentConversationId, IActivity activity, IActivity relatesTo)
         {
             // Clone the activity so we can modify it before sending without impacting the original object.
             var activityClone = activity.Clone();
@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Client
             activityClone.Conversation ??= new ConversationAccount();
             if (!string.IsNullOrEmpty(activityClone.Conversation.Id))
             {
-                activityClone.Conversation.Id = channelConversationId;
+                activityClone.Conversation.Id = agentConversationId;
             }
 
             return activityClone;
