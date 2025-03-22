@@ -17,22 +17,22 @@ namespace Microsoft.Agents.Client
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.ClientId))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Channel:{Name}:ConnectionSettings:{nameof(ConnectionSettings.ClientId)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Agent:{Name}:ConnectionSettings:{nameof(ConnectionSettings.ClientId)}");
             }
 
             if (ConnectionSettings.Endpoint == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Channel:{Name}:ConnectionSettings:{nameof(ConnectionSettings.Endpoint)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Agent:{Name}:ConnectionSettings:{nameof(ConnectionSettings.Endpoint)}");
             }
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.TokenProvider))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Channel:{Name}:ConnectionSettings:{nameof(ConnectionSettings.TokenProvider)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Agent:{Name}:ConnectionSettings:{nameof(ConnectionSettings.TokenProvider)}");
             }
 
             if (string.IsNullOrWhiteSpace(ConnectionSettings.ServiceUrl))
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Channel:{Name}:ConnectionSettings:{nameof(ConnectionSettings.ServiceUrl)}");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentMissingProperty, null, Name, $"Agent:{Name}:ConnectionSettings:{nameof(ConnectionSettings.ServiceUrl)}");
             }
 
             if (string.IsNullOrEmpty(ConnectionSettings.ResourceUrl))
@@ -45,10 +45,10 @@ namespace Microsoft.Agents.Client
     public class ConnectionSettings
     {
         /// <summary>
-        /// Gets or sets clientId/appId of the channel.
+        /// Gets or sets clientId/appId of the Agent.
         /// </summary>
         /// <value>
-        /// ClientId/AppId of the channel.
+        /// ClientId/AppId of the Agent.
         /// </value>
         public string ClientId { get; set; }
 
@@ -60,10 +60,10 @@ namespace Microsoft.Agents.Client
         public string TokenProvider { get; set; }
 
         /// <summary>
-        /// Gets or sets endpoint for the channel.
+        /// Gets or sets endpoint for the Agent.
         /// </summary>
         /// <value>
-        /// Uri for the channel.
+        /// Uri for the Agent.
         /// </value>
         public Uri Endpoint { get; set; }
 

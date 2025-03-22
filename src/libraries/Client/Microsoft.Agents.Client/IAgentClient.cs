@@ -19,9 +19,8 @@ namespace Microsoft.Agents.Client
         /// <remarks>This is a rather base level of functionality and in most cases <see cref="SendActivityForResultAsync"/> is easier to use.</remarks>
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
-        /// <returns></returns>
+        /// <param name="cancellationToken"></param>
         Task<InvokeResponse<T>> SendActivityAsync<T>(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -29,9 +28,8 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
-        /// <returns></returns>
+        /// <param name="cancellationToken"></param>
         Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -44,19 +42,17 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
         /// <param name="handler"></param>
-        /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
-        /// <returns></returns>
-        Task<T> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default);
+        /// <param name="cancellationToken"></param>
+        Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="agentConversationId"></param>
         /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
         /// <param name="relatesTo"></param>
-        /// <returns></returns>
+        /// <param name="cancellationToken"></param>
         IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default);
     }
 }

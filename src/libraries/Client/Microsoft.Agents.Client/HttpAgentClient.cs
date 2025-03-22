@@ -31,17 +31,17 @@ namespace Microsoft.Agents.Client
         private readonly ILogger _logger;
         private bool _disposed;
 
-        /// <param name="channelSettings"></param>
+        /// <param name="clientSettings"></param>
         /// <param name="httpClientFactory"></param>
         /// <param name="tokenProvider"></param>
         /// <param name="logger"></param>
         public HttpAgentClient(
-            HttpAgentClientSettings channelSettings,
+            HttpAgentClientSettings clientSettings,
             IHttpClientFactory httpClientFactory,
             IAccessTokenProvider tokenProvider,
             ILogger<HttpAgentClient> logger = null)
         {
-            _settings = channelSettings ?? throw new ArgumentNullException(nameof(channelSettings));
+            _settings = clientSettings ?? throw new ArgumentNullException(nameof(clientSettings));
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _logger = logger ?? NullLogger<HttpAgentClient>.Instance;
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task<T> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
+        public async Task<StreamResponse<T>> SendActivityStreamedAsync<T>(string agentConversationId, IActivity activity, Action<IActivity> handler, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
             ArgumentNullException.ThrowIfNull(activity);
@@ -92,12 +92,20 @@ namespace Microsoft.Agents.Client
                 {
                     if (receivedActivity.Type == ActivityTypes.EndOfConversation)
                     {
-                        if (receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
+                        if (!string.IsNullOrEmpty(receivedActivity.Code) && receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
                         {
-                            throw new ChannelOperationException($"Unsuccessful EOC from Channel: {receivedActivity.Code}");
+                            return new StreamResponse<T>()
+                            {
+                                Status = StreamResponseStatus.Error,
+                                Error = $"eoc:{receivedActivity.Code}",
+                            };
                         }
 
-                        return ProtocolJsonSerializer.ToObject<T>(receivedActivity.Value);
+                        return new StreamResponse<T>()
+                        {
+                            Status = StreamResponseStatus.Complete,
+                            Value = ProtocolJsonSerializer.ToObject<T>(receivedActivity.Value)
+                        };
                     }
 
                     handler(receivedActivity);
@@ -106,7 +114,11 @@ namespace Microsoft.Agents.Client
                 {
                     if (invokeResponse.Status >= 200 && invokeResponse.Status <= 299)
                     {
-                        throw new ChannelOperationException($"Unsuccessful InvokeResponse from Channel: {invokeResponse.Status}");
+                        return new StreamResponse<T>()
+                        {
+                            Status = StreamResponseStatus.Error,
+                            Error = $"invoke:{invokeResponse.Status}",
+                        };
                     }
 
                     if (activity.DeliveryMode == DeliveryModes.ExpectReplies)
@@ -117,16 +129,27 @@ namespace Microsoft.Agents.Client
                             handler(reply);
                         }
 
-                        return ProtocolJsonSerializer.ToObject<T>(expectedReplies.Body);
+                        return new StreamResponse<T>()
+                        {
+                            Status = StreamResponseStatus.Complete,
+                            Value = ProtocolJsonSerializer.ToObject<T>(expectedReplies.Body)
+                        };
                     }
                     else
                     {
-                        return ProtocolJsonSerializer.ToObject<T>(invokeResponse.Body);
+                        return new StreamResponse<T>()
+                        {
+                            Status = StreamResponseStatus.Complete,
+                            Value = ProtocolJsonSerializer.ToObject<T>(invokeResponse.Body)
+                        };
                     }
                 }
             }
 
-            return default;
+            return new StreamResponse<T>()
+            {
+                Status = StreamResponseStatus.Pending
+            };
         }
 
         /// <inheritdoc/>
@@ -163,7 +186,7 @@ namespace Microsoft.Agents.Client
                 }
                 else
                 {
-                    _logger.LogWarning("Channel {ChannelInfoId}: Unexpected stream type {StreamType}, {LineValue}", streamType, Name, line.Trim());
+                    _logger.LogWarning("AgentClient {AgentName}: Unexpected stream data {StreamType}, {LineValue}", Name, streamType, line.Trim());
                 }
             }
         }

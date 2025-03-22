@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Defines the interface of a factory that is used to create unique conversation IDs for Channel conversations.
+    /// Defines the interface of a factory that is used to create unique conversation IDs for Agent conversations.
     /// </summary>
     internal interface IConversationIdFactory
     {
@@ -23,9 +23,9 @@ namespace Microsoft.Agents.Client
         Task<string> CreateConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Gets the <see cref="AgentConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for a Channel ConversationId.
+        /// Gets the <see cref="AgentConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for an Agent conversation.
         /// </summary>
-        /// <param name="agentConversationId">A conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
+        /// <param name="agentConversationId">A conversationId for an Agent created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The caller's <see cref="ConversationReference"/> for a conversationId, with originatingAudience. Null if not found.</returns>
         Task<AgentConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken);
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Client
         /// <summary>
         /// Deletes a <see cref="ConversationReference"/>.
         /// </summary>
-        /// <param name="agentConversationId">A channel conversationId created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
+        /// <param name="agentConversationId">A conversationId for an Agent created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task DeleteConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken);

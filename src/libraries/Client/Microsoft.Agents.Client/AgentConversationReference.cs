@@ -6,7 +6,7 @@ using Microsoft.Agents.Core.Models;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// A conversation reference type for an Agent channel.
+    /// A conversation reference type for an Agent.
     /// </summary>
     public class AgentConversationReference
     {

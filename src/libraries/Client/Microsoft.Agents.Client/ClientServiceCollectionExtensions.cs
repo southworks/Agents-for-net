@@ -12,17 +12,21 @@ namespace Microsoft.Agents.Client
 {
     public static class ClientServiceCollectionExtensions
     {
+        /// <summary>
+        /// Adds multi-Agent functionality for use with AgentApplication.
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="storage">Used for IAgentHost.  If null, the registered IStorage will be used.</param>
         public static IHostApplicationBuilder AddAgentHost(this IHostApplicationBuilder builder, IStorage storage = null)
         {
             return builder.AddAgentHost<AdapterChannelResponseHandler>(storage);
         }
 
         /// <summary>
-        /// Adds multi-Agent functionality.
+        /// Adds multi-Agent functionality for use with the specified <see cref="IChannelApiHanlder"/>.
         /// </summary>
         /// <param name="builder"></param>
         /// <param name="storage">Used for IAgentHost.  If null, the registered IStorage will be used.</param>
-        /// <returns></returns>
         public static IHostApplicationBuilder AddAgentHost<THandler>(this IHostApplicationBuilder builder, IStorage storage = null)
             where THandler : class, IChannelApiHandler
         {

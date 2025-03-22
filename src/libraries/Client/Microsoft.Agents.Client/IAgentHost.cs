@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Client
         /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
         /// <param name="activity"></param>
         /// <param name="cancellationToken"></param>
-        /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
+        /// <exception cref="ArgumentException">If the specified agentName is null or not found.</exception>
         Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -79,19 +79,18 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="turnContext"></param>
         /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
-        /// <param name="channelName">A Channel name from configuration.</param>
-        /// <returns>Non-null list of Channel conversations.</returns>
+        /// <returns>Non-null list of <see cref="AgentConversation"/>.</returns>
         IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState);
 
         /// <summary>
         /// Returns the existing conversation for an Agent, or creates a new one.
         /// </summary>
         /// <remarks>
-        /// IAgentHost currently only supports a single active conversation per Channel per Turn Conversation.
+        /// IAgentHost currently only supports a single active conversation per Agent per Turn Conversation.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
-        /// <param name="agentName">A Channel name from configuration.</param>
+        /// <param name="agentName">An Agent name from configuration.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default);
