@@ -21,7 +21,7 @@ public class StreamingHostAgent : AgentApplication
     // This provides access to other Agents.
     private readonly IAgentHost _agentHost;
     
-    // The Agent this sample will communicate with.  This name matches AgentHost:Agents config.
+    // The Agent this sample will communicate with.  This name matches a AgentHost:Agents in config.
     private const string Agent2Name = "Echo";
 
     public StreamingHostAgent(AgentApplicationOptions options, IAgentHost agentHost) : base(options)
@@ -33,7 +33,7 @@ public class StreamingHostAgent : AgentApplication
     }
 
     [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -45,28 +45,25 @@ public class StreamingHostAgent : AgentApplication
     }
 
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
 
         if (echoConversationId == null)
         {
-            if (turnContext.Activity.Text.Contains("agent"))
-            {
-                await turnContext.SendActivityAsync(MessageFactory.Text($"Got it, connecting you to the '{Agent2Name}' Agent..."), cancellationToken);
-
-                // Create the Conversation to use with Agent2.  This same conversationId should be used for all
-                // subsequent SendToBot calls.  State is automatically saved after the turn is over.
-                echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
-            }
-            else
+            if (!turnContext.Activity.Text.Contains("agent"))
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text("Say \"agent\" and I'll patch you through"), cancellationToken);
                 return;
             }
+
+            // Create the Conversation to use with Agent2.  This same conversationId should be used for all
+            // subsequent SendToBot calls.  State is automatically saved after the turn is over.
+            await turnContext.SendActivityAsync(MessageFactory.Text($"Got it, connecting you to the '{Agent2Name}' Agent..."), cancellationToken);
+            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
         }
 
-        // Forward whatever the user says to Agent2.
+        // Get an Agent Client to send message
         var channel = _agentHost.GetClient(Agent2Name);
 
         // Forward whatever C2 sent to the channel until a result is returned.
@@ -84,10 +81,10 @@ public class StreamingHostAgent : AgentApplication
         // the result the Agent2 sent when "end" is received.
         if (result != null)
         {
-            // Remove the channels conversation reference
+            // Remove the channels conversation reference.
             await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
 
-            var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n: {ProtocolJsonSerializer.ToJson(result)}";
+            var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(result)}";
             await turnContext.SendActivityAsync(MessageFactory.Text(resultMessage), cancellationToken);
 
             // Done with calling the remote Agent.

@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <remarks>
         /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Agent, the
-        /// <see cref="AgentResponsesExtension.OnAgentReply"/> handler must be set.
+        /// <see cref="AgentResponsesExtension.OnAgentReply"/> handler must be set on the AgentApplication.
         /// </remarks>
         /// <remarks>
         /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 

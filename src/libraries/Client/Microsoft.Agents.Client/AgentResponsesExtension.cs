@@ -12,7 +12,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public delegate Task AgentResponseHandler(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity botActivity, CancellationToken cancellationToken);
+    public delegate Task AgentResponseHandler(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken);
 
     public class AgentResponsesExtension(AgentApplication agentApplication) : IAgentExtension
     {
