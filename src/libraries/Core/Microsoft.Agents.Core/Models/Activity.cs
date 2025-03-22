@@ -133,6 +133,11 @@ namespace Microsoft.Agents.Core.Models
             SemanticAction = semanticAction;
         }
 
+        public bool IsType(string type)
+        {
+            return string.Equals(ActivityTypes.EndOfConversation, Type, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <inheritdoc/>
         public bool HasContent()
         {

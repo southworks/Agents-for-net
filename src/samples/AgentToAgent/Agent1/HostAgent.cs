@@ -28,25 +28,18 @@ public class HostAgent : AgentApplication
     {
         _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
 
-        // Register extension to handle DeliveryMode.Normal Agent replies.
-        // This type of reply arrives asynchronously via HTTP callback each time the
-        // other Agent sends a message.
-        RegisterExtension(new AgentResponsesExtension(this), (extension) =>
+        // Register extension to handle communicating with other Agents.
+        RegisterExtension(new AgentResponsesExtension(this, _agentHost), (extension) =>
         {
-            // Add route to handle replies from another Agent.
+            // Handle DeliveryMode.Normal Agent asynchronous replies.
             extension.OnAgentReply(OnAgentResponseAsync);
+
+            extension.AddDefaultEndOfConversationHandling();
         });
-
-        // Add Activity routes
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationActivityAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-
-        // Add an AgentApplication turn error handler.
-        OnTurnError(TurnErrorHandlerAsync);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -57,10 +50,11 @@ public class HostAgent : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    // Handles messages sent by the user.
+    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
-
         if (echoConversationId == null)
         {
             if (!turnContext.Activity.Text.Contains("agent"))
@@ -71,7 +65,7 @@ public class HostAgent : AgentApplication
             }
 
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
-            // subsequent SendToAgent calls.  State is automatically saved after the turn is over.
+            // subsequent SendToAgent calls until the conversation is over.
             await turnContext.SendActivityAsync(MessageFactory.Text($"Got it, connecting you to the '{Agent2Name}' Agent..."), cancellationToken);
             echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
         }
@@ -80,8 +74,8 @@ public class HostAgent : AgentApplication
         await _agentHost.SendToAgent(Agent2Name, echoConversationId, turnContext.Activity, cancellationToken);
     }
 
-    // Handles response from Agent2.
-    private async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
+    // Handles responses from Agent2.
+    protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
     {
         var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
         if (!string.Equals(echoConversationId, agentActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
@@ -94,7 +88,7 @@ public class HostAgent : AgentApplication
         }
          
         // Agents can send an EndOfConversation Activity.  This Activity can optional contain a result value.
-        if (string.Equals(ActivityTypes.EndOfConversation, agentActivity.Type, StringComparison.OrdinalIgnoreCase))
+        if (agentActivity.IsType(ActivityTypes.EndOfConversation))
         {
             // In this sample, the Agent2 will send an EndOfConversation with a result when "end" is sent.
             if (agentActivity.Value != null)
@@ -116,17 +110,5 @@ public class HostAgent : AgentApplication
             // cannot be sent directly to ABS without modification.  Here we are just extracting values we need.
             await turnContext.SendActivityAsync(MessageFactory.Text($"({reference.AgentName}) {agentActivity.Text}"), cancellationToken);
         }
-    }
-
-    // Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
-    private async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        await _agentHost.EndAllActiveConversations(turnContext, turnState.Conversation, cancellationToken);
-        await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken);
-    }
-
-    private async Task TurnErrorHandlerAsync(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken)
-    {
-        await OnEndOfConversationActivityAsync(turnContext, turnState, cancellationToken);
     }
 }
