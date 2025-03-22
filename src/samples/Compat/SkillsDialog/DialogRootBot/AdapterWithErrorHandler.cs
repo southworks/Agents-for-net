@@ -65,7 +65,7 @@ namespace DialogRootBot
         {
             try
             {
-                await _agentHost.EndAllActiveConversations(turnContext, _conversationState);
+                await _agentHost.EndAllConversations(turnContext, _conversationState);
             }
             catch (Exception ex)
             {

@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Client.Compat
 
         private async Task<AgentConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
-            var conversationReference = await _agentHost.GetAgentConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
+            var conversationReference = await _agentHost.GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             if (conversationReference == null)
 
             {

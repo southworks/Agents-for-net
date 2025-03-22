@@ -49,7 +49,7 @@ public class StreamingHostAgent : AgentApplication
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var echoConversationId = _agentHost.GetExistingConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = _agentHost.GetConversation(turnContext, turnState.Conversation, Agent2Name);
         if (echoConversationId == null)
         {
             if (!turnContext.Activity.Text.Contains("agent"))

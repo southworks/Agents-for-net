@@ -24,15 +24,43 @@ namespace Microsoft.Agents.Client
         string HostClientId { get; set; }
 
         /// <summary>
+        /// Returns a list of configured Agents.
+        /// </summary>
+        IList<IAgentInfo> GetAgents();
+
+        /// <summary>
         /// Gets the Agent Client used to send Activities to another Agent.
         /// </summary>
         /// <param name="agentName">The name of the Agent</param>
         IAgentClient GetClient(string agentName);
 
         /// <summary>
-        /// Returns a list of configured Agents.
+        /// Sends an activity to an Agent.
         /// </summary>
-        IList<IAgentInfo> GetAgents();
+        /// <remarks>
+        /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Agent, the
+        /// <see cref="AgentResponsesExtension.OnAgentReply"/> handler must be set on the AgentApplication.
+        /// </remarks>
+        /// <remarks>
+        /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 
+        /// use the returned <see cref="IAgentClient"/> directly for those.
+        /// </remarks>
+        /// <param name="agentName">An Agent name from configuration.</param>
+        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="activity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
+        Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="agentName">An Agent name from configuration.</param>
+        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="activity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the conversationId for an existing conversation for a Agent, relative to the current Turns Conversation.
@@ -44,7 +72,7 @@ namespace Microsoft.Agents.Client
         /// <param name="conversationState"></param>
         /// <param name="agentName"></param>
         /// <returns>conversationId for an existing conversation, or null.</returns>
-        string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string agentName);
+        string GetConversation(ITurnContext turnContext, ConversationState conversationState, string agentName);
 
         /// <summary>
         /// Returns a list of all Agent conversations for the current Turns Conversation.
@@ -53,7 +81,7 @@ namespace Microsoft.Agents.Client
         /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
         /// <param name="channelName">A Channel name from configuration.</param>
         /// <returns>Non-null list of Channel conversations.</returns>
-        IList<AgentConversation> GetExistingConversations(ITurnContext turnContext, ConversationState conversationState);
+        IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState);
 
         /// <summary>
         /// Returns the existing conversation for an Agent, or creates a new one.
@@ -75,7 +103,7 @@ namespace Microsoft.Agents.Client
         /// Only the bot knows when a conversation is done.  All effort should be made to remove conversations as otherwise the persisted conversations accumulate.
         /// A received Activity of type EndOfConversation is one instance where the conversation should be deleted.
         /// </remarks>
-        /// <param name="agentConversationId">A conversationId return from <see cref="GetExistingConversation"/> or <see cref="GetOrCreateConversationAsync"/>.</param>
+        /// <param name="agentConversationId">A conversationId return from <see cref="GetConversation"/> or <see cref="GetOrCreateConversationAsync"/>.</param>
         /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
@@ -84,44 +112,20 @@ namespace Microsoft.Agents.Client
         /// <summary>
         /// Ends all active conversations for the Turn conversation.
         /// </summary>
+        /// <remarks>
+        /// This means for all conversation with other Agents for the current ITurnContext conversation.  This also sends an
+        /// EndOfConversations to each Agent.
+        /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="conversationState"></param>
         /// <param name="cancellationToken"></param>
-        Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default);
+        Task EndAllConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the conversation information for the specified Agent conversation.
         /// </summary>
         /// <param name="agentConversationId"></param>
         /// <param name="cancellationToken"></param>
-        Task<AgentConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Sends an activity to an Agent.
-        /// </summary>
-        /// <remarks>
-        /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Agent, the
-        /// <see cref="AgentResponsesExtension.OnAgentReply"/> handler must be set on the AgentApplication.
-        /// </remarks>
-        /// <remarks>
-        /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 
-        /// use the returned <see cref="IAgentClient"/> directly for those.
-        /// </remarks>
-        /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetExistingConversation"/></param>
-        /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
-        /// <exception cref="ArgumentException">If the specified channelName is null or not found.</exception>
-        Task SendToAgent(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId"><see cref="GetOrCreateConversationAsync"/> or <see cref="GetExistingConversation"/></param>
-        /// <param name="activity"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        IAsyncEnumerable<object> SendToAgentStreamedAsync(string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
+        Task<AgentConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default);
     }
 }

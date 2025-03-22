@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Client
         {
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                await agentHost.EndAllActiveConversations(turnContext, turnState.Conversation, cancellationToken).ConfigureAwait(false);
+                await agentHost.EndAllConversations(turnContext, turnState.Conversation, cancellationToken).ConfigureAwait(false);
                 if (handler != null)
                 {
                     await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);

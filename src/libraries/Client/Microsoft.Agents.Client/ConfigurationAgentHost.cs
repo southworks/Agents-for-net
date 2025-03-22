@@ -176,24 +176,24 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public string GetExistingConversation(ITurnContext turnContext, ConversationState conversationState, string agentName)
+        public string GetConversation(ITurnContext turnContext, ConversationState conversationState, string agentName)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
-            if (conversations.TryGetValue(agentName, out var conversationId)) 
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            if (conversations.TryGetValue(agentName, out var conversation)) 
             { 
-                return conversationId;
+                return conversation.AgentConversationId;
             }
             return null;
         }
 
         /// <inheritdoc/>
-        public IList<AgentConversation> GetExistingConversations(ITurnContext turnContext, ConversationState conversationState)
+        public IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState)
         {
             var result = new List<AgentConversation>();
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             foreach (var conversation in conversations)
             {
-                result.Add(new AgentConversation() { AgentName = conversation.Key, AgentConversationId = conversation.Value });
+                result.Add(conversation.Value);
             }
             return result;
         }
@@ -201,8 +201,12 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
-            if (conversations.TryGetValue(agentName, out var conversationId)) { return conversationId; }
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            if (conversations.TryGetValue(agentName, out var conversation)) 
+            { 
+                // Already a conversation for the Agent.
+                return conversation.AgentConversationId; 
+            }
 
             var options = new ConversationIdFactoryOptions
             {
@@ -213,7 +217,7 @@ namespace Microsoft.Agents.Client
             };
 
             var agentConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
-            conversations.Add(agentName, agentConversationId);
+            conversations.Add(agentName, new AgentConversation() { AgentConversationId = agentConversationId, AgentName = agentName });
             return agentConversationId;
         }
 
@@ -222,8 +226,8 @@ namespace Microsoft.Agents.Client
         {
             await _conversationIdFactory.DeleteConversationReferenceAsync(agentConversationId, cancellationToken).ConfigureAwait(false);
 
-            var conversations = conversationState.GetValue<IDictionary<string, string>>(AgentConversationsProperty, () => new Dictionary<string, string>());
-            var agentName = conversations.Where(kv => kv.Value.Equals(agentConversationId)).Select((kv) => kv.Key).FirstOrDefault();
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            var agentName = conversations.Where(kv => kv.Value.AgentConversationId.Equals(agentConversationId)).Select((kv) => kv.Key).FirstOrDefault();
             if (agentName != null)
             {
                 conversations.Remove(agentName);
@@ -251,10 +255,10 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task EndAllActiveConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
+        public async Task EndAllConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
         {
             // End all active Agent conversations.
-            var activeConversations = GetExistingConversations(turnContext, conversationState);
+            var activeConversations = GetConversations(turnContext, conversationState);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
@@ -271,7 +275,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public Task<AgentConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
+        public Task<AgentConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
         {
             return _conversationIdFactory.GetAgentConversationReferenceAsync(agentConversationId, cancellationToken);
         }

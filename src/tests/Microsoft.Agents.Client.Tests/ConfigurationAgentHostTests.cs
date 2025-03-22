@@ -200,31 +200,31 @@ namespace Microsoft.Agents.Client.Tests
             await turnState.LoadStateAsync(turnContext);
 
             // should be no conversation for bot
-            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, botName));
+            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, botName));
 
             // create a new conversation
             var conversationId = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, botName);
             Assert.NotNull(conversationId);
-            Assert.Equal(conversationId, host.GetExistingConversation(turnContext, turnState.Conversation, botName));
+            Assert.Equal(conversationId, host.GetConversation(turnContext, turnState.Conversation, botName));
 
             // Verify ConversationIdFactory stored the reference
             var idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Single(idState);
 
             // Verify ConversationState has the conversationId for the bot
-            var conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}", () => new Dictionary<string, string>());
-            Assert.Equal(conversationId, conversations[botName]);
+            var conversations = turnState.GetValue<IDictionary<string, AgentConversation>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}", () => new Dictionary<string, AgentConversation>());
+            Assert.Equal(conversationId, conversations[botName].AgentConversationId);
 
             // delete conversation
             await host.DeleteConversationAsync(conversationId, turnState.Conversation);
-            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, botName));
+            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, botName));
 
             // Verify ConversationIdFactory deleted the reference
             idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Empty(idState);
 
             // Verify conversation for the bot was removed from ConversationState
-            conversations = turnState.GetValue<IDictionary<string, string>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}");
+            conversations = turnState.GetValue<IDictionary<string, AgentConversation>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}");
             Assert.Empty(conversations);
         }
 
@@ -283,15 +283,15 @@ namespace Microsoft.Agents.Client.Tests
             // create a new conversation for channel1
             var conversationId1 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel1Name);
             Assert.NotNull(conversationId1);
-            Assert.Equal(conversationId1, host.GetExistingConversation(turnContext, turnState.Conversation, channel1Name));
+            Assert.Equal(conversationId1, host.GetConversation(turnContext, turnState.Conversation, channel1Name));
 
             // create a new conversation for channel2
             var conversationId2 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel2Name);
             Assert.NotNull(conversationId2);
-            Assert.Equal(conversationId2, host.GetExistingConversation(turnContext, turnState.Conversation, channel2Name));
+            Assert.Equal(conversationId2, host.GetConversation(turnContext, turnState.Conversation, channel2Name));
 
             // Should have two existing conversations
-            var conversations = host.GetExistingConversations(turnContext, turnState.Conversation);
+            var conversations = host.GetConversations(turnContext, turnState.Conversation);
             Assert.Equal(2, conversations.Count);
             Assert.Equal(conversationId1, conversations.Where(c => c.AgentName == channel1Name).First().AgentConversationId);
             Assert.Equal(conversationId2, conversations.Where(c => c.AgentName == channel2Name).First().AgentConversationId);
@@ -299,8 +299,8 @@ namespace Microsoft.Agents.Client.Tests
             // delete conversation
             await host.DeleteConversationAsync(conversationId1, turnState.Conversation);
             await host.DeleteConversationAsync(conversationId2, turnState.Conversation);
-            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, channel1Name));
-            Assert.Null(host.GetExistingConversation(turnContext, turnState.Conversation, channel2Name));
+            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, channel1Name));
+            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, channel2Name));
         }
     }
 }

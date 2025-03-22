@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Client
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var conversationReference = await _channelHost.GetAgentConversationReferenceAsync(conversationId, cancellationToken);
+            var conversationReference = await _channelHost.GetConversationReferenceAsync(conversationId, cancellationToken);
             if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.
