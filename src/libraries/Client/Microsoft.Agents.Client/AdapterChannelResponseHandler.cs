@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Microsoft.Agents.Connector.Types;
 using System;
 using Microsoft.Agents.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Agents.Client
 {
@@ -33,7 +34,7 @@ namespace Microsoft.Agents.Client
     {
         public class ChannelReply
         {
-            public AgentConversationReference ChannelConversationReference { get; set; }
+            public ChannelConversationReference ChannelConversationReference { get; set; }
             public IActivity Activity { get; set; }
         }
 
@@ -42,12 +43,14 @@ namespace Microsoft.Agents.Client
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
         private readonly IAgentHost _channelHost;
+        private readonly ILogger<AdapterChannelResponseHandler> _logger;
 
-        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IAgentHost channelHost)
+        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IAgentHost channelHost, ILogger<AdapterChannelResponseHandler> logger)
         {
             _adapter = adapter;
             _bot = bot;
             _channelHost = channelHost;
+            _logger = logger;
         }
 
         public async Task<ResourceResponse> OnSendToConversationAsync(ClaimsIdentity claimsIdentity, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
@@ -56,12 +59,12 @@ namespace Microsoft.Agents.Client
             if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.
-                // Probably should throw an exception.
+                _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", conversationId, BotClaims.GetAppId(claimsIdentity));
                 return null;
             }
 
             // Need to get this over to the calling Agents identity.  We will do it by packaging it in a custom event
-            // and the AgentApplication will need to route to a handler.  See ChannelResponses.OnChannelReply.
+            // and the AgentApplication will need to route to a handler.  See AgentResponsesExtension.OnAgentReply.
             var eventActivity = new Activity()
             {
                 Type = ActivityTypes.Event,
@@ -80,7 +83,7 @@ namespace Microsoft.Agents.Client
 
             await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _bot.OnTurnAsync, cancellationToken);
 
-            // This implementation isn't actually keeping track of Activities, so just make up an ActivityId.
+            // This implementation isn't keeping track of Activities, so just make up an ActivityId.
             return new ResourceResponse() { Id = Guid.NewGuid().ToString() };
         }
 

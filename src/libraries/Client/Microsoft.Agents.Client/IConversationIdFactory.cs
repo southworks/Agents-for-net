@@ -23,12 +23,12 @@ namespace Microsoft.Agents.Client
         Task<string> CreateConversationIdAsync(ConversationIdFactoryOptions options, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Gets the <see cref="AgentConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for an Agent conversation.
+        /// Gets the <see cref="ChannelConversationReference"/> used during <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/> for an Agent conversation.
         /// </summary>
         /// <param name="agentConversationId">A conversationId for an Agent created using <see cref="CreateConversationIdAsync(ConversationIdFactoryOptions,System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The caller's <see cref="ConversationReference"/> for a conversationId, with originatingAudience. Null if not found.</returns>
-        Task<AgentConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken);
+        Task<ChannelConversationReference> GetAgentConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes a <see cref="ConversationReference"/>.

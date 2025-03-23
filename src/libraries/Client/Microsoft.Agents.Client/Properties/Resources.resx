@@ -129,6 +129,10 @@
     <value>Agent '{0}' not found.</value>
     <comment>Raised when calling IAgentHost.GetClient.</comment>
   </data>
+  <data name="AgentTokenProviderNotFound" xml:space="preserve">
+    <value>Token Provider '{0}' for Agent '{1}' not found.</value>
+    <comment>Raised when an AgentClient is being created.</comment>
+  </data>
   <data name="SendToAgentFailed" xml:space="preserve">
     <value>SendToAgent '{0}' failed</value>
     <comment>Raised when calling IAgentHost.SendToAgent.</comment>

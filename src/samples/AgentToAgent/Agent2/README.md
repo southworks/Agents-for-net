@@ -1,8 +1,6 @@
 ﻿# Agent2 Sample
 
-This is a sample of a simple Agent hosted on an Asp.net core web service, That represents remote Agent, or secondary Agent of a multi-agent configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller.
-
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Agent.
+This is a sample of a simple Agent that represents remote Agent, or secondary Agent, of a multi-agent configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller.
 
 ## Prerequisites
 
@@ -17,7 +15,6 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 - Access to an Azure Subscription with access to preform the following tasks:
     - Create and configure Entra ID Application Identities
     - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your Agent
-    - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
 ## Getting Started with Agent2 Sample
@@ -41,7 +38,7 @@ While this is the simplest way to get started and run your Agent, there are impo
 When running in Anonymous mode, your Agent will not be able to create authentication tokens to access other services, Nor can it interact with Azure Bot Services. Therefor, Anonymous Mode is there to support testing basic operational features of the Agent and to work with and test various events that your Agent can process. It should be used only during initial development.
 
 > [!IMPORTANT]
-> This sample is configured, by default, for Anonymous Authentication. Before using this sample with Azure Bot Service, it is necessary to configure authentication.
+> This sample is configured, by default, for Anonymous Authentication when running in Development mode. Before using this sample with Azure Bot Service, it is necessary to configure authentication.
 
 **- Configured Authentication with Entra ID.**
 
@@ -59,24 +56,20 @@ However there are a few key items to consider when configuring authentication fo
 
 To configure authentication into the Agent2 Sample Project you will need the following information:
 
-1. Client ID of the Application identity you wish to use.
-1. Client Secret of the Application identity you wish to use or the Certificate that has been registered for the Client ID in Entra AD
+1. Follow the instructions for [Register a Single Tenant agent with Azure](https://aka.ms/AgentsSDK-CreateBot).
+1. Record the Client ID (App ID), Client Secret, and Tenant ID of the Application just created. 
+   1. Keep the Client ID handy as it will also be needed when configuring `Agent1`.
 
 1. Once you have that information, to configure authentication, Open the `appsettings.json` file in the root of the sample project.
 
-   Find the section labeled `Connections`,  it should appear similar to this:
-
    ```json
    "Agent": {
-     "ClientId": "{{ClientId}}", // this is the Client ID for Agent2
-     "Description": null,
-     "Publisher": null,
-     "Copyright": null
+     "ClientId": "{{Agent2ClientId}}",
    },
 
    "TokenValidation": {
      "Audiences": [
-       "{{ClientId}}" // this is the Client ID for Agent2
+       "{{Agent2ClientId}}"
      ],
      "TenantId": "{{TenantId}}"
    },
@@ -84,10 +77,10 @@ To configure authentication into the Agent2 Sample Project you will need the fol
    "Connections": {
      "BotServiceConnection": {
        "Settings": {
-         "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+         "AuthType": "ClientSecret", 
          "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-         "ClientId": "{{ClientId}}", // this is the Client ID for Agent2
-         "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
+         "ClientId": "{{Agent2ClientId}}",
+         "ClientSecret": "{{ClientSecret}}", 
          "Scopes": [
            "https://api.botframework.com/.default"
          ]
@@ -95,9 +88,9 @@ To configure authentication into the Agent2 Sample Project you will need the fol
    }
    ```
     
-   1. Replace all **{{ClientId}}** with the AppId of Agent2.
+   1. Replace all **{{Agent2ClientId}}** with the AppId of Agent2.
    1. Replace all **{{TenantId}}** to the Tenant Id where your application is registered.
-   1. Set the **ClientSecret** to the Secret that was created for your identity.
+   1. Set the **{{ClientSecret}}** to the Secret that was created for your identity.
 
 > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
@@ -113,7 +106,9 @@ To run the Agent2 Sample for the first time:
     1. In the bot URL field input the URL you noted down from the web page and add /api/messages to it. It should appear similar to `https://localhost:39783/api/messages`
     1. Click **Connect**
 
-If you type a message and hit enter, or the send arrow, your messages should be returned to you with **your message** and **Say “end” and I’ll end the conversation and return to the parent.**
+If you type a message and hit enter, or the send arrow, your messages should be echoed along with **Say “end” and I’ll end the conversation.**
+
+If this happens, `Agent2` is working.
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.

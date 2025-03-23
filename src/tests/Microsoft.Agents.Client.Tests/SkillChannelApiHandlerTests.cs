@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Client.Tests
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.AgentPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<AgentConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
 
             // Assert based on activity type,
             if (activityType == ActivityTypes.Message)
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Client.Tests
             // Assert
             // Assert the turnContext.
             Assert.Equal($"{CallerIdConstants.AgentPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<AgentConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
             if (name.StartsWith("application/"))
             {
                 // Should be sent to the channel and not to the bot.
@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Client.Tests
             await sut.OnDeleteActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToDelete);
 
             // Assert
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<AgentConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToDelete, mockObjects.ActivityIdToDelete);
         }
 
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Assert
             Assert.Equal("resourceId", response.Id);
-            Assert.NotNull(mockObjects.TurnContext.StackState.Get<AgentConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
+            Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToUpdate, mockObjects.TurnContext.Activity.Id);
             Assert.Equal(activity.Text, mockObjects.UpdateActivity.Text);
         }

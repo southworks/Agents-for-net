@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Single(idState);
 
             // Verify ConversationState has the conversationId for the bot
-            var conversations = turnState.GetValue<IDictionary<string, AgentConversation>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}", () => new Dictionary<string, AgentConversation>());
+            var conversations = turnState.Conversation.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             Assert.Equal(conversationId, conversations[botName].AgentConversationId);
 
             // delete conversation
@@ -224,7 +224,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Empty(idState);
 
             // Verify conversation for the bot was removed from ConversationState
-            conversations = turnState.GetValue<IDictionary<string, AgentConversation>>($"conversation.{ConfigurationAgentHost.AgentConversationsProperty}");
+            conversations = turnState.Conversation.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty);
             Assert.Empty(conversations);
         }
 

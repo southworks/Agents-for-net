@@ -12,7 +12,7 @@ using System;
 
 namespace Microsoft.Agents.Client
 {
-    public delegate Task AgentResponseHandler(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken);
+    public delegate Task AgentResponseHandler(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken);
 
     /// <summary>
     /// This AgentApplication Extension provides features to help handle agent-to-agent communication.
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Client
 
             agentApplication.OnActivity(
                 (turnContext, CancellationToken) =>
-                    Task.FromResult(string.Equals(ActivityTypes.Event, turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase)
+                    Task.FromResult(turnContext.Activity.IsType(ActivityTypes.Event)
                         && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase)),
                 routeHandler,
                 rank);
@@ -56,23 +56,22 @@ namespace Microsoft.Agents.Client
         /// <param name="rank"></param>
         public void AddDefaultEndOfConversationHandling(RouteHandler handler = null, ushort rank = RouteRank.Unspecified)
         {
-            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            async Task eocHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
                 await agentHost.EndAllConversations(turnContext, turnState.Conversation, cancellationToken).ConfigureAwait(false);
                 if (handler != null)
                 {
                     await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);
                 }
-                await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             }
 
             agentApplication.OnActivity(
-                (turnContext, CancellationToken) => Task.FromResult(string.Equals(ActivityTypes.EndOfConversation, turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase)),
-                routeHandler,
+                (turnContext, CancellationToken) => Task.FromResult(turnContext.Activity.IsType(ActivityTypes.EndOfConversation)),
+                eocHandler,
                 rank);
 
             // This adds an AgentApplication.OnTurnError to handle cleaning up when an uncaught exception occurs.
-            agentApplication.OnTurnError(async (turnContext, turnState, exception, cancellationToken) => await routeHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false));
+            agentApplication.OnTurnError(async (turnContext, turnState, exception, cancellationToken) => await eocHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false));
         }
 
         public string ChannelId { get; init; } = "*";

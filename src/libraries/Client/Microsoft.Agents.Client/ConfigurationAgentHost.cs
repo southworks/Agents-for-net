@@ -23,8 +23,6 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class ConfigurationAgentHost : IAgentHost
     {
-        public const string AgentConversationsProperty = "agentHost.agentConversations";
-
         private readonly IServiceProvider _serviceProvider;
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -178,7 +176,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public string GetConversation(ITurnContext turnContext, ConversationState conversationState, string agentName)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             if (conversations.TryGetValue(agentName, out var conversation)) 
             { 
                 return conversation.AgentConversationId;
@@ -190,7 +188,7 @@ namespace Microsoft.Agents.Client
         public IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState)
         {
             var result = new List<AgentConversation>();
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             foreach (var conversation in conversations)
             {
                 result.Add(conversation.Value);
@@ -201,7 +199,7 @@ namespace Microsoft.Agents.Client
         /// <inheritdoc/>
         public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             if (conversations.TryGetValue(agentName, out var conversation)) 
             { 
                 // Already a conversation for the Agent.
@@ -226,7 +224,7 @@ namespace Microsoft.Agents.Client
         {
             await _conversationIdFactory.DeleteConversationReferenceAsync(agentConversationId, cancellationToken).ConfigureAwait(false);
 
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
+            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
             var agentName = conversations.Where(kv => kv.Value.AgentConversationId.Equals(agentConversationId)).Select((kv) => kv.Key).FirstOrDefault();
             if (agentName != null)
             {
@@ -269,13 +267,13 @@ namespace Microsoft.Agents.Client
                     // Send EndOfConversation to the Agent.
                     await SendToAgent(conversation.AgentName, conversation.AgentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
                 }
-            }
 
-            await conversationState.SaveChangesAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await conversationState.SaveChangesAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
         }
 
         /// <inheritdoc/>
-        public Task<AgentConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
+        public Task<ChannelConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
         {
             return _conversationIdFactory.GetAgentConversationReferenceAsync(agentConversationId, cancellationToken);
         }
@@ -285,7 +283,7 @@ namespace Microsoft.Agents.Client
             var tokenProviderName = clientSettings.ConnectionSettings.TokenProvider;
             if (!_connections.TryGetConnection(tokenProviderName, out var tokenProvider))
             {
-                throw new ArgumentException($"TokenProvider '{tokenProviderName}' not found for Agent '{agentName}'");
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentTokenProviderNotFound, null, tokenProviderName, agentName);
             }
 
             return new HttpAgentClient(clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));

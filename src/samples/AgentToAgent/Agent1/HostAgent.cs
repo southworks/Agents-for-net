@@ -75,7 +75,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles responses from Agent2.
-    protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, AgentConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
+    protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
     {
         var echoConversationId = _agentHost.GetConversation(turnContext, turnState.Conversation, Agent2Name);
         if (!string.Equals(echoConversationId, agentActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
@@ -87,27 +87,27 @@ public class HostAgent : AgentApplication
             return;
         }
          
-        // Agents can send an EndOfConversation Activity.  This Activity can optional contain a result value.
+        // Agents can send an EndOfConversation Activity.  This Activity can optionally contain a result value.
         if (agentActivity.IsType(ActivityTypes.EndOfConversation))
         {
+            // Remove the conversation because we're done with it.
+            await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
+
             // In this sample, the Agent2 will send an EndOfConversation with a result when "end" is sent.
             if (agentActivity.Value != null)
             {
-                // Remove the Agents conversation reference because we're done with it.
-                await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
-
                 var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
                 await turnContext.SendActivityAsync(resultMessage, cancellationToken: cancellationToken);
             }
 
-            // Done with calling the other Agent.
+            // Done with calling Agent2.
             await turnContext.SendActivityAsync($"Back in {nameof(HostAgent)}. Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
         }
         else
         {
-            // Forward whatever the user sent to the channel until EndOfConversation is received from an Agent channel.
-            // Note that the agentActivity is actually for a different conversation (contains a different ConversationReference).  It
-            // cannot be sent directly to ABS without modification.  Here we are just extracting values we need.
+            // Forward whatever Agent2 sent to the User until EndOfConversation is received.
+            // Note that the agentActivity is for a different conversation.  It cannot be sent directly to ABS
+            // without modification.  Here we are just extracting values we need.
             await turnContext.SendActivityAsync($"({reference.AgentName}) {agentActivity.Text}", cancellationToken: cancellationToken);
         }
     }

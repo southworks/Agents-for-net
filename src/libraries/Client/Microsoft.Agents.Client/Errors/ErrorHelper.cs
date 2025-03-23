@@ -39,6 +39,7 @@ namespace Microsoft.Agents.Client.Errors
         internal static AgentErrorDefinition SendToAgentFailed = new AgentErrorDefinition(baseClientErrorCode - 3, Properties.Resources.SendToAgentFailed, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition SendToAgentUnsuccessful = new AgentErrorDefinition(baseClientErrorCode - 4, Properties.Resources.SendToAgentUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition SendToAgentUnauthorized = new AgentErrorDefinition(baseClientErrorCode - 5, Properties.Resources.SendToAgentUnauthorized, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AgentTokenProviderNotFound = new AgentErrorDefinition(baseClientErrorCode - 5, Properties.Resources.AgentTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

@@ -88,6 +88,15 @@ namespace Microsoft.Agents.Client.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Token Provider &apos;{0}&apos; for Agent &apos;{1}&apos; not found..
+        /// </summary>
+        internal static string AgentTokenProviderNotFound {
+            get {
+                return ResourceManager.GetString("AgentTokenProviderNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to SendToAgent &apos;{0}&apos; failed.
         /// </summary>
         internal static string SendToAgentFailed {

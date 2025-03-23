@@ -1,8 +1,6 @@
 ﻿# Agent1 Sample
 
-This is a sample of a simple Agent hosted on an Asp.net core web service, That represents the entry point of a multi-agent configuration.  This Agent is configured to accept a request and echo the text of the request back to the caller or relay them to Agent2.
-
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK's messaging loop and how it can communicate with another Agent.
+This is a the sample Agnet of an Agent communicating with another Agent. For this sample, `Agent1` is communicating with another Agent (`Agent2`) for a multi-turn conversation.
 
 ## Prerequisites
 
@@ -16,8 +14,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 
 - Access to an Azure Subscription with access to preform the following tasks:
     - Create and configure Entra ID Application Identities
-    - Create and configure an [Azure Bot Service](https://aka.ms/AgentsSDK-CreateBot) for your Agent.
-    - Create and configure an [Azure App Service](https://learn.microsoft.com/azure/app-service/) to deploy your bot on to.
+    - Create and configure an [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot) for your Agent.
     - A tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
 
 ## Getting Started with Agent1 Sample

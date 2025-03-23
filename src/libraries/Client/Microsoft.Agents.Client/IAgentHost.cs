@@ -16,6 +16,8 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public interface IAgentHost
     {
+        public const string AgentConversationsProperty = "agentHost.agentConversations";
+
         /// <summary>
         /// The endpoint to use in Activity.ServiceUrl if unspecified in an Agents settings.
         /// </summary>
@@ -125,6 +127,6 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="agentConversationId"></param>
         /// <param name="cancellationToken"></param>
-        Task<AgentConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default);
+        Task<ChannelConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default);
     }
 }

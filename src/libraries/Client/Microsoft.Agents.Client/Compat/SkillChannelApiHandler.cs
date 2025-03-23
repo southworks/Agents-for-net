@@ -205,7 +205,7 @@ namespace Microsoft.Agents.Client.Compat
             turnContext.Activity.Value = activity.Value;
         }
 
-        private async Task<AgentConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
+        private async Task<ChannelConversationReference> GetSkillConversationReferenceAsync(string conversationId, CancellationToken cancellationToken)
         {
             var conversationReference = await _agentHost.GetConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             if (conversationReference == null)

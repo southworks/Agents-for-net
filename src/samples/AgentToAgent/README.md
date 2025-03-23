@@ -2,7 +2,9 @@
 
 This Sample contains two Agents: `Agent1` and `Agent2`, that represent the two legs of a multi-agent communication sequence. Each Agent has its own readme to setup and configure the Agent.  
 
-Actually, there is a third Agent, `StreamAgent1`, that demonstrates streaming replies from Agent2.  These should be used as Agent1 -> Agent2, or StreamingAgent1 -> Agent2.  Agent2 is the same in either case.
+There is a third Agent, `StreamAgent1`, that demonstrates streaming replies from Agent2.  
+
+These should be used as `Agent1 <-> Agent2`, or `StreamingAgent1 <-> Agent2`.  Agent2 is the same in either case.
 
 ## Key concepts in this sample
 
@@ -16,9 +18,9 @@ The solution includes a parent (`Agent1`) and another Agent (`Agent2`) and shows
   - `StreamingAgent1` uses `DeliveryModes.Stream`.  In this case, the replies from `Agent2` are streamed back in the HTTP response.  The same thing will happen in `Agent2` either way.  But for `StreamingAgent1`, this means the replies from `Agent2` are always handled in the same Turn.
   - The same thing happens either way.  The consideration of one vs the other is that `DeliveryModes.Normal` is best suited for possibly long running operations when you don't know how long the reply could take.  `DeliveryModes.Stream` is more appropriate (and slightly easier to code) for short chat-style interactions.
 
-## Further reading to get going
-- Pick one combination:  Agent1 -> Agent2, or StreamAgent1 -> Agent2
-  - Once you set up one pair, Agent1 and StreamingAgent1 can be swapped out.
+## Next steps to get going
+- Pick one combination:  `Agent1 <-> Agent2`, or `StreamAgent1 <-> Agent2`
+  - Once you set up one pair, `Agent1` and `StreamingAgent1` can be swapped out.
 - **Setup Agent2 first.**
 - [Agent2](./Agent2/README.md)
 - [Agent1](./Agent1/README.md)
