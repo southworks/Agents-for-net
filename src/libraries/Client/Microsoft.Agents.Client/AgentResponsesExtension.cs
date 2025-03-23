@@ -70,8 +70,15 @@ namespace Microsoft.Agents.Client
                 eocHandler,
                 rank);
 
+
+            async Task errorHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                await eocHandler(turnContext, turnState, CancellationToken.None).ConfigureAwait(false);
+                await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+            }
+
             // This adds an AgentApplication.OnTurnError to handle cleaning up when an uncaught exception occurs.
-            agentApplication.OnTurnError(async (turnContext, turnState, exception, cancellationToken) => await eocHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false));
+            agentApplication.OnTurnError(async (turnContext, turnState, exception, cancellationToken) => await errorHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false));
         }
 
         public string ChannelId { get; init; } = "*";
