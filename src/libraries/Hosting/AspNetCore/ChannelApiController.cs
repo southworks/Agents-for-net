@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector.Types;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// This contains the routes for the ChannelAPI.  These are the endpoints that
     /// ConnectorClient uses in the case of a bot-to-bot.
     /// The implementation of this is via <see cref="IChannelApiHandler"/>.
-    /// See the Microsoft.Agents.BotBuilder.ProxyChannelApiHandler class for an example of this for Dialogs.SkillDialog and bot-to-bot.
+    /// See the Microsoft.Agents.Builder.ProxyChannelApiHandler class for an example of this for Dialogs.SkillDialog and bot-to-bot.
     /// <see cref="IConnectorClient"/>
     /// </summary>
     /// <remarks>

@@ -1,0 +1,13 @@
+using Microsoft.Agents.Builder.App;
+
+namespace Microsoft.Agents.Builder;
+
+
+/// <summary>
+/// Contract for Agent Extensions.
+/// </summary>
+public interface IAgentExtension
+{
+    string ChannelId { get; init; }
+    void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false);
+}

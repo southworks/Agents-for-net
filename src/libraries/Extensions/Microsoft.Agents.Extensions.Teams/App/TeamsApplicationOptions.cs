@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App;
-using Microsoft.Agents.BotBuilder.App.AdaptiveCards;
-using Microsoft.Agents.BotBuilder.App.UserAuth;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;

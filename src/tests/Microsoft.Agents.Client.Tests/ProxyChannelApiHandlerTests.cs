@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Client.Tests.Logger;
 using Microsoft.Agents.Core.Models;
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Client.Tests
 
             public Mock<IChannelServiceClientFactory> Auth { get;  }
 
-            public Mock<IBot> Bot { get;  }
+            public Mock<IAgent> Bot { get;  }
 
             public IConnectorClient Client { get; }
 
@@ -302,8 +302,8 @@ namespace Microsoft.Agents.Client.Tests
 
                 // Mock the adapter ContinueConversationAsync method
                 // This code block catches and executes the custom bot callback created by the service handler.
-                adapter.Setup(a => a.ContinueConversationAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<ConversationReference>(), It.IsAny<string>(), It.IsAny<BotCallbackHandler>(), It.IsAny<CancellationToken>()))
-                    .Callback<ClaimsIdentity, ConversationReference, string, BotCallbackHandler, CancellationToken>(async (token, conv, audience, botCallbackHandler, cancel) =>
+                adapter.Setup(a => a.ContinueConversationAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<ConversationReference>(), It.IsAny<string>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
+                    .Callback<ClaimsIdentity, ConversationReference, string, AgentCallbackHandler, CancellationToken>(async (token, conv, audience, botCallbackHandler, cancel) =>
                     {
                         // Create and capture the TurnContext so we can run assertions on it.
                         TurnContext = new TurnContext(adapter.Object, conv.GetContinuationActivity());
@@ -347,9 +347,9 @@ namespace Microsoft.Agents.Client.Tests
                 return adapter;
             }
 
-            private Mock<IBot> CreateMockBot()
+            private Mock<IAgent> CreateMockBot()
             {
-                var bot = new Mock<IBot>();
+                var bot = new Mock<IAgent>();
                 bot.Setup(b => b.OnTurnAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
                     .Callback<ITurnContext, CancellationToken>((turnContext, ct) =>
                     {

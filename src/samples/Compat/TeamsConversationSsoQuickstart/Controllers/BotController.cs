@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
 namespace TeamsConversationSsoQuickstart.Controllers
 {
@@ -15,7 +15,7 @@ namespace TeamsConversationSsoQuickstart.Controllers
     [Authorize]
     [ApiController]
     [Route("api/messages")]
-    public class BotController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
+    public class BotController(IBotHttpAdapter adapter, IAgent bot) : ControllerBase
     {
         [HttpPost]
         public Task PostAsync(CancellationToken cancellationToken)

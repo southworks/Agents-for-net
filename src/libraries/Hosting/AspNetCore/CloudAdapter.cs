@@ -10,8 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
 
@@ -44,7 +43,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             IActivityTaskQueue activityTaskQueue,
             ILogger<IBotHttpAdapter> logger = null,
             AdapterOptions options = null,
-            BotBuilder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
+            Builder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions() { Async = true, ShutdownTimeoutSeconds = 60 };
@@ -98,7 +97,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive
         ///     notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default)
+        public async Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent bot, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(httpRequest);
             ArgumentNullException.ThrowIfNull(httpResponse);
@@ -157,7 +156,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="cancellationToken"></param>
         /// <param name="audience"></param>
         /// <returns></returns>
-        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+        public override Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken, string audience = null)
         {
             if (_adapterOptions.Async)
             {
