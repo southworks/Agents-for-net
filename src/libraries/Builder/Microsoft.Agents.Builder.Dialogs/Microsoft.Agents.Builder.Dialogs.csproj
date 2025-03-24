@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <ComponentAreaName>CplBotBuilderDialogs</ComponentAreaName>
+    <ComponentAreaName>CplBuilderDialogs</ComponentAreaName>
     <SignAssembly>true</SignAssembly>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <Import Project="..\..\..\Build.Common.core.props" />
 
   <PropertyGroup>
-	<PackageId>Microsoft.Agents.BotBuilder.Dialogs</PackageId>
+	<PackageId>Microsoft.Agents.Builder.Dialogs</PackageId>
     <Description>This library implements .NET Simple Dialog classes </Description>
     <Summary>This library implements .NET Simple Dialog classes</Summary>
   </PropertyGroup>
