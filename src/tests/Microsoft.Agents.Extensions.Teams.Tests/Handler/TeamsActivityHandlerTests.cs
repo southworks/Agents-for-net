@@ -9,8 +9,8 @@ using Xunit;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Globalization;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Microsoft.Agents.Connector;
 using Moq;
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             turnContext.Services.Set(connectorMock.Object);
 
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             Assert.Equal(2, bot.Record.Count);
             Assert.Equal("OnConversationUpdateActivityAsync", bot.Record[0]);
@@ -571,7 +571,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -807,7 +807,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -883,7 +883,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1181,7 +1181,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1221,7 +1221,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1246,7 +1246,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1268,7 +1268,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1289,7 +1289,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -1309,7 +1309,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -1330,7 +1330,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Equal(2, bot.Record.Count);
@@ -1351,7 +1351,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -1371,7 +1371,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);

@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.Builder.App;
 using System.Reflection;
 using System;
 using Xunit;
-using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;

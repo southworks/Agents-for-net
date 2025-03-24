@@ -9,8 +9,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Compat;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var record = UseRecord();
 
-            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<BotBuilder.IMiddleware>);
+            Assert.Single(record.Adapter.MiddlewareSet as IEnumerable<Builder.IMiddleware>);
         }
 
         [Fact]
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var factory = new Mock<IChannelServiceClientFactory>();
             var queue = new Mock<IActivityTaskQueue>();
             var logger = new Mock<ILogger<IBotHttpAdapter>>();
-            var middleware = new Mock<BotBuilder.IMiddleware>();
+            var middleware = new Mock<Builder.IMiddleware>();
 
             var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, middlewares: middleware.Object);
             return new(adapter, factory, queue, logger);
@@ -241,10 +241,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 IChannelServiceClientFactory channelServiceClientFactory,
                 IActivityTaskQueue activityTaskQueue,
                 ILogger<IBotHttpAdapter> logger = null,
-                params BotBuilder.IMiddleware[] middlewares)
+                params Builder.IMiddleware[] middlewares)
             : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, null, middlewares)
         {
-            public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public override Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 return Task.FromResult(new InvokeResponse { Status = StatusCodes.Status511NetworkAuthenticationRequired, Body = activity });
             }

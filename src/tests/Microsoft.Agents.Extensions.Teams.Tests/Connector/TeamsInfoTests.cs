@@ -10,8 +10,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -1522,37 +1522,37 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
 
             public IMiddlewareSet MiddlewareSet => throw new NotImplementedException();
 
-            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ContinueConversationAsync(string botId, IActivity continuationActivity, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(string botId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ContinueConversationAsync(string botId, ConversationReference reference, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ContinueConversationAsync(string botId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task CreateConversationAsync(string botAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task CreateConversationAsync(string botAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 AppId = botAppId;
                 ChannelId = channelId;
@@ -1574,17 +1574,17 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 throw new NotImplementedException();
             }
 
-            public Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IBot bot, CancellationToken cancellationToken, string audience = null)
+            public Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, IAgent bot, CancellationToken cancellationToken, string audience = null)
             {
                 throw new NotImplementedException();
             }

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
+
 namespace Microsoft.Agents.Client
 {
     /// <summary>
@@ -11,7 +13,7 @@ namespace Microsoft.Agents.Client
         public string AgentName { get; set; }
 
         /// <summary>
-        /// This is the conversationId created with <see cref="IAgentHost.GetOrCreateConversationAsync(BotBuilder.ITurnContext, BotBuilder.State.ConversationState, string, System.Threading.CancellationToken)"/>.
+        /// This is the conversationId created with <see cref="IAgentHost.GetOrCreateConversationAsync(ITurnContext, string, System.Threading.CancellationToken)"/>.
         /// </summary>
         public string AgentConversationId { get; set; }
     }

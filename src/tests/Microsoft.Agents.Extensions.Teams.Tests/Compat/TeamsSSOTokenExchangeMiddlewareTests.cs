@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
 
         private class TeamsSSOAdapter(ConversationReference conversationReference) : TestAdapter(conversationReference)
         {
-            public override Task SendTextToBotAsync(string userSays, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public override Task SendTextToBotAsync(string userSays, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 return ProcessActivityAsync(MakeTokenExchangeActivity(), callback, cancellationToken);
             }

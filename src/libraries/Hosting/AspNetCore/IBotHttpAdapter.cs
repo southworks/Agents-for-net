@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -23,6 +23,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IBot bot, CancellationToken cancellationToken = default(CancellationToken));
+        Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent bot, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

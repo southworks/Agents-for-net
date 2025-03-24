@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // We must go back through DI to get the IBot. This is because the IBot is typically transient, and anything
                     // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
-                    var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
+                    var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IAgent));
 
                     if (activityWithClaims.IsProactive)
                     {
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
                             activityWithClaims.ProactiveAudience ?? BotClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IBot)bot).OnTurnAsync, 
+                            ((IAgent)bot).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         var response = await _adapter.ProcessActivityAsync(
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
-                            ((IBot)bot).OnTurnAsync, 
+                            ((IAgent)bot).OnTurnAsync, 
                             stoppingToken).ConfigureAwait(false);
 
                         activityWithClaims.OnComplete?.Invoke(response);

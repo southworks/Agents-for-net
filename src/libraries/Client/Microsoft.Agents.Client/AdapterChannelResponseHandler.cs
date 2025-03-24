@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -41,14 +41,14 @@ namespace Microsoft.Agents.Client
         public const string ChannelReplyEventName = "application/vnd.microsoft.agents.ChannelReply";
 
         private readonly IChannelAdapter _adapter;
-        private readonly IBot _bot;
+        private readonly IAgent _agent;
         private readonly IAgentHost _channelHost;
         private readonly ILogger<AdapterChannelResponseHandler> _logger;
 
-        public AdapterChannelResponseHandler(IChannelAdapter adapter, IBot bot, IAgentHost channelHost, ILogger<AdapterChannelResponseHandler> logger)
+        public AdapterChannelResponseHandler(IChannelAdapter adapter, IAgent agent, IAgentHost channelHost, ILogger<AdapterChannelResponseHandler> logger)
         {
             _adapter = adapter;
-            _bot = bot;
+            _agent = agent;
             _channelHost = channelHost;
             _logger = logger;
         }
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Client
                 new(AuthenticationConstants.AppIdClaim, _channelHost.HostClientId),
             ]);
 
-            await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _bot.OnTurnAsync, cancellationToken);
+            await _adapter.ProcessActivityAsync(hostClaimsIdentity, eventActivity, _agent.OnTurnAsync, cancellationToken);
 
             // This implementation isn't keeping track of Activities, so just make up an ActivityId.
             return new ResourceResponse() { Id = Guid.NewGuid().ToString() };

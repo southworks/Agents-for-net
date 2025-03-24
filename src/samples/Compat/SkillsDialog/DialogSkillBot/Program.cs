@@ -10,7 +10,7 @@ using DialogSkillBot.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Builder.State;
 
 var builder = WebApplication.CreateBuilder(args);
 

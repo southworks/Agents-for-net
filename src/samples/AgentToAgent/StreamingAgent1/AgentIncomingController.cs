@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using System.Threading;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
 namespace StreamingAgent1;
 
@@ -15,7 +15,7 @@ namespace StreamingAgent1;
 [Authorize]
 [ApiController]
 [Route("api/messages")]
-public class AgentIncomingController(IBotHttpAdapter adapter, IBot agent) : ControllerBase
+public class AgentIncomingController(IBotHttpAdapter adapter, IAgent agent) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)

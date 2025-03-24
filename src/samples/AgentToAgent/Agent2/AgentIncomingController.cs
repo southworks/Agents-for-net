@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using System.Threading;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
 namespace Agent2;
 
@@ -15,9 +15,9 @@ namespace Agent2;
 [Authorize(Policy = "AllowedCallers")]
 [ApiController]
 [Route("api/messages")]
-public class AgentIncomingController(IBotHttpAdapter adapter, IBot bot) : ControllerBase
+public class AgentIncomingController(IBotHttpAdapter adapter, IAgent agent) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)
-        => adapter.ProcessAsync(Request, Response, bot, cancellationToken);
+        => adapter.ProcessAsync(Request, Response, agent, cancellationToken);
 }

@@ -13,8 +13,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.State;
 
 namespace Microsoft.Agents.Client.Compat
 {
@@ -31,21 +31,21 @@ namespace Microsoft.Agents.Client.Compat
         public static readonly string SkillConversationReferenceKey = $"{nameof(SkillChannelApiHandler)}.SkillConversationReference";
 
         private readonly IChannelAdapter _adapter;
-        private readonly IBot _bot;
+        private readonly IAgent _agent;
         private readonly IAgentHost _agentHost;
         private readonly ILogger _logger;
 
         public SkillChannelApiHandler(
             IChannelAdapter adapter,
-            IBot bot,
+            IAgent agent,
             IAgentHost channelHost,
             ILogger logger = null)
         {
             ArgumentNullException.ThrowIfNull(adapter);
-            ArgumentNullException.ThrowIfNull(bot);
+            ArgumentNullException.ThrowIfNull(agent);
             ArgumentNullException.ThrowIfNull(channelHost);
 
-            _bot = bot;
+            _agent = agent;
             _adapter = adapter;
             _agentHost = channelHost;
             _logger = logger ?? NullLogger.Instance;
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Client.Compat
         {
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
 
-            var callback = new BotCallbackHandler(async (turnContext, ct) =>
+            var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Client.Compat
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
 
             ResourceResponse resourceResponse = null;
-            var callback = new BotCallbackHandler(async (turnContext, ct) =>
+            var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Client.Compat
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             ChannelAccount member = null;
 
-            var callback = new BotCallbackHandler(async (turnContext, ct) =>
+            var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Client.Compat
             var skillConversationReference = await GetSkillConversationReferenceAsync(conversationId, cancellationToken).ConfigureAwait(false);
             ChannelAccount member = null;
 
-            var callback = new BotCallbackHandler(async (turnContext, ct) =>
+            var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 var client = turnContext.Services.Get<IConnectorClient>();
                 var conversationId = turnContext.Activity.Conversation.Id;
@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Client.Compat
 
             ResourceResponse resourceResponse = null;
 
-            var callback = new BotCallbackHandler(async (turnContext, ct) =>
+            var callback = new AgentCallbackHandler(async (turnContext, ct) =>
             {
                 turnContext.StackState.Set(SkillConversationReferenceKey, skillConversationReference);
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Client.Compat
         private async Task SendToBotAsync(IActivity activity, ITurnContext turnContext, CancellationToken ct)
         {
             ApplySkillActivityToTurnContext(turnContext, activity);
-            await _bot.OnTurnAsync(turnContext, ct).ConfigureAwait(false);
+            await _agent.OnTurnAsync(turnContext, ct).ConfigureAwait(false);
         }
     }
 }

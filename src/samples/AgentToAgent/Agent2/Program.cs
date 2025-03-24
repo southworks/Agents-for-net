@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using Agent2;
-using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;

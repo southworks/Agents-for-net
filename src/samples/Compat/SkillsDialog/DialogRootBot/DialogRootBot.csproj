@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>Microsoft.BotBuilderSamples.DialogRootBot</AssemblyName>
-    <RootNamespace>Microsoft.BotBuilderSamples.DialogRootBot</RootNamespace>
+    <AssemblyName>Microsoft.BuilderSamples.DialogRootBot</AssemblyName>
+    <RootNamespace>Microsoft.BuilderSamples.DialogRootBot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
-    <ProjectReference Include="..\..\..\..\libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj" />
+    <ProjectReference Include="..\..\..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
     <ProjectReference Include="..\..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
   </ItemGroup>
 

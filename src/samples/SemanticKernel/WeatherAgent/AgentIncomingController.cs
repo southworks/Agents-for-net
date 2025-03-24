@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Agents.Hosting.AspNetCore;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 
 namespace WeatherAgent;
 
@@ -15,7 +15,7 @@ namespace WeatherAgent;
 [Authorize]
 [ApiController]
 [Route("api/messages")]
-public class AgentIncomingController(IBotHttpAdapter adapter, IBot agent) : ControllerBase
+public class AgentIncomingController(IBotHttpAdapter adapter, IAgent agent) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)

@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.App.UserAuth;
-using Microsoft.Agents.BotBuilder.App;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -20,35 +20,35 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     public static class ServiceCollectionExtensions
     {
-        public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory, IStorage storage = null)
         {
             return AddAgent<CloudAdapter>(builder, implementationFactory, storage);
         }
 
-        public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IBot> implementationFactory, IStorage storage = null)
+        public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory, IStorage storage = null)
             where TAdapter : CloudAdapter
         {
             AddCore<TAdapter>(builder, storage);
 
-            builder.Services.AddTransient<IBot>(implementationFactory);
+            builder.Services.AddTransient<IAgent>(implementationFactory);
 
             return builder;
         }
 
         public static IHostApplicationBuilder AddAgent<TAgent>(this IHostApplicationBuilder builder, IStorage storage = null)
-            where TAgent : class, IBot
+            where TAgent : class, IAgent
         {
             return AddAgent<TAgent, CloudAdapter>(builder, storage);
         }
 
         public static IHostApplicationBuilder AddAgent<TAgent, TAdapter>(this IHostApplicationBuilder builder, IStorage storage = null)
-            where TAgent : class, IBot
+            where TAgent : class, IAgent
             where TAdapter : CloudAdapter
         {
             AddCore<TAdapter>(builder, storage);
 
             // Add the Agent 
-            builder.Services.AddTransient<IBot, TAgent>();
+            builder.Services.AddTransient<IAgent, TAgent>();
 
             return builder;
         }

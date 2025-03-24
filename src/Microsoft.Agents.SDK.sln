@@ -17,19 +17,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{9AEE51
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{7A18F0C9-F8AF-4168-B954-6563BB2C1A90}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BotBuilder", "BotBuilder", "{F81B3CA1-5DB1-45E9-95B7-3B774588E635}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Builder", "Builder", "{F81B3CA1-5DB1-45E9-95B7-3B774588E635}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Hosting.AspNetCore", "libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj", "{CCEEC142-70BF-42EE-A5DD-54FF80ED5F82}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Client", "libraries\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj", "{9712326C-F202-4A8C-9F16-72D20CB7F353}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.Testing", "tests\BotBuilder.Testing\Microsoft.Agents.BotBuilder.Testing.csproj", "{D08C3B96-BDFE-489E-BD46-E5B2B885BE07}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.Testing", "tests\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj", "{D08C3B96-BDFE-489E-BD46-E5B2B885BE07}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.Dialogs.Tests", "tests\Microsoft.Agents.BotBuilder.Dialogs.Tests\Microsoft.Agents.BotBuilder.Dialogs.Tests.csproj", "{9AD702C6-E1E1-4328-A249-09702853DE8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.Dialogs.Tests", "tests\Microsoft.Agents.Builder.Dialogs.Tests\Microsoft.Agents.Builder.Dialogs.Tests.csproj", "{9AD702C6-E1E1-4328-A249-09702853DE8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.TestBot.Shared", "tests\Microsoft.Agents.BotBuilder.TestBot.Shared\Microsoft.Agents.BotBuilder.TestBot.Shared.csproj", "{61084CFD-CB22-44DA-A42B-4BAB0F18DDE7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.TestBot.Shared", "tests\Microsoft.Agents.Builder.TestBot.Shared\Microsoft.Agents.Builder.TestBot.Shared.csproj", "{61084CFD-CB22-44DA-A42B-4BAB0F18DDE7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.TestBot.Tests", "tests\Microsoft.Agents.BotBuilder.TestBot.Tests\Microsoft.Agents.BotBuilder.TestBot.Tests.csproj", "{84568CE9-4EE6-4A14-9DED-B1161AF620B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.TestBot.Tests", "tests\Microsoft.Agents.Builder.TestBot.Tests\Microsoft.Agents.Builder.TestBot.Tests.csproj", "{84568CE9-4EE6-4A14-9DED-B1161AF620B7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Model.Tests", "tests\Microsoft.Agents.Model.Tests\Microsoft.Agents.Model.Tests.csproj", "{53FEE87D-2E52-4064-93DB-BD27E3996B59}"
 EndProject
@@ -53,9 +53,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Authentica
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Telemetry", "libraries\Core\Microsoft.Agents.Telemetry\Microsoft.Agents.Telemetry.csproj", "{30378105-38A9-465D-BD78-63B65C389E61}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder", "libraries\BotBuilder\Microsoft.Agents.BotBuilder\Microsoft.Agents.BotBuilder.csproj", "{379985EF-21A2-49A8-8882-F797CC015F10}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder", "libraries\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj", "{379985EF-21A2-49A8-8882-F797CC015F10}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.Dialogs", "libraries\BotBuilder\Microsoft.Agents.BotBuilder.Dialogs\Microsoft.Agents.BotBuilder.Dialogs.csproj", "{B69076E7-D54D-4CC1-9DCB-43F5270BABAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.Dialogs", "libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj", "{B69076E7-D54D-4CC1-9DCB-43F5270BABAB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Core", "libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj", "{4B844752-C6D6-4268-B918-5C6EDE3D1A61}"
 EndProject
@@ -75,7 +75,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Storage.Tr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Storage.Tests", "tests\Microsoft.Agents.Storage.Tests\Microsoft.Agents.Storage.Tests.csproj", "{23065AEC-4875-4CDC-A7E5-EE389C201534}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.BotBuilder.Tests", "tests\Microsoft.Agents.BotBuilder.Tests\Microsoft.Agents.BotBuilder.Tests.csproj", "{401F5548-D6EF-4497-B786-D2A6BA8CBF76}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.Tests", "tests\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj", "{401F5548-D6EF-4497-B786-D2A6BA8CBF76}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.State.Tests", "tests\Microsoft.Agents.State.Tests\Microsoft.Agents.State.Tests.csproj", "{71813B2D-D6A8-4388-9541-9B1287C93F19}"
 EndProject

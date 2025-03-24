@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Linq;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
