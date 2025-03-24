@@ -207,6 +207,10 @@ namespace Microsoft.Agents.Client.Tests
             Assert.NotNull(conversationId);
             Assert.Equal(conversationId, await host.GetConversation(turnContext, botName));
 
+            // single conversation per agent
+            var secondCreateConversationId = await host.GetOrCreateConversationAsync(turnContext, botName);
+            Assert.Equal(conversationId, secondCreateConversationId);
+
             // Verify ConversationIdFactory stored the reference
             var idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Single(idState);
