@@ -6,11 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -26,7 +24,6 @@ namespace Microsoft.Agents.Client
     public class ConfigurationAgentHost : IAgentHost
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
         private readonly IStorage _storage;
@@ -45,8 +42,6 @@ namespace Microsoft.Agents.Client
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-
-            _conversationIdFactory = new ConversationIdFactory(storage);
 
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
@@ -232,7 +227,6 @@ namespace Microsoft.Agents.Client
             var items = await _storage.ReadAsync([GetAgentStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
             if (items != null && items.TryGetValue(GetAgentStorageKey(turnContext), out var conversations))
             {
-                //((Dictionary<string, object>)conversations).RemoveTypeInfo();
                 agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
 
                 if (agentConversations.TryGetValue(agentName, out var conversation))
