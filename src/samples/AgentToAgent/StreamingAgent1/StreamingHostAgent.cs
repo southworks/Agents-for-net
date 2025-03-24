@@ -49,7 +49,7 @@ public class StreamingHostAgent : AgentApplication
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var echoConversationId = _agentHost.GetConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
         if (echoConversationId == null)
         {
             if (!turnContext.Activity.Text.Contains("agent"))
@@ -61,7 +61,7 @@ public class StreamingHostAgent : AgentApplication
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
             // subsequent SendToBot calls.
             await turnContext.SendActivityAsync($"Got it, connecting you to the '{Agent2Name}' Agent...", cancellationToken: cancellationToken);
-            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
+            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, Agent2Name, cancellationToken);
         }
 
         // Send the message to the other Agent, and handle Agent2 replies.
@@ -71,7 +71,7 @@ public class StreamingHostAgent : AgentApplication
             if (agentActivity.IsType(ActivityTypes.EndOfConversation))
             {
                 // Remove the Agent conversation reference since the conversation is over.
-                await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
+                await _agentHost.DeleteConversationAsync(turnContext, echoConversationId, cancellationToken);
 
                 if (agentActivity.Value != null)
                 {

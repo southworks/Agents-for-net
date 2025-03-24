@@ -71,18 +71,18 @@ namespace Microsoft.Agents.Client
         /// IAgentHost currently only supports a single active conversation per Agent per Turn Conversation.
         /// </remarks>
         /// <param name="turnContext"></param>
-        /// <param name="conversationState"></param>
         /// <param name="agentName"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>conversationId for an existing conversation, or null.</returns>
-        string GetConversation(ITurnContext turnContext, ConversationState conversationState, string agentName);
+        Task<string> GetConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns a list of all Agent conversations for the current Turns Conversation.
         /// </summary>
         /// <param name="turnContext"></param>
-        /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>Non-null list of <see cref="AgentConversation"/>.</returns>
-        IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState);
+        Task<IList<AgentConversation>> GetConversations(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the existing conversation for an Agent, or creates a new one.
@@ -91,11 +91,10 @@ namespace Microsoft.Agents.Client
         /// IAgentHost currently only supports a single active conversation per Agent per Turn Conversation.
         /// </remarks>
         /// <param name="turnContext"></param>
-        /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
         /// <param name="agentName">An Agent name from configuration.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default);
+        Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes the indicated conversation.
@@ -104,11 +103,11 @@ namespace Microsoft.Agents.Client
         /// Only the bot knows when a conversation is done.  All effort should be made to remove conversations as otherwise the persisted conversations accumulate.
         /// A received Activity of type EndOfConversation is one instance where the conversation should be deleted.
         /// </remarks>
+        /// <param name="turnContext"></param>
         /// <param name="agentConversationId">A conversationId return from <see cref="GetConversation"/> or <see cref="GetOrCreateConversationAsync"/>.</param>
-        /// <param name="conversationState">Typically from <see cref="ITurnState.Conversation"/></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task DeleteConversationAsync(string agentConversationId, ConversationState conversationState, CancellationToken cancellationToken = default);
+        Task DeleteConversationAsync(ITurnContext turnContext, string agentConversationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Ends all active conversations for the Turn conversation.
@@ -120,7 +119,7 @@ namespace Microsoft.Agents.Client
         /// <param name="turnContext"></param>
         /// <param name="conversationState"></param>
         /// <param name="cancellationToken"></param>
-        Task EndAllConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default);
+        Task EndAllConversations(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the conversation information for the specified Agent conversation.

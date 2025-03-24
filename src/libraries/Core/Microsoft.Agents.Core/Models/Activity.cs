@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Core.Models
 
         public bool IsType(string type)
         {
-            return string.Equals(ActivityTypes.EndOfConversation, Type, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(type, Type, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc/>

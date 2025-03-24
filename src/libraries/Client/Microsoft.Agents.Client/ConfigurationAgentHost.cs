@@ -6,12 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,6 +29,7 @@ namespace Microsoft.Agents.Client
         private readonly IConversationIdFactory _conversationIdFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
+        private readonly IStorage _storage;
         internal IDictionary<string, HttpAgentClientSettings> _agents;
 
         public ConfigurationAgentHost(
@@ -41,6 +44,7 @@ namespace Microsoft.Agents.Client
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
 
             _conversationIdFactory = new ConversationIdFactory(storage);
 
@@ -173,63 +177,138 @@ namespace Microsoft.Agents.Client
             return result;
         }
 
-        /// <inheritdoc/>
-        public string GetConversation(ITurnContext turnContext, ConversationState conversationState, string agentName)
+        private static string GetAgentStorageKey(ITurnContext turnContext)
         {
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
-            if (conversations.TryGetValue(agentName, out var conversation)) 
-            { 
-                return conversation.AgentConversationId;
-            }
-            return null;
+            return $"{turnContext.Activity.Conversation.Id}/agentconversations";
         }
 
-        /// <inheritdoc/>
-        public IList<AgentConversation> GetConversations(ITurnContext turnContext, ConversationState conversationState)
+        private static string GetAgentConversationStorageKey(string agentConversationId)
         {
-            var result = new List<AgentConversation>();
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
-            foreach (var conversation in conversations)
-            {
-                result.Add(conversation.Value);
-            }
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, ConversationState conversationState, string agentName, CancellationToken cancellationToken = default)
-        {
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
-            if (conversations.TryGetValue(agentName, out var conversation)) 
-            { 
-                // Already a conversation for the Agent.
-                return conversation.AgentConversationId; 
-            }
-
-            var options = new ConversationIdFactoryOptions
-            {
-                FromOAuthScope = BotClaims.GetTokenScopes(turnContext.Identity)?.First(),
-                FromClientId = HostClientId,
-                Activity = turnContext.Activity,
-                Agent = _agents[agentName]
-            };
-
-            var agentConversationId = await _conversationIdFactory.CreateConversationIdAsync(options, cancellationToken).ConfigureAwait(false);
-            conversations.Add(agentName, new AgentConversation() { AgentConversationId = agentConversationId, AgentName = agentName });
             return agentConversationId;
         }
 
         /// <inheritdoc/>
-        public async Task DeleteConversationAsync(string agentConversationId, ConversationState conversationState, CancellationToken cancellationToken = default)
+        public async Task<string> GetConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
         {
-            await _conversationIdFactory.DeleteConversationReferenceAsync(agentConversationId, cancellationToken).ConfigureAwait(false);
+            var key = GetAgentStorageKey(turnContext);
+            var items = await _storage.ReadAsync([key], CancellationToken.None);
 
-            var conversations = conversationState.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
-            var agentName = conversations.Where(kv => kv.Value.AgentConversationId.Equals(agentConversationId)).Select((kv) => kv.Key).FirstOrDefault();
-            if (agentName != null)
+            if (items != null && items.TryGetValue(key, out var conversations))
             {
-                conversations.Remove(agentName);
+                var agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
+                if (agentConversations.TryGetValue(agentName, out var conversation))
+                {
+                    return conversation.AgentConversationId;
+                }
             }
+
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public async Task<IList<AgentConversation>> GetConversations(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            var result = new List<AgentConversation>();
+
+            var key = GetAgentStorageKey(turnContext);
+            var items = await _storage.ReadAsync([key], CancellationToken.None);
+
+            if (items != null && items.TryGetValue(key, out var conversations))
+            {
+                var agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
+                foreach (var conversation in agentConversations)
+                {
+                    result.Add(ProtocolJsonSerializer.ToObject<AgentConversation>(conversation.Value));
+                }
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
+        {
+            IDictionary<string, AgentConversation> agentConversations = new Dictionary<string, AgentConversation>();
+            var items = await _storage.ReadAsync([GetAgentStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
+            if (items != null && items.TryGetValue(GetAgentStorageKey(turnContext), out var conversations))
+            {
+                //((Dictionary<string, object>)conversations).RemoveTypeInfo();
+                agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
+
+                if (agentConversations.TryGetValue(agentName, out var conversation))
+                {
+                    return conversation.AgentConversationId;
+                }
+            }
+
+            // Create the storage key based on the options.
+            var conversationReference = turnContext.Activity.GetConversationReference();
+            var agentConversationId = Guid.NewGuid().ToString();
+
+            // Create the ChannelConversationReference instance.
+            var channelConversationReference = new ChannelConversationReference
+            {
+                ConversationReference = conversationReference,
+                OAuthScope = turnContext.Identity == null ? null : BotClaims.GetTokenScopes(turnContext.Identity)?.FirstOrDefault(),
+                AgentName = agentName
+            };
+
+            agentConversations.Add(agentName, new AgentConversation() { AgentConversationId = agentConversationId, AgentName = agentName });
+
+            var changes = new Dictionary<string, object>
+            {
+                { GetAgentStorageKey(turnContext), agentConversations },
+                { GetAgentConversationStorageKey(agentConversationId), channelConversationReference }
+            };
+
+            await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+
+            return agentConversationId;
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteConversationAsync(ITurnContext turnContext, string agentConversationId, CancellationToken cancellationToken = default)
+        {
+            var deleteKeys = new List<string>
+            {
+                GetAgentConversationStorageKey(agentConversationId)
+            };
+
+            string agentName = null;
+            IDictionary<string, AgentConversation> agentConversations;
+            var agentConversationsKey = GetAgentStorageKey(turnContext);
+            var items = await _storage.ReadAsync([agentConversationsKey], cancellationToken).ConfigureAwait(false);
+            if (items != null && items.TryGetValue(agentConversationsKey, out var conversations))
+            {
+                agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
+
+                foreach (var conversation in agentConversations)
+                {
+                    if (conversation.Value.AgentConversationId.Equals(agentConversationId))
+                    {
+                        agentName = conversation.Value.AgentName;
+                        break;
+                    }
+                }
+
+                if (agentName != null)
+                {
+                    agentConversations.Remove(agentName);
+                    if (agentConversations.Count == 0)
+                    {
+                        deleteKeys.Add(agentConversationsKey);
+                    }
+                    else
+                    {
+                        await _storage.WriteAsync(new Dictionary<string, object>
+                        {
+                            { agentConversationsKey, agentConversations }
+                        }, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            await _storage.DeleteAsync([.. deleteKeys], cancellationToken).ConfigureAwait(false);   
         }
 
         /// <inheritdoc/>
@@ -253,29 +332,44 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async Task EndAllConversations(ITurnContext turnContext, ConversationState conversationState, CancellationToken cancellationToken = default)
+        public async Task EndAllConversations(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             // End all active Agent conversations.
-            var activeConversations = GetConversations(turnContext, conversationState);
+            var deletionKeys = new List<string>
+            {
+                GetAgentStorageKey(turnContext)
+            };
+
+            var activeConversations = await GetConversations(turnContext, cancellationToken).ConfigureAwait(false);
             if (activeConversations.Count > 0)
             {
                 foreach (var conversation in activeConversations)
                 {
-                    // Delete the conversation because we're done with it.
-                    await DeleteConversationAsync(conversation.AgentConversationId, conversationState, cancellationToken).ConfigureAwait(false);
+                    deletionKeys.Add(GetAgentConversationStorageKey(conversation.AgentConversationId));
 
                     // Send EndOfConversation to the Agent.
                     await SendToAgent(conversation.AgentName, conversation.AgentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
                 }
-
-                await conversationState.SaveChangesAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
+
+            await _storage.DeleteAsync(deletionKeys.ToArray(), cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public Task<ChannelConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
+        public async Task<ChannelConversationReference> GetConversationReferenceAsync(string agentConversationId, CancellationToken cancellationToken = default)
         {
-            return _conversationIdFactory.GetAgentConversationReferenceAsync(agentConversationId, cancellationToken);
+            ArgumentException.ThrowIfNullOrWhiteSpace(agentConversationId);
+
+            var channelConversationInfo = await _storage
+                .ReadAsync(new[] { GetAgentConversationStorageKey(agentConversationId) }, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (channelConversationInfo.TryGetValue(agentConversationId, out var channelConversationReference))
+            {
+                return ProtocolJsonSerializer.ToObject<ChannelConversationReference>(channelConversationReference);
+            }
+
+            return null;
         }
 
         private IAgentClient CreateClient(string agentName, HttpAgentClientSettings clientSettings)

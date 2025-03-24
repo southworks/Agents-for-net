@@ -33,25 +33,21 @@ namespace Microsoft.Agents.Client.Compat
         private readonly IChannelAdapter _adapter;
         private readonly IBot _bot;
         private readonly IAgentHost _agentHost;
-        private readonly ConversationState _conversationState;
         private readonly ILogger _logger;
 
         public SkillChannelApiHandler(
             IChannelAdapter adapter,
             IBot bot,
             IAgentHost channelHost,
-            ConversationState conversationState,
             ILogger logger = null)
         {
             ArgumentNullException.ThrowIfNull(adapter);
             ArgumentNullException.ThrowIfNull(bot);
             ArgumentNullException.ThrowIfNull(channelHost);
-            ArgumentNullException.ThrowIfNull(conversationState);
 
             _bot = bot;
             _adapter = adapter;
             _agentHost = channelHost;
-            _conversationState = conversationState;
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -233,7 +229,7 @@ namespace Microsoft.Agents.Client.Compat
                 switch (activity.Type)
                 {
                     case ActivityTypes.EndOfConversation:
-                        await _agentHost.DeleteConversationAsync(conversationId, _conversationState, cancellationToken).ConfigureAwait(false);
+                        await _agentHost.DeleteConversationAsync(turnContext, conversationId, cancellationToken).ConfigureAwait(false);
                         await SendToBotAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
                     case ActivityTypes.Event:

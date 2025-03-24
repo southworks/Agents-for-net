@@ -54,7 +54,7 @@ public class HostAgent : AgentApplication
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var echoConversationId = _agentHost.GetConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
         if (echoConversationId == null)
         {
             if (!turnContext.Activity.Text.Contains("agent"))
@@ -67,7 +67,7 @@ public class HostAgent : AgentApplication
             // Create the Conversation to use with Agent2.  This same conversationId should be used for all
             // subsequent SendToAgent calls until the conversation is over.
             await turnContext.SendActivityAsync($"Got it, connecting you to the '{Agent2Name}' Agent...", cancellationToken: cancellationToken);
-            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, turnState.Conversation, Agent2Name, cancellationToken);
+            echoConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, Agent2Name, cancellationToken);
         }
 
         // Send whatever the user said to Agent2.
@@ -77,7 +77,7 @@ public class HostAgent : AgentApplication
     // Handles responses from Agent2.
     protected async Task OnAgentResponseAsync(ITurnContext turnContext, ITurnState turnState, ChannelConversationReference reference, IActivity agentActivity, CancellationToken cancellationToken)
     {
-        var echoConversationId = _agentHost.GetConversation(turnContext, turnState.Conversation, Agent2Name);
+        var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
         if (!string.Equals(echoConversationId, agentActivity.Conversation.Id, StringComparison.OrdinalIgnoreCase))
         {
             // This sample only deals with one active Agent at a time.
@@ -91,7 +91,7 @@ public class HostAgent : AgentApplication
         if (agentActivity.IsType(ActivityTypes.EndOfConversation))
         {
             // Remove the conversation because we're done with it.
-            await _agentHost.DeleteConversationAsync(echoConversationId, turnState.Conversation, cancellationToken);
+            await _agentHost.DeleteConversationAsync(turnContext, echoConversationId,cancellationToken);
 
             // In this sample, the Agent2 will send an EndOfConversation with a result when "end" is sent.
             if (agentActivity.Value != null)

@@ -200,49 +200,39 @@ namespace Microsoft.Agents.Client.Tests
             await turnState.LoadStateAsync(turnContext);
 
             // should be no conversation for bot
-            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, botName));
+            Assert.Null(await host.GetConversation(turnContext, botName));
 
             // create a new conversation
-            var conversationId = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, botName);
+            var conversationId = await host.GetOrCreateConversationAsync(turnContext, botName);
             Assert.NotNull(conversationId);
-            Assert.Equal(conversationId, host.GetConversation(turnContext, turnState.Conversation, botName));
+            Assert.Equal(conversationId, await host.GetConversation(turnContext, botName));
 
             // Verify ConversationIdFactory stored the reference
             var idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
             Assert.Single(idState);
 
-            // Verify ConversationState has the conversationId for the bot
-            var conversations = turnState.Conversation.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty, () => new Dictionary<string, AgentConversation>());
-            Assert.Equal(conversationId, conversations[botName].AgentConversationId);
-
             // delete conversation
-            await host.DeleteConversationAsync(conversationId, turnState.Conversation);
-            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, botName));
+            await host.DeleteConversationAsync(turnContext, conversationId);
+            Assert.Null(await host.GetConversation(turnContext, botName));
 
             // Verify ConversationIdFactory deleted the reference
-            idState = await _storage.ReadAsync([conversationId], CancellationToken.None);
+            idState = await _storage.ReadAsync([conversationId, $"{turnContext.Activity.Conversation.Id}/agentconversations"], CancellationToken.None);
             Assert.Empty(idState);
-
-            // Verify conversation for the bot was removed from ConversationState
-            conversations = turnState.Conversation.GetValue<IDictionary<string, AgentConversation>>(IAgentHost.AgentConversationsProperty);
-            Assert.Empty(conversations);
         }
 
         [Fact]
         public async Task Conversation_MultiChannel()
         {
             // arrange
-            var channel1Name = "bot1Name";
-            var channel2Name = "bot2Name";
+            var agent1Name = "bot1Name";
+            var agent2Name = "bot2Name";
             var sections = new Dictionary<string, string>{
-                {$"Agent:Host:Agents:{channel1Name}:Alias", channel1Name},
-                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:ClientId", "123"},
-                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"Agent:Host:Agents:{channel1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
-                {$"Agent:Host:Agents:{channel2Name}:Alias", channel2Name},
-                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:ClientId", "456"},
-                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
-                {$"Agent:Host:Agents:{channel2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:ClientId", "123"},
+                {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
+                {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:ClientId", "456"},
+                {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
                 {"Agent:Host:DefaultResponseEndpoint", "http://localhost/"},
                 {"Agent:ClientId", "hostId"},
             };
@@ -280,27 +270,29 @@ namespace Microsoft.Agents.Client.Tests
             var turnState = new TurnState(_storage);
             await turnState.LoadStateAsync(turnContext);
 
-            // create a new conversation for channel1
-            var conversationId1 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel1Name);
+            // create a new conversation for agent1
+            var conversationId1 = await host.GetOrCreateConversationAsync(turnContext, agent1Name);
             Assert.NotNull(conversationId1);
-            Assert.Equal(conversationId1, host.GetConversation(turnContext, turnState.Conversation, channel1Name));
+            Assert.Equal(conversationId1, await host.GetConversation(turnContext, agent1Name));
 
-            // create a new conversation for channel2
-            var conversationId2 = await host.GetOrCreateConversationAsync(turnContext, turnState.Conversation, channel2Name);
+            // create a new conversation for agent2
+            var conversationId2 = await host.GetOrCreateConversationAsync(turnContext, agent2Name);
             Assert.NotNull(conversationId2);
-            Assert.Equal(conversationId2, host.GetConversation(turnContext, turnState.Conversation, channel2Name));
+            Assert.Equal(conversationId2, await host.GetConversation(turnContext, agent2Name));
 
             // Should have two existing conversations
-            var conversations = host.GetConversations(turnContext, turnState.Conversation);
+            var conversations = await host.GetConversations(turnContext);
             Assert.Equal(2, conversations.Count);
-            Assert.Equal(conversationId1, conversations.Where(c => c.AgentName == channel1Name).First().AgentConversationId);
-            Assert.Equal(conversationId2, conversations.Where(c => c.AgentName == channel2Name).First().AgentConversationId);
+            Assert.Equal(conversationId1, conversations.Where(c => c.AgentName == agent1Name).First().AgentConversationId);
+            Assert.Equal(conversationId2, conversations.Where(c => c.AgentName == agent2Name).First().AgentConversationId);
 
             // delete conversation
-            await host.DeleteConversationAsync(conversationId1, turnState.Conversation);
-            await host.DeleteConversationAsync(conversationId2, turnState.Conversation);
-            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, channel1Name));
-            Assert.Null(host.GetConversation(turnContext, turnState.Conversation, channel2Name));
+            await host.DeleteConversationAsync(turnContext, conversationId1);
+            await host.DeleteConversationAsync(turnContext, conversationId2);
+            Assert.Null(await host.GetConversation(turnContext, agent1Name));
+            Assert.Null(await host.GetConversation(turnContext, agent2Name));
+            conversations = await host.GetConversations(turnContext);
+            Assert.Empty(conversations);
         }
     }
 }

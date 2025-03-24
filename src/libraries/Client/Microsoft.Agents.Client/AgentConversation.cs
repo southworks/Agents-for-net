@@ -8,11 +8,11 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public class AgentConversation
     {
-        public string AgentName { get; internal set; }
+        public string AgentName { get; set; }
 
         /// <summary>
         /// This is the conversationId created with <see cref="IAgentHost.GetOrCreateConversationAsync(BotBuilder.ITurnContext, BotBuilder.State.ConversationState, string, System.Threading.CancellationToken)"/>.
         /// </summary>
-        public string AgentConversationId { get; internal set; }
+        public string AgentConversationId { get; set; }
     }
 }

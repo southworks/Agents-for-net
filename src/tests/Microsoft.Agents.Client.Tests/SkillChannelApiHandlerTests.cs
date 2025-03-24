@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
+            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.AgentHost);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
+            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.AgentHost);
             var response = replyToId == null ? await sut.OnSendToConversationAsync(mockObjects.CreateTestClaims(), conversationId, activity) : await sut.OnReplyToActivityAsync(mockObjects.CreateTestClaims(), conversationId, replyToId, activity);
 
             // Assert
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Client.Tests
             var activityToDelete = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
+            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.AgentHost);
             await sut.OnDeleteActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToDelete);
 
             // Assert
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Client.Tests
             var activityToUpdate = Guid.NewGuid().ToString();
 
             // Act
-            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
+            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.AgentHost);
             var response = await sut.OnUpdateActivityAsync(mockObjects.CreateTestClaims(), conversationId, activityToUpdate, activity);
 
             // Assert
@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Client.Tests
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
-            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.ChannelHost, mockObjects.ConversationState);
+            var sut = new SkillChannelApiHandler(mockObjects.Adapter.Object, mockObjects.Bot.Object, mockObjects.AgentHost);
             var member = await sut.OnGetConversationMemberAsync(mockObjects.CreateTestClaims(), TestMember.Id, conversationId);
 
             // Assert
@@ -246,10 +246,10 @@ namespace Microsoft.Agents.Client.Tests
                     .Setup(c => c.TryGetConnection(It.IsAny<string>(), out provider))
                     .Returns(true);
 
-                ChannelHost = CreateChannelHost(Storage, HttpClientFactory.Object, Connections.Object);
+                AgentHost = CreateAgentHost(Storage, HttpClientFactory.Object, Connections.Object);
             }
 
-            private IAgentHost CreateChannelHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
+            private IAgentHost CreateAgentHost(IStorage storage, IHttpClientFactory clientFactory, IConnections connections)
             {
                 var httpBotChannelSettings = new HttpAgentClientSettings();
                 httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Client.Tests
             public Mock<IConnections> Connections { get; }
 
 
-            public IAgentHost ChannelHost { get; }
+            public IAgentHost AgentHost { get; }
 
             public TestHttpMessageHandler HttpMessageHandler { get; }
 
@@ -344,13 +344,13 @@ namespace Microsoft.Agents.Client.Tests
                     .SetupGet(i => i.Identity)
                     .Returns(new ClaimsIdentity(
                     [
-                        new (AuthenticationConstants.AudienceClaim, ChannelHost.HostClientId),
-                        new (AuthenticationConstants.AppIdClaim, ChannelHost.HostClientId),
+                        new (AuthenticationConstants.AudienceClaim, AgentHost.HostClientId),
+                        new (AuthenticationConstants.AppIdClaim, AgentHost.HostClientId),
                     ]));
 
                 await ConversationState.LoadAsync(turnContext.Object);
 
-                return await ChannelHost.GetOrCreateConversationAsync(turnContext.Object, ConversationState, "test");
+                return await AgentHost.GetOrCreateConversationAsync(turnContext.Object, "test");
             }
             public ClaimsIdentity CreateTestClaims()
             {

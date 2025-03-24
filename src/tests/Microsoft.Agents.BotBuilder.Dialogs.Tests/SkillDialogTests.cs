@@ -171,7 +171,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert results and data sent to the SkillClient for fist turn
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
-            Assert.NotNull(_agentHost.GetConversation(_context.Object, conversationState, "test"));
+            Assert.NotNull(await _agentHost.GetConversation(_context.Object, "test"));
 
             // Send a second message to continue the dialog
             _httpMessageHandler.HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             // Assert we are done.
             Assert.Equal(DialogTurnStatus.Complete, client.DialogTurnResult.Status);
-            Assert.Null(_agentHost.GetConversation(_context.Object, conversationState, "test"));
+            Assert.Null(await _agentHost.GetConversation(_context.Object, "test"));
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -547,7 +547,7 @@ namespace Microsoft.Agents.BotBuilder.Dialogs.Tests
 
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1"} })
-                .Verifiable(Times.Exactly(7));
+                .Verifiable(Times.Exactly(8));
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.StackState)

@@ -39,8 +39,11 @@ namespace Microsoft.Agents.Client
 
             agentApplication.OnActivity(
                 (turnContext, CancellationToken) =>
-                    Task.FromResult(turnContext.Activity.IsType(ActivityTypes.Event)
-                        && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase)),
+                {
+                    var isReply = turnContext.Activity.IsType(ActivityTypes.Event)
+                        && string.Equals(AdapterChannelResponseHandler.ChannelReplyEventName, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase);
+                    return Task.FromResult(isReply);
+                },
                 routeHandler,
                 rank);
         }
@@ -52,17 +55,20 @@ namespace Microsoft.Agents.Client
         /// Called either by the User sending EOC, or in the case of an AgentApplication TurnError.
         /// Default handling is to end all agent-to-agent conversations, and delete ConversationState.
         /// </remarks>
-        /// <param name="handler">An optional additional RouteHandler that is called prior to ConversationState being deleted.</param>
+        /// <param name="additionalHandler">An optional additional RouteHandler that is called prior to ConversationState being deleted.</param>
         /// <param name="rank"></param>
-        public void AddDefaultEndOfConversationHandling(RouteHandler handler = null, ushort rank = RouteRank.Unspecified)
+        public void AddDefaultEndOfConversationHandling(RouteHandler additionalHandler = null, ushort rank = RouteRank.Unspecified)
         {
             async Task eocHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
-                await agentHost.EndAllConversations(turnContext, turnState.Conversation, cancellationToken).ConfigureAwait(false);
-                if (handler != null)
+                // Give the additionalHandler a chance to act on the EOC before default handling nukes it.
+                if (additionalHandler != null)
                 {
-                    await handler(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                    await additionalHandler(turnContext, turnState, cancellationToken).ConfigureAwait(false);
                 }
+
+                // This tells each active Agent that the conversation is over, and remove it from state.
+                await agentHost.EndAllConversations(turnContext, cancellationToken).ConfigureAwait(false);
             }
 
             agentApplication.OnActivity(
@@ -71,9 +77,13 @@ namespace Microsoft.Agents.Client
                 rank);
 
 
+            // On error, end all active Agent conversations and delete ConversationState.
             async Task errorHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {
                 await eocHandler(turnContext, turnState, CancellationToken.None).ConfigureAwait(false);
+
+                // The default behavior is that in the event of an uncaught exception, things are in the weeds, and
+                // best to just reset the ConversationState.
                 await turnState.Conversation.DeleteStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             }
 

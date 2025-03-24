@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace Microsoft.Agents.Storage.CosmosDb
 {
@@ -130,7 +131,9 @@ namespace Microsoft.Agents.Storage.CosmosDb
                     object item = null;
                     if (document.GetTypeInfo(out var type))
                     {
+                        var typeProps = document.RemoveTypeInfoProperties();
                         item = document.Deserialize(type, _serializerOptions);
+                        document.SetTypeInfoProperties(typeProps);
                     }
                     else
                     {
