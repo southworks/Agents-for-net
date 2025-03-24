@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <ComponentAreaName>CplBotBuilderDialogs</ComponentAreaName>
+    <ComponentAreaName>CplBuilderDialogs</ComponentAreaName>
     <SignAssembly>true</SignAssembly>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
