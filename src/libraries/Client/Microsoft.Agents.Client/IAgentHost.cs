@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.State;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -16,8 +15,6 @@ namespace Microsoft.Agents.Client
     /// </summary>
     public interface IAgentHost
     {
-        public const string AgentConversationsProperty = "agentHost.agentConversations";
-
         /// <summary>
         /// The endpoint to use in Activity.ServiceUrl if unspecified in an Agents settings.
         /// </summary>
@@ -125,7 +122,7 @@ namespace Microsoft.Agents.Client
         /// Ends all active conversations for the Turn conversation.
         /// </summary>
         /// <remarks>
-        /// This means for all conversation with other Agents for the current ITurnContext conversation.  This also sends an
+        /// This deletes all conversations with other Agents for the current ITurnContext conversation.  This also sends an
         /// EndOfConversations to each Agent.
         /// </remarks>
         /// <param name="turnContext"></param>
