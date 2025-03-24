@@ -325,6 +325,17 @@ namespace Microsoft.Agents.Client
             return client.SendActivityStreamedAsync(agentConversationId, activity, cancellationToken: cancellationToken);
         }
 
+        public async Task EndAgentConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
+        {
+            var agentConversationId = await GetConversation(turnContext, agentName, cancellationToken).ConfigureAwait(false);
+
+            await DeleteConversationAsync(turnContext, agentConversationId, cancellationToken).ConfigureAwait(false);
+
+            // Send EndOfConversation to the Agent.
+            await SendToAgent(agentName, agentConversationId, Activity.CreateEndOfConversationActivity(), cancellationToken).ConfigureAwait(false);
+
+        }
+
         /// <inheritdoc/>
         public async Task EndAllConversations(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
@@ -374,7 +385,7 @@ namespace Microsoft.Agents.Client
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AgentTokenProviderNotFound, null, tokenProviderName, agentName);
             }
 
-            return new HttpAgentClient(clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
+            return new HttpAgentClient(this, clientSettings, _httpClientFactory, tokenProvider, (ILogger<HttpAgentClient>) _serviceProvider.GetService(typeof(ILogger<HttpAgentClient>)));
         }
     }
 }

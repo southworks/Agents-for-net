@@ -19,6 +19,18 @@ public class Echo : AgentApplication
         OnTurnError(TurnErrorHandlerAsync);
     }
 
+    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    protected async Task ConversationUpdate(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        {
+            if (member.Id != turnContext.Activity.Recipient.Id)
+            {
+                await turnContext.SendActivityAsync(MessageFactory.Text("Hi! This is Echo."), cancellationToken);
+            }
+        }
+    }
+
     [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last )]
     protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {

@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.Client.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -29,13 +30,16 @@ namespace Microsoft.Agents.Client
         private readonly IAccessTokenProvider _tokenProvider;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
+        private readonly IAgentHost _agentHost;
         private bool _disposed;
 
+        /// <param name="agentHost"></param>
         /// <param name="clientSettings"></param>
         /// <param name="httpClientFactory"></param>
         /// <param name="tokenProvider"></param>
         /// <param name="logger"></param>
         public HttpAgentClient(
+            IAgentHost agentHost,
             HttpAgentClientSettings clientSettings,
             IHttpClientFactory httpClientFactory,
             IAccessTokenProvider tokenProvider,
@@ -45,10 +49,28 @@ namespace Microsoft.Agents.Client
             _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _logger = logger ?? NullLogger<HttpAgentClient>.Instance;
+            _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
         }
 
         /// <inheritdoc/>
         public string Name => _settings.Name;
+
+        public async Task StartConversationAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            var agentConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).ConfigureAwait(false);
+            var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, false);
+
+            await SendRequest(conversationUpdate, cancellationToken).ConfigureAwait(false);
+        }
+
+        public IAsyncEnumerable<object> StartConversationStreamedAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            var agentConversationId = _agentHost.GetOrCreateConversationAsync(turnContext, Name, cancellationToken).GetAwaiter().GetResult();
+            var conversationUpdate = CreateConversationUpdateActivity(turnContext, agentConversationId, true);
+
+            return InnerSendActivityStreamedAsync(conversationUpdate, cancellationToken);
+        }
+
 
         /// <inheritdoc/>
         public async Task SendActivityAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
@@ -153,13 +175,18 @@ namespace Microsoft.Agents.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<object> SendActivityStreamedAsync(string agentConversationId, IActivity activity, IActivity relatesTo = null, CancellationToken cancellationToken = default)
         {
             var activityClone = CreateSendActivity(agentConversationId, activity, relatesTo);
             activityClone.DeliveryMode = DeliveryModes.Stream;
 
+            return InnerSendActivityStreamedAsync(activity, cancellationToken);
+        }
+
+        public async IAsyncEnumerable<object> InnerSendActivityStreamedAsync(IActivity activity, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
             // Create the HTTP request from the cloned Activity and send it to the Agent.
-            using var response = await SendRequest(activityClone, cancellationToken).ConfigureAwait(false);
+            using var response = await SendRequest(activity, cancellationToken).ConfigureAwait(false);
 
             // Read streamed response
             using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -282,7 +309,7 @@ namespace Microsoft.Agents.Client
             activityClone.Recipient ??= new ChannelAccount();
             activityClone.Recipient.Role = RoleTypes.Skill;
             activityClone.From ??= new ChannelAccount();
-            activityClone.From.Role = RoleTypes.Skill;
+            activityClone.From.Role = RoleTypes.Bot;
 
             activityClone.Conversation ??= new ConversationAccount();
             if (!string.IsNullOrEmpty(activityClone.Conversation.Id))
@@ -291,6 +318,22 @@ namespace Microsoft.Agents.Client
             }
 
             return activityClone;
+        }
+
+        private IActivity CreateConversationUpdateActivity(ITurnContext turnContext, string agentConversationId, bool streamed)
+        {
+            return new Activity()
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                Id = Guid.NewGuid().ToString(),
+                ChannelId = turnContext.Activity.ChannelId,
+                DeliveryMode = streamed ? DeliveryModes.Stream : DeliveryModes.Normal,
+                Conversation = new ConversationAccount() { Id = agentConversationId },
+                MembersAdded = [new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Bot }, new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill }],
+                ServiceUrl = _settings.ConnectionSettings.ServiceUrl,
+                Recipient = new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill },
+                From = new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Bot },
+            };
         }
 
         /// <inheritdoc/>

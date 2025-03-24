@@ -110,6 +110,18 @@ namespace Microsoft.Agents.Client
         Task DeleteConversationAsync(ITurnContext turnContext, string agentConversationId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Ends the conversation for the specified Agent.
+        /// </summary>
+        /// <remarks>
+        /// This deletes the conversation and sends the Agent an EndOfConversation. 
+        /// </remarks>
+        /// <param name="turnContext"></param>
+        /// <param name="agentName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task EndAgentConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Ends all active conversations for the Turn conversation.
         /// </summary>
         /// <remarks>
