@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Connector.RestClients
 {
     /// <summary>
-    /// BotSignIn operations.
+    /// AgentSignIn operations.
     /// </summary>
-    internal interface IBotSignIn
+    internal interface IAgentSignIn
     {
         /// <summary>Get sign-in URL with HTTP Message.</summary>
         /// <param name='state'>State.</param>
