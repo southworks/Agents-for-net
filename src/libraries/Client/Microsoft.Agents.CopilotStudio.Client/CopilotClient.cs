@@ -64,7 +64,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         public static string? ScopeFromSettings(ConnectionSettings settings) => PowerPlatformEnvironment.GetTokenAudience(settings);
 
         /// <summary>
-        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted bots. 
+        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted Agents. 
         /// </summary>
         /// <param name="settings">Configuration Settings for Connecting to Copilot Studio</param>
         /// <param name="httpClientFactory">Http Client Factory to use when connecting to Copilot Studio</param>
@@ -80,10 +80,10 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
 
         /// <summary>
-        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted bots. 
+        /// Creates a DirectToEngine client for Microsoft Copilot Studio hosted Agents. 
         /// </summary>
         /// <param name="settings">Configuration Settings for Connecting to Copilot Studio</param>
-        /// <param name="httpClientFactory">Http Client Factory to use when connecting to Coilot Studio</param>
+        /// <param name="httpClientFactory">Http Client Factory to use when connecting to Copilot Studio</param>
         /// <param name="logger">ILogger to log events on for DirectToEngine operations. </param>
         /// <param name="httpClientName">Name of HttpClient to use from the factory</param>
         /// <param name="tokenProviderFunction">Function pointer for a async function that will accept an URL and return an AccessToken</param>
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <summary>
         /// Used to start a conversation with MCS. 
         /// </summary>
-        /// <param name="emitStartConversationEvent">Should ask remote bot to emit start event</param>
+        /// <param name="emitStartConversationEvent">Should ask remote Agent to emit start event</param>
         /// <param name="cancellationToken">Event Cancelation Token</param>
         /// <returns></returns>
         public IAsyncEnumerable<IActivity> StartConversationAsync(bool emitStartConversationEvent = true, CancellationToken cancellationToken = default)
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Sends a String question to the remote bot and returns the response as an IAsyncEnumerable of IActivity
+        /// Sends a String question to the remote Agent and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="question">String Question to send to copilot</param>
         /// <param name="conversationId">Conversation ID to reference, Optional. If not set it will pick up the current conversation id</param>
@@ -247,7 +247,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Sends an activity the remote bot and returns the response as an IAsyncEnumerable of IActivity
+        /// Sends an activity the remote Agent and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="activity" >Activity to send</param>
         /// <param name="ct">Event Cancelation Token</param>

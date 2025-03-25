@@ -20,9 +20,9 @@ namespace Microsoft.Agents.CopilotStudio.Client
         //<inheritdoc/>
         public string? CustomPowerPlatformCloud { get; set; }
         //<inheritdoc/>
-        public string? BotIdentifier { get; set; }
+        public string? SchemaName { get; set; }
         //<inheritdoc/>
-        public BotType? CopilotBotType { get; set; } 
+        public AgentType? CopilotAgentType { get; set; } 
 
         public ConnectionSettings()
         {
@@ -40,9 +40,9 @@ namespace Microsoft.Agents.CopilotStudio.Client
             if (config != null && config.Exists())
             {
                 EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
-                BotIdentifier = config[nameof(BotIdentifier)] ?? throw new ArgumentException($"{nameof(BotIdentifier)} not found in config");
+                SchemaName = config[nameof(SchemaName)] ?? throw new ArgumentException($"{nameof(SchemaName)} not found in config");
                 Cloud = config.GetValue(nameof(Cloud), PowerPlatformCloud.Unknown);
-                CopilotBotType = config.GetValue(nameof(CopilotBotType), BotType.Published);
+                CopilotAgentType = config.GetValue(nameof(CopilotAgentType), AgentType.Published);
                 CustomPowerPlatformCloud = config[nameof(CustomPowerPlatformCloud)];
             }
         }

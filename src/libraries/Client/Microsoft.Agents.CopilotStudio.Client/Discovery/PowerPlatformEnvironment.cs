@@ -14,15 +14,15 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
         /// <param name="conversationId">Optional, Conversation ID to address</param>
-        /// <param name="botType">Type of Bot being addressed. <see cref="BotType"/></param>
-        /// <param name="cloud">Power Platform Cloud Hosting Bot <see cref="PowerPlatformCloud"/></param>
+        /// <param name="agentType">Type of Agent being addressed. <see cref="AgentType"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static Uri GetCopilotStudioConnectionUrl(
                 ConnectionSettings settings,
                 string? conversationId,
-                BotType botType = BotType.Published,
+                AgentType agentType = AgentType.Published,
                 PowerPlatformCloud cloud = PowerPlatformCloud.Prod, 
                 string? cloudBaseAddress = default
             )
@@ -35,9 +35,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             {
                 throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
             }
-            if (string.IsNullOrEmpty(settings.BotIdentifier))
+            if (string.IsNullOrEmpty(settings.SchemaName))
             {
-                throw new ArgumentException("BotIdentifier must be provided", nameof(settings.BotIdentifier));
+                throw new ArgumentException("SchemaName must be provided", nameof(settings.SchemaName));
             }
             if ( settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
             {
@@ -62,22 +62,22 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                     }
                 }
             }
-            if ( settings.CopilotBotType != null)
+            if ( settings.CopilotAgentType != null)
             {
-                botType = settings.CopilotBotType.Value;
+                agentType = settings.CopilotAgentType.Value;
             }
 
             cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
             var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId, cloudBaseAddress);
-            return CreateUri(settings.BotIdentifier, host, botType, conversationId);
+            return CreateUri(settings.SchemaName, host, agentType, conversationId);
         }
 
         /// <summary>
         /// Returns the Power Platform API Audience.
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
-        /// <param name="cloud">Power Platform Cloud Hosting Bot <see cref="PowerPlatformCloud"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
@@ -132,25 +132,25 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <summary>
         /// Creates the PowerPlatform API connection URL for the given settings.
         /// </summary>
-        private static Uri CreateUri(string botIdentifier, string host, BotType botType, string? conversationId)
+        private static Uri CreateUri(string schemaName, string host, AgentType agentType, string? conversationId)
         {
-            string botPathName = "";
-            if (BotType.Published == botType)
+            string agentPathName = "";
+            if (AgentType.Published == agentType)
             {
-                botPathName = "dataverse-backed";
+                agentPathName = "dataverse-backed";
             }
             else
             {
-                botPathName = "prebuilt";
+                agentPathName = "prebuilt";
             }
             var builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = host;
             builder.Query = $"api-version={ApiVersion}";
             if (string.IsNullOrEmpty(conversationId))
-                builder.Path = $"/copilotstudio/{botPathName}/authenticated/bots/{botIdentifier}/conversations";
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations";
             else
-                builder.Path = $"/copilotstudio/{botPathName}/authenticated/bots/{botIdentifier}/conversations/{conversationId}";
+                builder.Path = $"/copilotstudio/{agentPathName}/authenticated/bots/{schemaName}/conversations/{conversationId}";
             return builder.Uri;
         }
 
