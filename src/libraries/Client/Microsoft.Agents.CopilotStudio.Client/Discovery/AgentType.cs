@@ -3,9 +3,9 @@
 namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 {
     /// <summary>
-    /// Bot types that can be connected to by the Copilot Studio Client
+    /// Agent types that can be connected to by the Copilot Studio Client
     /// </summary>
-    public enum BotType
+    public enum AgentType
     {
         /// <summary>
         /// Copilot Studio Published Copilot
