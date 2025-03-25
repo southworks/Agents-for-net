@@ -9,11 +9,11 @@ namespace Microsoft.Agents.Builder;
 public abstract class AgentExtension : IAgentExtension
 {
     public virtual string ChannelId {get;init;}
-    public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false) {
+    public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified) {
         var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
             return turnContext.Activity.ChannelId == ChannelId && await routeSelector(turnContext, cancellationToken);
         });
 
-        agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute);
+        agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank);
     }
 }
