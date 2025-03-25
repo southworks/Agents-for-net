@@ -11,11 +11,10 @@ using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
-    internal class BotSignInRestClient(IRestTransport transport) : IBotSignIn
+    internal class AgentSignInRestClient(IRestTransport transport) : IAgentSignIn
     {
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
