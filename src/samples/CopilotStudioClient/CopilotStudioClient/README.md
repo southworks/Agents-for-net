@@ -57,7 +57,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 ```json
   "DirectToEngineSettings": {
     "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-    "BotIdentifier": "", // Schema Name of the Copilot to use
+    "SchemaName": "", // Schema Name of the Copilot to use
     "TenantId": "", // Tenant ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
     "AppClientId": "" // App ID of the App Registration used to login,  this should be in the same tenant as the Copilot.
   }
@@ -65,7 +65,7 @@ With the above information, you can now run the client `CopilostStudioClientSamp
 
 3. Run the CopilotStudioClientSample.exe program.
 
-This should challenge you for login and connect ot the Copilot Studio Hosted bot, allowing you to communicate via a console interface.
+This should challenge you for login and connect ot the Copilot Studio Hosted Agent, allowing you to communicate via a console interface.
 
 ## Authentication
 
