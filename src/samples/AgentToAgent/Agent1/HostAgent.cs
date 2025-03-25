@@ -29,7 +29,7 @@ public class HostAgent : AgentApplication
         _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
 
         // Register extension to handle communicating with other Agents.
-        RegisterExtension(new AgentResponsesExtension(this, _agentHost), (extension) =>
+        RegisterExtension(new AgentResponses(this, _agentHost), (extension) =>
         {
             // Handle DeliveryMode.Normal Agent asynchronous replies.
             extension.OnAgentReply(OnAgentResponseAsync);

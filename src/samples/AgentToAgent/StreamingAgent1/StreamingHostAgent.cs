@@ -28,7 +28,7 @@ public class StreamingHostAgent : AgentApplication
     {
         _agentHost = agentHost ?? throw new ArgumentNullException(nameof(agentHost));
 
-        RegisterExtension(new AgentResponsesExtension(this, _agentHost), (extension) =>
+        RegisterExtension(new AgentResponses(this, _agentHost), (extension) =>
         {
             extension.AddDefaultEndOfConversationHandling();
         });
