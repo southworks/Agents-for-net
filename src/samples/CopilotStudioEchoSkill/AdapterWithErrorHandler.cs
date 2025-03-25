@@ -7,7 +7,7 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using System.Threading;
 
 namespace CopilotStudioEchoSkill;
