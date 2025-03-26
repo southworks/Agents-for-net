@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
             var claims = CreateClaimsIdentity(agentAppId);
-            return ProcessProactiveAsync(CreateClaimsIdentity(agentAppId), reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claims), callback, cancellationToken);
+            return ProcessProactiveAsync(CreateClaimsIdentity(agentAppId), reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Builder
         {
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Builder
             ValidateContinuationActivity(continuationActivity);
 
             var claims = CreateClaimsIdentity(agentAppId);
-            return ProcessProactiveAsync(claims, continuationActivity, BotClaims.GetTokenAudience(claims), callback, cancellationToken);
+            return ProcessProactiveAsync(claims, continuationActivity, AgentClaims.GetTokenAudience(claims), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Builder
             _ = callback ?? throw new ArgumentNullException(nameof(callback));
             ValidateContinuationActivity(continuationActivity);
 
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, BotClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+            return ProcessProactiveAsync(claimsIdentity, continuationActivity, AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -239,7 +239,7 @@ namespace Microsoft.Agents.Builder
         public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
-            audience = audience ?? BotClaims.GetTokenAudience(claimsIdentity);
+            audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, continuationActivity.ServiceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -259,9 +259,9 @@ namespace Microsoft.Agents.Builder
         {
             Logger.LogInformation($"ProcessActivityAsync");
 
-            if (BotClaims.IsBotClaim(claimsIdentity))
+            if (AgentClaims.IsAgentClaim(claimsIdentity))
             {
-                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{BotClaims.GetOutgoingAppId(claimsIdentity)}";
+                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppId(claimsIdentity)}";
             }
             else
             {
@@ -276,9 +276,9 @@ namespace Microsoft.Agents.Builder
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 claimsIdentity, 
                 activity.ServiceUrl, 
-                BotClaims.GetTokenAudience(claimsIdentity), 
+                AgentClaims.GetTokenAudience(claimsIdentity), 
                 cancellationToken, 
-                scopes: BotClaims.GetTokenScopes(claimsIdentity),
+                scopes: AgentClaims.GetTokenScopes(claimsIdentity),
                 useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false);
 
             // Create a UserTokenClient instance for OAuth flow.
@@ -328,7 +328,7 @@ namespace Microsoft.Agents.Builder
             activity.Id = createConversationResult.ActivityId ?? Guid.NewGuid().ToString("n");
             activity.Conversation = new ConversationAccount(id: createConversationResult.Id, tenantId: conversationParameters.TenantId);
             activity.ChannelData = conversationParameters.ChannelData;
-            activity.Recipient = conversationParameters.Bot;
+            activity.Recipient = conversationParameters.Agent;
             return (Activity)activity;
         }
 

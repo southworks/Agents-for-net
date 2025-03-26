@@ -48,7 +48,7 @@ This sample is intended to introduce you to:
       },
 
       "Connections": {
-          "BotServiceConnection": {
+          "ServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
           "Type":  "MsalAuth",
           "Settings": {

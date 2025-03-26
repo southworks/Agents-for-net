@@ -49,8 +49,8 @@ namespace Microsoft.Agents.Core.Models
         /// For example, America/Los_Angeles.
         /// </param>
         /// <param name="callerId">
-        /// A string containing an IRI identifying the caller of a bot. This field is not intended to be transmitted
-        /// over the wire, but is instead populated by bots and clients based on cryptographically verifiable data
+        /// A string containing an IRI identifying the caller of an Agent. This field is not intended to be transmitted
+        /// over the wire, but is instead populated by Agents and clients based on cryptographically verifiable data
         /// that asserts the identity of the callers (e.g. tokens).
         /// </param>
         /// <param name="serviceUrl"> Contains the URL that specifies the channel's service endpoint. Set by the channel. </param>
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="locale"> A BCP-47 locale name for the contents of the text field. </param>
         /// <param name="text"> The text content of the message. </param>
         /// <param name="speak"> The text to speak. </param>
-        /// <param name="inputHint"> Indicates whether the bot is accepting, expecting, or ignoring input. </param>
+        /// <param name="inputHint"> Indicates whether the Agent is accepting, expecting, or ignoring input. </param>
         /// <param name="summary"> The text to display if the channel cannot render cards. </param>
         /// <param name="suggestedActions"> SuggestedActions that can be performed. </param>
         /// <param name="attachments"> Attachments. </param>
@@ -399,7 +399,7 @@ namespace Microsoft.Agents.Core.Models
             {
                 ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
                 User = From,
-                Bot = Recipient,
+                Agent = Recipient,
                 Conversation = Conversation,
                 ChannelId = ChannelId,
                 Locale = Locale,
@@ -430,7 +430,7 @@ namespace Microsoft.Agents.Core.Models
             if (isIncoming)
             {
                 From = reference.User;
-                Recipient = reference.Bot;
+                Recipient = reference.Agent;
                 if (reference.ActivityId != null)
                 {
                     Id = reference.ActivityId;
@@ -439,7 +439,7 @@ namespace Microsoft.Agents.Core.Models
             else
             {
                 // Outgoing
-                From = reference.Bot;
+                From = reference.Agent;
                 Recipient = reference.User;
                 if (reference.ActivityId != null)
                 {

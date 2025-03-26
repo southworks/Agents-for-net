@@ -9,17 +9,17 @@ namespace Microsoft.Agents.Core.Models
     public static class CallerIdConstants
     {
         /// <summary>
-        ///  The caller ID for any Azure Bot Service channel.
+        ///  The caller ID for any Azure Channel.
         /// </summary>
         public const string PublicAzureChannel = "urn:botframework:azure";
 
         /// <summary>
-        ///  The caller ID for any Azure Bot Service US Government cloud channel.
+        ///  The caller ID for any Azure US Government cloud channel.
         /// </summary>
         public const string USGovChannel = "urn:botframework:azureusgov";
 
         /// <summary>
-        /// The caller ID prefix when a bot initiates a request to another Agent.
+        /// The caller ID prefix when a Agent initiates a request to another Agent.
         /// </summary>
         /// <remarks>
         /// This prefix will be followed by the Azure Active Directory App ID of the Agent that initiated the call.

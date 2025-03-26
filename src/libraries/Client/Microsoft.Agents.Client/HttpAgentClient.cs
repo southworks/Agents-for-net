@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Client
             activityClone.Recipient ??= new ChannelAccount();
             activityClone.Recipient.Role = RoleTypes.Skill;
             activityClone.From ??= new ChannelAccount();
-            activityClone.From.Role = RoleTypes.Bot;
+            activityClone.From.Role = RoleTypes.Agent;
 
             activityClone.Conversation ??= new ConversationAccount();
             if (!string.IsNullOrEmpty(activityClone.Conversation.Id))
@@ -329,10 +329,10 @@ namespace Microsoft.Agents.Client
                 ChannelId = turnContext.Activity.ChannelId,
                 DeliveryMode = streamed ? DeliveryModes.Stream : DeliveryModes.Normal,
                 Conversation = new ConversationAccount() { Id = agentConversationId },
-                MembersAdded = [new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Bot }, new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill }],
+                MembersAdded = [new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Agent }, new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill }],
                 ServiceUrl = _settings.ConnectionSettings.ServiceUrl,
                 Recipient = new ChannelAccount() { Id = _settings.ConnectionSettings.ClientId, Role = RoleTypes.Skill },
-                From = new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Bot },
+                From = new ChannelAccount() { Id = _agentHost.HostClientId, Role = RoleTypes.Agent },
             };
         }
 

@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public void GetAppId_ThrowIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => BotClaims.GetAppId(null));
+            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetAppId(null));
         }
 
         [Fact]
         public void GetAppId_NullIfNoClaims()
         {
             ClaimsIdentity identity = new();
-            Assert.Null(BotClaims.GetAppId(identity));
+            Assert.Null(AgentClaims.GetAppId(identity));
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Null(BotClaims.GetAppId(identity));
+            Assert.Null(AgentClaims.GetAppId(identity));
         }
         [Fact]
         public void GetAppId_ThrowIf2AudienceClaims()
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Throws<InvalidOperationException>(() => BotClaims.GetAppId(identity));
+            Assert.Throws<InvalidOperationException>(() => AgentClaims.GetAppId(identity));
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Throws<InvalidOperationException>(() => BotClaims.GetAppId(identity));
+            Assert.Throws<InvalidOperationException>(() => AgentClaims.GetAppId(identity));
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Equal("claim1", BotClaims.GetAppId(identity));
+            Assert.Equal("claim1", AgentClaims.GetAppId(identity));
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset without the right claims throws an exception
-            Assert.Equal("claim1", BotClaims.GetAppId(identity));
+            Assert.Equal("claim1", AgentClaims.GetAppId(identity));
         }
 
         [Fact]
@@ -112,13 +112,13 @@ namespace Microsoft.Agents.Auth.Tests
             ClaimsIdentity identity = new(claims);
 
             // Verify asking for an AppId on a claimset with both claims returns the Audiance claim.
-            Assert.Equal("claim2", BotClaims.GetAppId(identity));
+            Assert.Equal("claim2", AgentClaims.GetAppId(identity));
         }
 
         [Fact]
         public void GetOutgoingAppId_ThrowIfNull()
         {
-            Assert.Throws<ArgumentNullException>(() => BotClaims.GetOutgoingAppId(null));
+            Assert.Throws<ArgumentNullException>(() => AgentClaims.GetOutgoingAppId(null));
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(ClaimTypes.Name, "Name1")
             ]);
 
-            Assert.Null(BotClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
         }
 
         [Fact]
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, "claim2")
             ]);
 
-            Assert.Null(BotClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
         }
 
         [Fact]
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, "3.0"),                
             ]);
 
-            Assert.Null(BotClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
         }
 
         [Fact]
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.VersionClaim, string.Empty),
             ]);
 
-            Assert.Null(BotClaims.GetOutgoingAppId(claims));
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));
         }
         [Fact]
         public void GetOutgoingAppId_ValidVersionClaimNullVersionAppId()
@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId")                
             ]);
 
-            Assert.Equal("appId", BotClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
         }
         
         [Fact]
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId")
             ]);
 
-            Assert.Equal("appId", BotClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
         }
 
         [Fact]
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId") // not a valid claim on a v2 token
             ]);
 
-            Assert.Null(BotClaims.GetOutgoingAppId(claims));            
+            Assert.Null(AgentClaims.GetOutgoingAppId(claims));            
         }
 
 
@@ -216,13 +216,13 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AuthorizedParty, "appId")
             ]);
 
-            Assert.Equal("appId", BotClaims.GetOutgoingAppId(claims));
+            Assert.Equal("appId", AgentClaims.GetOutgoingAppId(claims));
         }
 
         [Fact]
         public void IsBotClaim_ThrowOnNullClaimset()
         {
-            Assert.Throws<ArgumentNullException>(() => BotClaims.IsBotClaim(null));
+            Assert.Throws<ArgumentNullException>(() => AgentClaims.IsAgentClaim(null));
         }
 
         [Fact]
@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AudienceClaim, "audience")
             ]);
 
-            Assert.True(BotClaims.IsBotClaim(claims));
+            Assert.True(AgentClaims.IsAgentClaim(claims));
         }
 
         [Fact]
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AudienceClaim, "party") // if these 2 match, the claim set doesn't qualify
             ]);
 
-            Assert.False(BotClaims.IsBotClaim(claims));
+            Assert.False(AgentClaims.IsAgentClaim(claims));
         }
 
         [Fact]
@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AudienceClaim, AuthenticationConstants.BotFrameworkTokenIssuer) 
             ]);
 
-            Assert.False(BotClaims.IsBotClaim(claims));
+            Assert.False(AgentClaims.IsAgentClaim(claims));
         }
 
         [Fact]
@@ -278,7 +278,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId")
             ]);
 
-            Assert.False(BotClaims.IsBotClaim(claims));
+            Assert.False(AgentClaims.IsAgentClaim(claims));
         }
 
         [Fact]
@@ -292,7 +292,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AppIdClaim, "appId") // not a valid claim on a v2 token
             ]);
 
-            Assert.False(BotClaims.IsBotClaim(claims));
+            Assert.False(AgentClaims.IsAgentClaim(claims));
         }
 
         [Fact]
@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AudienceClaim, "aud")
             ]);
 
-            var audience = BotClaims.GetTokenAudience(claims);
+            var audience = AgentClaims.GetTokenAudience(claims);
 
             Assert.Equal("app://appId", audience);
         }
@@ -319,7 +319,7 @@ namespace Microsoft.Agents.Auth.Tests
                 new(AuthenticationConstants.AuthorizedParty, "appId"),
             ]);
 
-            var audience = BotClaims.GetTokenAudience(claims);
+            var audience = AgentClaims.GetTokenAudience(claims);
 
             Assert.Equal(AuthenticationConstants.BotFrameworkScope, audience);
         }

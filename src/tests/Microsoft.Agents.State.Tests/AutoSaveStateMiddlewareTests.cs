@@ -75,7 +75,7 @@ namespace Microsoft.Agents.State.Tests
                 ChannelId = "test",
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
                 .Use(new AutoSaveStateMiddleware(true, userState, convState));
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.State.Tests
                 ChannelId = "test",
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo2", "Conversation2"),
             })
                 .Use(bss);

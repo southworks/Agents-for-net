@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             // If authentication is enabled, get access token
             if (!_options.UseAnonymous)
             {
-                accessToken = await _accessTokenProvider.GetAccessTokenAsync(BotClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
+                accessToken = await _accessTokenProvider.GetAccessTokenAsync(AgentClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
             }
 
             List<InputFile> files = [];

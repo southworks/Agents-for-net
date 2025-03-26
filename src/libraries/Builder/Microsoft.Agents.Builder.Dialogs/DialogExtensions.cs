@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         private static bool SendEoCToParent(ITurnContext turnContext)
         {
-            if (turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity))
+            if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
             {
                 // EoC Activities returned by skills are bounced back to the bot by SkillHandler.
                 // In those cases we will have a SkillConversationReference instance in state.
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 return false;
             }
 
-            return turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity);
+            return turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity);
         }
 
         // Recursively walk up the DC stack to find the active DC.

@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Testing
                 ChannelId = channelId,
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                 Locale = this.Locale,
             };
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.Testing
                     ChannelId = Channels.Test,
                     ServiceUrl = "https://test.com",
                     User = new ChannelAccount("user1", "User1"),
-                    Bot = new ChannelAccount("bot", "Bot"),
+                    Agent = new ChannelAccount("bot", "Bot"),
                     Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                     Locale = this.Locale,
                 };
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Builder.Testing
                 ServiceUrl = "https://test.com",
                 Conversation = new ConversationAccount(false, name, name),
                 User = new ChannelAccount(id: user.ToLowerInvariant(), name: user),
-                Bot = new ChannelAccount(id: bot.ToLowerInvariant(), name: bot),
+                Agent = new ChannelAccount(id: bot.ToLowerInvariant(), name: bot),
                 Locale = "en-us"
             };
         }
@@ -173,12 +173,12 @@ namespace Microsoft.Agents.Builder.Testing
                     activity.ChannelId = Conversation.ChannelId;
                 }
 
-                if (activity.From == null || activity.From.Id == "unknown" || activity.From.Role == RoleTypes.Bot)
+                if (activity.From == null || activity.From.Id == "unknown" || activity.From.Role == RoleTypes.Agent)
                 {
                     activity.From = Conversation.User;
                 }
 
-                activity.Recipient = Conversation.Bot;
+                activity.Recipient = Conversation.Agent;
                 activity.Conversation = Conversation.Conversation;
                 activity.ServiceUrl = Conversation.ServiceUrl;
 
@@ -450,7 +450,7 @@ namespace Microsoft.Agents.Builder.Testing
                 Type = ActivityTypes.Message,
                 Locale = this.Locale ?? "en-us",
                 From = Conversation.User,
-                Recipient = Conversation.Bot,
+                Recipient = Conversation.Agent,
                 Conversation = Conversation.Conversation,
                 ServiceUrl = Conversation.ServiceUrl,
                 Id = (_nextId++).ToString(CultureInfo.InvariantCulture),

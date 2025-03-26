@@ -289,12 +289,12 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
-            if (turnContext.Identity as ClaimsIdentity != null && BotClaims.IsBotClaim(turnContext.Identity))
+            if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
             {
                 return new CallerInfo
                 {
                     CallerServiceUrl = turnContext.Activity.ServiceUrl,
-                    Scope = BotClaims.GetOutgoingAppId(turnContext.Identity),
+                    Scope = AgentClaims.GetOutgoingAppId(turnContext.Identity),
                 };
             }
 

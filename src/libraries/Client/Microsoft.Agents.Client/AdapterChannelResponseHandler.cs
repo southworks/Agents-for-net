@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Client
             if (conversationReference == null)
             {
                 // Received a conversationId that isn't known.
-                _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", conversationId, BotClaims.GetAppId(claimsIdentity));
+                _logger.LogWarning("Received unknown request for an unknown conversation '{AgentConversationId}' from '{AgentAppId}'", conversationId, AgentClaims.GetAppId(claimsIdentity));
                 return null;
             }
 

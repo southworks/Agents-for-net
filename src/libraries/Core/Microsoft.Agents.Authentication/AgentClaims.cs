@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Microsoft.Agents.Authentication
 {
-    public static class BotClaims
+    public static class AgentClaims
     {
         public static string GetAppId(ClaimsIdentity claimsIdentity)
         {
@@ -17,14 +17,14 @@ namespace Microsoft.Agents.Authentication
             
             // For requests from channel App Id is in Audience claim of JWT token. For emulator it is in AppId claim. For
             // unauthenticated requests we have anonymous claimsIdentity provided auth is disabled.
-            // For Activities coming from Emulator AppId claim contains the Bot's AAD AppId.
-            var botAppIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim);
-            if (botAppIdClaim == null)
+            // For Activities coming from Emulator AppId claim contains the Agent's AAD AppId.
+            var appIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim);
+            if (appIdClaim == null)
             {
-                botAppIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
+                appIdClaim = claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
             }
 
-            return botAppIdClaim?.Value;
+            return appIdClaim?.Value;
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Authentication
         /// If the <see cref="AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
         /// obtain the attribute from the <see cref="AuthenticationConstants.AppIdClaim"/> or if present.
         /// </remarks>
-        /// <param name="identity">The bot identity</param>
+        /// <param name="identity">The Agent identity</param>
         /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
         public static string GetOutgoingAppId(ClaimsIdentity identity)
         {
@@ -67,24 +67,24 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
-        /// Checks if the given list of claims represents a bot claim (not coming from ABS/SMBA).
+        /// Checks if the given list of claims represents a Agent claim (not coming from ABS/SMBA).
         /// </summary>
         /// <remarks>
-        /// A bot claim should contain:
+        /// A Agent claim should contain:
         ///     An <see cref="AuthenticationConstants.VersionClaim"/> claim.
         ///     An <see cref="AuthenticationConstants.AudienceClaim"/> claim.
         ///     An <see cref="AuthenticationConstants.AppIdClaim"/> claim (v1) or an a <see cref="AuthenticationConstants.AuthorizedParty"/> claim (v2).
         /// And the appId claim should be different than the audience claim.
-        /// When a channel (webchat, teams, etc.) invokes a bot, the <see cref="AuthenticationConstants.AudienceClaim"/>
-        /// is set to <see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/> but when a bot calls another bot,
-        /// the audience claim is set to the appId of the bot being invoked.
+        /// When a channel (webchat, teams, etc.) invokes an Agent, the <see cref="AuthenticationConstants.AudienceClaim"/>
+        /// is set to <see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/> but when an Agent calls another Agent,
+        /// the audience claim is set to the appId of the Agent being invoked.
         /// The protocol supports v1 and v2 tokens:
-        /// For v1 tokens, the  <see cref="AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling bot.
-        /// For v2 tokens, the  <see cref="AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling bot.
+        /// For v1 tokens, the  <see cref="AuthenticationConstants.AppIdClaim"/> is present and set to the app Id of the calling Agent.
+        /// For v2 tokens, the  <see cref="AuthenticationConstants.AuthorizedParty"/> is present and set to the app Id of the calling Agent.
         /// </remarks>
         /// <param name="claims">A list of claims.</param>
-        /// <returns>True if the list of claims is a bot claim, false if is not.</returns>
-        public static bool IsBotClaim(ClaimsIdentity claims)
+        /// <returns>True if the list of claims is an Agent claim, false if is not.</returns>
+        public static bool IsAgentClaim(ClaimsIdentity claims)
         {
             ArgumentNullException.ThrowIfNull(claims);
 
@@ -110,21 +110,21 @@ namespace Microsoft.Agents.Authentication
                 return false;
             }
 
-            // Bot claims must contain and app ID and the AppID must be different than the audience.
+            // Agent claims must contain and app ID and the AppID must be different than the audience.
             return appId != audience;
         }
 
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
-            return BotClaims.IsBotClaim(identity)
-                ? $"app://{BotClaims.GetOutgoingAppId(identity)}"
+            return AgentClaims.IsAgentClaim(identity)
+                ? $"app://{AgentClaims.GetOutgoingAppId(identity)}"
                 : AuthenticationConstants.BotFrameworkScope;
         }
 
         public static IList<string> GetTokenScopes(ClaimsIdentity identity)
         {
-            return BotClaims.IsBotClaim(identity)
-                ? [$"{BotClaims.GetOutgoingAppId(identity)}/.default"]
+            return AgentClaims.IsAgentClaim(identity)
+                ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
                 : null;
         }
     }
