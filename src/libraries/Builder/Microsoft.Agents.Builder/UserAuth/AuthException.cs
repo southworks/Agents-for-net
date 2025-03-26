@@ -31,21 +31,16 @@ namespace Microsoft.Agents.Builder.UserAuth
     /// <summary>
     /// An exception thrown when user authentication error occurs.
     /// </summary>
-    public class AuthException : Exception
+    /// <remarks>
+    /// Initializes the class
+    /// </remarks>
+    /// <param name="message">The exception message</param>
+    /// <param name="reason">The cause of the exception</param>
+    internal class AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other) : Exception(message)
     {
         /// <summary>
         /// The cause of the exception.
         /// </summary>
-        public AuthExceptionReason Cause { get; }
-
-        /// <summary>
-        /// Initializes the class
-        /// </summary>
-        /// <param name="message">The exception message</param>
-        /// <param name="reason">The cause of the exception</param>
-        public AuthException(string message, AuthExceptionReason reason = AuthExceptionReason.Other) : base(message)
-        {
-            Cause = reason;
-        }
+        public AuthExceptionReason Cause { get; } = reason;
     }
 }

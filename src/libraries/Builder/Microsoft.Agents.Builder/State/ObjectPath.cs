@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.State
     /// <summary>
     /// Helper methods for working with dynamic json objects.
     /// </summary>
-    public static class ObjectPath
+    internal static class ObjectPath
     {
         private static readonly JsonSerializerOptions _serializerOptions = new()
         {

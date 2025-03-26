@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// <see cref="BackgroundService"/> implementation used to process activities with claims.
     ///  <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">More information.</see>
     /// </summary>
-    public class HostedActivityService : BackgroundService
+    internal class HostedActivityService : BackgroundService
     {
         private readonly ILogger<HostedActivityService> _logger;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();

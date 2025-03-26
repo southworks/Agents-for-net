@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var factory = new Mock<IChannelServiceClientFactory>();
             var queue = new Mock<IActivityTaskQueue>();
-            var logger = new Mock<ILogger<IBotHttpAdapter>>();
+            var logger = new Mock<ILogger<IAgentHttpAdapter>>();
             var middleware = new Mock<Builder.IMiddleware>();
 
             var adapter = new TestAdapter(factory.Object, queue.Object, logger.Object, middlewares: middleware.Object);
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             TestAdapter Adapter,
             Mock<IChannelServiceClientFactory> Factory,
             Mock<IActivityTaskQueue> Queue,
-            Mock<ILogger<IBotHttpAdapter>> Logger)
+            Mock<ILogger<IAgentHttpAdapter>> Logger)
         {
             public void VerifyMocks()
             {
@@ -240,7 +240,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         private class TestAdapter(
                 IChannelServiceClientFactory channelServiceClientFactory,
                 IActivityTaskQueue activityTaskQueue,
-                ILogger<IBotHttpAdapter> logger = null,
+                ILogger<IAgentHttpAdapter> logger = null,
                 params Builder.IMiddleware[] middlewares)
             : CloudAdapter(channelServiceClientFactory, activityTaskQueue, logger, null, middlewares)
         {

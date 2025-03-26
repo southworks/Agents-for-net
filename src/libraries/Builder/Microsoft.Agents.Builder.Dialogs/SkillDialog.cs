@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             var dialogArgs = ValidateBeginDialogArgs(options);
 
             // Create deep clone of the original activity to avoid altering it before forwarding it.
-            var skillActivity = ObjectPath.Clone((Activity)dialogArgs.Activity);
+            var skillActivity = dialogArgs.Activity.Clone();
 
             // Apply conversation reference and common properties from incoming activity before sending.
             skillActivity.ApplyConversationReference(dc.Context.Activity.GetConversationReference(), true);
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             }
 
             // Create deep clone of the original activity to avoid altering it before forwarding it.
-            var skillActivity = ObjectPath.Clone((Activity) dc.Context.Activity);
+            var skillActivity = dc.Context.Activity.Clone();
 
             skillActivity.DeliveryMode = dc.ActiveDialog.State[DeliverModeStateKey] as string;
 

@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 }
 
                 AdaptiveCardInvokeResponse adaptiveCardInvokeResponse = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
-                Activity activity = ActivityUtilities.CreateInvokeResponseActivity(adaptiveCardInvokeResponse);
+                var activity = Activity.CreateInvokeResponseActivity(adaptiveCardInvokeResponse);
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
@@ -352,7 +352,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                         Results = results
                     }
                 };
-                Activity activity = ActivityUtilities.CreateInvokeResponseActivity(searchInvokeResponse);
+                var activity = Activity.CreateInvokeResponseActivity(searchInvokeResponse);
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             };
             _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);

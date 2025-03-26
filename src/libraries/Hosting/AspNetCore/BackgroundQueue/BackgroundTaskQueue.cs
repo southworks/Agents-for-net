@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// <summary>
     /// Singleton queue, used to transfer a work item to the <see cref="HostedTaskService"/>.
     /// </summary>
-    public class BackgroundTaskQueue : IBackgroundTaskQueue
+    internal class BackgroundTaskQueue : IBackgroundTaskQueue
     {
         private readonly ConcurrentQueue<Func<CancellationToken, Task>> _workItems = new ConcurrentQueue<Func<CancellationToken, Task>>();
         private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);

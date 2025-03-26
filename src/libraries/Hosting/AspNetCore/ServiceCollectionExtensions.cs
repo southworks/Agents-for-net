@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             AddAsyncCloudAdapterSupport(services);
 
             services.AddSingleton<CloudAdapter, T>();
-            services.AddSingleton<IBotHttpAdapter>(sp => sp.GetService<CloudAdapter>());
+            services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
 
