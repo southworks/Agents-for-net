@@ -196,7 +196,6 @@ namespace Microsoft.Agents.Builder
 
             // Create a ClaimsIdentity, to create the connector and for adding to the turn context.
             var claimsIdentity = CreateClaimsIdentity(agentAppId);
-            claimsIdentity.AddClaim(new Claim(AuthenticationConstants.ServiceUrlClaim, serviceUrl));
 
             // Create the connector client to use for outbound requests.
             using (var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false))
