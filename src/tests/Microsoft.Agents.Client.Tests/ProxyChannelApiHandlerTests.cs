@@ -291,7 +291,6 @@ namespace Microsoft.Agents.Client.Tests
 
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, TestBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AppIdClaim, TestSkillId));
-                claimsIdentity.AddClaim(new Claim(AuthenticationConstants.ServiceUrlClaim, TestBotEndpoint));
 
                 return claimsIdentity;
             }
