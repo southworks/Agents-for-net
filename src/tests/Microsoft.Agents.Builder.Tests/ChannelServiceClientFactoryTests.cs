@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Tests
             var serviceProvider = TestSupport.ServiceProviderBootStrap.CreateServiceProvider(_outputListener, configurationDictionary: new Dictionary<string, string>
                     {
                          { "ConnectionsMap:0:ServiceUrl", "*" },
-                        { "ConnectionsMap:0:Connection", "BotServiceConnection" },
+                        { "ConnectionsMap:0:Connection", "ServiceConnection" },
                     });
 
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
@@ -178,12 +178,12 @@ namespace Microsoft.Agents.Builder.Tests
                     InitialData = new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
-                        { "ConnectionsMap:0:Connection", "BotServiceConnection" },
-                        { "Connections:BotServiceConnection:Type", "MsalAuth" },
-                        { "Connections:BotServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
-                        { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
-                        { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
-                        { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
+                        { "ConnectionsMap:0:Connection", "ServiceConnection" },
+                        { "Connections:ServiceConnection:Type", "MsalAuth" },
+                        { "Connections:ServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
+                        { "Connections:ServiceConnection:Settings:ClientId", "ClientId" },
+                        { "Connections:ServiceConnection:Settings:ClientSecret", "ClientSecret" },
+                        { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
                     }
                 })
             });
@@ -215,12 +215,12 @@ namespace Microsoft.Agents.Builder.Tests
                     InitialData = new Dictionary<string, string>
                     {
                         { "ConnectionsMap:0:ServiceUrl", "*" },
-                        { "ConnectionsMap:0:Connection", "BotServiceConnection" },
-                        { "Connections:BotServiceConnection:Type", "MsalAuth" },
-                        { "Connections:BotServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
-                        { "Connections:BotServiceConnection:Settings:ClientId", "ClientId" },
-                        { "Connections:BotServiceConnection:Settings:ClientSecret", "ClientSecret" },
-                        { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
+                        { "ConnectionsMap:0:Connection", "ServiceConnection" },
+                        { "Connections:ServiceConnection:Type", "MsalAuth" },
+                        { "Connections:ServiceConnection:Assembly", "Microsoft.Agents.Authentication.Msal" },
+                        { "Connections:ServiceConnection:Settings:ClientId", "ClientId" },
+                        { "Connections:ServiceConnection:Settings:ClientSecret", "ClientSecret" },
+                        { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "AuthorityEndpoint" },
                         { "RestChannelServiceClientFactory:TokenServiceEndpoint", "https://test.token.endpoint" }
                     }
                 })

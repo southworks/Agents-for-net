@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Auth.Tests
             IConfiguration config = serviceProvider.GetService<IConfiguration>(); 
             
             // Create a new instance of MSAL Auth flow
-            MsalAuth authClient = new MsalAuth(serviceProvider, config.GetSection("BotServiceConnection"));
+            MsalAuth authClient = new MsalAuth(serviceProvider, config.GetSection("ServiceConnection"));
             
             // Create empty Scopes List
             List<string> scopes = new List<string>();

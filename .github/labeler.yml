@@ -18,6 +18,6 @@
 - changed-files:
   - any-glob-to-any-file: ['src/tests/**']
 
-"MCP":
+"ML: Packages":
 - changed-files:
-  - any-glob-to-any-file: ['src/**/*MCP*']
+  - any-glob-to-any-file: ['Directory.Packages.props']
