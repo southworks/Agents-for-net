@@ -9,7 +9,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
@@ -33,7 +32,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(BackgroundTaskQueue),
                 typeof(ActivityTaskQueue),
                 typeof(CloudAdapter), // Default Type passed to AddCloudAdapter.
-                typeof(IBotHttpAdapter),
+                typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
             };
 
@@ -59,7 +58,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(BackgroundTaskQueue),
                 typeof(ActivityTaskQueue),
                 typeof(CloudAdapter),
-                typeof(IBotHttpAdapter),
+                typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
                 typeof(ActivityHandler), // Type passed to AddBot.
             };

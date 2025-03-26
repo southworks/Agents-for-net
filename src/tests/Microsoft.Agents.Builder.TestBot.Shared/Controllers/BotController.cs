@@ -16,11 +16,11 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Controllers
     [ApiController]
     public class BotController : ControllerBase
     {
-        private readonly IBotHttpAdapter _adapter;
+        private readonly IAgentHttpAdapter _adapter;
         private IAgent _bot;
         private readonly Func<string, IAgent> _service;
 
-        public BotController(IBotHttpAdapter adapter, Func<string, IAgent> service)
+        public BotController(IAgentHttpAdapter adapter, Func<string, IAgent> service)
         {
             _adapter = adapter;
             _service = service;

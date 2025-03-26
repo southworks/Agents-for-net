@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Agents.Authentication.Errors
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Authentication.Errors
 {
     /// <summary>
     /// Error helper for the Authentication core system

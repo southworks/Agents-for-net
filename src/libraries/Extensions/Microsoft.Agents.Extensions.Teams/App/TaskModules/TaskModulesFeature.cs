@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
+                    var activity = Activity.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
+                    var activity = Activity.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };

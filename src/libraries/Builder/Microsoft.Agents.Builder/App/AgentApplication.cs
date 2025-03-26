@@ -526,7 +526,7 @@ namespace Microsoft.Agents.Builder.App
                 string token = turnContext.Activity.Value.GetType().GetProperty("Continuation").GetValue(turnContext.Activity.Value) as string ?? "";
                 await handler(turnContext, turnState, token, cancellationToken);
 
-                Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
+                var activity = Activity.CreateInvokeResponseActivity();
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             };
             AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank: rank);

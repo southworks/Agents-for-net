@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// <summary>
     /// Singleton queue, used to transfer an ActivityWithClaims to the <see cref="HostedActivityService"/>.
     /// </summary>
-    public class ActivityTaskQueue : IActivityTaskQueue
+    internal class ActivityTaskQueue : IActivityTaskQueue
     {
         private readonly SemaphoreSlim _signal = new(0);
         private readonly ConcurrentQueue<ActivityWithClaims> _activities = new ConcurrentQueue<ActivityWithClaims>();

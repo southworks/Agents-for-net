@@ -15,7 +15,7 @@ namespace TeamsConversationSsoQuickstart.Controllers
     [Authorize]
     [ApiController]
     [Route("api/messages")]
-    public class BotController(IBotHttpAdapter adapter, IAgent bot) : ControllerBase
+    public class BotController(IAgentHttpAdapter adapter, IAgent bot) : ControllerBase
     {
         [HttpPost]
         public Task PostAsync(CancellationToken cancellationToken)

@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Client.Tests
                 var httpBotChannelSettings = new HttpAgentClientSettings();
                 httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
                 httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri(TestBotEndpoint);
-                httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+                httpBotChannelSettings.ConnectionSettings.TokenProvider = "ServiceConnection";
 
                 var channelHost = new ConfigurationAgentHost(
                     new Mock<IServiceProvider>().Object,
@@ -358,7 +358,6 @@ namespace Microsoft.Agents.Client.Tests
 
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AudienceClaim, TestBotId));
                 claimsIdentity.AddClaim(new Claim(AuthenticationConstants.AppIdClaim, TestSkillId));
-                claimsIdentity.AddClaim(new Claim(AuthenticationConstants.ServiceUrlClaim, TestBotEndpoint));
 
                 return claimsIdentity;
             }

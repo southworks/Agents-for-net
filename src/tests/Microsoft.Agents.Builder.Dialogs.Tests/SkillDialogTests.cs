@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             _httpAgentChannelSettings = new HttpAgentClientSettings();
             _httpAgentChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
             _httpAgentChannelSettings.ConnectionSettings.Endpoint = new Uri("http://testskill.contoso.com/api/messages");
-            _httpAgentChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+            _httpAgentChannelSettings.ConnectionSettings.TokenProvider = "ServiceConnection";
 
             _agentHost = new ConfigurationAgentHost(
                 new Mock<IServiceProvider>().Object,

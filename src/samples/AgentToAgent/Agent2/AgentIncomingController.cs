@@ -15,7 +15,7 @@ namespace Agent2;
 [Authorize(Policy = "AllowedCallers")]
 [ApiController]
 [Route("api/messages")]
-public class AgentIncomingController(IBotHttpAdapter adapter, IAgent agent) : ControllerBase
+public class AgentIncomingController(IAgentHttpAdapter adapter, IAgent agent) : ControllerBase
 {
     [HttpPost]
     public Task PostAsync(CancellationToken cancellationToken)

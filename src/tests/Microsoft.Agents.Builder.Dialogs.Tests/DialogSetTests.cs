@@ -127,20 +127,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         [Fact]
-        public void Add_ShouldApplyDependencies()
-        {
-            var name = "A";
-            var dialogSet = new DialogSet(new DialogState());
-
-            dialogSet.Add(new MockDialog(name));
-
-            var dialogs = dialogSet.GetDialogs();
-            Assert.Equal(name, dialogs.ElementAt(0).Id);
-            Assert.Equal($"{name}2", dialogs.ElementAt(1).Id);
-            Assert.Equal("B", dialogs.ElementAt(2).Id);
-        }
-
-        [Fact]
         public async Task CreateContextAsync_ShouldThrowOnNullDialogState()
         {
             var dialogState = new DialogState([
@@ -179,22 +165,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             Assert.Throws<ArgumentNullException>(() => dialogSet.Find(null));
             Assert.Throws<ArgumentNullException>(() => dialogSet.Find(string.Empty));
-        }
-
-        private class MockDialog(string id) : Dialog(id), IDialogDependencies
-        {
-            public override Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
-            {
-                throw new NotImplementedException();
-            }
-
-            public IEnumerable<Dialog> GetDependencies()
-            {
-                return [
-                    new WaterfallDialog("A"),
-                    new WaterfallDialog("B")
-                ];
-            }
         }
     }
 }

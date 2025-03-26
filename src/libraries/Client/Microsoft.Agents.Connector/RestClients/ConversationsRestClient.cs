@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Security.Claims;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.Errors;

@@ -7,12 +7,12 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// Invoke and ExpectReplies are always handled synchronously.
     /// </remarks>
     public class CloudAdapter
-        : ChannelServiceAdapterBase, IBotHttpAdapter
+        : ChannelServiceAdapterBase, IAgentHttpAdapter
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IBotHttpAdapter> logger = null,
+            ILogger<IAgentHttpAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null) : base(channelServiceClientFactory, logger)
         {

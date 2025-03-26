@@ -30,7 +30,7 @@ namespace Microsoft.BuilderSamples.Tests.Controllers
             var actionContext = new ActionContext(mockHttpContext.Object, new RouteData(), new ControllerActionDescriptor());
 
             // Create BF mocks
-            var mockAdapter = new Mock<IBotHttpAdapter>();
+            var mockAdapter = new Mock<IAgentHttpAdapter>();
             mockAdapter
                 .Setup(x => x.ProcessAsync(It.IsAny<HttpRequest>(), It.IsAny<HttpResponse>(), It.IsAny<IAgent>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);

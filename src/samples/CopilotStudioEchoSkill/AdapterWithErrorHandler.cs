@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Builder;
 using System.Threading;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace CopilotStudioEchoSkill;
 
@@ -16,7 +16,7 @@ public class AdapterWithErrorHandler : CloudAdapter
 {
     private readonly ILogger _logger;
 
-    public AdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, ILogger<IBotHttpAdapter> logger)
+    public AdapterWithErrorHandler(IChannelServiceClientFactory channelServiceClientFactory, IActivityTaskQueue activityTaskQueue, ILogger<IAgentHttpAdapter> logger)
                 : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

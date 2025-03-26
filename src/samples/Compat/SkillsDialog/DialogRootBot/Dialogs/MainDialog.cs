@@ -236,7 +236,7 @@ namespace DialogRootBot.Dialogs
             {
                 // Note message activities also support input parameters but we are not using them in this example.
                 // Return a deep clone of the activity so we don't risk altering the original one 
-                activity = ObjectPath.Clone(turnContext.Activity);
+                activity = turnContext.Activity.Clone();
             }
 
             // Send an event activity to the skill with "BookFlight" in the name.

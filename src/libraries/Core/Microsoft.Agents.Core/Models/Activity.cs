@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -313,7 +314,7 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
-        public static IMessageActivity CreateMessageActivity()
+        public static IActivity CreateMessageActivity()
         {
             return new Activity(ActivityTypes.Message)
             {
@@ -323,19 +324,19 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="ITypingActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new typing activity.</returns>
-        public static ITypingActivity CreateTypingActivity()
+        public static IActivity CreateTypingActivity()
         {
             return new Activity(ActivityTypes.Typing);
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an EndOfConversationActivity object.
+        /// Creates an instance of the <see cref="IActivity"/> class as an EndOfConversationActivity object.
         /// </summary>
         /// <returns>The new end of conversation activity.</returns>
-        public static IEndOfConversationActivity CreateEndOfConversationActivity()
+        public static IActivity CreateEndOfConversationActivity()
         {
             return new Activity()
             {
@@ -343,7 +344,7 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
-        public static IConversationUpdateActivity CreateConversationUpdateActivity()
+        public static IActivity CreateConversationUpdateActivity()
         {
             return new Activity()
             {
@@ -354,7 +355,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="Activity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <param name="name">The name of the trace operation to create.</param>
         /// <param name="valueType">Optional, identifier for the format of the <paramref name="value"/>.
@@ -362,7 +363,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="value">Optional, the content for this trace operation.</param>
         /// <param name="label">Optional, a descriptive label for this trace operation.</param>
         /// <returns>The new trace activity.</returns>
-        public static ITraceActivity CreateTraceActivity(string name, string valueType = null, object value = null, [CallerMemberName] string label = null)
+        public static IActivity CreateTraceActivity(string name, string valueType = null, object value = null, [CallerMemberName] string label = null)
         {
             return new Activity()
             {
@@ -375,22 +376,33 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="IHandoffActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new handoff activity.</returns>
-        public static IHandoffActivity CreateHandoffActivity()
+        public static IActivity CreateHandoffActivity()
         {
             return new Activity(ActivityTypes.Handoff);
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="IInvokeActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new invoke activity.</returns>
-        public static IInvokeActivity CreateInvokeActivity()
+        public static IActivity CreateInvokeActivity()
         {
             return new Activity(ActivityTypes.Invoke);
         }
+
+        public static IActivity CreateInvokeResponseActivity(object body = default, int status = (int)HttpStatusCode.OK)
+        {
+            Activity activity = new()
+            {
+                Type = ActivityTypes.InvokeResponse,
+                Value = new InvokeResponse { Status = status, Body = body }
+            };
+            return activity;
+        }
+
 
         /// <inheritdoc/>
         public ConversationReference GetConversationReference()

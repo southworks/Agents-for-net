@@ -19,7 +19,7 @@ namespace TeamsConversationSsoQuickstart
             IChannelServiceClientFactory channelServiceClientFactory, 
             IActivityTaskQueue activityTaskQueue,
             IConfiguration configuration,
-            ILogger<IBotHttpAdapter> logger,
+            ILogger<IAgentHttpAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
             : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
