@@ -17,7 +17,7 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Storage.CosmosDb
 {
     /// <summary>
-    /// Implements an CosmosDB based storage provider using partitioning for a bot.
+    /// Implements an CosmosDB based storage provider using partitioning for an Agent.
     /// </summary>
     public class CosmosDbPartitionedStorage : IStorage, IDisposable
     {
