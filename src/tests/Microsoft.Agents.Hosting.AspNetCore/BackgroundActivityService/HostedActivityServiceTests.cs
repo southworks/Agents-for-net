@@ -14,7 +14,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundActivityService
+namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class HostedActivityServiceTests
     {
