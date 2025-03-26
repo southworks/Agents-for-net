@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Builder.Tests
             ConversationReference cr = new ConversationReference
             {
                 ActivityId = "activityId",
-                Bot = new ChannelAccount
+                Agent = new ChannelAccount
                 {
                     Id = "channelId",
                     Name = "testChannelAccount",

@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+                                ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Builder
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
 
-            var appId = BotClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
+            var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
 
             return Task.FromResult<IUserTokenClient>(new RestUserTokenClient(
                 appId,
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,

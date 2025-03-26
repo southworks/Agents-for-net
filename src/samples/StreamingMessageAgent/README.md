@@ -55,7 +55,7 @@ If all is working correctly, the Bot Emulator should show you a Web Chat experie
       },
 
       "Connections": {
-        "BotServiceConnection": {
+        "ServiceConnection": {
           "Settings": {
             "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",

@@ -8,12 +8,12 @@ using System.Text.Json;
 
 namespace Microsoft.Agents.Core.Models
 {
-    /// <summary> An Activity is the basic communication type for the Azure Bot Service 3.0 protocol. </summary>
+    /// <summary> An Activity is the basic communication type for the Activity Protocol used with Agents. </summary>
     public interface IActivity
     {
         /// <summary>
         /// The action field describes the meaning of the contact relation update activity. The value of the Action field
-        /// is a string. Only values of add and remove are defined, which denote a relationship between the users/bots in 
+        /// is a string. Only values of add and remove are defined, which denote a relationship between the users/Agents in 
         /// the from and recipient fields.
         /// </summary>
         string Action { get; set; }
@@ -32,8 +32,8 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// In some cases, it's important to record where an activity was sent. The CallerId field is a string containing 
-        /// an IRI identifying the caller of a bot. This field is not intended to be transmitted over the wire, but is 
-        /// instead populated by bots and clients based on cryptographically verifiable 
+        /// an IRI identifying the caller of a Agent. This field is not intended to be transmitted over the wire, but is 
+        /// instead populated by Agents and clients based on cryptographically verifiable 
         /// data that asserts the identity of the callers (e.g. tokens).
         /// </summary>
         string CallerId { get; set; }
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Core.Models
         DateTimeOffset? Expiration { get; set; }
 
         /// <summary>
-        /// The From field describes which client, bot, or channel generated an activity. The value of the From 
+        /// The From field describes which client, Agent, or channel generated an activity. The value of the From 
         /// field is a complex object of the ChannelAccount type.
         /// </summary>
         ChannelAccount From { get; set; }
@@ -145,13 +145,13 @@ namespace Microsoft.Agents.Core.Models
         string LocalTimezone { get; set; }
 
         /// <summary>
-        /// The membersAdded field contains a list of channel participants (bots or users) added to the conversation. The value 
+        /// The membersAdded field contains a list of channel participants (Agents or users) added to the conversation. The value 
         /// of the membersAdded field is an array of type channelAccount.
         /// </summary>
         IList<ChannelAccount> MembersAdded { get; set; }
 
         /// <summary>
-        /// The membersRemoved field contains a list of channel participants (bots or users) removed from the conversation. The 
+        /// The membersRemoved field contains a list of channel participants (Agents or users) removed from the conversation. The 
         /// value of the membersRemoved field is an array of type channelAccount.
         /// </summary>
         IList<ChannelAccount> MembersRemoved { get; set; }
@@ -175,10 +175,10 @@ namespace Microsoft.Agents.Core.Models
         IList<MessageReaction> ReactionsRemoved { get; set; }
 
         /// <summary>
-        /// The recipient field describes which client or bot is receiving this activity. This field is only meaningful when 
+        /// The recipient field describes which client or Agent is receiving this activity. This field is only meaningful when 
         /// an activity is transmitted to exactly one recipient; it is not meaningful when it is broadcast to multiple recipients 
         /// (as happens when an activity is sent to a channel). The purpose of the field is to allow the recipient to identify 
-        /// themselves. This is helpful when a client or bot has more than one identity within the channel. The value of the 
+        /// themselves. This is helpful when a client or Agent has more than one identity within the channel. The value of the 
         /// recipient field is a complex object of the Channel account type.
         /// </summary>
         ChannelAccount Recipient { get; set; }
@@ -198,10 +198,10 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// The semanticAction field contains an optional programmatic action accompanying the user request. The semantic action 
-        /// field is populated by the channel and bot based on some understanding of what the user is trying to accomplish; this 
+        /// field is populated by the channel and Agent based on some understanding of what the user is trying to accomplish; this 
         /// understanding may be achieved with natural language processing, additional user interface elements tied specifically 
         /// to these actions, through a process of conversational refinement, or contextually via other means. The meaning and 
-        /// structure of the semantic action is agreed ahead of time between the channel and the bot.
+        /// structure of the semantic action is agreed ahead of time between the channel and the Agent.
         /// </summary>
         SemanticAction SemanticAction { get; set; }
 
@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The timestamp field records the exact UTC time when the activity occurred. Due to the distributed nature of computing 
         /// systems, the important time is when the channel (the authoritative store) records the activity. The time when a client 
-        /// or bot initiated an activity may be transmitted separately in the localTimestamp field. The value of the timestamp field 
+        /// or Agent initiated an activity may be transmitted separately in the localTimestamp field. The value of the timestamp field 
         /// is an ISO 8601 date time format encoded datetime within a string.
         /// </summary>
         DateTimeOffset? Timestamp { get; set; }
@@ -287,8 +287,8 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="reference">The existing conversation reference.</param>
         /// <param name="isIncoming">Optional, <c>true</c> to treat the activity as an
-        /// incoming activity, where the bot is the recipient; otherwise, <c>false</c>.
-        /// Default is <c>false</c>, and the activity will show the bot as the sender.</param>
+        /// incoming activity, where the Agent is the recipient; otherwise, <c>false</c>.
+        /// Default is <c>false</c>, and the activity will show the Agent as the sender.</param>
         /// <remarks>Call <see cref="GetConversationReference()"/> on an incoming
         /// activity to get a conversation reference that you can then use to update an
         /// outgoing activity with the correct delivery information.

@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.Equal(activity.Id, conversationReference.ActivityId);
             Assert.Equal(activity.From.Id, conversationReference.User.Id);
-            Assert.Equal(activity.Recipient.Id, conversationReference.Bot.Id);
+            Assert.Equal(activity.Recipient.Id, conversationReference.Agent.Id);
             Assert.Equal(activity.Conversation.Id, conversationReference.Conversation.Id);
             Assert.Equal(activity.ChannelId, conversationReference.ChannelId);
             Assert.Equal(activity.Locale, conversationReference.Locale);
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.Equal(reply.Id, conversationReference.ActivityId);
             Assert.Equal(activity.From.Id, conversationReference.User.Id);
-            Assert.Equal(activity.Recipient.Id, conversationReference.Bot.Id);
+            Assert.Equal(activity.Recipient.Id, conversationReference.Agent.Id);
             Assert.Equal(activity.Conversation.Id, conversationReference.Conversation.Id);
             Assert.Equal(activity.ChannelId, conversationReference.ChannelId);
             Assert.Equal(activity.Locale, conversationReference.Locale);
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Model.Tests
                 {
                     Id = "cr_abc",
                 },
-                Bot = new ChannelAccount
+                Agent = new ChannelAccount
                 {
                     Id = "cr_def",
                 },
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(conversationReference.Conversation.Id, activity.Conversation.Id);
 
             Assert.Equal(conversationReference.User.Id, activity.From.Id);
-            Assert.Equal(conversationReference.Bot.Id, activity.Recipient.Id);
+            Assert.Equal(conversationReference.Agent.Id, activity.Recipient.Id);
             Assert.Equal(conversationReference.ActivityId, activity.Id);
             Assert.Equal(activity.Locale, activityToSend.Locale);
         }
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Model.Tests
                 {
                     Id = "abc",
                 },
-                Bot = new ChannelAccount
+                Agent = new ChannelAccount
                 {
                     Id = "def",
                 },
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(conversationReference.ServiceUrl, activity.ServiceUrl);
             Assert.Equal(conversationReference.Conversation.Id, activity.Conversation.Id);
 
-            Assert.Equal(conversationReference.Bot.Id, activity.From.Id);
+            Assert.Equal(conversationReference.Agent.Id, activity.From.Id);
             Assert.Equal(conversationReference.User.Id, activity.Recipient.Id);
             Assert.Equal(conversationReference.ActivityId, activity.ReplyToId);
 

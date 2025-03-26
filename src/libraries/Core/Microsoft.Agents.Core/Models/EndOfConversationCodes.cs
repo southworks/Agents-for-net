@@ -24,14 +24,14 @@ namespace Microsoft.Agents.Core.Models
         public const string UserCancelled = "userCancelled";
 
         /// <summary>
-        /// The code value for bot time out end of conversations.
+        /// The code value for Agent time out end of conversations.
         /// </summary>
-        public const string BotTimedOut = "botTimedOut";
+        public const string AgentTimedOut = "timedOut";
 
         /// <summary>
-        /// The code value for bot-issued invalid message end of conversations.
+        /// The code value for Agent-issued invalid message end of conversations.
         /// </summary>
-        public const string BotIssuedInvalidMessage = "botIssuedInvalidMessage";
+        public const string AgentIssuedInvalidMessage = "agentIssuedInvalidMessage";
 
         /// <summary>
         /// The code value for channel failed end of conversations.

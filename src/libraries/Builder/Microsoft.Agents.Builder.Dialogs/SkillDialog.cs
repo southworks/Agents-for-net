@@ -379,7 +379,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             // Create a conversationId to interact with the skill and send the activity
             var conversationIdFactoryOptions = new ConversationIdFactoryOptions
             {
-                FromBotOAuthScope = context.Identity != null ? BotClaims.GetTokenScopes(context.Identity).First() : null,
+                FromBotOAuthScope = context.Identity != null ? AgentClaims.GetTokenScopes(context.Identity).First() : null,
                 FromBotId = DialogOptions.BotId,
                 Activity = activity,
                 Bot = DialogOptions.Skill

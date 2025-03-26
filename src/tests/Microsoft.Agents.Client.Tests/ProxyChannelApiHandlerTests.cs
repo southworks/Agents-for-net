@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Assert
             // Assert the turnContext.
-            Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
+            Assert.Equal($"{CallerIdConstants.AgentPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
             Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
 
             // Assert based on activity type,
@@ -130,7 +130,7 @@ namespace Microsoft.Agents.Client.Tests
 
             // Assert
             // Assert the turnContext.
-            Assert.Equal($"{CallerIdConstants.BotToBotPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
+            Assert.Equal($"{CallerIdConstants.AgentPrefix}{TestSkillId}", mockObjects.TurnContext.Activity.CallerId);
             Assert.NotNull(mockObjects.TurnContext.StackState.Get<BotConversationReference>(ProxyChannelApiHandler.SkillConversationReferenceKey));
             if (name.StartsWith("application/"))
             {
