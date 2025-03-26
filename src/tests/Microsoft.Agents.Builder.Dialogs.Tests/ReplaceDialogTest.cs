@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Telemetry;
 using Moq;
 using Xunit;
 using Microsoft.Agents.Builder.State;
@@ -65,27 +64,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .AssertReply("prompt four")
             .Send("hello")
             .AssertReply("prompt five")
-            .Send("hello")
-            .StartTestAsync();
-        }
-
-        [Fact]
-        public async Task ReplaceDialogTelemetryClientNotNull()
-        {
-            var botTelemetryClient = new Mock<IBotTelemetryClient>();
-            var dialog = new FirstDialog();
-            var storage = new MemoryStorage();
-            var conversationState = new ConversationState(storage);
-            var adapter = new TestAdapter()
-                .Use(new AutoSaveStateMiddleware(conversationState));
-
-            await new TestFlow((TestAdapter)adapter, async (turnContext, cancellationToken) =>
-            {
-                await conversationState.LoadAsync(turnContext, false, cancellationToken);
-                await dialog.RunAsync(turnContext, conversationState, cancellationToken);
-
-                Assert.NotNull(dialog.TelemetryClient);
-            })
             .Send("hello")
             .StartTestAsync();
         }
