@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             var botName = "bot1";
             var botClientId = "123";
-            var botTokenProvider = "BotServiceConnection";
+            var botTokenProvider = "ServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
             var DefaultResponseEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Client.Tests
             var botAlias = "bot1";
             var botClientId = "123";
             var botEndpoint = "http://localhost/api/messages";
-            var botTokenProvider = "BotServiceConnection";
+            var botTokenProvider = "ServiceConnection";
             var DefaultResponseEndpoint = "http://localhost/";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{botName}:Alias", botAlias},
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Client.Tests
             var botName = "botName";
             var botAlias = "bot1";
             var botClientId = "123";
-            var botTokenProvider = "BotServiceConnection";
+            var botTokenProvider = "ServiceConnection";
             var botEndpoint = "http://localhost/api/messages";
             var DefaultResponseEndpoint = "http://localhost/";
             var hostId = "hostId";
@@ -232,10 +232,10 @@ namespace Microsoft.Agents.Client.Tests
             var agent2Name = "bot2Name";
             var sections = new Dictionary<string, string>{
                 {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:ClientId", "123"},
-                {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:TokenProvider", "ServiceConnection"},
                 {$"Agent:Host:Agents:{agent1Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
                 {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:ClientId", "456"},
-                {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:TokenProvider", "BotServiceConnection"},
+                {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:TokenProvider", "ServiceConnection"},
                 {$"Agent:Host:Agents:{agent2Name}:ConnectionSettings:Endpoint", "http://localhost/api/messages"},
                 {"Agent:Host:DefaultResponseEndpoint", "http://localhost/"},
                 {"Agent:ClientId", "hostId"},

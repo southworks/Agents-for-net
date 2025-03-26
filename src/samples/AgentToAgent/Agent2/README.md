@@ -75,7 +75,7 @@ To configure authentication into the Agent2 Sample Project you will need the fol
    },
 
    "Connections": {
-     "BotServiceConnection": {
+     "ServiceConnection": {
        "Settings": {
          "AuthType": "ClientSecret", 
          "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",

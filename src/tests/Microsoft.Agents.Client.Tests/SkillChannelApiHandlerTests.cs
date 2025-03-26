@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Client.Tests
                 var httpBotChannelSettings = new HttpAgentClientSettings();
                 httpBotChannelSettings.ConnectionSettings.ClientId = Guid.NewGuid().ToString();
                 httpBotChannelSettings.ConnectionSettings.Endpoint = new Uri(TestBotEndpoint);
-                httpBotChannelSettings.ConnectionSettings.TokenProvider = "BotServiceConnection";
+                httpBotChannelSettings.ConnectionSettings.TokenProvider = "ServiceConnection";
 
                 var channelHost = new ConfigurationAgentHost(
                     new Mock<IServiceProvider>().Object,

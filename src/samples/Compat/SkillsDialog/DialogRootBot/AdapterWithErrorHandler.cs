@@ -22,7 +22,7 @@ namespace DialogRootBot
         public AdapterWithErrorHandler(
             IChannelServiceClientFactory channelServiceClientFactory,
             IActivityTaskQueue activityTaskQueue,
-            ILogger<IBotHttpAdapter> logger,
+            ILogger<IAgentHttpAdapter> logger,
             ConversationState conversationState,
             IAgentHost agentHost)
             : base(channelServiceClientFactory, activityTaskQueue, logger: logger)

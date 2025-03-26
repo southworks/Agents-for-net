@@ -72,7 +72,7 @@ To configure authentication into the Agent1 Sample Project you will need the fol
    },
 
    "Connections": {
-       "BotServiceConnection": {
+       "ServiceConnection": {
        "Settings": {
            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -103,7 +103,7 @@ To configure authentication into the Agent1 Sample Project you will need the fol
            "ConnectionSettings": {
              "ClientId": "{{Agent2ClientId}}", // This is the Client ID of Agent2
              "Endpoint": "http://localhost:39783/api/messages", // The endpoint of Agent2
-             "TokenProvider": "BotServiceConnection"
+             "TokenProvider": "ServiceConnection"
            }
          }
        }
