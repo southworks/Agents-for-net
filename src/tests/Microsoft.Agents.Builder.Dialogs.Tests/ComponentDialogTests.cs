@@ -9,7 +9,6 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Telemetry;
 using Microsoft.Recognizers.Text;
 using Xunit;
 using Moq;
@@ -128,72 +127,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("64")
             .AssertReply("Bot received the number '64'.")
             .StartTestAsync();
-        }
-
-        [Fact]
-        public async Task TelemetryBasicWaterfallTest()
-        {
-            var testComponentDialog = new TestComponentDialog();
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-
-            testComponentDialog.TelemetryClient = new MyBotTelemetryClient();
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.TelemetryClient.GetType());
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-            await Task.CompletedTask;
-        }
-
-        [Fact]
-        public async Task TelemetryHeterogeneousLoggerTest()
-        {
-            var testComponentDialog = new TestComponentDialog();
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-
-            testComponentDialog.FindDialog("test-waterfall").TelemetryClient = new MyBotTelemetryClient();
-
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-            await Task.CompletedTask;
-        }
-
-        [Fact]
-        public async Task TelemetryAddWaterfallTest()
-        {
-            var testComponentDialog = new TestComponentDialog();
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-
-            testComponentDialog.TelemetryClient = new MyBotTelemetryClient();
-            testComponentDialog.AddDialog(new WaterfallDialog("C"));
-
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.FindDialog("C").TelemetryClient.GetType());
-            await Task.CompletedTask;
-        }
-
-        [Fact]
-        public async Task TelemetryNullUpdateAfterAddTest()
-        {
-            var testComponentDialog = new TestComponentDialog();
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-
-            testComponentDialog.TelemetryClient = new MyBotTelemetryClient();
-            testComponentDialog.AddDialog(new WaterfallDialog("C"));
-
-            Assert.Equal(typeof(MyBotTelemetryClient), testComponentDialog.FindDialog("C").TelemetryClient.GetType());
-            testComponentDialog.TelemetryClient = null;
-
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("test-waterfall").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("number").TelemetryClient.GetType());
-            Assert.Equal(typeof(NullBotTelemetryClient), testComponentDialog.FindDialog("C").TelemetryClient.GetType());
-
-            await Task.CompletedTask;
         }
 
         [Fact]
@@ -517,48 +450,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 AddDialog(waterfallDialog);
                 AddDialog(new NumberPrompt<int>("number", defaultLocale: Culture.English));
-            }
-        }
-
-        private class MyBotTelemetryClient : IBotTelemetryClient, IBotPageViewTelemetryClient
-        {
-            public MyBotTelemetryClient()
-            {
-            }
-
-            public void Flush()
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackAvailability(string name, DateTimeOffset timeStamp, TimeSpan duration, string runLocation, bool success, string message = null, IDictionary<string, string> properties = null, IDictionary<string, double> metrics = null)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackDependency(string dependencyTypeName, string target, string dependencyName, string data, DateTimeOffset startTime, TimeSpan duration, string resultCode, bool success)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackPageView(string dialogName, IDictionary<string, string> properties = null, IDictionary<string, double> metrics = null)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackEvent(string eventName, IDictionary<string, string> properties = null, IDictionary<string, double> metrics = null)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackException(Exception exception, IDictionary<string, string> properties = null, IDictionary<string, double> metrics = null)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void TrackTrace(string message, Severity severityLevel, IDictionary<string, string> properties)
-            {
-                throw new NotImplementedException();
             }
         }
     }
