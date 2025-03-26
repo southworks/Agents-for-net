@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Telemetry;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,36 +47,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         public DialogSet Dialogs { get; set; } = new DialogSet();
 
         /// <summary>
-        /// Gets or sets the <see cref="IBotTelemetryClient"/> to use for logging.
-        /// When setting this property, all of the contained dialogs' <see cref="Dialog.TelemetryClient"/>
-        /// properties are also set.
-        /// </summary>
-        /// <value>The <see cref="IBotTelemetryClient"/> to use when logging.</value>
-        /// <seealso cref="DialogSet.TelemetryClient"/>
-        [JsonIgnore]
-        public override IBotTelemetryClient TelemetryClient
-        {
-            get
-            {
-                return base.TelemetryClient;
-            }
-
-            set
-            {
-                base.TelemetryClient = value ?? NullBotTelemetryClient.Instance;
-
-                // Care! Dialogs.TelemetryClient assigment internally assigns the 
-                // TelemetryClient for each dialog which could lead to an eventual stack
-                // overflow in cyclical dialg structures. 
-                // Don't set the telemetry client if the candidate instance is the same as the currently set one.
-                if (Dialogs.TelemetryClient != value)
-                {
-                    Dialogs.TelemetryClient = base.TelemetryClient;
-                }
-            }
-        }
-
-        /// <summary>
         /// Creates an inner dialog context for the containers active child.
         /// </summary>
         /// <param name="dc">Parents dialog context.</param>
@@ -121,7 +90,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             {
                 var traceMessage = $"Unhandled dialog event: {e.Name}. Active Dialog: {dc.ActiveDialog.Id}";
 
-                dc.Dialogs.TelemetryClient.TrackTrace(traceMessage, Severity.Warning, null);
+                //dc.Dialogs.TelemetryClient.TrackTrace(traceMessage, Severity.Warning, null);
 
                 await dc.Context.TraceActivityAsync(traceMessage, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);

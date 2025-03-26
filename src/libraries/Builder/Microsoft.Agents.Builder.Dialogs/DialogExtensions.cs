@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Telemetry;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client.Compat;
@@ -39,9 +38,6 @@ namespace Microsoft.Agents.Builder.Dialogs
             var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());
             var dialogSet = new DialogSet(dialogState);
 
-            // look for the IBotTelemetryClient on the TurnState, if not there take it from the Dialog, if not there fall back to the "null" default
-            dialogSet.TelemetryClient = turnContext.Services.Get<IBotTelemetryClient>() ?? dialog.TelemetryClient ?? NullBotTelemetryClient.Instance;
-
             dialogSet.Add(dialog);
 
             var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken).ConfigureAwait(false);
@@ -55,9 +51,6 @@ namespace Microsoft.Agents.Builder.Dialogs
             var state = await accessor.GetAsync(turnContext, () => { return new DialogState(); }, cancellationToken).ConfigureAwait(false);
 
             var dialogSet = new DialogSet(state);
-
-            // look for the IBotTelemetryClient on the TurnState, if not there take it from the Dialog, if not there fall back to the "null" default
-            dialogSet.TelemetryClient = turnContext.Services.Get<IBotTelemetryClient>() ?? dialog.TelemetryClient ?? NullBotTelemetryClient.Instance;
 
             dialogSet.Add(dialog);
 
