@@ -8,13 +8,13 @@ using Microsoft.Agents.Builder.TestBot.Shared;
 using Microsoft.Agents.Builder.TestBot.Shared.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared.Services;
 using Microsoft.Agents.Core.Models;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs
+namespace Microsoft.BuilderSamples.Tests.Dialogs
 {
     public class MainDialogTests : BotTestBase
     {

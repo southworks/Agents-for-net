@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared.Bots;
 using Microsoft.Agents.Core.Models;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Xunit;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 
-namespace Microsoft.BotBuilderSamples.Tests.Bots
+namespace Microsoft.BuilderSamples.Tests.Bots
 {
     public class DialogAndWelcomeBotTests
     {

@@ -8,7 +8,7 @@ using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
 using Moq;
 
-namespace Microsoft.BotBuilderSamples.Tests.Framework
+namespace Microsoft.BuilderSamples.Tests.Framework
 {
     /// <summary>
     /// Contains utility methods for creating simple mock objects based on <see href="https://github.com/moq/moq">moq</see>/>.

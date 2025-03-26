@@ -281,7 +281,9 @@ namespace Microsoft.Agents.Storage.Blobs
 
                         if (jsonObject.GetTypeInfo(out var type))
                         {
+                            var typeProps = jsonObject.RemoveTypeInfoProperties();
                             item = jsonObject.Deserialize(type, _serializerOptions);
+                            jsonObject.SetTypeInfoProperties(typeProps);
                         }
                         else
                         {

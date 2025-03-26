@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared.Bots;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -12,7 +12,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 
-namespace Microsoft.BotBuilderSamples.Tests.Bots
+namespace Microsoft.BuilderSamples.Tests.Bots
 {
     public class DialogBotTests
     {

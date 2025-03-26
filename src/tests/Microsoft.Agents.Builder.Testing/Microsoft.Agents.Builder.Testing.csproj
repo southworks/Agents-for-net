@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <ComponentAreaName>CplTests.BotBuilderTesting</ComponentAreaName>
+    <ComponentAreaName>CplTests.BuilderTesting</ComponentAreaName>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <Import Project="..\..\Build.Common.core.props" />
