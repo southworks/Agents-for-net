@@ -14,18 +14,11 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Dialogs
     public class MainDialog : ComponentDialog
     {
         private readonly ILogger _logger;
-        private readonly IRecognizer _luisRecognizer;
 
         public MainDialog(ILogger<MainDialog> logger, BookingDialog bookingDialog)
-            : this(logger, null, bookingDialog)
-        {
-        }
-
-        public MainDialog(ILogger<MainDialog> logger, IRecognizer luisRecognizer, BookingDialog bookingDialog)
             : base(nameof(MainDialog))
         {
             _logger = logger;
-            _luisRecognizer = luisRecognizer;
 
             AddDialog(new TextPrompt(nameof(TextPrompt)));
 
@@ -35,25 +28,12 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Dialogs
             // Create and add waterfall for main conversation loop
             // NOTE: we use a different task step if LUIS is not configured.
             WaterfallStep[] steps;
-            if (luisRecognizer == null)
+            steps = new WaterfallStep[]
             {
-                steps = new WaterfallStep[]
-                {
-                    PromptForTaskActionAsync,
-                    InvokeTaskActionAsyncNoLuis,
-                    ResumeMainLoopActionAsync,
-                };
-            }
-            else
-            {
-                // LUIS is configured
-                steps = new WaterfallStep[]
-                {
-                    PromptForTaskActionAsync,
-                    InvokeTaskActionAsync,
-                    ResumeMainLoopActionAsync,
-                };
-            }
+                PromptForTaskActionAsync,
+                InvokeTaskActionAsyncNoLuis,
+                ResumeMainLoopActionAsync,
+            };
 
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), steps));
 
@@ -63,13 +43,6 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Dialogs
 
         private async Task<DialogTurnResult> PromptForTaskActionAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            if (_luisRecognizer == null)
-            {
-                var activity = MessageFactory.Text("NOTE: LUIS is not configured. To enable all capabilities, add 'LuisAppId', 'LuisAPIKey' and 'LuisAPIHostName' to the appsettings.json file.");
-                activity.InputHint = InputHints.IgnoringInput;
-                await stepContext.Context.SendActivityAsync(activity, cancellationToken);
-            }
-
             // Use the text provided in ResumeMainLoopActionAsync or the default if it is the first time.
             var promptText = stepContext.Options?.ToString() ?? "What can I help you with today?";
 
