@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {
@@ -89,8 +88,9 @@ namespace Microsoft.Agents.Builder.Dialogs
                 { "DialogId", Id },
                 { "InstanceId", instanceId },
             };
-            TelemetryClient.TrackEvent("WaterfallStart", properties);
-            TelemetryClient.TrackDialogView(Id);
+
+            //TelemetryClient.TrackEvent("WaterfallStart", properties);
+            //TelemetryClient.TrackDialogView(Id);
 
             // Run first step
             return await RunStepAsync(dc, 0, DialogReason.BeginCalled, null, cancellationToken).ConfigureAwait(false);
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                     { "StepName", stepName },
                     { "InstanceId", instanceId },
                 };
-                TelemetryClient.TrackEvent("WaterfallCancel", properties);
+                //TelemetryClient.TrackEvent("WaterfallCancel", properties);
             }
             else if (reason == DialogReason.EndCalled)
             {
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                     { "DialogId", Id },
                     { "InstanceId", instanceId },
                 };
-                TelemetryClient.TrackEvent("WaterfallComplete", properties);
+                //TelemetryClient.TrackEvent("WaterfallComplete", properties);
             }
 
             return Task.CompletedTask;
@@ -208,7 +208,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 { "StepName", stepName },
                 { "InstanceId", instanceId },
             };
-            TelemetryClient.TrackEvent("WaterfallStep", properties);
+            //TelemetryClient.TrackEvent("WaterfallStep", properties);
             return await _steps[stepContext.Index](stepContext, cancellationToken).ConfigureAwait(false);
         }
 
