@@ -207,7 +207,8 @@ namespace Microsoft.Agents.Client.Compat
             if (conversationReference == null)
 
             {
-                _logger.LogError($"Unable to get conversation reference for conversationId {conversationId}.");
+                var sanitizedConversationId = conversationId.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
+                _logger.LogError($"Unable to get conversation reference for conversationId {sanitizedConversationId}.");
                 throw new KeyNotFoundException();
             }
 
