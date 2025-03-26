@@ -4,9 +4,11 @@
 version: 2
 updates:
 - package-ecosystem: nuget
-  directory: /
+  directory: "/"
   schedule:
     interval: daily
+  open-pull-requests-limit: 1
+    target-branch: "main"    
   labels:
     - 'dependencies'
   reviewers:
@@ -14,9 +16,11 @@ updates:
 
   
 - package-ecosystem: dotnet-sdk
-  directory: /
+  directory: "/"
   schedule:
     interval: daily
+  open-pull-requests-limit: 1
+    target-branch: "main"    
   labels:
     - 'dependencies'
   reviewers:
