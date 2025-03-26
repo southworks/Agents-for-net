@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
                 ChannelId = channelId,
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount(TeamsUserId, TeamsUserId),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                 Locale = "en-us",
             };
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
                     Type = ActivityTypes.Invoke,
                     Locale = this.Locale ?? "en-us",
                     From = Conversation.User,
-                    Recipient = Conversation.Bot,
+                    Recipient = Conversation.Agent,
                     Conversation = Conversation.Conversation,
                     ServiceUrl = Conversation.ServiceUrl,
                     Id = Guid.NewGuid().ToString(),

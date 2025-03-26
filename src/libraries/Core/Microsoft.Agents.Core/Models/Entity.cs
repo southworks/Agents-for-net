@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Models
     /// Entities carry metadata about an activity or conversation. Each entity's meaning and shape is defined by 
     /// the type field. Additional type-specific fields sit as peers to the type field.
     ///
-    /// Some non-Bot-Framework entities may have a preexisting field called type.Parties integrating these entities 
+    /// Some Microsoft entities may have a preexisting field called type. Parties integrating these entities 
     /// into the activity entity format are advised to define field-level mapping to resolve conflicts with the type 
     /// field name and other incompatibilities with serialization requirement A2001 as part of the IRI defining the 
     /// entity type.
