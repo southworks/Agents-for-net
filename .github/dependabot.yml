@@ -5,7 +5,8 @@ version: 2
 updates:
 - package-ecosystem: nuget
   directories: 
-    - "**/*"
+    - "/Directory.Packages.*"
+    - "/src/tests/*"
   schedule:
     interval: daily
   open-pull-requests-limit: 1
