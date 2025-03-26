@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplTests.BotBuilder</ComponentAreaName>
+		<ComponentAreaName>CplTests.Builder</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />

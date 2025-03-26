@@ -14,7 +14,7 @@ using Moq;
 using Xunit;
 using Microsoft.Agents.Builder;
 
-namespace Microsoft.BotBuilderSamples.Tests.Controllers
+namespace Microsoft.BuilderSamples.Tests.Controllers
 {
     public class BotControllerTests
     {

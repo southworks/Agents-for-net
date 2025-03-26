@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Builder.TestBot.Shared;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs.TestData
+namespace Microsoft.BuilderSamples.Tests.Dialogs.TestData
 {
     public class GetBookingDetailsDialogTestCase
     {

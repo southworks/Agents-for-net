@@ -9,13 +9,13 @@ using Microsoft.Agents.Builder.TestBot.Shared.Services;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Testing.XUnit;
 using Microsoft.Agents.Core.Models;
-using Microsoft.BotBuilderSamples.Tests.Dialogs.TestData;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Dialogs.TestData;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs
+namespace Microsoft.BuilderSamples.Tests.Dialogs
 {
     public class BookingDialogTests : BotTestBase
     {

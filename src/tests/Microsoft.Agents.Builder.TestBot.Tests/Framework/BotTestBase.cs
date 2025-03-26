@@ -10,7 +10,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 
-namespace Microsoft.BotBuilderSamples.Tests.Framework
+namespace Microsoft.BuilderSamples.Tests.Framework
 {
     /// <summary>
     /// A base class with helper methods and properties to write bot tests.

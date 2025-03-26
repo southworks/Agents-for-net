@@ -80,15 +80,18 @@ namespace Microsoft.Agents.Builder
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                    if (!await StreamedResponseAsync(turnContext.Activity, activity, cancellationToken).ConfigureAwait(false))
                     {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var connectorClient = turnContext.Services.Get<IConnectorClient>();
-                        response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(activity.ReplyToId))
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.ReplyToActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            var connectorClient = turnContext.Services.Get<IConnectorClient>();
+                            response = await connectorClient.Conversations.SendToConversationAsync(activity, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                 }
 
@@ -235,6 +238,7 @@ namespace Microsoft.Agents.Builder
         public override async Task ProcessProactiveAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             Logger.LogInformation($"ProcessProactiveAsync for Conversation Id: {continuationActivity.Conversation.Id}");
+            audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
 
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, continuationActivity.ServiceUrl, audience, cancellationToken).ConfigureAwait(false);
@@ -306,6 +310,11 @@ namespace Microsoft.Agents.Builder
                 new(AuthenticationConstants.AudienceClaim, agentAppId),
                 new(AuthenticationConstants.AppIdClaim, agentAppId),
             ]);
+        }
+
+        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
         }
 
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)

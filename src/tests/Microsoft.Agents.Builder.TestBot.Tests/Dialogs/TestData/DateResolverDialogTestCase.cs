@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs.TestData
+namespace Microsoft.BuilderSamples.Tests.Dialogs.TestData
 {
     public class DateResolverDialogTestCase
     {

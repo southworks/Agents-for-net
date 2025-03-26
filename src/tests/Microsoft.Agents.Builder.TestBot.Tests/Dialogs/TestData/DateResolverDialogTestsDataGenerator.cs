@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.Builder.Testing.XUnit;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs.TestData
+namespace Microsoft.BuilderSamples.Tests.Dialogs.TestData
 {
     [SuppressMessage("Microsoft.StyleCop.CSharp.OrderingRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Ignoring to make code more readable")]
 

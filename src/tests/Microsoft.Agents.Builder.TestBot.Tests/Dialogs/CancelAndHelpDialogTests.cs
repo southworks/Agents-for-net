@@ -10,11 +10,11 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Testing.XUnit;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs
+namespace Microsoft.BuilderSamples.Tests.Dialogs
 {
     public class CancelAndHelpDialogTests : BotTestBase
     {
