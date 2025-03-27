@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
     /// <summary>
-    /// Base class for bot authentication that handles common logic.
+    /// Base class for Agent authentication that handles common logic.
     /// </summary>
     internal class BotUserAuthorization
     {
