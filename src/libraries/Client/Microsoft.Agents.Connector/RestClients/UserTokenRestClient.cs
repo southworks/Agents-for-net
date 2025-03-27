@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetToken")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetToken")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId)
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/exchange")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetAadTokens")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetAadTokens")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Delete;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/SignOut")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/SignOut")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetTokenStatus")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenStatus")
                 .AppendQuery("userId", userId)
                 .AppendQuery("channelId", channelId)
                 .AppendQuery("include", include);
@@ -217,7 +217,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/exchange")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/exchange")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId);
@@ -257,7 +257,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
 
-            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetTokenOrSignInResource")
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetTokenOrSignInResource")
                 .AppendQuery("userId", userId)
                 .AppendQuery("connectionName", connectionName)
                 .AppendQuery("channelId", channelId)
@@ -283,10 +283,6 @@ namespace Microsoft.Agents.Connector.RestClients
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                case 404:
-                    {
-                        return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                    }
                 default:
                     throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");
             }
