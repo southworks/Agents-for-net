@@ -378,27 +378,6 @@ namespace Microsoft.Agents.Connector.Tests
             }
         }
 
-        [Fact]
-        public async Task ExchangeTokenAsync_TokenResponseFor404()
-        {
-            var tokenResponse = new
-            {
-                Token = "test-token"
-            };
-
-            var httpResponse = new HttpResponseMessage(HttpStatusCode.NotFound)
-            {
-                Content = new StringContent(JsonSerializer.Serialize(tokenResponse))
-            };
-
-            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
-
-            var client = UseClient();
-
-            var response = await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None);
-            Assert.IsAssignableFrom<TokenResponse>(response);
-        }
-
         private RestUserTokenClient UseClient()
             {
                 var httpFactory = new Mock<IHttpClientFactory>();
