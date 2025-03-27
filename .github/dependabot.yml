@@ -9,7 +9,6 @@ updates:
     - "/src/tests/*"
   schedule:
     interval: daily
-  open-pull-requests-limit: 1
   target-branch: "main"    
   labels:
     - 'dependencies'
@@ -21,7 +20,6 @@ updates:
   directory: "/"
   schedule:
     interval: daily
-  open-pull-requests-limit: 1
   target-branch: "main"    
   labels:
     - 'dependencies'
