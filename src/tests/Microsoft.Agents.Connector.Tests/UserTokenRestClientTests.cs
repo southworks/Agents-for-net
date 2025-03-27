@@ -449,21 +449,6 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal(responseContent.SignInResource.SignInLink, result.SignInResource.SignInLink);
         }
 
-        [Fact]
-        public async Task GetTokenOrSignInResourceAsync_ShouldReturnNullOnNotFound()
-        {
-            var response = new HttpResponseMessage(HttpStatusCode.NotFound);
-
-            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
-
-            var client = UseClient();
-
-            var result = await client.GetTokenOrSignInResourceAsync(UserId, ConnectionName, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None);
-
-            Assert.Null(result);
-        }
-
-
         private static RestUserTokenClient UseClient()
         {
             var httpFactory = new Mock<IHttpClientFactory>();

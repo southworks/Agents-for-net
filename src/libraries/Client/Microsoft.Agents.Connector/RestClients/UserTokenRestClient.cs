@@ -283,6 +283,7 @@ namespace Microsoft.Agents.Connector.RestClients
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
+                    return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                 default:
                     throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");
             }
