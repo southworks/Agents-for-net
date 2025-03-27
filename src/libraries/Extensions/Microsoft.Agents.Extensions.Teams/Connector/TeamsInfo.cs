@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
 
         /*
         /// <summary>
-        /// Creates a new thread in a team chat and sends an activity to that new thread. Use this method if you are using BotFrameworkAdapter and are handling credentials in your code.
+        /// Creates a new thread in a team chat and sends an activity to that new thread. Use this method if you are using Adapter and are handling credentials in your code.
         /// </summary>
         /// <param name="turnContext"> Turn context. </param>
         /// <param name="activity"> The activity to send on starting the new thread. </param>

@@ -209,7 +209,6 @@ namespace Microsoft.Agents.Builder.Dialogs
                 var promptOptions = (PromptOptions)state[PersistedOptions];
 
                 // Increment attempt count
-                // Convert.ToInt32 For issue https://github.com/Microsoft/botbuilder-dotnet/issues/1859
                 promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
 
                 // Validate the return value

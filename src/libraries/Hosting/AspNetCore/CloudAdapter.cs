@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <remarks>
         /// Note, this is an ImmediateAccept and BackgroundProcessing override of: 
-        /// Task IBotHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
+        /// Task IAgentHttpAdapter.ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default);
         /// </remarks>
         /// <param name="httpRequest">The HTTP request object, typically in a POST handler by a Controller.</param>
         /// <param name="httpResponse">The HTTP response object.</param>

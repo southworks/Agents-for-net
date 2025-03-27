@@ -131,8 +131,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             {
                 try
                 {
-                    // We must go back through DI to get the IBot. This is because the IBot is typically transient, and anything
-                    // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
+                    // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
+                    // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
 
