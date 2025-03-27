@@ -5,7 +5,7 @@ version: 2
 updates:
 - package-ecosystem: nuget
   directories: 
-    - "/Directory.Packages.props"
+    - "**/"
     - "/src/tests/*"
   schedule:
     interval: daily
