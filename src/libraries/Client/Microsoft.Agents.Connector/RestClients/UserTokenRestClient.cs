@@ -250,5 +250,45 @@ namespace Microsoft.Agents.Connector.RestClients
                     throw new HttpRequestException($"ExchangeTokenAsync {httpResponse.StatusCode}");
             }
         }
+
+        internal HttpRequestMessage CreateGetTokenOrSignInResourceRequest(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl)
+        {
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+
+            request.RequestUri = new Uri(_transport.Endpoint, $"api/usertoken/GetTokenOrSignInResource")
+                .AppendQuery("userId", userId)
+                .AppendQuery("connectionName", connectionName)
+                .AppendQuery("channelId", channelId)
+                .AppendQuery("code", code)
+                .AppendQuery("state", state)
+                .AppendQuery("finalRedirect", finalRedirect)
+                .AppendQuery("fwdUrl", fwdUrl);
+
+            request.Headers.Add("Accept", "application/json");
+            return request;
+        }
+
+        /// <inheritdoc/>
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId = null, string code = null, string state = null, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(userId);
+            ArgumentException.ThrowIfNullOrEmpty(connectionName);
+            ArgumentException.ThrowIfNullOrEmpty(channelId);
+
+            using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
+            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
+            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+            switch ((int)httpResponse.StatusCode)
+            {
+                case 200:
+                case 404:
+                    {
+                        return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    }
+                default:
+                    throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");
+            }
+        }
     }
 }
