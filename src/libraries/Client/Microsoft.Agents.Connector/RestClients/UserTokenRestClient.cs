@@ -274,7 +274,6 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            ArgumentException.ThrowIfNullOrEmpty(channelId);
 
             using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
