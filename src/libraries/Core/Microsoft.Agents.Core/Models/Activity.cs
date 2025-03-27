@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -49,8 +50,8 @@ namespace Microsoft.Agents.Core.Models
         /// For example, America/Los_Angeles.
         /// </param>
         /// <param name="callerId">
-        /// A string containing an IRI identifying the caller of a bot. This field is not intended to be transmitted
-        /// over the wire, but is instead populated by bots and clients based on cryptographically verifiable data
+        /// A string containing an IRI identifying the caller of an Agent. This field is not intended to be transmitted
+        /// over the wire, but is instead populated by Agents and clients based on cryptographically verifiable data
         /// that asserts the identity of the callers (e.g. tokens).
         /// </param>
         /// <param name="serviceUrl"> Contains the URL that specifies the channel's service endpoint. Set by the channel. </param>
@@ -68,7 +69,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="locale"> A BCP-47 locale name for the contents of the text field. </param>
         /// <param name="text"> The text content of the message. </param>
         /// <param name="speak"> The text to speak. </param>
-        /// <param name="inputHint"> Indicates whether the bot is accepting, expecting, or ignoring input. </param>
+        /// <param name="inputHint"> Indicates whether the Agent is accepting, expecting, or ignoring input. </param>
         /// <param name="summary"> The text to display if the channel cannot render cards. </param>
         /// <param name="suggestedActions"> SuggestedActions that can be performed. </param>
         /// <param name="attachments"> Attachments. </param>
@@ -133,6 +134,11 @@ namespace Microsoft.Agents.Core.Models
             SemanticAction = semanticAction;
         }
 
+        public bool IsType(string type)
+        {
+            return string.Equals(type, Type, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <inheritdoc/>
         public bool HasContent()
         {
@@ -157,19 +163,6 @@ namespace Microsoft.Agents.Core.Models
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Determine if the Activity was sent via an Http/Https connection or Streaming
-        /// This can be determined by looking at the ServiceUrl property:
-        /// (1) All channels that send messages via http/https are not streaming
-        /// (2) Channels that send messages via streaming have a ServiceUrl that does not begin with http/https.
-        /// </summary>
-        /// <returns>True if the Activity originated from a streaming connection.</returns>
-        public bool IsFromStreamingConnection()
-        {
-            var isHttp = ServiceUrl?.StartsWith("http", StringComparison.InvariantCultureIgnoreCase);
-            return isHttp.HasValue && !isHttp.Value;
         }
 
         /// <inheritdoc/>
@@ -308,7 +301,7 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
-        public static IMessageActivity CreateMessageActivity()
+        public static IActivity CreateMessageActivity()
         {
             return new Activity(ActivityTypes.Message)
             {
@@ -318,19 +311,19 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="ITypingActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new typing activity.</returns>
-        public static ITypingActivity CreateTypingActivity()
+        public static IActivity CreateTypingActivity()
         {
             return new Activity(ActivityTypes.Typing);
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an EndOfConversationActivity object.
+        /// Creates an instance of the <see cref="IActivity"/> class as an EndOfConversationActivity object.
         /// </summary>
         /// <returns>The new end of conversation activity.</returns>
-        public static IEndOfConversationActivity CreateEndOfConversationActivity()
+        public static IActivity CreateEndOfConversationActivity()
         {
             return new Activity()
             {
@@ -338,7 +331,7 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
-        public static IConversationUpdateActivity CreateConversationUpdateActivity()
+        public static IActivity CreateConversationUpdateActivity()
         {
             return new Activity()
             {
@@ -349,7 +342,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="Activity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <param name="name">The name of the trace operation to create.</param>
         /// <param name="valueType">Optional, identifier for the format of the <paramref name="value"/>.
@@ -357,7 +350,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="value">Optional, the content for this trace operation.</param>
         /// <param name="label">Optional, a descriptive label for this trace operation.</param>
         /// <returns>The new trace activity.</returns>
-        public static ITraceActivity CreateTraceActivity(string name, string valueType = null, object value = null, [CallerMemberName] string label = null)
+        public static IActivity CreateTraceActivity(string name, string valueType = null, object value = null, [CallerMemberName] string label = null)
         {
             return new Activity()
             {
@@ -370,22 +363,33 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="IHandoffActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new handoff activity.</returns>
-        public static IHandoffActivity CreateHandoffActivity()
+        public static IActivity CreateHandoffActivity()
         {
             return new Activity(ActivityTypes.Handoff);
         }
 
         /// <summary>
-        /// Creates an instance of the <see cref="Activity"/> class as an <see cref="IInvokeActivity"/> object.
+        /// Creates an instance of the <see cref="IActivity"/>.
         /// </summary>
         /// <returns>The new invoke activity.</returns>
-        public static IInvokeActivity CreateInvokeActivity()
+        public static IActivity CreateInvokeActivity()
         {
             return new Activity(ActivityTypes.Invoke);
         }
+
+        public static IActivity CreateInvokeResponseActivity(object body = default, int status = (int)HttpStatusCode.OK)
+        {
+            Activity activity = new()
+            {
+                Type = ActivityTypes.InvokeResponse,
+                Value = new InvokeResponse { Status = status, Body = body }
+            };
+            return activity;
+        }
+
 
         /// <inheritdoc/>
         public ConversationReference GetConversationReference()
@@ -394,7 +398,7 @@ namespace Microsoft.Agents.Core.Models
             {
                 ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || (!string.Equals(ChannelId, "directline", StringComparison.OrdinalIgnoreCase) && !string.Equals(ChannelId, "webchat", StringComparison.OrdinalIgnoreCase)) ? Id : null,
                 User = From,
-                Bot = Recipient,
+                Agent = Recipient,
                 Conversation = Conversation,
                 ChannelId = ChannelId,
                 Locale = Locale,
@@ -425,7 +429,7 @@ namespace Microsoft.Agents.Core.Models
             if (isIncoming)
             {
                 From = reference.User;
-                Recipient = reference.Bot;
+                Recipient = reference.Agent;
                 if (reference.ActivityId != null)
                 {
                     Id = reference.ActivityId;
@@ -434,7 +438,7 @@ namespace Microsoft.Agents.Core.Models
             else
             {
                 // Outgoing
-                From = reference.Bot;
+                From = reference.Agent;
                 Recipient = reference.User;
                 if (reference.ActivityId != null)
                 {
@@ -493,7 +497,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="activityType">The activity type to check for.</param>
         /// <returns><c>true</c> if this activity is of the specified activity type; otherwise, <c>false</c>.</returns>
-        public bool IsActivity(string activityType)
+        internal bool IsActivity(string activityType)
         {
             /*
              * NOTE: While it is possible to come up with a fancy looking "one-liner" to solve

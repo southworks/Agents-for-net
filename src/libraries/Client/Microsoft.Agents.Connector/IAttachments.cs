@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Models;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;

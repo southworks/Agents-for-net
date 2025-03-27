@@ -7,7 +7,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs.Debugging;
-using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {
@@ -23,8 +22,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         public static readonly DialogTurnResult EndOfTurn = new DialogTurnResult(DialogTurnStatus.Waiting);
 
-        private IBotTelemetryClient _telemetryClient;
-
         [JsonPropertyName("id")]
         private string _id;
 
@@ -36,7 +33,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         public Dialog(string dialogId = null)
         {
             Id = dialogId;
-            _telemetryClient = NullBotTelemetryClient.Instance;
         }
 
         /// <summary>
@@ -57,25 +53,6 @@ namespace Microsoft.Agents.Builder.Dialogs
             set
             {
                 _id = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the <see cref="IBotTelemetryClient"/> to use for logging.
-        /// </summary>
-        /// <value>The <see cref="IBotTelemetryClient"/> to use for logging.</value>
-        /// <seealso cref="DialogSet.TelemetryClient"/>
-        [JsonIgnore]
-        public virtual IBotTelemetryClient TelemetryClient
-        {
-            get
-            {
-                return _telemetryClient;
-            }
-
-            set
-            {
-                _telemetryClient = value;
             }
         }
 

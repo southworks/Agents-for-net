@@ -1,3 +1,5 @@
 # Microsoft.Agents.Builder.Dialogs
 
-TBD
+## About
+
+The package provides support for Bot Framework SDK Dialogs.

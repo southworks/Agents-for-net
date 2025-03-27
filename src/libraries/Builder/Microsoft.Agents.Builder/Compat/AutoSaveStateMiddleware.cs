@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 using Microsoft.Agents.Builder.State;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,12 +24,14 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="agentStates">initial list of <see cref="AgentState"/> objects to manage.</param>
         public AutoSaveStateMiddleware(params IAgentState[] agentStates)
         {
-            _autoLoad = false;
+            // This is really so back-compat Agents can use the new AgentState methods without having to
+            // Load or use IStatePropertyAccessor.
+            _autoLoad = true;  
             TurnState = new TurnState(agentStates);
         }
 
         /// <summary>
-        /// Allows for optionally auto-loading BotState at turn start.
+        /// Allows for optionally auto-loading AgentState at turn start.
         /// </summary>
         /// <param name="autoLoad"></param>
         /// <param name="agentStates"></param>
@@ -44,10 +45,10 @@ namespace Microsoft.Agents.Builder.Compat
         /// Initializes a new instance of the <see cref="AutoSaveStateMiddleware"/> class with 
         /// a list of state management objects managed by this object.
         /// </summary>
-        /// <param name="agentTurnState">The state management objects managed by this object.</param>
-        public AutoSaveStateMiddleware(ITurnState agentTurnState)
+        /// <param name="turnState">The state management objects managed by this object.</param>
+        public AutoSaveStateMiddleware(ITurnState turnState)
         {
-            TurnState = agentTurnState;
+            TurnState = turnState;
         }
 
         /// <summary>

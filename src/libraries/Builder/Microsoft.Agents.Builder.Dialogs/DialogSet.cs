@@ -8,7 +8,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {
@@ -20,7 +19,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         private readonly IDictionary<string, Dialog> _dialogs = new Dictionary<string, Dialog>();
         private readonly DialogState _dialogState;
         private readonly IStatePropertyAccessor<DialogState> _dialogStateProperty;
-        private IBotTelemetryClient _telemetryClient;
         private string _version;
 
         /// <summary>
@@ -35,14 +33,12 @@ namespace Microsoft.Agents.Builder.Dialogs
         public DialogSet(DialogState dialogState)
         {
             _dialogState = dialogState ?? throw new ArgumentNullException(nameof(dialogState));
-            _telemetryClient = NullBotTelemetryClient.Instance;
         }
 
         [Obsolete("Use DialogSet(DialogState)")]
         public DialogSet(IStatePropertyAccessor<DialogState> dialogStateProperty)
         {
             _dialogStateProperty = dialogStateProperty ?? throw new ArgumentNullException(nameof(dialogStateProperty));
-            _telemetryClient = NullBotTelemetryClient.Instance;
         }
 
         /// <summary>
@@ -51,31 +47,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         public DialogSet()
         {
             _dialogState = null;
-            _telemetryClient = NullBotTelemetryClient.Instance;
-        }
-
-        /// <summary>
-        /// Gets or sets the <see cref="IBotTelemetryClient"/> to use for logging.
-        /// </summary>
-        /// <value>The <see cref="IBotTelemetryClient"/> to use for logging.</value>
-        /// <remarks>When this property is set, it sets the <see cref="Dialog.TelemetryClient"/> of each
-        /// dialog in the set to the new value.</remarks>
-        [JsonIgnore]
-        public IBotTelemetryClient TelemetryClient
-        {
-            get
-            {
-                return _telemetryClient;
-            }
-
-            set
-            {
-                _telemetryClient = value ?? NullBotTelemetryClient.Instance;
-                foreach (var dialog in _dialogs.Values)
-                {
-                    dialog.TelemetryClient = _telemetryClient;
-                }
-            }
         }
 
         /// <summary>
@@ -150,17 +121,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 }
             }
 
-            dialog.TelemetryClient = _telemetryClient;
             _dialogs[dialog.Id] = dialog;
-
-            // Automatically add any dependencies the dialog might have
-            if (dialog is IDialogDependencies dialogWithDependencies)
-            {
-                foreach (var dependencyDialog in dialogWithDependencies.GetDependencies())
-                {
-                    Add(dependencyDialog);
-                }
-            }
 
             return this;
         }

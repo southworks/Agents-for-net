@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App
 {
+    public delegate Task AgentApplicationTurnError(ITurnContext turnContext, ITurnState turnState, Exception exception, CancellationToken cancellationToken);
+
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
@@ -28,6 +30,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
+        private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
 
         /// <summary>
         /// Creates a new AgentApplication instance.
@@ -50,6 +53,7 @@ namespace Microsoft.Agents.Builder.App
             _routes = new RouteList();
             _beforeTurn = new ConcurrentQueue<TurnEventHandler>();
             _afterTurn = new ConcurrentQueue<TurnEventHandler>();
+            _turnErrorHandlers = new ConcurrentQueue<AgentApplicationTurnError>();
 
             // Application Features
 
@@ -109,7 +113,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <param name="selector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <param name="isInvokeRoute">Boolean indicating if the RouteSelectorAsync is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
+        /// <param name="isInvokeRoute">Boolean indicating if the RouteSelector is for an activity that uses "invoke" which require special handling. Defaults to `false`.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
         public AgentApplication AddRoute(RouteSelector selector, RouteHandler handler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified)
@@ -172,7 +176,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming activities of a given type.
         /// </summary>
-        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
+        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelector selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
@@ -295,7 +299,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a Agent respond anytime a user sends your Agent a
+        /// This method provides a simple way to have an Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// <br/>
         /// For example, you can easily clear the current conversation anytime a user sends "/reset":
@@ -324,7 +328,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a Agent respond anytime a user sends your Agent a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// <br/>
         /// For example, you can easily clear the current conversation anytime a user sends "/reset":
@@ -353,7 +357,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a Agent respond anytime a user sends your Agent a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// </summary>
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
@@ -371,10 +375,10 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles incoming messages with a given keyword.
         /// <br/>
-        /// This method provides a simple way to have a Agent respond anytime a user sends your Agent a
+        /// This method provides a simple way to have a Agent respond anytime a user sends a
         /// message with a specific word or phrase.
         /// </summary>
-        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
+        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelector selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <returns>The application instance for chaining purposes.</returns>
@@ -403,6 +407,65 @@ namespace Microsoft.Agents.Builder.App
                     OnMessage(routeSelector, handler, rank: rank);
                 }
             }
+            return this;
+        }
+
+        /// <summary>
+        /// Handles incoming Event with a specific Name.
+        /// </summary>
+        /// <param name="eventName">Substring of the incoming message text.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(string eventName, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            ArgumentNullException.ThrowIfNull(handler);
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+                => Task.FromResult
+                (
+                    string.Equals(ActivityTypes.Event, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity?.Name != null
+                    && context.Activity.Text.IndexOf(eventName, StringComparison.OrdinalIgnoreCase) >= 0
+                );
+            OnEvent(routeSelector, handler, rank: rank);
+            return this;
+        }
+
+        /// <summary>
+        /// Handles incoming Events matching a Name pattern.
+        /// </summary>
+        /// <param name="namePattern">Regular expression to match against the text of an incoming message.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(Regex namePattern, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentNullException.ThrowIfNull(namePattern);
+            ArgumentNullException.ThrowIfNull(handler);
+            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
+                => Task.FromResult
+                (
+                    string.Equals(ActivityTypes.Message, context.Activity?.Type, StringComparison.OrdinalIgnoreCase)
+                    && context.Activity?.Text != null
+                    && namePattern.IsMatch(context.Activity.Text)
+                );
+            OnEvent(routeSelector, handler, rank: rank);
+            return this;
+        }
+
+        /// <summary>
+        /// Handles incoming Events.
+        /// </summary>
+        /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnEvent(RouteSelector routeSelector, RouteHandler handler, ushort rank = RouteRank.Unspecified)
+        {
+            ArgumentNullException.ThrowIfNull(routeSelector);
+            ArgumentNullException.ThrowIfNull(handler);
+            AddRoute(routeSelector, handler, rank: rank);
             return this;
         }
 
@@ -463,7 +526,7 @@ namespace Microsoft.Agents.Builder.App
                 string token = turnContext.Activity.Value.GetType().GetProperty("Continuation").GetValue(turnContext.Activity.Value) as string ?? "";
                 await handler(turnContext, turnState, token, cancellationToken);
 
-                Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
+                var activity = Activity.CreateInvokeResponseActivity();
                 await turnContext.SendActivityAsync(activity, cancellationToken);
             };
             AddRoute(routeSelector, routeHandler, isInvokeRoute: true, rank: rank);
@@ -474,7 +537,7 @@ namespace Microsoft.Agents.Builder.App
         /// Add a handler that will execute before the turn's activity handler logic is processed.
         /// <br/>
         /// Handler returns true to continue execution of the current turn. Handler returning false
-        /// prevents the turn from running, but the Agent state is still saved, which lets you
+        /// prevents the turn from running, but the Agents state is still saved, which lets you
         /// track the reason why the turn was not processed. It also means you can use this as
         /// a way to call into the dialog system. For example, you could use the OAuthPrompt to sign the
         /// user in before allowing the AI system to run.
@@ -500,6 +563,21 @@ namespace Microsoft.Agents.Builder.App
         {
             ArgumentNullException.ThrowIfNull(handler);
             _afterTurn.Enqueue(handler);
+            return this;
+        }
+
+        /// <summary>
+        /// Allows the AgentApplication to provide error handling without having to change the Adapter.OnTurnError.  This
+        /// is beneficial since the application has more context.
+        /// </summary>
+        /// <remarks>
+        /// Exceptions here will bubble-up to Adapter.OnTurnError.  Since it isn't know where in the turn the exception
+        /// was thrown, it is possible that OnAfterTurn handlers, and ITurnState saving has NOT happened.
+        /// </remarks>
+        public AgentApplication OnTurnError(AgentApplicationTurnError handler)
+        {
+            ArgumentNullException.ThrowIfNull(handler);
+            _turnErrorHandlers.Enqueue(handler);
             return this;
         }
 
@@ -588,80 +666,70 @@ namespace Microsoft.Agents.Builder.App
                 ITurnState turnState = Options.TurnStateFactory!();
                 await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                // Handle user auth
-                if (_userAuth != null)
+                try
                 {
-                    var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    if (!signInComplete)
+                    // Handle user auth
+                    if (_userAuth != null)
                     {
-                        return;
-                    }
-                }
-
-                // Call before turn handler
-                foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
-                {
-                    if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
-                    {
-                        // Save turn state
-                        // - This lets the Agent keep track of why it ended the previous turn. It also
-                        //   allows the dialog system to be used before the AI system is called.
-                        await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                        return;
-                    }
-                }
-
-                // Download any input files
-                IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                if (fileDownloaders != null && fileDownloaders.Count > 0)
-                {
-                    foreach (IInputFileDownloader downloader in fileDownloaders)
-                    {
-                        var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                        turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
-                    }
-                }
-
-                bool eventHandlerCalled = false;
-
-                // Run any Invoke RouteSelectors first if the incoming Teams activity.type is "Invoke".
-                // Invoke Activities from Teams need to be responded to in less than 5 seconds.
-                // This is mostly because the selectors are async and could incur delays, so we need to limit this possibility.
-                if (ActivityTypes.Invoke.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
-                {
-                    foreach (Route route in _routes.Enumerate(true))
-                    {
-                        if (await route.Selector(turnContext, cancellationToken))
+                        var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (!signInComplete)
                         {
-                            await route.Handler(turnContext, turnState, cancellationToken);
-                            eventHandlerCalled = true;
-                            break;
+                            return;
                         }
                     }
-                }
 
-                // All other ActivityTypes and any unhandled Invokes are run through the remaining routes.
-                if (!eventHandlerCalled)
-                {
+                    // Call before turn handler
+                    foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    {
+                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                        {
+                            // Save turn state
+                            // - This lets the Agent keep track of why it ended the previous turn. It also
+                            //   allows the dialog system to be used before the AI system is called.
+                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                            return;
+                        }
+                    }
+
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    {
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        {
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                        }
+                    }
+
+                    // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
                     foreach (Route route in _routes.Enumerate())
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
                             await route.Handler(turnContext, turnState, cancellationToken);
-                            eventHandlerCalled = true;
                             break;
                         }
                     }
-                }
 
-                // Call after turn handler
-                foreach (TurnEventHandler afterTurnHandler in _afterTurn)
-                {
-                    if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                    // Call after turn handler
+                    foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                     {
-                        return;
+                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                        {
+                            return;
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
+                    {
+                        await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    throw;
                 }
 
                 await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -670,6 +738,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 // Stop the timer if configured
                 StopTypingTimer();
+
 
                 if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
                 {
@@ -681,8 +750,7 @@ namespace Microsoft.Agents.Builder.App
         private void ApplyRouteAttributes()
         {
             // This will evaluate all methods that have an attribute, in declaration order (grouped by inheritance chain)
-            var methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            foreach (var method in methods)
+            foreach (var method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {
                 var activityRoutes = method.GetCustomAttributes<Attribute>(true);
                 foreach (var attribute in activityRoutes)

@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// <summary>
     /// Helper class containing string utility methods.
     /// </summary>
-    public static class StringUtils
+    internal static class StringUtils
     {
         /// <summary>
         /// Truncate string with ...

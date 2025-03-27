@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Testing
                 ChannelId = channelId,
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                 Locale = this.Locale,
             };
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.Testing
                     ChannelId = Channels.Test,
                     ServiceUrl = "https://test.com",
                     User = new ChannelAccount("user1", "User1"),
-                    Bot = new ChannelAccount("bot", "Bot"),
+                    Agent = new ChannelAccount("bot", "Bot"),
                     Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                     Locale = this.Locale,
                 };
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Builder.Testing
                 ServiceUrl = "https://test.com",
                 Conversation = new ConversationAccount(false, name, name),
                 User = new ChannelAccount(id: user.ToLowerInvariant(), name: user),
-                Bot = new ChannelAccount(id: bot.ToLowerInvariant(), name: bot),
+                Agent = new ChannelAccount(id: bot.ToLowerInvariant(), name: bot),
                 Locale = "en-us"
             };
         }
@@ -145,6 +145,11 @@ namespace Microsoft.Agents.Builder.Testing
             return this;
         }
 
+        public async Task<InvokeResponse> ProcessActivityAsync(IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        {
+            return await ProcessActivityAsync(ClaimsIdentity, activity, callback, cancellationToken);
+        }
+
         /// <summary>
         /// Receives an activity and runs it through the middleware pipeline.
         /// </summary>
@@ -153,7 +158,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        public async Task ProcessActivityAsync(IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             lock (_conversationLock)
             {
@@ -168,12 +173,12 @@ namespace Microsoft.Agents.Builder.Testing
                     activity.ChannelId = Conversation.ChannelId;
                 }
 
-                if (activity.From == null || activity.From.Id == "unknown" || activity.From.Role == RoleTypes.Bot)
+                if (activity.From == null || activity.From.Id == "unknown" || activity.From.Role == RoleTypes.Agent)
                 {
                     activity.From = Conversation.User;
                 }
 
-                activity.Recipient = Conversation.Bot;
+                activity.Recipient = Conversation.Agent;
                 activity.Conversation = Conversation.Conversation;
                 activity.ServiceUrl = Conversation.ServiceUrl;
 
@@ -193,20 +198,7 @@ namespace Microsoft.Agents.Builder.Testing
             // note here Dispose is NOT called on the TurnContext because we want to use it later in the test code
             var context = CreateTurnContext(activity);
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
-        }
 
-        /// <summary>
-        /// Creates a turn context and runs the middleware pipeline for an incoming activity.
-        /// </summary>
-        /// <param name="claimsIdentity">A <see cref="ClaimsIdentity"/> for the request.</param>
-        /// <param name="activity">The incoming activity.</param>
-        /// <param name="callback">The code to run at the end of the adapter's middleware pipeline.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        public override async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
-        {
-            await ProcessActivityAsync(activity, callback, cancellationToken).ConfigureAwait(false);
             return null;
         }
 
@@ -458,7 +450,7 @@ namespace Microsoft.Agents.Builder.Testing
                 Type = ActivityTypes.Message,
                 Locale = this.Locale ?? "en-us",
                 From = Conversation.User,
-                Recipient = Conversation.Bot,
+                Recipient = Conversation.Agent,
                 Conversation = Conversation.Conversation,
                 ServiceUrl = Conversation.ServiceUrl,
                 Id = (_nextId++).ToString(CultureInfo.InvariantCulture),
@@ -467,6 +459,8 @@ namespace Microsoft.Agents.Builder.Testing
 
             return activity;
         }
+
+        public ClaimsIdentity ClaimsIdentity { get; set; }
 
         /// <summary>
         /// Processes a message activity from a user.
@@ -478,7 +472,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <seealso cref="TestFlow.Send(string)"/>
         public virtual Task SendTextToBotAsync(string userSays, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            return ProcessActivityAsync(MakeActivity(userSays), callback, cancellationToken);
+            return ProcessActivityAsync(ClaimsIdentity, MakeActivity(userSays), callback, cancellationToken);
         }
 
         /// <summary>
@@ -528,6 +522,7 @@ namespace Microsoft.Agents.Builder.Testing
             var turnContext = new TurnContext(this, activity);
 
             turnContext.Services.Set<IUserTokenClient>(_userTokenClient);
+            turnContext.Identity = ClaimsIdentity;
 
             return turnContext;
         }

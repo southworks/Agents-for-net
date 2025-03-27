@@ -1,25 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared;
 using Microsoft.Agents.Builder.TestBot.Shared.Dialogs;
 using Microsoft.Agents.Builder.TestBot.Shared.Services;
-using Microsoft.Agents.Builder.Testing;
-using Microsoft.Agents.Builder.Testing.XUnit;
 using Microsoft.Agents.Core.Models;
-using Microsoft.BotBuilderSamples.Tests.Framework;
+using Microsoft.BuilderSamples.Tests.Framework;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.BotBuilderSamples.Tests.Dialogs
+namespace Microsoft.BuilderSamples.Tests.Dialogs
 {
     public class MainDialogTests : BotTestBase
     {
@@ -41,39 +36,12 @@ namespace Microsoft.BotBuilderSamples.Tests.Dialogs
         [Fact]
         public void DialogConstructor()
         {
-            var sut = new MainDialog(_mockLogger.Object, null, _mockBookingDialog);
+            var sut = new MainDialog(_mockLogger.Object,  _mockBookingDialog);
 
             Assert.Equal("MainDialog", sut.Id);
             Assert.IsType<TextPrompt>(sut.FindDialog("TextPrompt"));
             Assert.NotNull(sut.FindDialog("BookingDialog"));
             Assert.IsType<WaterfallDialog>(sut.FindDialog("WaterfallDialog"));
-        }
-
-        [Fact]
-        public async Task ShowsMessageIfLuisNotConfigured()
-        {
-            // Arrange
-            var sut = new MainDialog(_mockLogger.Object, null, _mockBookingDialog);
-            var testClient = new DialogTestClient(Channels.Test, sut, middlewares: new[] { new XUnitDialogTestLogger(Output) });
-
-            // Act/Assert
-            var reply = await testClient.SendActivityAsync<Activity>("hi");
-            Assert.Equal("NOTE: LUIS is not configured. To enable all capabilities, add 'LuisAppId', 'LuisAPIKey' and 'LuisAPIHostName' to the appsettings.json file.", reply.Text);
-
-            reply = testClient.GetNextReply<Activity>();
-            Assert.Equal("What can I help you with today?", reply.Text);
-        }
-
-        [Fact]
-        public async Task ShowsPromptIfLuisIsConfigured()
-        {
-            // Arrange
-            var sut = new MainDialog(_mockLogger.Object, SimpleMockFactory.CreateMockLuisRecognizer<IRecognizer>(null).Object, _mockBookingDialog);
-            var testClient = new DialogTestClient(Channels.Test, sut, middlewares: new[] { new XUnitDialogTestLogger(Output) });
-
-            // Act/Assert
-            var reply = await testClient.SendActivityAsync<Activity>("hi");
-            Assert.Equal("What can I help you with today?", reply.Text);
         }
     }
 }

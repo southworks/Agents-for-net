@@ -6,9 +6,7 @@ Provides the MSAL IAccessTokenProvider implementation to get tokens.
 
 ```
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
         "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
@@ -24,7 +22,7 @@ Provides the MSAL IAccessTokenProvider implementation to get tokens.
 
 ## MSAL Authentication provider
 
-The MSAL authentication provider is a utility aid you on creating access tokens for bot clients and external services from the Microsoft Agents Framework self hosted Agent.
+The MSAL authentication provider is a utility aid you on creating access tokens for Agent clients and external services from the Microsoft Agents Framework self hosted Agent.
 
 This utility has supports multiple distinct profiles that can be used to create access tokens.
 Each access token can be created using one of the following auth types:
@@ -79,7 +77,7 @@ These settings are:
 |AuthType     |AuthTypes Enum (Certificate, CertificateSubjectName, ClientSecret, UserManagedIdentity, SystemManagedIdentity) |ClientSecret        |This is the type of authentication that will be created.|
 |AuthorityEndpoint     |String         |Null         |When present, used as the Authority to request a token from.|
 |TenantId     |String         |Null         |When present and AuthorityEndpoint is null, used to create an Authority to request a token from|
-|Scopes     |String list         |Null         |Default Lists of scopes to request tokens for. Is only used when no scopes are passed from the bot connection request|
+|Scopes     |String list         |Null         |Default Lists of scopes to request tokens for. Is only used when no scopes are passed from the Agent connection request|
 
 ### ClientSecret
 |Setting Name  |Type  |Default Value  |Description  |
@@ -91,9 +89,7 @@ These settings are:
 
 ```json
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "ClientSecret",
         "ClientId": "<<ClientID>>",
@@ -119,9 +115,7 @@ These settings are:
 
 ```json
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "UserManagedIdentity",
         "ClientId": "<ClientID>",
@@ -144,9 +138,7 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 
 ```json
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "SystemManagedIdentity",
         "Scopes": [
@@ -170,9 +162,7 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 
 ```json
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "CertificateSubjectName",
         "ClientId": "<ClientID>",
@@ -201,9 +191,7 @@ When using Auth type **SystemManagedIdentity**, Client ID is ignored and the sys
 
 ```json
   "Connections": {
-    "BotServiceConnection": {
-      "Assembly": "Microsoft.Agents.Authentication.Msal",
-      "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
+    "ServiceConnection": {
       "Settings": {
         "AuthType": "CertificateSubjectName",
         "ClientId": "<ClientID>",
@@ -226,7 +214,7 @@ To easy setup, we provide a service provider extension to add the default config
 
 In a Program.cs class.
 ```csharp
-    // Add default bot MsalAuth support
+    // Add default Agent MsalAuth support
     builder.Services.AddDefaultMsalAuth(builder.Configuration);
 
     // Add Connections object to access configured token connections.

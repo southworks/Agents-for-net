@@ -1,9 +1,7 @@
-﻿using Microsoft.Agents.Core.Errors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Connector.Errors
 {
@@ -27,7 +25,7 @@ namespace Microsoft.Agents.Connector.Errors
     /// Method 2: 
     /// 
     ///     throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException&lt;OperationCanceledException&gt;(
-    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
     /// 
     /// </summary>
     internal static partial class ErrorHelper

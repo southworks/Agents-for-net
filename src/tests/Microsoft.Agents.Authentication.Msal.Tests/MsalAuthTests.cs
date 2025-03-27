@@ -27,12 +27,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         private static readonly Mock<IServiceProvider> _service = new Mock<IServiceProvider>();
 
         private static readonly Dictionary<string, string> _configSettings = new Dictionary<string, string> {
-            { "Connections:BotServiceConnection:Settings:AuthType", "ClientSecret" },
-            { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-            { "Connections:BotServiceConnection:Settings:ClientSecret", "test-secret" },
-            { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+            { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+            { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+            { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+            { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
         };
-        private const string SettingsSection = "Connections:BotServiceConnection:Settings";
+        private const string SettingsSection = "Connections:ServiceConnection:Settings";
 
         IConfiguration _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(_configSettings)
@@ -200,11 +200,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var token = "token";
 
             var configSettings = new Dictionary<string, string> {
-                { "Connections:BotServiceConnection:Settings:AuthType", "Certificate" },
-                { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-                { "Connections:BotServiceConnection:Settings:AuthorityEndpoint", "https://botframework/test.com" },
-                { "Connections:BotServiceConnection:Settings:CertThumbprint", "thumbprint" },
-                { "Connections:BotServiceConnection:Settings:Scopes:scope1", "{instance}" }
+                { "Connections:ServiceConnection:Settings:AuthType", "Certificate" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://botframework/test.com" },
+                { "Connections:ServiceConnection:Settings:CertThumbprint", "thumbprint" },
+                { "Connections:ServiceConnection:Settings:Scopes:scope1", "{instance}" }
             };
 
             IConfiguration configuration = new ConfigurationBuilder()
@@ -252,12 +252,12 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public void MSALProvider_ClientSecretShouldReturnConfidentialClient()
         {
             Dictionary<string, string> configSettings = new Dictionary<string, string> {
-                { "Connections:BotServiceConnection:Settings:AuthType", "ClientSecret" },
-                { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-                { "Connections:BotServiceConnection:Settings:ClientSecret", "test-secret" },
-                { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret" },
+                { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
             };
-            string settingsSection = "Connections:BotServiceConnection:Settings";
+            string settingsSection = "Connections:ServiceConnection:Settings";
 
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configSettings)
@@ -292,11 +292,11 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public void MSALProvider_UserManagedIdentityShouldReturnManagedIdentityApplication()
         {
             Dictionary<string, string> configSettings = new Dictionary<string, string> {
-                { "Connections:BotServiceConnection:Settings:AuthType", "UserManagedIdentity" },
-                { "Connections:BotServiceConnection:Settings:ClientId", "test-id" },
-                { "Connections:BotServiceConnection:Settings:TenantId", "test-tenant" },
+                { "Connections:ServiceConnection:Settings:AuthType", "UserManagedIdentity" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id" },
+                { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
             };
-            string settingsSection = "Connections:BotServiceConnection:Settings";
+            string settingsSection = "Connections:ServiceConnection:Settings";
 
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(configSettings)

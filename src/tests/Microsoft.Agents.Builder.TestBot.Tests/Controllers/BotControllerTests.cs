@@ -14,7 +14,7 @@ using Moq;
 using Xunit;
 using Microsoft.Agents.Builder;
 
-namespace Microsoft.BotBuilderSamples.Tests.Controllers
+namespace Microsoft.BuilderSamples.Tests.Controllers
 {
     public class BotControllerTests
     {
@@ -30,7 +30,7 @@ namespace Microsoft.BotBuilderSamples.Tests.Controllers
             var actionContext = new ActionContext(mockHttpContext.Object, new RouteData(), new ControllerActionDescriptor());
 
             // Create BF mocks
-            var mockAdapter = new Mock<IBotHttpAdapter>();
+            var mockAdapter = new Mock<IAgentHttpAdapter>();
             mockAdapter
                 .Setup(x => x.ProcessAsync(It.IsAny<HttpRequest>(), It.IsAny<HttpResponse>(), It.IsAny<IAgent>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);

@@ -13,50 +13,36 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// </summary>
     public class SkillDialogOptions
     {
-        /// <summary>
-        /// Gets or sets the Microsoft app ID of the bot calling the skill.
-        /// </summary>
-        /// <value>
-        /// The the Microsoft app ID of the bot calling the skill.
-        /// </value>
-        [JsonPropertyName("botId")]
-        public string BotId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="BotFrameworkClient"/> used to call the remote skill.
-        /// </summary>
-        /// <value>
-        /// The <see cref="BotFrameworkClient"/> used to call the remote skill.
-        /// </value>
         [JsonIgnore]
-        public IChannel SkillClient { get; set; }
+        public IAgentHost AgentHost { get; set; }
 
         /// <summary>
-        /// Gets or sets the callback Url for the skill host.
+        /// Gets or sets the Channel name the dialog will call.
         /// </summary>
         /// <value>
-        /// The callback Url for the skill host.
-        /// </value>
-        [JsonPropertyName("skillHostEndpoint")]
-        public Uri SkillHostEndpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="BotFrameworkSkill"/> that the dialog will call.
-        /// </summary>
-        /// <value>
-        /// The <see cref="BotFrameworkSkill"/> that the dialog will call.
+        /// The Agent name that the Dialog will call.
         /// </value>
         [JsonPropertyName("skill")]
-        public IChannelInfo Skill { get; set; }
+        public string Skill { get; set; }
+
 
         /// <summary>
-        /// Gets or sets an instance of a <see cref="SkillConversationIdFactoryBase"/> used to generate conversation IDs for interacting with the skill.
+        /// Gets or sets the Microsoft app ID of the Agent calling the skill.
         /// </summary>
         /// <value>
-        /// An instance of a <see cref="SkillConversationIdFactoryBase"/> used to generate conversation IDs for interacting with the skill.
+        /// The the Microsoft app ID of the Agent calling the skill.
         /// </value>
         [JsonIgnore]
-        public IConversationIdFactory ConversationIdFactory { get; set; }
+        public string ClientId => AgentHost?.HostClientId;
+
+        /// <summary>
+        /// Gets or sets the <see cref="IAgentClient"/> used to call the remote Agent.
+        /// </summary>
+        /// <value>
+        /// The <see cref="IAgentClient"/> used to call the remote Agent.
+        /// </value>
+        [JsonIgnore]
+        public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
 
         /// <summary>
         /// Gets or sets the <see cref="ConversationState"/> to be used by the dialog.
@@ -71,7 +57,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Gets or sets the OAuth Connection Name, that would be used to perform Single SignOn with a skill.
         /// </summary>
         /// <value>
-        /// The OAuth Connection Name for the Parent Bot.
+        /// The Token Provider Connection Name to use to get tokens.
         /// </value>
         [JsonPropertyName("connectionName")]
         public string ConnectionName { get; set; }

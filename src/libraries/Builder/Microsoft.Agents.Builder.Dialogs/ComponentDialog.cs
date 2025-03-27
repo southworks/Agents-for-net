@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Telemetry;
 
 namespace Microsoft.Agents.Builder.Dialogs
 {
@@ -77,7 +76,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 return await EndComponentAsync(outerDc, turnResult.Result, cancellationToken).ConfigureAwait(false);
             }
 
-            TelemetryClient.TrackDialogView(Id);
+            //TelemetryClient.TrackDialogView(Id);
 
             // Just signal waiting
             return Dialog.EndOfTurn;
@@ -364,7 +363,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <remarks>If the task is successful, the result indicates that the dialog ended after the
         /// turn was processed by the dialog.
         ///
-        /// In general, the parent context is the dialog or bot turn handler that started the dialog.
+        /// In general, the parent context is the dialog or Agent turn handler that started the dialog.
         /// If the parent is a dialog, the stack calls the parent's
         /// <see cref="Dialog.ResumeDialogAsync(DialogContext, DialogReason, object, CancellationToken)"/>
         /// method to return a result to the parent dialog. If the parent dialog does not implement

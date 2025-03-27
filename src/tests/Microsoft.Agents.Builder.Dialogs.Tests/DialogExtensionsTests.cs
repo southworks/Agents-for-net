@@ -15,9 +15,9 @@ using Xunit;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Agents.Builder.Testing;
-using Microsoft.Agents.Telemetry;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Client.Compat;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -127,35 +127,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .StartTestAsync();
 
             Assert.Equal(DialogReason.BeginCalled, dialog.EndReason);
-        }
-
-        [Fact]
-        public async Task RunAsyncShouldSetTelemetryClient()
-        {
-            var adapter = new Mock<IChannelAdapter>();
-            var dialog = new SimpleComponentDialog();
-            var conversationState = new ConversationState(new MemoryStorage());
-
-            // ChannelId and Conversation.Id are required for ConversationState and
-            // ChannelId and From.Id are required for UserState.
-            var activity = new Activity
-            {
-                ChannelId = "test-channel",
-                Conversation = new ConversationAccount { Id = "test-conversation-id" },
-                From = new ChannelAccount { Id = "test-id" }
-            };
-
-            var telemetryClientMock = new Mock<IBotTelemetryClient>();
-
-            using (var turnContext = new TurnContext(adapter.Object, activity))
-            {
-                await conversationState.LoadAsync(turnContext, false);
-                turnContext.Services.Set(telemetryClientMock.Object);
-
-                await DialogExtensions.RunAsync(dialog, turnContext, conversationState, CancellationToken.None);
-            }
-
-            Assert.Equal(telemetryClientMock.Object, dialog.TelemetryClient);
         }
 
         [Fact]
@@ -278,14 +249,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.StackState.Set(SkillChannelApiHandler.SkillConversationReferenceKey, new ChannelConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)
                     {
                         // Simulate the SkillConversationReference with a parent Bot ID stored in TurnState.
                         // This emulates a response coming to a skill from another skill through SkillHandler. 
-                        turnContext.StackState.Set(ProxyChannelApiHandler.SkillConversationReferenceKey, new BotConversationReference { OAuthScope = _parentBotId });
+                        turnContext.StackState.Set(SkillChannelApiHandler.SkillConversationReferenceKey, new ChannelConversationReference { OAuthScope = _parentBotId });
                     }
                 }
 

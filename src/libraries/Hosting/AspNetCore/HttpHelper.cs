@@ -16,10 +16,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// Helper class with methods to help with reading and responding to HTTP requests.
     /// </summary>
-    public static class HttpHelper
+    internal static class HttpHelper
     {
         /// <summary>
-        /// Accepts an incoming HttpRequest and deserializes it using the <see cref="BotMessageSerializer"/>.
+        /// Accepts an incoming HttpRequest and deserializes it using the <see cref="ProtocolJsonSerializer"/>.
         /// </summary>
         /// <typeparam name="T">The type to deserialize the request into.</typeparam>
         /// <param name="request">The HttpRequest.</param>

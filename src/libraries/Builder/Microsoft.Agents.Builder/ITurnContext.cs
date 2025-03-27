@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Sends a message activity to the sender of the incoming activity.
         /// </summary>
-        /// <param name="textReplyToSend">The text of the message to send.</param>
+        /// <param name="text">The text of the message to send.</param>
         /// <param name="speak">Optional, text to be spoken by your Agent on a speech-enabled
         /// channel.</param>
         /// <param name="inputHint">Optional, indicates whether your Agent is accepting,
@@ -149,15 +149,15 @@ namespace Microsoft.Agents.Builder
         /// a <see cref="ResourceResponse"/> object that contains the ID that the receiving
         /// channel assigned to the activity.
         /// <para>See the channel's documentation for limits imposed upon the contents of
-        /// <paramref name="textReplyToSend"/>.</para>
+        /// <paramref name="text"/>.</para>
         /// <para>To control various characteristics of your Agent's speech such as voice,
         /// rate, volume, pronunciation, and pitch, specify <paramref name="speak"/> in
         /// Speech Synthesis Markup Language (SSML) format.</para>
         /// </remarks>
         /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        ///// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        ///// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default);
+        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
+        Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends an activity to the sender of the incoming activity.

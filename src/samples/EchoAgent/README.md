@@ -59,7 +59,7 @@ If you type a message and hit enter, or the send arrow, your messages should be 
       },
 
       "Connections": {
-        "BotServiceConnection": {
+        "ServiceConnection": {
           "Settings": {
             "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",

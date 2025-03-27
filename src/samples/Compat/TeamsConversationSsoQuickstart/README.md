@@ -48,7 +48,7 @@ The sample uses the OAuth capabilities in [Azure Bot Service](https://docs.botfr
       },
 
       "Connections": {
-          "BotServiceConnection": {
+          "ServiceConnection": {
           "Assembly": "Microsoft.Agents.Authentication.Msal",
           "Type":  "MsalAuth",
           "Settings": {

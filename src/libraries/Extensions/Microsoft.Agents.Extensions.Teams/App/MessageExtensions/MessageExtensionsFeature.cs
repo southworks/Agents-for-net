@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
+                    var activity = Activity.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -210,7 +210,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
+                    var activity = Activity.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -312,7 +312,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
                     MessagingExtensionActionResponse response = new();
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -406,7 +406,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(result);
+                    var activity = Activity.CreateInvokeResponseActivity(result);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -511,7 +511,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -584,7 +584,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -617,7 +617,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -655,7 +655,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -690,7 +690,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     {
                         ComposeExtension = result
                     };
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity(response);
+                    var activity = Activity.CreateInvokeResponseActivity(response);
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -721,7 +721,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
+                    var activity = Activity.CreateInvokeResponseActivity();
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
@@ -754,7 +754,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                 {
-                    Activity activity = ActivityUtilities.CreateInvokeResponseActivity();
+                    var activity = Activity.CreateInvokeResponseActivity();
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
