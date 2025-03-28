@@ -20,8 +20,8 @@ namespace Microsoft.Agents.Connector
 
         public Uri BaseUri => base.Endpoint;
 
-        public RestConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestConnectorClient))
-            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
+        public RestConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, IServiceProvider provider = null, string namedClient = nameof(RestConnectorClient))
+            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction, provider)
         {
             ArgumentNullException.ThrowIfNull(endpoint);
             ArgumentNullException.ThrowIfNull(httpClientFactory);

@@ -32,12 +32,14 @@ namespace Microsoft.Agents.BotBuilder
         private readonly ILogger _logger;
         private readonly IConnections _connections;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IServiceProvider _provider;
 
         /// <param name="configuration"></param>
         /// <param name="httpClientFactory">Used to create an HttpClient with the fullname of this class</param>
         /// <param name="connections"></param>
         /// <param name="tokenServiceEndpoint"></param>
         /// <param name="tokenServiceAudience"></param>
+        /// <param name="provider"></param>
         /// <param name="logger"></param>
         /// <param name="customClient">For testing purposes only.</param>
         public RestChannelServiceClientFactory(
@@ -46,6 +48,7 @@ namespace Microsoft.Agents.BotBuilder
             IConnections connections,
             string tokenServiceEndpoint = AuthenticationConstants.BotFrameworkOAuthUrl,
             string tokenServiceAudience = AuthenticationConstants.BotFrameworkScope,
+            IServiceProvider provider = null,
             ILogger logger = null)
         {
             ArgumentNullException.ThrowIfNull(configuration);
@@ -53,6 +56,7 @@ namespace Microsoft.Agents.BotBuilder
             _logger = logger ?? NullLogger.Instance;
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _provider = provider;
 
             var tokenEndpoint = configuration?.GetValue<string>($"{nameof(RestChannelServiceClientFactory)}:TokenServiceEndpoint");
             _tokenServiceEndpoint = string.IsNullOrWhiteSpace(tokenEndpoint)
@@ -89,6 +93,7 @@ namespace Microsoft.Agents.BotBuilder
                                 ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
                     }
                 },
+                _provider,
                 typeof(RestChannelServiceClientFactory).FullName));
         }
 
@@ -117,6 +122,7 @@ namespace Microsoft.Agents.BotBuilder
                                 ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
                     }
                 },
+                _provider,
                 typeof(RestChannelServiceClientFactory).FullName,
                 _logger));
         }

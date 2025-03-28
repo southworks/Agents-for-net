@@ -31,8 +31,8 @@ namespace Microsoft.Agents.Connector
 
         public Uri BaseUri => Endpoint;
 
-        public RestUserTokenClient(string appId, Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestUserTokenClient), ILogger logger = null)
-            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
+        public RestUserTokenClient(string appId, Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, IServiceProvider provider = null, string namedClient = nameof(RestUserTokenClient), ILogger logger = null)
+            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction, provider)
         {
             ArgumentException.ThrowIfNullOrEmpty(appId);
 

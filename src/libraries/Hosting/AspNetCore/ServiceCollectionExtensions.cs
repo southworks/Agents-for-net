@@ -6,8 +6,8 @@ using Microsoft.Agents.BotBuilder;
 using Microsoft.Agents.BotBuilder.App;
 using Microsoft.Agents.BotBuilder.App.UserAuth;
 using Microsoft.Agents.Client;
+using Microsoft.Agents.Connector.HeaderPropagation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TAdapter : CloudAdapter
         {
             AddHeaderPropagation(builder);
-            AddHttpClientFactory(builder);
+            //AddHttpClientFactory(builder);
             AddCore<TAdapter>(builder, storage);
 
             // Add the Bot,  this is the primary worker for the bot. 
@@ -162,18 +162,31 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
         }
 
+        ///// <summary>
+        ///// Adds a middleware that collects headers to be propagated to an <see cref="IHttpClientFactory"/> instance.
+        ///// </summary>
+        ///// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        ///// <param name="configureOptions">The <see cref="HeaderPropagationOptions"/> configuration to select which headers to propagate from incoming to outgoing requests.</param>
+        ///// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
+        //public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app, Action<HeaderPropagationOptions> configureOptions)
+        //{
+        //    ArgumentNullException.ThrowIfNull(app);
+        //    ArgumentNullException.ThrowIfNull(configureOptions);
+
+        //    configureOptions(app.ApplicationServices.GetRequiredService<HeaderPropagationOptions>());
+
+        //    return app.UseMiddleware<HeaderPropagationMiddleware>();
+        //}
+
         /// <summary>
         /// Adds a middleware that collects headers to be propagated to an <see cref="IHttpClientFactory"/> instance.
         /// </summary>
         /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
         /// <param name="configureOptions">The <see cref="HeaderPropagationOptions"/> configuration to select which headers to propagate from incoming to outgoing requests.</param>
         /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
-        public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app, Action<HeaderPropagationOptions> configureOptions)
+        public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
         {
             ArgumentNullException.ThrowIfNull(app);
-            ArgumentNullException.ThrowIfNull(configureOptions);
-
-            configureOptions(app.ApplicationServices.GetRequiredService<HeaderPropagationOptions>());
 
             return app.UseMiddleware<HeaderPropagationMiddleware>();
         }
@@ -214,39 +227,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             services.AddSingleton<IActivityTaskQueue, ActivityTaskQueue>();
         }
 
-        /// <summary>
-        /// Adds a custom Http Client factory that wraps the default <see cref="IHttpClientFactory"/>.
-        /// </summary>
-        private static void AddHttpClientFactory(this IHostApplicationBuilder builder)
-        {
-            var defaultDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(IHttpClientFactory));
-            if (defaultDescriptor == null)
-            {
-                builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp));
-                return;
-            }
+        ///// <summary>
+        ///// Adds a custom Http Client factory that wraps the default <see cref="IHttpClientFactory"/>.
+        ///// </summary>
+        //private static void AddHttpClientFactory(this IHostApplicationBuilder builder)
+        //{
+        //    var defaultDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(IHttpClientFactory));
+        //    if (defaultDescriptor == null)
+        //    {
+        //        builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp));
+        //        return;
+        //    }
 
-            // Remove the default registration.
-            builder.Services.Remove(defaultDescriptor);
+        //    // Remove the default registration.
+        //    builder.Services.Remove(defaultDescriptor);
 
-            // Capture a factory delegate that can create the default IHttpClientFactory instance.
-            Func<IServiceProvider, IHttpClientFactory> defaultFactory;
-            if (defaultDescriptor.ImplementationFactory != null)
-            {
-                defaultFactory = provider => (IHttpClientFactory)defaultDescriptor.ImplementationFactory(provider);
-            }
-            else if (defaultDescriptor.ImplementationInstance != null)
-            {
-                defaultFactory = _ => (IHttpClientFactory)defaultDescriptor.ImplementationInstance;
-            }
-            else
-            {
-                defaultFactory = provider => ActivatorUtilities.CreateInstance(provider, defaultDescriptor.ImplementationType) as IHttpClientFactory;
-            }
+        //    // Capture a factory delegate that can create the default IHttpClientFactory instance.
+        //    Func<IServiceProvider, IHttpClientFactory> defaultFactory;
+        //    if (defaultDescriptor.ImplementationFactory != null)
+        //    {
+        //        defaultFactory = provider => (IHttpClientFactory)defaultDescriptor.ImplementationFactory(provider);
+        //    }
+        //    else if (defaultDescriptor.ImplementationInstance != null)
+        //    {
+        //        defaultFactory = _ => (IHttpClientFactory)defaultDescriptor.ImplementationInstance;
+        //    }
+        //    else
+        //    {
+        //        defaultFactory = provider => ActivatorUtilities.CreateInstance(provider, defaultDescriptor.ImplementationType) as IHttpClientFactory;
+        //    }
 
-            // Register custom factory that wraps the default.
-            builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp, defaultFactory(sp)));
-        }
+        //    // Register custom factory that wraps the default.
+        //    builder.Services.AddSingleton<IHttpClientFactory>(sp => new AgentsHttpClientFactory(sp, defaultFactory(sp)));
+        //}
 
         /// <summary>
         /// Adds header propagation services.

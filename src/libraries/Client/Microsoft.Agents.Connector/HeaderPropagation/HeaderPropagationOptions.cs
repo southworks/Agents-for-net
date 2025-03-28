@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
+namespace Microsoft.Agents.Connector.HeaderPropagation;
 
 /// <summary>
 /// Provides configuration for the <see cref="HeaderPropagationContext"/>.

@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
+using Microsoft.Agents.Connector.HeaderPropagation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

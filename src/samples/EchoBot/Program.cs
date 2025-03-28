@@ -27,6 +27,13 @@ builder.AddBot<MyBot>();
 
 var app = builder.Build();
 
+app.UseHeaderPropagation();
+
+//app.UseHeaderPropagation(options =>
+//{
+//    options.Headers.Add("x-ms-correlation-id");
+//});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapGet("/", () => "Microsoft Agents SDK Sample");

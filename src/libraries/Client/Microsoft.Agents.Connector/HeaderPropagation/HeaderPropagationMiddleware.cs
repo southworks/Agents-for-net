@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
+namespace Microsoft.Agents.Connector.HeaderPropagation;
 
 /// <summary>
 /// A middleware to propagate incoming request headers to outgoing ones using internally a custom <see cref="IHttpClientFactory"/>.

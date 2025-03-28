@@ -8,14 +8,20 @@ using System.Net.Http;
 using System.Threading;
 using Microsoft.AspNetCore.Http;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
+namespace Microsoft.Agents.Connector.HeaderPropagation;
 
 /// <summary>
 /// Shared context between the <see cref="HeaderPropagationMiddleware"/> and <see cref="AgentsHttpClientFactory"/> for propagating headers.
 /// </summary>
-public class HeaderPropagationContext(HeaderPropagationOptions options)
+public class HeaderPropagationContext()
 {
     private static readonly AsyncLocal<IHeaderDictionary> _headers = new();
+    private static readonly IHeaderDictionary _headersToPropagate;
+
+    static HeaderPropagationContext()
+    {
+        _headersToPropagate = HeaderPropagationAttribute.SetHeadersSerialization();
+    }
 
     /// <summary>
     /// Gets or sets the headers allowed by the <see cref="HeaderPropagationOptions"/> class to be propagated when the <see cref="HttpClient"/> gets created.
@@ -40,19 +46,24 @@ public class HeaderPropagationContext(HeaderPropagationOptions options)
     private HeaderDictionary FilterHeaders(IHeaderDictionary requestHeaders)
     {
         var result = new HeaderDictionary();
-        if (requestHeaders == null || requestHeaders.Count == 0 || options.Headers.Count == 0)
-        {
-            return result;
-        }
 
         // Create a copy to ensure headers are not modified by the original request.
         var headers = requestHeaders.ToDictionary(StringComparer.InvariantCultureIgnoreCase);
 
-        foreach (var key in options.Headers)
+        if (requestHeaders == null || requestHeaders.Count == 0)
         {
-            if (headers.TryGetValue(key, out var header))
+            return result;
+        }
+        
+        headers.TryGetValue("x-ms-correlation-id", out var correlationId);
+
+        result.TryAdd("x-ms-correlation-id", correlationId);
+
+        foreach (var item in _headersToPropagate)
+        {
+            if (headers.TryGetValue(item.Key, out var header))
             {
-                result.TryAdd(key, header);
+                result.TryAdd(item.Key, header);
             }
         }
 
