@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Initializes a new instance of ConversationParameters. </summary>
         internal ConversationParameters()
         {
-            Members = new List<ChannelAccount>();
+            Members = [];
         }
 
         /// <summary>Initializes a new instance of the <see cref="ConversationParameters"/> class.</summary>
