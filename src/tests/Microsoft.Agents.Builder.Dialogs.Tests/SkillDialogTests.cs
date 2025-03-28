@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             _httpMessageHandler = new TestHttpMessageHandler()
             {
-                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
             };
 
             _httpFactory = new Mock<IHttpClientFactory>();
@@ -708,6 +708,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
         public Action<IActivity, int> SendAssert { get; set; }
 
+        public Func<HttpResponseMessage> PostSend {  get; set; }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             _sendRequest++;
@@ -718,7 +720,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 SendAssert(activity, _sendRequest);
             }
 
-            return Task.FromResult(HttpResponseMessage);
+            var response = HttpResponseMessage;
+            var result = Task.FromResult(response);
+            if (PostSend != null)
+            {
+                HttpResponseMessage = PostSend();
+            }
+            return result;
         }
     }
 }
