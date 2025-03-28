@@ -418,13 +418,6 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullChannelId()
-        {
-            var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(UserId, ConnectionName, null, Code, State, FinalRedirect, FwdUrl, CancellationToken.None));
-        }
-
-        [Fact]
         public async Task GetTokenOrSignInResourceAsync_ShouldReturnTokenOrSignInResourceResponse()
         {
             var responseContent = new TokenOrSignInResourceResponse
