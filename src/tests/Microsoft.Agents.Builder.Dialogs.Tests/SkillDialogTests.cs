@@ -708,8 +708,6 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
         public Action<IActivity, int> SendAssert { get; set; }
 
-        public Func<HttpResponseMessage> PostSend {  get; set; }
-
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             _sendRequest++;
@@ -720,13 +718,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 SendAssert(activity, _sendRequest);
             }
 
-            var response = HttpResponseMessage;
-            var result = Task.FromResult(response);
-            if (PostSend != null)
-            {
-                HttpResponseMessage = PostSend();
-            }
-            return result;
+            return Task.FromResult(HttpResponseMessage);
         }
     }
 }
