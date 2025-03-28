@@ -7,18 +7,22 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Microsoft.Agents.Client.Tests
 {
@@ -171,6 +175,89 @@ namespace Microsoft.Agents.Client.Tests
 
             // Two EOC's sent (once for each Agent)
             Assert.Equal(2, eocCount);
+        }
+
+        [Fact]
+        public async Task ResponseHandler_NoConversationTest()
+        {
+            // Setup AgentApplication
+            var app = new AgentApplication(new AgentApplicationOptions() { TurnStateFactory = () => new TurnState(_storage), Adapter = new TestAdapter() });
+            var responseHandler = new AdapterChannelResponseHandler(app.Options.Adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
+
+            // Act
+
+            var agent2Activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "test",
+                Conversation = new ConversationAccount() { Id = "fakConversationId" },
+                From = new ChannelAccount() { Id = "from" }
+            };
+
+            var agent2Identity = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.AudienceClaim, _agentHost.HostClientId),
+                new(AuthenticationConstants.AppIdClaim, _agentHost.HostClientId),
+            ]);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => responseHandler.OnSendToConversationAsync(agent2Identity, "fakConversationId", agent2Activity));
+        }
+
+        [Fact]
+        public async Task ResponseHandler_EventCreated()
+        {
+            bool eventReceived = false;
+
+            // Setup
+            TurnContext turnContext = CreateTurnContext(new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "webchat",
+                ServiceUrl = "https://serviceUrl.com",
+                Conversation = new ConversationAccount() { Id = "1" },
+                From = new ChannelAccount() { Id = "from" }
+            });
+
+            var agent2ConversationId = await _agentHost.GetOrCreateConversationAsync(turnContext, "bot1");
+
+            // Setup AgentApplication
+            var app = new AgentApplication(new AgentApplicationOptions() { TurnStateFactory = () => new TurnState(_storage), Adapter = new TestAdapter() });
+
+            app.OnActivity(ActivityTypes.Event, (turnContext, turnState, cancellationToken) =>
+            {
+                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == AdapterChannelResponseHandler.ChannelReplyEventName)
+                {
+                    Assert.NotNull(turnContext.Activity.Value);
+                    var channelReplyValue = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(turnContext.Activity.Value);
+                    Assert.Equal(agent2ConversationId, channelReplyValue.Activity.Conversation.Id);
+                    Assert.Equal("1", channelReplyValue.ChannelConversationReference.ConversationReference.Conversation.Id);
+                    Assert.Equal("webchat", channelReplyValue.ChannelConversationReference.ConversationReference.ChannelId);
+                    Assert.Equal("https://serviceUrl.com", channelReplyValue.ChannelConversationReference.ConversationReference.ServiceUrl);
+                    eventReceived = true;
+                }
+                return Task.CompletedTask;
+            });
+
+            var responseHandler = new AdapterChannelResponseHandler(app.Options.Adapter, app, _agentHost, NullLogger<AdapterChannelResponseHandler>.Instance);
+
+            // Act
+
+            var agent2Activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "test",
+                Conversation = new ConversationAccount() { Id = agent2ConversationId },
+                From = new ChannelAccount() { Id = "from" }
+            };
+
+            var agent2Identity = new ClaimsIdentity(
+            [
+                new(AuthenticationConstants.AudienceClaim, _agentHost.HostClientId),
+                new(AuthenticationConstants.AppIdClaim, _agentHost.HostClientId),
+            ]);
+
+            await responseHandler.OnSendToConversationAsync(agent2Identity, agent2ConversationId, agent2Activity);
+            Assert.True(eventReceived);
         }
 
         private TurnContext CreateTurnContext(IActivity activity)
