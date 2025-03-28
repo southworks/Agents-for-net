@@ -12,8 +12,16 @@ namespace Microsoft.Agents.Builder.State
     /// such as <see cref="AgentState"/>.
     /// </summary>
     /// <typeparam name="T">type of the property.</typeparam>
-    public interface IStatePropertyAccessor<T> : IStatePropertyInfo
+    public interface IStatePropertyAccessor<T> 
     {
+        /// <summary>
+        /// Gets the name of the property.
+        /// </summary>
+        /// <value>
+        /// The name of the property.
+        /// </value>
+        string Name { get; }
+
         /// <summary>
         /// Gets the property value from the source.
         /// </summary>
