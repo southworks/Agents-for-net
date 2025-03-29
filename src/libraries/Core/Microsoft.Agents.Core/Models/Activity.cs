@@ -273,8 +273,8 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity(ActivityTypes.Message)
             {
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
         }
 
@@ -411,8 +411,8 @@ namespace Microsoft.Agents.Core.Models
                 Conversation = new ConversationAccount(isGroup: Conversation.IsGroup, id: Conversation.Id, name: Conversation.Name),
                 Text = text ?? string.Empty,
                 Locale = locale ?? Locale,
-                Attachments = new List<Attachment>(),
-                Entities = new List<Entity>(),
+                Attachments = [],
+                Entities = [],
             };
             return reply;
         }

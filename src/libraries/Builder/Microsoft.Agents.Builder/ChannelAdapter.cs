@@ -68,10 +68,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public virtual Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
-            using (var context = new TurnContext(this, reference.GetContinuationActivity()))
-            {
-                return RunPipelineAsync(context, callback, cancellationToken);
-            }
+            using var context = new TurnContext(this, reference.GetContinuationActivity());
+            return RunPipelineAsync(context, callback, cancellationToken);
         }
 
         /// <inheritdoc/>

@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Core.Models
         {
             IsGroup = isGroup;
             Agent = agent;
-            Members = members ?? new List<ChannelAccount>();
+            Members = members ?? [];
             TopicName = topicName;
             Activity = activity;
             ChannelData = channelData;

@@ -112,9 +112,7 @@ namespace Microsoft.Agents.Core.Models
                 instance = activity.GetChannelData<T>();
                 return true;
             }
-#pragma warning disable CA1031 // Do not catch general exception types (we just return false here if the conversion fails for any reason)
             catch
-#pragma warning restore CA1031 // Do not catch general exception types
             {
                 return false;
             }

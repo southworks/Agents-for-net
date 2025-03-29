@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="defaultValueFactory">Function which defines the property value to be returned if no value has been set.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Delete the property from the source.
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="turnContext">Turn Context.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken));
+        Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Set the property value on the source.
@@ -46,6 +46,6 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="value">The value to set.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken = default(CancellationToken));
+        Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken = default);
     }
 }
