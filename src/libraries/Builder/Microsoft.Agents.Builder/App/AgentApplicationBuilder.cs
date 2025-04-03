@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.AdaptiveCards;
@@ -101,10 +101,10 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Configures authentication for the application.
+        /// Configures user authorization for the application.
         /// </summary>
         /// <param name="channelAdapter"></param>
-        /// <param name="authorizationOptions">The options for authentication.</param>
+        /// <param name="authorizationOptions">The options for the authorization system.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
         public AgentApplicationBuilder WithAuthorization(IChannelAdapter channelAdapter, UserAuthorizationOptions authorizationOptions)
         {
