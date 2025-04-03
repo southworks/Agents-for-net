@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Builder.App
         /// Configures user authorization for the application.
         /// </summary>
         /// <param name="channelAdapter"></param>
-        /// <param name="authorizationOptions">The options for the authorization system.</param>
+        /// <param name="authorizationOptions">The options for user authorization.</param>
         /// <returns>The ApplicationBuilder instance.</returns>
         public AgentApplicationBuilder WithAuthorization(IChannelAdapter channelAdapter, UserAuthorizationOptions authorizationOptions)
         {
