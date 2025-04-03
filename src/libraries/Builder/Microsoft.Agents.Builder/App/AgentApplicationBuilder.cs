@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The ApplicationBuilder instance.</returns>
         public AgentApplicationBuilder SetNormalizeMentions(bool normalizeMentions)
         {
-            Options.RemoveRecipientMention = normalizeMentions;
+            Options.NormalizeMentions = normalizeMentions;
             return this;
         }
 
