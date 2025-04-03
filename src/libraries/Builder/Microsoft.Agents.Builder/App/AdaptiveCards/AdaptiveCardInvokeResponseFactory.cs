@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="adaptiveCard">An Adaptive Card.</param>
         /// <returns>The response that includes an Adaptive Card that the client should display.</returns>
-        public static AdaptiveCardInvokeResponse AdaptiveCard(AdaptiveCard adaptiveCard)
+        public static AdaptiveCardInvokeResponse AdaptiveCard(global::AdaptiveCards.AdaptiveCard adaptiveCard)
         {
             return new AdaptiveCardInvokeResponse
             {

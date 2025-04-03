@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set..
+        ///   Looks up a localized string similar to AgentApplication.Authorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {
             get {
