@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Compat;
@@ -51,7 +50,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
             var expected = new List<Type>{
-                typeof(IHttpClientFactory),
                 typeof(ConfigurationConnections),
                 typeof(RestChannelServiceClientFactory),
                 // CloudAdapter services.

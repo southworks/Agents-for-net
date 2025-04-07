@@ -35,7 +35,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Invoked when ProcessActivity is done.  Ignored if IsProactive.
         /// </summary>
         public Action<InvokeResponse> OnComplete { get; set; }
-        
+
+        /// <summary>
         /// Headers used for the current <see cref="Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -134,40 +134,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
                     // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
-<<<<<<< HEAD:src/libraries/Hosting/AspNetCore/BackgroundActivityService/HostedActivityService.cs
-                    var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
-                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-=======
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
->>>>>>> main:src/libraries/Hosting/AspNetCore/BackgroundQueue/HostedActivityService.cs
+                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
 
                     if (activityWithClaims.IsProactive)
                     {
                         await _adapter.ProcessProactiveAsync(
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-<<<<<<< HEAD:src/libraries/Hosting/AspNetCore/BackgroundActivityService/HostedActivityService.cs
-                            activityWithClaims.ProactiveAudience ?? BotClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
-                            ((IBot)bot).OnTurnAsync,
-=======
                             activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
                             ((IAgent)agent).OnTurnAsync, 
->>>>>>> main:src/libraries/Hosting/AspNetCore/BackgroundQueue/HostedActivityService.cs
                             stoppingToken).ConfigureAwait(false);
                     }
                     else
                     {
-<<<<<<< HEAD:src/libraries/Hosting/AspNetCore/BackgroundActivityService/HostedActivityService.cs
-                        await _adapter.ProcessActivityAsync(
-                            activityWithClaims.ClaimsIdentity,
-                            activityWithClaims.Activity,
-                            ((IBot)bot).OnTurnAsync,
-=======
                         var response = await _adapter.ProcessActivityAsync(
                             activityWithClaims.ClaimsIdentity, 
                             activityWithClaims.Activity,
                             ((IAgent)agent).OnTurnAsync, 
->>>>>>> main:src/libraries/Hosting/AspNetCore/BackgroundQueue/HostedActivityService.cs
                             stoppingToken).ConfigureAwait(false);
 
                         activityWithClaims.OnComplete?.Invoke(response);

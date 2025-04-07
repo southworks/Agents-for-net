@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder;
 using System.Text;
 using Microsoft.Agents.Core.Errors;
-using System.Linq;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
