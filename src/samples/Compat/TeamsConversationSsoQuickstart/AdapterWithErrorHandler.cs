@@ -5,8 +5,8 @@ using System;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.State;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +19,7 @@ namespace TeamsConversationSsoQuickstart
             IChannelServiceClientFactory channelServiceClientFactory, 
             IActivityTaskQueue activityTaskQueue,
             IConfiguration configuration,
-            ILogger<IBotHttpAdapter> logger,
+            ILogger<IAgentHttpAdapter> logger,
             IStorage storage,
             ConversationState conversationState)
             : base(channelServiceClientFactory, activityTaskQueue, logger: logger)

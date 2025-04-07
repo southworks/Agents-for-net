@@ -119,7 +119,7 @@
   </resheader>
   <data name="ConversationResponseUnAuthorized" xml:space="preserve">
     <value>The Access Token created to respond to a request from the agent was rejected by the remote endpoint.  This can be caused by the incorrect connection configuration. Please verify that configuration against the expected configuration. </value>
-    <comment>Describes an Error when the Bot Cannot Authenticate to ABS to respond to a request. </comment>
+    <comment>Describes an Error when the Agent cannot Authenticate to ABS to respond to a request. </comment>
   </data>
   <data name="CreateConversationError" xml:space="preserve">
     <value>CreateConversation operation returned an invalid status code '({0}) {1}'</value>

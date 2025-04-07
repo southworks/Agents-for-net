@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
-using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
 
 namespace TeamsConversationSsoQuickstart.Dialogs
@@ -32,7 +32,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
         protected override async Task<DialogTurnResult> OnBeginDialogAsync(
             DialogContext innerDc,
             object options,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             var result = await InterruptAsync(innerDc, cancellationToken);
             if (result != null)
@@ -51,7 +51,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
         /// <returns>A task representing the asynchronous operation.</returns>
         protected override async Task<DialogTurnResult> OnContinueDialogAsync(
             DialogContext innerDc,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             var result = await InterruptAsync(innerDc, cancellationToken);
             if (result != null)
@@ -70,7 +70,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
         /// <returns></returns>
         private async Task<DialogTurnResult> InterruptAsync(
             DialogContext innerDc,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             if (innerDc.Context.Activity.Type == ActivityTypes.Message)
             {

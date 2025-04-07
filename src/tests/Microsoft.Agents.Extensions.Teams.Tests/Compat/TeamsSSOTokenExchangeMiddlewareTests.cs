@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
                 ChannelId = channelId,
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount(TeamsUserId, TeamsUserId),
-                Bot = new ChannelAccount("bot", "Bot"),
+                Agent = new ChannelAccount("bot", "Bot"),
                 Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
                 Locale = "en-us",
             };
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
 
         private class TeamsSSOAdapter(ConversationReference conversationReference) : TestAdapter(conversationReference)
         {
-            public override Task SendTextToBotAsync(string userSays, BotCallbackHandler callback, CancellationToken cancellationToken)
+            public override Task SendTextToBotAsync(string userSays, AgentCallbackHandler callback, CancellationToken cancellationToken)
             {
                 return ProcessActivityAsync(MakeTokenExchangeActivity(), callback, cancellationToken);
             }
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Compat
                     Type = ActivityTypes.Invoke,
                     Locale = this.Locale ?? "en-us",
                     From = Conversation.User,
-                    Recipient = Conversation.Bot,
+                    Recipient = Conversation.Agent,
                     Conversation = Conversation.Conversation,
                     ServiceUrl = Conversation.ServiceUrl,
                     Id = Guid.NewGuid().ToString(),
