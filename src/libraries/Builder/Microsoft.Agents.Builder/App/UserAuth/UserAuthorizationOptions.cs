@@ -82,6 +82,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public UserAuthorizationOptions(IConnections connections, params IUserAuthorization[] userAuthHandlers)
         {
             Dispatcher = new UserAuthorizationDispatcher(connections, userAuthHandlers);
+            AutoSignIn = AutoSignInOn;
         }
 
         internal IUserAuthorizationDispatcher Dispatcher { get; set; }
@@ -103,7 +104,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public AutoSignInSelectorAsync? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorizationFeature.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}", flowName, response.Cause))];
