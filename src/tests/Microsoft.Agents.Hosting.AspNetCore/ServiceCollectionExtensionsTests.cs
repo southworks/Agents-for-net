@@ -11,7 +11,6 @@ using Microsoft.Agents.BotBuilder.Compat;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,8 +53,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
             var expected = new List<Type>{
-                typeof(HeaderPropagationOptions),
-                typeof(HeaderPropagationContext),
                 typeof(IHttpClientFactory),
                 typeof(ConfigurationConnections),
                 typeof(RestChannelServiceClientFactory),

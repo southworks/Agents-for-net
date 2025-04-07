@@ -8,9 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -91,6 +91,7 @@ namespace Microsoft.Agents.Client
                     // Add the auth header to the HTTP request.
                     var tokenResult = await _tokenAccess.GetAccessTokenAsync(toBotResource, [$"{toBotId}/.default"]).ConfigureAwait(false);
                     httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult);
+                    _httpClient.AddHeaderPropagation();
 
                     using (var httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, cancellationToken).ConfigureAwait(false))
                     {

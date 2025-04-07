@@ -8,9 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.Hosting.AspNetCore.HeaderPropagation;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -136,11 +135,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the bot, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var bot = _serviceProvider.GetService(activityWithClaims.BotType ?? typeof(IBot));
-                    var headerValues = _serviceProvider.GetService<HeaderPropagationContext>();
-                    if (headerValues != null)
-                    {
-                        headerValues.Headers = activityWithClaims.Headers;
-                    }
+                    HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
 
                     if (activityWithClaims.IsProactive)
                     {
