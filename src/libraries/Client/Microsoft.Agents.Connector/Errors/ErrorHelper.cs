@@ -1,9 +1,7 @@
-﻿using Microsoft.Agents.Core.Errors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Connector.Errors
 {
@@ -27,7 +25,7 @@ namespace Microsoft.Agents.Connector.Errors
     /// Method 2: 
     /// 
     ///     throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException&lt;OperationCanceledException&gt;(
-    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{BotClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+    ///         ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
     /// 
     /// </summary>
     internal static partial class ErrorHelper
@@ -35,24 +33,24 @@ namespace Microsoft.Agents.Connector.Errors
         /// <summary>
         /// Base error code for the authentication provider
         /// </summary>
-        private static readonly int baseBotBuilderErrorCode = -60000;
+        private static readonly int baseBuilderErrorCode = -60000;
 
-        internal static AgentErrorDefinition InvalidAccessTokenForAgentCallback = new AgentErrorDefinition(baseBotBuilderErrorCode, Properties.Resources.ConversationResponseUnAuthorized, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendGetConversationsError = new AgentErrorDefinition(baseBotBuilderErrorCode - 1, Properties.Resources.GetConversationsError, "https://aka.ms/AgentsSDK-Error02");
-        internal static AgentErrorDefinition SendCreateConversationError = new AgentErrorDefinition(baseBotBuilderErrorCode - 2, Properties.Resources.CreateConversationError, "https://aka.ms/AgentsSDK-Error03");
-        internal static AgentErrorDefinition SendSendConversationError = new AgentErrorDefinition(baseBotBuilderErrorCode - 3, Properties.Resources.SendToConversationError, "https://aka.ms/AgentsSDK-Error04");
-        internal static AgentErrorDefinition SendConversationHistoryError = new AgentErrorDefinition(baseBotBuilderErrorCode - 4, Properties.Resources.SendConversationHistoryError, "https://aka.ms/AgentsSDK-Error05");
-        internal static AgentErrorDefinition SendUpdateActivityError = new AgentErrorDefinition(baseBotBuilderErrorCode - 5, Properties.Resources.SendUpdateActivityError, "https://aka.ms/AgentsSDK-Error06");
-        internal static AgentErrorDefinition SendReplyToActivityError = new AgentErrorDefinition(baseBotBuilderErrorCode - 6, Properties.Resources.ReplyToActivityError, "https://aka.ms/AgentsSDK-Error07");
-        internal static AgentErrorDefinition SendDeleteActivityError = new AgentErrorDefinition(baseBotBuilderErrorCode - 7, Properties.Resources.SendDeleteActivity, "https://aka.ms/AgentsSDK-Error08");
-        internal static AgentErrorDefinition SendGetConversationMembersError = new AgentErrorDefinition(baseBotBuilderErrorCode - 8, Properties.Resources.SendGetConversationMembers, "https://aka.ms/AgentsSDK-Error09");
-        internal static AgentErrorDefinition SendGetConversationMemberError = new AgentErrorDefinition(baseBotBuilderErrorCode - 9, Properties.Resources.SendGetConversationMember, "https://aka.ms/AgentsSDK-Error10");
-        internal static AgentErrorDefinition SendDeleteConversationMemberError = new AgentErrorDefinition(baseBotBuilderErrorCode - 10, Properties.Resources.SendDeleteConversationMember, "https://aka.ms/AgentsSDK-Error11");
-        internal static AgentErrorDefinition SendGetConversationPagedMembersError = new AgentErrorDefinition(baseBotBuilderErrorCode - 11, Properties.Resources.SendGetConversationPagedMembers, "https://aka.ms/AgentsSDK-Error12");
-        internal static AgentErrorDefinition SendGetActivityMembersError = new AgentErrorDefinition(baseBotBuilderErrorCode - 12, Properties.Resources.SendGetActivityMembers, "https://aka.ms/AgentsSDK-Error13");
-        internal static AgentErrorDefinition SendUploadAttachmentError = new AgentErrorDefinition(baseBotBuilderErrorCode - 13, Properties.Resources.SendUploadAttachment, "https://aka.ms/AgentsSDK-Error14");
-        internal static AgentErrorDefinition GetSignInResourceAsync_BadRequestError = new AgentErrorDefinition(baseBotBuilderErrorCode - 14, Properties.Resources.GetSignInResourceAsync_BadRequest, "https://aka.ms/AgentsSDK-Error15");
-        internal static AgentErrorDefinition GetAttachmentError = new AgentErrorDefinition(baseBotBuilderErrorCode - 15, Properties.Resources.GetAttachment_Error, "https://aka.ms/AgentsSDK-Error16");
-        internal static AgentErrorDefinition GetAttachmentInfoError = new AgentErrorDefinition(baseBotBuilderErrorCode - 16, Properties.Resources.GetAttachmentInfoError, "https://aka.ms/AgentsSDK-Error17");
+        internal static AgentErrorDefinition InvalidAccessTokenForAgentCallback = new AgentErrorDefinition(baseBuilderErrorCode, Properties.Resources.ConversationResponseUnAuthorized, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition SendGetConversationsError = new AgentErrorDefinition(baseBuilderErrorCode - 1, Properties.Resources.GetConversationsError, "https://aka.ms/AgentsSDK-Error02");
+        internal static AgentErrorDefinition SendCreateConversationError = new AgentErrorDefinition(baseBuilderErrorCode - 2, Properties.Resources.CreateConversationError, "https://aka.ms/AgentsSDK-Error03");
+        internal static AgentErrorDefinition SendSendConversationError = new AgentErrorDefinition(baseBuilderErrorCode - 3, Properties.Resources.SendToConversationError, "https://aka.ms/AgentsSDK-Error04");
+        internal static AgentErrorDefinition SendConversationHistoryError = new AgentErrorDefinition(baseBuilderErrorCode - 4, Properties.Resources.SendConversationHistoryError, "https://aka.ms/AgentsSDK-Error05");
+        internal static AgentErrorDefinition SendUpdateActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 5, Properties.Resources.SendUpdateActivityError, "https://aka.ms/AgentsSDK-Error06");
+        internal static AgentErrorDefinition SendReplyToActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 6, Properties.Resources.ReplyToActivityError, "https://aka.ms/AgentsSDK-Error07");
+        internal static AgentErrorDefinition SendDeleteActivityError = new AgentErrorDefinition(baseBuilderErrorCode - 7, Properties.Resources.SendDeleteActivity, "https://aka.ms/AgentsSDK-Error08");
+        internal static AgentErrorDefinition SendGetConversationMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 8, Properties.Resources.SendGetConversationMembers, "https://aka.ms/AgentsSDK-Error09");
+        internal static AgentErrorDefinition SendGetConversationMemberError = new AgentErrorDefinition(baseBuilderErrorCode - 9, Properties.Resources.SendGetConversationMember, "https://aka.ms/AgentsSDK-Error10");
+        internal static AgentErrorDefinition SendDeleteConversationMemberError = new AgentErrorDefinition(baseBuilderErrorCode - 10, Properties.Resources.SendDeleteConversationMember, "https://aka.ms/AgentsSDK-Error11");
+        internal static AgentErrorDefinition SendGetConversationPagedMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 11, Properties.Resources.SendGetConversationPagedMembers, "https://aka.ms/AgentsSDK-Error12");
+        internal static AgentErrorDefinition SendGetActivityMembersError = new AgentErrorDefinition(baseBuilderErrorCode - 12, Properties.Resources.SendGetActivityMembers, "https://aka.ms/AgentsSDK-Error13");
+        internal static AgentErrorDefinition SendUploadAttachmentError = new AgentErrorDefinition(baseBuilderErrorCode - 13, Properties.Resources.SendUploadAttachment, "https://aka.ms/AgentsSDK-Error14");
+        internal static AgentErrorDefinition GetSignInResourceAsync_BadRequestError = new AgentErrorDefinition(baseBuilderErrorCode - 14, Properties.Resources.GetSignInResourceAsync_BadRequest, "https://aka.ms/AgentsSDK-Error15");
+        internal static AgentErrorDefinition GetAttachmentError = new AgentErrorDefinition(baseBuilderErrorCode - 15, Properties.Resources.GetAttachment_Error, "https://aka.ms/AgentsSDK-Error16");
+        internal static AgentErrorDefinition GetAttachmentInfoError = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.GetAttachmentInfoError, "https://aka.ms/AgentsSDK-Error17");
     }
 }

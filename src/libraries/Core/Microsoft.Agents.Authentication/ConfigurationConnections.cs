@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Loader;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -20,16 +19,14 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     /// <remarks>
     /// "Connections": {
-    ///   "BotServiceConnection": {
-    ///   "Assembly": "Microsoft.Agents.Authentication.Msal",
-    ///   "Type": "Microsoft.Agents.Authentication.Msal.MsalAuth",
-    ///   "Settings": {
-    ///   }
+    ///   "ServiceConnection": {
+    ///     "Settings": {
+    ///     }
     /// },
     /// "ConnectionsMap": [
     ///  { 
     ///    "ServiceUrl": "*",
-    ///    "Connection": "BotServiceConnection"
+    ///    "Connection": "ServiceConnection"
     /// }
     /// 
     /// The type indicated must have the constructor: (IServiceProvider systemServiceProvider, IConfigurationSection configurationSection).
@@ -133,7 +130,7 @@ namespace Microsoft.Agents.Authentication
         ///    {
         ///       "ServiceUrl": "http://*..botframework.com/*.",
         ///       "Audience": optional,
-        ///       "Connection": "BotServiceConnection"
+        ///       "Connection": "ServiceConnection"
         ///    }
         /// ]
         /// 
@@ -153,7 +150,7 @@ namespace Microsoft.Agents.Authentication
                 return GetDefaultConnection();
             }
 
-            var audience = BotClaims.GetAppId(claimsIdentity);
+            var audience = AgentClaims.GetAppId(claimsIdentity);
 
             // Find a match, in document order.
             foreach (var mapItem in _map)

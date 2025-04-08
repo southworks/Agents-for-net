@@ -4,12 +4,12 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.BotBuilder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Extensions.Teams.Compat;
-using Microsoft.Agents.BotBuilder.State;
-using Microsoft.Agents.BotBuilder;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder;
 
 namespace TeamsConversationSsoQuickstart.Bots
 {
@@ -20,10 +20,10 @@ namespace TeamsConversationSsoQuickstart.Bots
     // and the requirement is that all BotState objects are saved at the end of a turn.
     public class DialogBot<T> : TeamsActivityHandler where T : Dialog
     {
-        protected readonly BotState _conversationState;
+        protected readonly AgentState _conversationState;
         protected readonly Dialog _dialog;
         protected readonly ILogger _logger;
-        protected readonly BotState _userState;
+        protected readonly AgentState _userState;
 
         public DialogBot(ConversationState conversationState, UserState userState, T dialog, ILogger<DialogBot<T>> logger)
         {
@@ -44,7 +44,7 @@ namespace TeamsConversationSsoQuickstart.Bots
         /// </remarks>
         public override async Task OnTurnAsync(
             ITurnContext turnContext,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             await base.OnTurnAsync(turnContext, cancellationToken);
 
