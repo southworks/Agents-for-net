@@ -77,8 +77,7 @@ namespace Microsoft.Agents.Authentication
 
         public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
         {
-            _connections = [];
-
+            _connections = new Dictionary<string, ConnectionDefinition>();
             if (accessTokenProviders != null)
             {
                 foreach (var provider in accessTokenProviders)
