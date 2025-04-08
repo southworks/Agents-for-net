@@ -6,13 +6,17 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using Newtonsoft.Json.Linq;
+using System.Net.Http.Headers;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 
-namespace AuthorizationAgent;
 
 public class AuthAgent : AgentApplication
 {
+    private string _defaultDisplayName = "Unknown User";
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
     /// This agent will handle the sign-in and sign-out processes for a user.
@@ -28,18 +32,24 @@ public class AuthAgent : AgentApplication
          This handler should only register events and setup state as it can be called multiple times before agent events are invoked. 
         */
 
-
-
         /*
          When a conversation update event is triggered. 
         */
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
-        /*
-         Handles the user sending a Login or LogOut command using the specific keywords '-signin' and '-signout'
-        */
+        ///*
+        // Handles the user sending a Login or LogOut command using the specific keywords '-signin' and '-signout'
+        //*/
         OnMessage("-signin", SignInAsync);
-        OnMessage("-signout", SignOutAsync);
+//        OnMessage("-signout", SignOutAsync);
+
+        OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>
+        {
+            // force a user signout to reset the user state
+            // this is needed to reset the token in Azure Bot Services if needed. 
+            await Authorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
+            await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
+        }, rank: RouteRank.Last);
 
 
         /*
@@ -72,10 +82,95 @@ public class AuthAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Welcome to AuthorizationAgent. Type 'auto' to demonstrate Auto SignIn. Type '/signin' to sign in for graph.  Type '/signout' to sign-out.  Anything else will be repeated back."), cancellationToken);
+                string displayName = await GetDisplayName(turnContext);
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"Welcome to the AutoSignIn Example, **{displayName}**!.");
+                sb.AppendLine("This Agent automatically signs you in when you first connect.");
+                sb.AppendLine("You can use the following commands to interact with the agent:");
+                sb.AppendLine("-signout: Sign out of the agent and force it to reset the login flow on next message.");
+                if ( displayName.Equals(_defaultDisplayName))
+                {
+                    sb.AppendLine("**WARNING: We were unable to get your display name with the current access token.. please use the -signout command before proceeding**");
+                }
+                sb.AppendLine("");
+                sb.AppendLine("Type anything else to see the agent echo back your message.");
+                await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
+                sb.Clear(); 
             }
         }
     }
+
+    /// <summary>
+    /// Handles general message loop. 
+    /// </summary>
+    /// <param name="turnContext"><see cref="ITurnContext"/></param>
+    /// <param name="turnState"><see cref="ITurnState"/></param>
+    /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
+    /// <returns></returns>
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        /*
+        When Auto Sign in is properly configured, the user will be automatically signed in when they first connect to the agent using the default handler chosen in the UserAuthorization configuration.
+        IMPORTANT: The ReadMe associated with this sample, instructs you on confiuring the Azure Bot Service Registration with the scopes to allow you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
+
+        If the sign in process is successful, the user will be signed in and the token will be available from the Authorization.GetTurnToken(Authorization.DefaultHandlerName) function call. 
+        if the sign in was not successful,  you will get a Null when you call the Authorization.GetTurnToken(Authorization.DefaultHandlerName) function. 
+        */
+
+        // Check for Access Token from the Authorization Sub System. 
+        if (string.IsNullOrEmpty(Authorization.GetTurnToken(Authorization.DefaultHandlerName)))
+        {
+            // Failed to get access token here, and we will now bail out of this message loop. 
+            await turnContext.SendActivityAsync($"The auto sign in process failed and no access token is available", cancellationToken: cancellationToken);
+            return; 
+        }
+
+        // We have the access token, now try to get your user name from graph. 
+        string displayName = await GetDisplayName(turnContext); 
+        if (displayName.Equals(_defaultDisplayName))
+        {
+            // Handle error response from Graph API
+            await turnContext.SendActivityAsync($"Failed to get user information from Graph API \nDid you update the scope correctly in Azure bot Service?. If so type in -signout to force signout the current user", cancellationToken: cancellationToken);
+            return;
+        }
+
+        // Now Echo back what was said with your display name. 
+        await turnContext.SendActivityAsync($"**{displayName} said:** {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+
+
+        //if (turnContext.Activity.Text == "auto")
+        //{
+        //    await Authorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken: cancellationToken); //--> this blocks?
+
+        //    await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authorization.DefaultHandlerName}', token length: {Authorization.GetTurnToken(Authorization.DefaultHandlerName).Length}", cancellationToken: cancellationToken);
+        //}
+        //else
+        //{
+        //    // Not one of the defined inputs.  Just repeat what user said.
+
+        //    var a = Authorization.GetTurnToken(Authorization.DefaultHandlerName);
+
+        //    await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        //}
+    }
+
+    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    {
+        string displayName = _defaultDisplayName;
+        string accessToken = Authorization.GetTurnToken(Authorization.DefaultHandlerName);
+        string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        HttpResponseMessage response = await client.GetAsync(graphApiUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            dynamic graphResponse = JObject.Parse(content);
+            displayName = graphResponse.displayName;
+        }
+        return displayName; 
+    }
+
 
     /// <summary>
     /// This method is called by the `OnMessage("-signin", SignInAsync);` registration to handle the sign-in process for the user. 
@@ -112,23 +207,6 @@ public class AuthAgent : AgentApplication
         await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        if (turnContext.Activity.Text == "auto")
-        {
-            await Authorization.SignInUserAsync(turnContext, turnState, "graph", cancellationToken: cancellationToken); //--> this blocks?
-
-            await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{Authorization.DefaultHandlerName}', token length: {Authorization.GetTurnToken(Authorization.DefaultHandlerName).Length}", cancellationToken: cancellationToken);
-        }
-        else
-        {
-            // Not one of the defined inputs.  Just repeat what user said.
-
-            var a = Authorization.GetTurnToken(Authorization.DefaultHandlerName);
-
-            await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
-        }
-    }
 
     private async Task OnUserSignInSuccess(ITurnContext turnContext, ITurnState turnState, string handlerName, string token, IActivity initiatingActivity, CancellationToken cancellationToken)
     {
