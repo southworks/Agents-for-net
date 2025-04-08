@@ -45,7 +45,6 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
     })
     .AllowAnonymous();
 
-
 // Hardcoded for brevity and ease of testing. 
 // In production, this should be set in configuration.
 app.Urls.Add($"http://localhost:3978");
