@@ -134,7 +134,7 @@
     <comment>Raised when accessing RouteAttribute is being initialized but the indicated Selector method does not have a valid signature.</comment>
   </data>
   <data name="UserAuthenticationRequiresAdapter" xml:space="preserve">
-    <value>AgentApplication.UserAuthenticationFeature requires AgentApplicationOptions.Adapter set.</value>
+    <value>AgentApplication.Authorization requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing the AgentApplication.</comment>
   </data>
   <data name="StreamingResponseEnded" xml:space="preserve">
