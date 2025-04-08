@@ -6,8 +6,11 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace AuthorizationAgent;
 
@@ -34,7 +37,11 @@ public class AuthAgent : AgentApplication
         OnMessage("-signin", SignInAsync);
 //        OnMessage("-signout", SignOutAsync);
 
+        OnMessage("-signin", SignInAsync);
+//        OnMessage("-signout", SignOutAsync);
+
         UserAuthorization.OnUserSignInSuccess(OnUserSignInSuccess);
+        Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
         UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
