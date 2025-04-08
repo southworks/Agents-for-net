@@ -325,8 +325,7 @@ namespace Microsoft.Agents.Auth.Tests
                 )}
             };
 
-            List<ConnectionMapItem> mapItems = [new ConnectionMapItem() { ServiceUrl = "*", Connection = "ServiceConnection" }];
-
+            List<ConnectionMapItem> mapItems = new List<ConnectionMapItem> { new ConnectionMapItem { ServiceUrl = "*", Connection = "ServiceConnection" } };
             var connection = new ConfigurationConnections(providers, mapItems);
             Assert.True(connection.TryGetConnection("ServiceConnection", out var provider));
             Assert.NotNull(provider);
