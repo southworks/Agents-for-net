@@ -4,23 +4,27 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
-using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text;
-using Azure;
-using Microsoft.VisualBasic;
 
 
 public class AuthAgent : AgentApplication
 {
+    /// <summary>
+    /// Default Sign In Name
+    /// </summary>
     private string _defaultDisplayName = "Unknown User";
-    
-    private string _signInHandlerName = string.Empty; 
+
+    /// <summary>
+    /// Authorization Handler Name to use for queries 
+    /// </summary>
+    private string _signInHandlerName = string.Empty;
+
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
     /// This agent will handle the sign-in and sign-out processes for a user.
@@ -37,7 +41,7 @@ public class AuthAgent : AgentApplication
         */
 
         // this sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
-        _signInHandlerName = Authorization.DefaultHandlerName; 
+        _signInHandlerName = Authorization.DefaultHandlerName;
 
         /*
          When a conversation update event is triggered. 
@@ -67,8 +71,8 @@ public class AuthAgent : AgentApplication
 
         // Register Events for SignIn and SignOut on the authentication class to track the status of the user, notify the user of the status of their authentication process, or log the status of the authentication process.
         Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
-        
-        Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) => 
+
+        Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
         {
             await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
         });
@@ -103,7 +107,7 @@ public class AuthAgent : AgentApplication
                 sb.AppendLine("");
                 sb.AppendLine("Type anything else to see the agent echo back your message.");
                 await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
-                sb.Clear(); 
+                sb.Clear();
             }
         }
     }
@@ -141,10 +145,10 @@ public class AuthAgent : AgentApplication
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            dynamic graphResponse = JObject.Parse(content);
-            displayName = graphResponse.displayName;
+            var graphResponse = JsonNode.Parse(content);
+            displayName = graphResponse!["displayName"].GetValue<string>();
         }
-        return displayName; 
+        return displayName;
     }
 
 

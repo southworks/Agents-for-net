@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Threading;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
