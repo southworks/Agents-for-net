@@ -12,19 +12,21 @@ namespace Microsoft.Agents.Authentication.Msal.Model
     /// </summary>
     public class ConnectionSettings : ConnectionSettingsBase, IMSALConnectionSettings
     {
-        public ConnectionSettings(IConfigurationSection configurationSection) : base(configurationSection)
-        {
-            ArgumentNullException.ThrowIfNull(configurationSection);
+        public ConnectionSettings() : base() { }
 
-            if (configurationSection != null)
+        public ConnectionSettings(IConfigurationSection msalConfigurationSection) : base(msalConfigurationSection)
+        {
+            ArgumentNullException.ThrowIfNull(msalConfigurationSection);
+
+            if (msalConfigurationSection != null)
             {
-                CertificateThumbPrint = configurationSection.GetValue<string>("CertThumbprint", string.Empty);
-                CertificateSubjectName = configurationSection.GetValue<string>("CertSubjectName", string.Empty);
-                CertificateStoreName = configurationSection.GetValue<string>("CertStoreName", "My");
-                ValidCertificateOnly = configurationSection.GetValue<bool>("ValidCertificateOnly", true);
-                SendX5C = configurationSection.GetValue<bool>("SendX5C", false);
-                ClientSecret = configurationSection.GetValue<string>("ClientSecret", string.Empty);
-                AuthType = configurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
+                CertificateThumbPrint = msalConfigurationSection.GetValue<string>("CertThumbprint", string.Empty);
+                CertificateSubjectName = msalConfigurationSection.GetValue<string>("CertSubjectName", string.Empty);
+                CertificateStoreName = msalConfigurationSection.GetValue<string>("CertStoreName", "My");
+                ValidCertificateOnly = msalConfigurationSection.GetValue<bool>("ValidCertificateOnly", true);
+                SendX5C = msalConfigurationSection.GetValue<bool>("SendX5C", false);
+                ClientSecret = msalConfigurationSection.GetValue<string>("ClientSecret", string.Empty);
+                AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
             }
 
             ValidateConfiguration();

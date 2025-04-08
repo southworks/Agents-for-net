@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.Loader;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks.Sources;
 
 namespace Microsoft.Agents.Authentication
 {
@@ -43,8 +44,8 @@ namespace Microsoft.Agents.Authentication
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(connectionsKey);
-            ArgumentNullException.ThrowIfNullOrEmpty(mapKey);
+            ArgumentException.ThrowIfNullOrEmpty(connectionsKey);
+            ArgumentException.ThrowIfNullOrEmpty(mapKey);
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
@@ -71,6 +72,30 @@ namespace Microsoft.Agents.Authentication
             foreach (var connection in _connections)
             {
                 connection.Value.Constructor = assemblyLoader.GetProviderConstructor(connection.Key, connection.Value.Assembly, connection.Value.Type);
+            }
+        }
+
+        public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
+        {
+            _connections = [];
+
+            if (accessTokenProviders != null)
+            {
+                foreach (var provider in accessTokenProviders)
+                {
+                    _connections[provider.Key] = new ConnectionDefinition() { Instance = provider.Value };
+                }
+            }
+
+            if (_connections.Count == 0)
+            {
+                _logger.LogWarning("No connections provided");
+            }
+
+            _map = connectionMapItems == null ? [] : [.. connectionMapItems];
+            if (!_map.Any())
+            {
+                _logger.LogWarning("No connections map provided");
             }
         }
 
