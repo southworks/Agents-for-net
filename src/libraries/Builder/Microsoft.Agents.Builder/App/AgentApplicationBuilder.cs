@@ -4,8 +4,8 @@
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder.App
@@ -15,6 +15,10 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public class AgentApplicationBuilder
     {
+        public AgentApplicationBuilder()
+        {
+        }
+
         /// <summary>
         /// The application's configured options.
         /// </summary>
@@ -24,10 +28,32 @@ namespace Microsoft.Agents.Builder.App
         /// Configures the turn state factory to use for managing the bot's turn state.
         /// </summary>
         /// <param name="turnStateFactory">The turn state factory to use.</param>
-        /// <returns>The ApplicationBuilder instance.</returns>
-        public AgentApplicationBuilder WithTurnStateFactory(Func<ITurnState> turnStateFactory)
+        /// <remarks>
+        /// Not setting the TurnStateFactory would result in non-persisted <see cref="TurnState"/>.  This could
+        /// be appropriate for Agents not needing persisted state.  
+        /// <code>
+        ///    .WithTurnStateFactory(() => new TurnState(singletonStorageInstance))
+        /// </code>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        /// </remarks>
+        public AgentApplicationBuilder WithTurnStateFactory(TurnStateFactory turnStateFactory)
         {
             Options.TurnStateFactory = turnStateFactory;
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the turn state factory to use for managing the bot's turn state.
+        /// </summary>
+        /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
+        /// <remarks>
+        /// Not setting the TurnStateFactory would result in non-persisted <see cref="TurnState"/>.  This could
+        /// be appropriate for Agents not needing persisted state.
+        /// </remarks>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        public AgentApplicationBuilder WithTurnStateFactory(IStorage storage)
+        {
+            Options.TurnStateFactory = () => new TurnState(storage);
             return this;
         }
 
