@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Authentication
                 _logger.LogWarning("No connections provided");
             }
 
-            _map = connectionMapItems == null ? [] : [.. connectionMapItems];
+            _map = connectionMapItems == null ? new List<ConnectionMapItem>() : new List<ConnectionMapItem>(connectionMapItems);
             if (!_map.Any())
             {
                 _logger.LogWarning("No connections map provided");
