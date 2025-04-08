@@ -4,27 +4,23 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
-using System;
-using System.Net.Http;
+using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
-using System.Text.Json.Nodes;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
+using Azure;
+using Microsoft.VisualBasic;
 
 
 public class AuthAgent : AgentApplication
 {
-    /// <summary>
-    /// Default Sign In Name
-    /// </summary>
     private string _defaultDisplayName = "Unknown User";
-
-    /// <summary>
-    /// Authorization Handler Name to use for queries 
-    /// </summary>
-    private string _signInHandlerName = string.Empty;
-
+    
+    private string _signInHandlerName = string.Empty; 
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
     /// This agent will handle the sign-in and sign-out processes for a user.
@@ -32,20 +28,25 @@ public class AuthAgent : AgentApplication
     /// <param name="options">AgentApplication Configuration objects to configure and setup the Agent Application</param>
     public AuthAgent(AgentApplicationOptions options) : base(options)
     {
-        
-         // During setup of the Agent Application, Register Event Handlers for the Agent. 
-         // For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
-         // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent. .
+        /*
+         During setup of the Agent Application, Register Event Handlers for the Agent. 
+         For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
+         Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent. .
 
-         // This handler should only register events and setup state as it can be called multiple times before agent events are invoked. 
-        
+         This handler should only register events and setup state as it can be called multiple times before agent events are invoked. 
+        */
 
-        // This sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
-        _signInHandlerName = Authorization.DefaultHandlerName;
+        // this sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
+        _signInHandlerName = Authorization.DefaultHandlerName; 
 
-        // When a conversation update event is triggered. 
+        /*
+         When a conversation update event is triggered. 
+        */
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
+        ///*
+        // Handles the user sending a Login or LogOut command using the specific keywords '-signin' and '-signout'
+        //*/
         // Handles the user sending a Login command using the specific keywords '-signin'
         OnMessage("-signin", SignInAsync);
 
@@ -59,14 +60,15 @@ public class AuthAgent : AgentApplication
         }, rank: RouteRank.Last);
 
 
-        
-        // The Authorization Class provides methods and properties to manage and access user authentication tokens
-        // You can use this class to interact with the authentication process, including signing in and signing out users, accessing tokens, and handling authentication events.
+        /*
+         The Authorization Class provides methods and properties to manage and access user authentication tokens
+         You can use this class to interact with the authentication process, including signing in and signing out users, accessing tokens, and handling authentication events.
+         */
 
         // Register Events for SignIn and SignOut on the authentication class to track the status of the user, notify the user of the status of their authentication process, or log the status of the authentication process.
         Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
-
-        Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
+        
+        Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) => 
         {
             await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
         });
@@ -83,32 +85,25 @@ public class AuthAgent : AgentApplication
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        
-        // In this example, we will send a welcome message to the user when they join the conversation.
-        // We do this by iterating over the incoming activity members added to the conversation and checking if the member is not the agent itself.
-        // Then a greeting notice is provided to each new member of the conversation.
-
+        /*
+        In this example, we will send a welcome message to the user when they join the conversation.
+        We do this by iterating over the incoming activity members added to the conversation and checking if the member is not the agent itself.
+        Then a greeting notice is provided to each new member of the conversation.
+        */
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                string WelcomeMsg = """
-                        $"Welcome to the ManualSignIn Example."
-                        "This Agent requires you to manually sign you in."
-                        "You can use the following commands to interact with the agent:"
-                        "-signin: Sign into the agent."
-                        "-signout: Sign out of the agent and force it to reset the login flow on next message."
-                        ""
-                        "Type anything else to see the agent echo back your message."
-                        $"Welcome to the ManualSignIn Example."
-                        "This Agent requires you to manually sign you in."
-                        "You can use the following commands to interact with the agent:"
-                        "-signin: Sign into the agent."
-                        "-signout: Sign out of the agent and force it to reset the login flow on next message."
-                        ""
-                        "Type anything else to see the agent echo back your message."
-                    """;
-                await turnContext.SendActivityAsync(MessageFactory.Text(WelcomeMsg), cancellationToken);
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"Welcome to the ManualSignIn Example.");
+                sb.AppendLine("This Agent requires you to manually sign you in.");
+                sb.AppendLine("You can use the following commands to interact with the agent:");
+                sb.AppendLine("-signin: Sign into the agent.");
+                sb.AppendLine("-signout: Sign out of the agent and force it to reset the login flow on next message.");
+                sb.AppendLine("");
+                sb.AppendLine("Type anything else to see the agent echo back your message.");
+                await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
+                sb.Clear(); 
             }
         }
     }
@@ -122,11 +117,36 @@ public class AuthAgent : AgentApplication
     /// <returns></returns>
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // IMPORTANT: The ReadMe associated with this sample, instructs you on configuring the Azure Bot Service Registration with the scopes to allow you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
+        /*
+        IMPORTANT: The ReadMe associated with this sample, instructs you on configuring the Azure Bot Service Registration with the scopes to allow you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
 
-        // In this scenario a specific login handler is called for,  if that logging handler succeeds the remainder of the turn process is handled in the OnUserSignInSuccess handler
+        In this scenario a specific login handler is called for,  if that logging handler succeeds the remainder of the turn process is handled in the OnUserSignInSuccess handler
+        */
         await Authorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
     }
+
+    /// <summary>
+    /// Gets the display name of the user from the Graph API using the access token.
+    /// </summary>
+    /// <param name="turnContext"><see cref="ITurnState"/></param>
+    /// <returns></returns>
+    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    {
+        string displayName = _defaultDisplayName;
+        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
+        string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        HttpResponseMessage response = await client.GetAsync(graphApiUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            dynamic graphResponse = JObject.Parse(content);
+            displayName = graphResponse.displayName;
+        }
+        return displayName; 
+    }
+
 
     /// <summary>
     /// This method is called by the `OnMessage("-signin", SignInAsync);` registration to handle the sign-in process for the user. 
@@ -137,11 +157,11 @@ public class AuthAgent : AgentApplication
     /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
     private async Task SignInAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-
-        // We are using the Authorization class to sign in the user to the authorization provider.
-        // This triggers the User login flow, and the user will be prompted to sign in using the authorization provider if needed.
-        // On Success, this will call the OnUserSignInSuccess event handler to notify the user of the success and provide the access token.  The token will also be available in the Authorization class.
-
+        /*
+        We are using the Authorization class to sign in the user to the authorization provider.
+        This triggers the User login flow, and the user will be prompted to sign in using the authorization provider if needed.
+        On Success, this will call the OnUserSignInSuccess event handler to notify the user of the success and provide the access token.  The token will also be available in the Authorization class.
+         */
         await Authorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
     }
 
@@ -160,7 +180,7 @@ public class AuthAgent : AgentApplication
     {
         // The user has successfully signed in to the authorization provider and we will continue the turn. 
 
-        // Handle the request for the designated login handler. 
+        // Handel the request for the designated login handler. 
         if (handlerName.Equals(_signInHandlerName))
         {
             // Check for Access Token from the Authorization Sub System. 
@@ -190,35 +210,4 @@ public class AuthAgent : AgentApplication
         }
 
     }
-
-    /// <summary>
-    /// Gets the display name of the user from the Graph API using the access token.
-    /// </summary>
-    /// <param name="turnContext"><see cref="ITurnState"/></param>
-    /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
-    {
-        string displayName = _defaultDisplayName;
-        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
-        string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
-        try
-        {
-            using HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            HttpResponseMessage response = await client.GetAsync(graphApiUrl);
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var graphResponse = JsonNode.Parse(content);
-                displayName = graphResponse!["displayName"].GetValue<string>();
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle error response from Graph API
-            System.Diagnostics.Trace.WriteLine($"Error getting display name: {ex.Message}");
-        }
-        return displayName;
-    }
-
 }
