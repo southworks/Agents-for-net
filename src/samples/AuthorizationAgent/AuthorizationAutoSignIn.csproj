@@ -19,26 +19,13 @@
 	<ItemGroup>
 		<Content Update="appManifest\teams-manifest.json">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		  <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</Content>
-		<Content Update="appsettings.Development.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		  <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
 		<Content Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="Properties\launchSettings.json">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-	  </None>
+	  <Folder Include="Properties\" />
 	</ItemGroup>
 </Project>
