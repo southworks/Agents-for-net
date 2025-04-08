@@ -2,13 +2,15 @@
 // Licensed under the MIT License.
 
 using AuthorizationAgent;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,8 +24,8 @@ builder.Logging.AddDebug();
 // Add AspNet token validation
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
-// Add AgentApplicationOptions from config.
-builder.AddAgentApplicationOptions(autoSignIn: (context, cancellationToken) => Task.FromResult(context.Activity.Text == "auto"));
+// Add AgentApplicationOptions from appsettings config.
+builder.AddAgentApplicationOptions();
 
 // Add the Agent
 builder.AddAgent<AuthAgent>();
@@ -36,16 +38,17 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapGet("/", () => "Microsoft Agents SDK Sample");
-    app.UseDeveloperExceptionPage();
-    app.MapControllers().AllowAnonymous();
-}
-else
-{
-    app.MapControllers();
-}
+// Configure the HTTP request pipeline.
+app.UseRouting();
+app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+    {
+        await adapter.ProcessAsync(request, response, agent, cancellationToken);
+    })
+    .AllowAnonymous();
+
+// Setup port and listening address.
+app.Urls.Add("http://localhost:5000");
+app.Urls.Add("https://localhost:5001");
 
 app.Run();
 

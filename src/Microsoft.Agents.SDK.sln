@@ -104,7 +104,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Agent1", "samples\AgentToAg
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Agent2", "samples\AgentToAgent\Agent2\Agent2.csproj", "{D13DF019-D0FF-400F-AFD3-05B62C8C6FA6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthorizationAgent", "samples\AuthorizationAgent\AuthorizationAgent.csproj", "{6DFD9752-2D4B-4CE7-B9D6-42E7DB1A9A7D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthorizationAutoSignIn", "samples\AuthorizationAgent\AuthorizationAutoSignIn.csproj", "{6DFD9752-2D4B-4CE7-B9D6-42E7DB1A9A7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoAgent", "samples\EchoAgent\EchoAgent.csproj", "{A45D3004-BEC0-4320-84CC-8ED471D4C3B2}"
 EndProject
