@@ -11,7 +11,6 @@ using System.Linq;
 using System.Runtime.Loader;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks.Sources;
 
 namespace Microsoft.Agents.Authentication
 {
@@ -62,7 +61,7 @@ namespace Microsoft.Agents.Authentication
             _connections = configuration
                 .GetSection(connectionsKey)
                 .Get<Dictionary<string, ConnectionDefinition>>() ?? [];
-            if (!_connections.Any())
+            if (_connections.Count == 0)
             {
                 _logger.LogWarning("No connections found in configuration.");
             }
@@ -77,7 +76,7 @@ namespace Microsoft.Agents.Authentication
 
         public ConfigurationConnections(IDictionary<string, IAccessTokenProvider> accessTokenProviders, IList<ConnectionMapItem> connectionMapItems)
         {
-            _connections = new Dictionary<string, ConnectionDefinition>();
+            _connections = [];
             if (accessTokenProviders != null)
             {
                 foreach (var provider in accessTokenProviders)
@@ -91,7 +90,7 @@ namespace Microsoft.Agents.Authentication
                 _logger.LogWarning("No connections provided");
             }
 
-            _map = connectionMapItems == null ? new List<ConnectionMapItem>() : new List<ConnectionMapItem>(connectionMapItems);
+            _map = connectionMapItems == null ? [] : [.. connectionMapItems];
             if (!_map.Any())
             {
                 _logger.LogWarning("No connections map provided");
@@ -122,14 +121,10 @@ namespace Microsoft.Agents.Authentication
         public IAccessTokenProvider GetDefaultConnection()
         {
             // if no connections, abort and return null.
-            if (!_connections.Any())
+            if (_connections.Count == 0)
             {
                 _logger.LogError(ErrorHelper.MissingAuthenticationConfiguration.description);
-                throw new IndexOutOfRangeException(ErrorHelper.MissingAuthenticationConfiguration.description)
-                {
-                    HResult = ErrorHelper.MissingAuthenticationConfiguration.code,
-                    HelpLink = ErrorHelper.MissingAuthenticationConfiguration.helplink
-                };
+                throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.MissingAuthenticationConfiguration, null);
             }
 
             // Return the wildcard map item instance.
@@ -167,7 +162,7 @@ namespace Microsoft.Agents.Authentication
         public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, string serviceUrl)
         {
             ArgumentNullException.ThrowIfNull(claimsIdentity);
-            ArgumentNullException.ThrowIfNullOrEmpty(serviceUrl);
+            ArgumentException.ThrowIfNullOrEmpty(serviceUrl);
 
             if (!_map.Any())
             {
@@ -207,7 +202,7 @@ namespace Microsoft.Agents.Authentication
         {
             if (!_connections.TryGetValue(name, out ConnectionDefinition value))
             {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.ConnectionNotFoundByName, null, name);
+                throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.ConnectionNotFoundByName, null, name);
             }
             return GetConnectionInstance(value);
         }
@@ -230,7 +225,7 @@ namespace Microsoft.Agents.Authentication
             {
                 if (doThrow)
                 {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateAuthModuleProvider, ex, connection.Type);
                 }
             }
             return null;

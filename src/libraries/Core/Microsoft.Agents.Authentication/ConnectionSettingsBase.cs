@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -27,11 +28,11 @@ namespace Microsoft.Agents.Authentication
             {
                 if (msalConfigurationSection != null)
                 {
-                    throw new ArgumentException($"Authentication configuration section {msalConfigurationSection.Key}, not Found.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ConfigurationSectionNotFound, null, msalConfigurationSection.Key);
                 }
                 else
                 {
-                    throw new ArgumentNullException(nameof(msalConfigurationSection), "No configuration section provided. An authentication configuration section is required to create a connection settings object.");
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ConfigurationSectionNotProvided, null);
                 }
             }
         }
