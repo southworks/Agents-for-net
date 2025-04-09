@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Authentication
     {
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IEnumerable<ConnectionMapItem> _map;
+        private readonly IList<ConnectionMapItem> _map;
         private readonly ILogger<ConfigurationConnections> _logger;
 
         public ConfigurationConnections(IServiceProvider systemServiceProvider, IConfiguration configuration, string connectionsKey = "Connections", string mapKey = "ConnectionsMap")
@@ -49,21 +49,24 @@ namespace Microsoft.Agents.Authentication
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
 
-            _map = configuration
-                .GetSection(mapKey)
-                .Get<List<ConnectionMapItem>>() ?? Enumerable.Empty<ConnectionMapItem>();
-
-            if (!_map.Any())
-            {
-                _logger.LogWarning("No connections map found in configuration.");
-            }
-
             _connections = configuration
                 .GetSection(connectionsKey)
                 .Get<Dictionary<string, ConnectionDefinition>>() ?? [];
             if (_connections.Count == 0)
             {
                 _logger.LogWarning("No connections found in configuration.");
+            }
+
+            _map = configuration
+                .GetSection(mapKey)
+                .Get<List<ConnectionMapItem>>() ?? [];
+            if (!_map.Any())
+            {
+                _logger.LogWarning("No connections map found in configuration.");
+                if (_connections.Count == 1)
+                {
+                    _map.Add(new ConnectionMapItem() {  ServiceUrl = "*", Connection = _connections.First().Key });
+                }
             }
 
             var assemblyLoader = new AuthModuleLoader(AssemblyLoadContext.Default, _logger);
@@ -94,6 +97,10 @@ namespace Microsoft.Agents.Authentication
             if (!_map.Any())
             {
                 _logger.LogWarning("No connections map provided");
+                if (_connections.Count == 1)
+                {
+                    _map.Add(new ConnectionMapItem() { ServiceUrl = "*", Connection = _connections.First().Key });
+                }
             }
         }
 
