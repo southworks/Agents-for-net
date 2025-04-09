@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Raised when JWT authentication has not been enabled for the sending channel..
+        /// </summary>
+        internal static string AnonymousNotAllowed {
+            get {
+                return ResourceManager.GetString("AnonymousNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
         /// </summary>
         internal static string AttributeHandlerInvalid {
