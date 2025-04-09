@@ -10,7 +10,7 @@ using Microsoft.Extensions.Primitives;
 namespace Microsoft.Agents.Core.HeaderPropagation;
 
 /// <summary>
-/// Shared context between the <see cref="HeaderPropagationMiddleware"/> and <see cref="AgentsHttpClientFactory"/> for propagating headers.
+/// Shared context to manage request headers that will be used to propagate them in the <see cref="HeaderPropagationExtensions.AddHeaderPropagation"/>.
 /// </summary>
 public class HeaderPropagationContext()
 {

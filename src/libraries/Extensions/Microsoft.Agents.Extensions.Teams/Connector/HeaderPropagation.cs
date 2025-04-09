@@ -7,7 +7,6 @@ using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.Agents.Extensions.Teams.Connector
 {
-    // This class could implement an interface to guide customers on how to implement the SetHeaders method.
     [HeaderPropagation]
     internal class HeaderPropagation
     {
@@ -17,8 +16,11 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
             // Possibly provide an interface or abstract class to guide customers on how to implement the SetHeaders method.
             return new Dictionary<string, StringValues>()
             {
-                { "User-Agent", "Teams-123" },
-                { "Testing-Propagation-Id", "" }
+                // 1. Provide a header without value to propagate the incoming request value to outgoing requests.
+                // { "User-Agent", "" }
+
+                // 2. Provide a header with value to propagate it to outgoing requests.
+                //{ "User-Agent", "< VALUE-TO-PROPAGATE >" }
             };
         }
     }
