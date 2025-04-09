@@ -25,12 +25,12 @@ namespace Microsoft.Agents.Builder.App
         public AgentApplicationOptions Options { get; private set; } = new();
 
         /// <summary>
-        /// Configures the turn state factory to use for managing the bot's turn state.
+        /// Configures the turn state factory to use for managing the Agent's turn state.
         /// </summary>
         /// <param name="turnStateFactory">The turn state factory to use.</param>
         /// <remarks>
-        /// Not setting the TurnStateFactory would result in non-persisted <see cref="TurnState"/>.  This could
-        /// be appropriate for Agents not needing persisted state.  
+        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
+        /// be appropriate for Agents not needing persisted state.
         /// <code>
         ///    .WithTurnStateFactory(() => new TurnState(singletonStorageInstance))
         /// </code>
@@ -43,11 +43,11 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Configures the turn state factory to use for managing the bot's turn state.
+        /// Configures the turn state factory to use for managing the Agent's turn state.
         /// </summary>
         /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
         /// <remarks>
-        /// Not setting the TurnStateFactory would result in non-persisted <see cref="TurnState"/>.  This could
+        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
         /// be appropriate for Agents not needing persisted state.
         /// </remarks>
         /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Configures the removing of mentions of the bot's name from incoming messages.
+        /// Configures the removing of mentions of the Agent's name from incoming messages.
         /// Default state for removeRecipientMention is true
         /// </summary>
         /// <param name="removeRecipientMention">The boolean for removing recipient mentions.</param>

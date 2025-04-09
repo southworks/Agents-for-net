@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.App
         /// Optional. Factory used to create a custom turn state instance.
         /// </summary>
         /// <remarks>
-        /// While "optional", not setting the TurnStateFactory would result in non-persisted <see cref="TurnState"/>.  This could
+        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
         /// be appropriate for Agents not needing persisted state.
         /// <see cref="Microsoft.Agents.Builder.App.TurnStateFactory"/>
         /// </remarks>
