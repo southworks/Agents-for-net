@@ -24,6 +24,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Single(inActivity.Entities);
             Assert.IsAssignableFrom<ActivityTreatment>(inActivity.Entities[0]);
             Assert.Equal(ActivityTreatmentTypes.Targeted, ((ActivityTreatment) inActivity.Entities[0]).Treatment);
+            Assert.NotNull(inActivity.GetActivityTreatmentEntity());
         }
     }
 }
