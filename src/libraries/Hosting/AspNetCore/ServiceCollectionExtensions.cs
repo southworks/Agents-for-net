@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds and Agent which subclasses <c>AgentApplication</c>
+        /// Adds an Agent which subclasses <c>AgentApplication</c>
         /// <code>
         /// builder.Services.AddSingleton&lt;IStorage, MemoryStorage&gt;();
         /// builder.AddAgentApplicationOptions();
