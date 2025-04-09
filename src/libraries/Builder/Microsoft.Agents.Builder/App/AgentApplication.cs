@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Accessing user authorization features.
         /// </summary>
-        public UserAuthorization Authorization
+        public UserAuthorization UserAuthorization
         {
             get
             {
