@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object)
             });
 
-            Assert.Equal(GraphName, app.Authorization.DefaultHandlerName);
+            Assert.Equal(GraphName, app.UserAuthorization.DefaultHandlerName);
         }
 
         [Fact]
@@ -105,12 +105,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var response = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            var response = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
-            Assert.Equal(GraphToken, app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.Equal(GraphToken, app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -128,12 +128,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            var signInComplete = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
-            Assert.Equal(SharePointToken, app.Authorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.Equal(SharePointToken, app.UserAuthorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            var signInComplete = await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            var signInComplete = await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
 
             // assert
             Assert.False(signInComplete);
@@ -173,13 +173,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
-            await app.Authorization.SignOutUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(app.Authorization.GetTurnToken(GraphName));
-            Assert.NotNull(app.Authorization.GetTurnToken(SharePointName));
+            Assert.Null(app.UserAuthorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
         }
 
         [Fact]
@@ -196,13 +196,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
 
             // act
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState);
-            await app.Authorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
-            await app.Authorization.SignOutUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState, SharePointName);
+            await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(app.Authorization.GetTurnToken(SharePointName));
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.Null(app.UserAuthorization.GetTurnToken(SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -235,10 +235,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
             {
-                await app.Authorization.SignInUserAsync(turnContext, turnState, GraphName);
+                await app.UserAuthorization.SignInUserAsync(turnContext, turnState, GraphName);
             });
 
-            app.Authorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
+            app.UserAuthorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
             {
                 await turnContext.SendActivityAsync($"sign in success for '{handlerName}' and you said '{activity.Text}'", cancellationToken: CancellationToken.None);
             });
@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -294,10 +294,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnMessage("/signin", async (turnContext, turnState, cancellationToken) =>
             {
-                await app.Authorization.SignInUserAsync(turnContext, turnState, GraphName);
+                await app.UserAuthorization.SignInUserAsync(turnContext, turnState, GraphName);
             }); 
 
-            app.Authorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
+            app.UserAuthorization.OnUserSignInSuccess(async (turnContext, turnState, handlerName, token, activity, CancellationToken) =>
             {
                 await turnContext.SendActivityAsync($"sign in success for '{handlerName}' and you said '{activity.Text}'", cancellationToken: CancellationToken.None);
             });
@@ -313,7 +313,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         [Fact]
@@ -413,7 +413,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.Authorization.GetTurnToken(GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
         }
 
         private static TurnContext MockTurnContext()
