@@ -15,47 +15,30 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public class AgentApplicationBuilder
     {
-        public AgentApplicationBuilder()
+        /// <summary>
+        /// Creates the builder and uses IStorage to create the default TurnStateFactory to use for managing the Agent's turn state.
+        /// </summary>
+        /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        public AgentApplicationBuilder(IStorage storage)
         {
+            Options = new(storage);
+        }
+
+        /// <summary>
+        /// Creates the builder and uses the passed TurnStateFactory to use for managing the Agent's turn state.
+        /// </summary>
+        /// <param name="turnStateFactory"></param>
+        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
+        public AgentApplicationBuilder(TurnStateFactory turnStateFactory)
+        {
+            Options = new(turnStateFactory);
         }
 
         /// <summary>
         /// The application's configured options.
         /// </summary>
-        public AgentApplicationOptions Options { get; private set; } = new();
-
-        /// <summary>
-        /// Configures the turn state factory to use for managing the Agent's turn state.
-        /// </summary>
-        /// <param name="turnStateFactory">The turn state factory to use.</param>
-        /// <remarks>
-        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
-        /// be appropriate for Agents not needing persisted state.
-        /// <code>
-        ///    .WithTurnStateFactory(() => new TurnState(singletonStorageInstance))
-        /// </code>
-        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
-        /// </remarks>
-        public AgentApplicationBuilder WithTurnStateFactory(TurnStateFactory turnStateFactory)
-        {
-            Options.TurnStateFactory = turnStateFactory;
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the turn state factory to use for managing the Agent's turn state.
-        /// </summary>
-        /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
-        /// <remarks>
-        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
-        /// be appropriate for Agents not needing persisted state.
-        /// </remarks>
-        /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
-        public AgentApplicationBuilder WithTurnStateFactory(IStorage storage)
-        {
-            Options.TurnStateFactory = () => new TurnState(storage);
-            return this;
-        }
+        public AgentApplicationOptions Options { get; private set; }
 
         /// <summary>
         /// Configures the Logger factory for the application

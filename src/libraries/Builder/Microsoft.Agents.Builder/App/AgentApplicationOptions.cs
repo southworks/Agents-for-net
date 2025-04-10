@@ -54,12 +54,10 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Constructs AgentApplicationOptions programmatically.
         /// <code>
-        ///   var options = new AgentApplicationOptions()
+        ///   var options = new AgentApplicationOptions(storageInstance)
         ///   {
         ///     StartTypingTimer = true,
         ///     ...
-        ///     
-        ///     TurnStateFactory = () => new TurnState(storageInstance),
         ///     
         ///     UserAuthorization = new UserAuthorizationOptions()   // if required
         ///     {
@@ -71,8 +69,18 @@ namespace Microsoft.Agents.Builder.App
         ///     }
         ///   };
         /// </code>
+        /// <remarks>
+        /// This will set the `TurnStateFactory` property with the default TurnStateFactory .
+        /// </remarks>
         /// </summary>
-        public AgentApplicationOptions() { }
+        public AgentApplicationOptions(IStorage storage) : this(storage == null ? () => new TurnState() : () => new TurnState(storage))
+        {
+        }
+
+        public AgentApplicationOptions(TurnStateFactory turnStateFactory)
+        {
+            TurnStateFactory = turnStateFactory;
+        }
 
         /// <summary>
         /// Creates AgentApplicationOptions from IConfiguration and DI.

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using EchoAgent;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Samples;
 using Microsoft.Agents.Storage;
@@ -23,7 +24,10 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
-builder.AddAgent<Echo>();
+//builder.AddAgent<Echo>();
+builder.AddAgentCore();
+
+builder.Services.AddSingleton<IAgent, Echo>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
