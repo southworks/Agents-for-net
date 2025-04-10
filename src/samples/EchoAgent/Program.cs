@@ -24,10 +24,7 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
-//builder.AddAgent<Echo>();
-builder.AddAgentCore();
-
-builder.Services.AddSingleton<IAgent, Echo>();
+builder.AddAgent<Echo>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
