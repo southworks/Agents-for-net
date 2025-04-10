@@ -26,11 +26,7 @@ namespace Microsoft.Agents.Builder.App
     ///    var storage = new MemoryStorage();  // MemoryStorage for local dev
     ///    services.AddTransient&lt;IAgent&gt;(sp =>
     ///    {
-    ///        var options = new AgentApplicationOptions()
-    ///        {
-    ///           TurnStateFactory = () => new TurnState(storage);
-    ///        };
-    ///        
+    ///        var options = new AgentApplicationOptions(storage);
     ///        var app = new AgentApplication(options);
     ///
     ///        ...
@@ -57,6 +53,7 @@ namespace Microsoft.Agents.Builder.App
         ///   var options = new AgentApplicationOptions(storageInstance)
         ///   {
         ///     StartTypingTimer = true,
+        ///     
         ///     ...
         ///     
         ///     UserAuthorization = new UserAuthorizationOptions()   // if required
