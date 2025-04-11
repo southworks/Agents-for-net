@@ -166,6 +166,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (_userSignInFailureHandler != null)
                 {
                     await _userSignInFailureHandler(turnContext, turnState, handlerName, response, turnContext.Activity, cancellationToken).ConfigureAwait(false);
+                    return;
                 }
                 else
                 {
