@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     }
                     if (string.IsNullOrEmpty(FederatedClientId))
                     {
-                        throw new ArgumentNullException(nameof(ClientId), "FederatedClientId is required");
+                        throw new ArgumentNullException(nameof(FederatedClientId), "FederatedClientId is required");
                     }
                     if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
                     {
