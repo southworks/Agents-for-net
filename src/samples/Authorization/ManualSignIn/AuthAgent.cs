@@ -130,29 +130,6 @@ public class AuthAgent : AgentApplication
     }
 
     /// <summary>
-    /// Gets the display name of the user from the Graph API using the access token.
-    /// </summary>
-    /// <param name="turnContext"><see cref="ITurnState"/></param>
-    /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
-    {
-        string displayName = _defaultDisplayName;
-        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
-        string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
-        HttpClient client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        HttpResponseMessage response = await client.GetAsync(graphApiUrl);
-        if (response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStringAsync();
-            var graphResponse = JsonNode.Parse(content);
-            displayName = graphResponse!["displayName"].GetValue<string>();
-        }
-        return displayName;
-    }
-
-
-    /// <summary>
     /// This method is called by the `OnMessage("-signin", SignInAsync);` registration to handle the sign-in process for the user. 
     /// This is a generic message handler pattern used by the agent SDK to allow a developer to attach specific implementation to a specific message.
     /// </summary>
@@ -214,4 +191,27 @@ public class AuthAgent : AgentApplication
         }
 
     }
+
+    /// <summary>
+    /// Gets the display name of the user from the Graph API using the access token.
+    /// </summary>
+    /// <param name="turnContext"><see cref="ITurnState"/></param>
+    /// <returns></returns>
+    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    {
+        string displayName = _defaultDisplayName;
+        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
+        string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        HttpResponseMessage response = await client.GetAsync(graphApiUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            var graphResponse = JsonNode.Parse(content);
+            displayName = graphResponse!["displayName"].GetValue<string>();
+        }
+        return displayName;
+    }
+
 }
