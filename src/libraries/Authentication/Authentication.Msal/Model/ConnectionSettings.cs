@@ -126,6 +126,16 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 case AuthTypes.SystemManagedIdentity:
                     // No additional validation needed
                     break;
+                case AuthTypes.FederatedCredentials:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
                 default:
                     break;
             }
