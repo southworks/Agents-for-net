@@ -25,7 +25,6 @@ public class AuthAgent : AgentApplication
     /// </summary>
     private string _signInHandlerName = string.Empty;
 
-
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
     /// This agent will handle the sign-in and sign-out processes for a user.
@@ -146,6 +145,21 @@ public class AuthAgent : AgentApplication
         await turnContext.SendActivityAsync($"**{displayName} said:** {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// This method is called when the sign-in process fails with an error indicating why . 
+    /// </summary>
+    /// <param name="turnContext"></param>
+    /// <param name="turnState"></param>
+    /// <param name="handlerName"></param>
+    /// <param name="response"></param>
+    /// <param name="initiatingActivity"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async Task OnUserSignInFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken)
+    {
+        // Raise a notification to the user that the sign-in process failed.
+        await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
+    }
 
     /// <summary>
     /// Gets the display name of the user from the Graph API using the access token.
@@ -169,19 +183,5 @@ public class AuthAgent : AgentApplication
         return displayName;
     }
 
-    /// <summary>
-    /// This method is called when the sign-in process fails with an error indicating why . 
-    /// </summary>
-    /// <param name="turnContext"></param>
-    /// <param name="turnState"></param>
-    /// <param name="handlerName"></param>
-    /// <param name="response"></param>
-    /// <param name="initiatingActivity"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    private async Task OnUserSignInFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken)
-    {
-        // Raise a notification to the user that the sign-in process failed.
-        await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
-    }
+
 }
