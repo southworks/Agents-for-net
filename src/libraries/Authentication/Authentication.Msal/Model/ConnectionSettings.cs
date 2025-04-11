@@ -27,6 +27,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 SendX5C = msalConfigurationSection.GetValue<bool>("SendX5C", false);
                 ClientSecret = msalConfigurationSection.GetValue<string>("ClientSecret", string.Empty);
                 AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
+                FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
             }
 
             ValidateConfiguration();
@@ -66,6 +67,11 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         /// Use x5c for certs.  Defaults to false.
         /// </summary>
         public bool SendX5C { get; set; } = false;
+
+        /// <summary>
+        /// ClientId of the ManagedIdentity used with FederatedCredentials
+        /// </summary>
+        public string FederatedClientId { get; set; }
 
         /// <summary>
         /// Validates required properties are present in the configuration for the requested authentication type. 

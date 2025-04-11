@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 {
                     async Task<String> FetchExternalTokenAsync()
                     {
-                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.ClientId);
+                        var managedIdentityClientAssertion = new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId);
                         return await managedIdentityClientAssertion.GetSignedAssertionAsync(default).ConfigureAwait(false);
                     }
                     cAppBuilder.WithClientAssertion((AssertionRequestOptions options) => FetchExternalTokenAsync());
