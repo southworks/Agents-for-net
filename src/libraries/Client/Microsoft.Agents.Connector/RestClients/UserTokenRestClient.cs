@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
+        public async Task<object> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
@@ -227,28 +227,6 @@ namespace Microsoft.Agents.Connector.RestClients
                 request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
             return request;
-        }
-
-        /// <inheritdoc/>
-        public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest body = null, CancellationToken cancellationToken = default)
-        {
-            ArgumentException.ThrowIfNullOrEmpty(userId);
-            ArgumentException.ThrowIfNullOrEmpty(connectionName);
-            ArgumentException.ThrowIfNullOrEmpty(channelId);
-
-            using var message = CreateExchangeTokenRequest(userId, connectionName, channelId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch ((int)httpResponse.StatusCode)
-            {
-                case 200:
-                case 404:
-                    {
-                        return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-                    }
-                default:
-                    throw new HttpRequestException($"ExchangeTokenAsync {httpResponse.StatusCode}");
-            }
         }
     }
 }
