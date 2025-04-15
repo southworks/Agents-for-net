@@ -42,7 +42,7 @@ public class AuthAgent : AgentApplication
         
 
         // this sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
-        _signInHandlerName = Authorization.DefaultHandlerName;
+        _signInHandlerName = UserAuthorization.DefaultHandlerName;
 
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
@@ -53,17 +53,17 @@ public class AuthAgent : AgentApplication
         {
             // force a user signout to reset the user state
             // this is needed to reset the token in Azure Bot Services if needed. 
-            await Authorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
+            await UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
             await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
         }, rank: RouteRank.Last);
 
 
         
-         //The Authorization Class provides methods and properties to manage and access user authentication tokens
+         //The UserAuthorization Class provides methods and properties to manage and access user authentication tokens
          //You can use this class to interact with the authentication process, including signing in and signing out users, accessing tokens, and handling authentication events.
 
         // Register Events for SignIn on the authentication class to track the status of the user, notify the user of the status of their authentication process, or log the status of the authentication process.
-        Authorization.OnUserSignInFailure(OnUserSignInFailure);
+        UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
 
         // Registers a general event handler that will pick up any message activity that is not covered by the previous events handlers. 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
@@ -117,12 +117,12 @@ public class AuthAgent : AgentApplication
         //When Auto Sign in is properly configured, the user will be automatically signed in when they first connect to the agent using the default handler chosen in the UserAuthorization configuration.
         //IMPORTANT: The ReadMe associated with this sample, instructs you on configuring the Azure Bot Service Registration with the scopes to allow you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
 
-        //If the sign in process is successful, the user will be signed in and the token will be available from the Authorization.GetTurnToken(_signInHandlerName) function call. 
-        //if the sign in was not successful,  you will get a Null when you call the Authorization.GetTurnToken(_signInHandlerName) function. 
+        //If the sign in process is successful, the user will be signed in and the token will be available from the UserAuthorization.GetTurnToken(_signInHandlerName) function call. 
+        //if the sign in was not successful,  you will get a Null when you call the UserAuthorization.GetTurnToken(_signInHandlerName) function. 
         
 
-        // Check for Access Token from the Authorization Sub System. 
-        if (string.IsNullOrEmpty(Authorization.GetTurnToken(_signInHandlerName)))
+        // Check for Access Token from the UserAuthorization Sub System. 
+        if (string.IsNullOrEmpty(UserAuthorization.GetTurnToken(_signInHandlerName)))
         {
             // Failed to get access token here, and we will now bail out of this message loop. 
             await turnContext.SendActivityAsync($"The auto sign in process failed and no access token is available", cancellationToken: cancellationToken);
@@ -166,7 +166,7 @@ public class AuthAgent : AgentApplication
     private async Task<string> GetDisplayName(ITurnContext turnContext)
     {
         string displayName = _defaultDisplayName;
-        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
+        string accessToken = UserAuthorization.GetTurnToken(_signInHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {

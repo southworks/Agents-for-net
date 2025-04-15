@@ -41,7 +41,7 @@ public class AuthAgent : AgentApplication
         
 
         // This sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
-        _signInHandlerName = Authorization.DefaultHandlerName;
+        _signInHandlerName = UserAuthorization.DefaultHandlerName;
 
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
@@ -54,7 +54,7 @@ public class AuthAgent : AgentApplication
         {
             // force a user signout to reset the user state
             // this is needed to reset the token in Azure Bot Services if needed. 
-            await Authorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
+            await UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
             await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
         }, rank: RouteRank.Last);
 
@@ -64,9 +64,9 @@ public class AuthAgent : AgentApplication
         // You can use this class to interact with the authentication process, including signing in and signing out users, accessing tokens, and handling authentication events.
 
         // Register Events for SignIn and SignOut on the authentication class to track the status of the user, notify the user of the status of their authentication process, or log the status of the authentication process.
-        Authorization.OnUserSignInSuccess(OnUserSignInSuccess);
+        UserAuthorization.OnUserSignInSuccess(OnUserSignInSuccess);
 
-        Authorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
+        UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
         {
             await turnContext.SendActivityAsync($"Manual Sign In: Failed to login to '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
         });
@@ -125,7 +125,7 @@ public class AuthAgent : AgentApplication
         // IMPORTANT: The ReadMe associated with this sample, instructs you on configuring the Azure Bot Service Registration with the scopes to allow you to read your own information from Graph.  you must have completed that for this sample to work correctly. 
 
         // In this scenario a specific login handler is called for,  if that logging handler succeeds the remainder of the turn process is handled in the OnUserSignInSuccess handler
-        await Authorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
+        await UserAuthorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public class AuthAgent : AgentApplication
         // This triggers the User login flow, and the user will be prompted to sign in using the authorization provider if needed.
         // On Success, this will call the OnUserSignInSuccess event handler to notify the user of the success and provide the access token.  The token will also be available in the Authorization class.
 
-        await Authorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
+        await UserAuthorization.SignInUserAsync(turnContext, turnState, _signInHandlerName, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -164,7 +164,7 @@ public class AuthAgent : AgentApplication
         if (handlerName.Equals(_signInHandlerName))
         {
             // Check for Access Token from the Authorization Sub System. 
-            if (string.IsNullOrEmpty(Authorization.GetTurnToken(handlerName)))
+            if (string.IsNullOrEmpty(UserAuthorization.GetTurnToken(handlerName)))
             {
                 // Failed to get access token here, and we will now bail out of this message loop. 
                 await turnContext.SendActivityAsync($"The auto sign in process failed and no access token is available", cancellationToken: cancellationToken);
@@ -199,7 +199,7 @@ public class AuthAgent : AgentApplication
     private async Task<string> GetDisplayName(ITurnContext turnContext)
     {
         string displayName = _defaultDisplayName;
-        string accessToken = Authorization.GetTurnToken(_signInHandlerName);
+        string accessToken = UserAuthorization.GetTurnToken(_signInHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {
