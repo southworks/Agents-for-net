@@ -9,9 +9,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.IO;
 using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,20 +46,10 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
     .AllowAnonymous();
 
 
-// Setup development host and allow use of a local launchSettings.json file
-if (app.Environment.IsDevelopment())
-{
-    string launchSettingsPath = Path.Combine(app.Environment.ContentRootPath, "Properties", "launchSettings.json");
-    if (!File.Exists(launchSettingsPath))
-    {
-        // No local launch settings.. use default port
-        // Setup port and listening address.
-        app.Urls.Add("http://localhost:3978");
-    }
-    else
-    {
-        app.MapGet("/", () => "Microsoft Agents SDK Sample");
-    }
-}
+// Hardcoded for brevity and ease of testing. 
+// In production, this should be set in configuration.
+app.Urls.Add($"http://localhost:3978");
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
 app.Run();
 

@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -167,14 +168,22 @@ public class AuthAgent : AgentApplication
         string displayName = _defaultDisplayName;
         string accessToken = Authorization.GetTurnToken(_signInHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
-        HttpClient client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        HttpResponseMessage response = await client.GetAsync(graphApiUrl);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var content = await response.Content.ReadAsStringAsync();
-            var graphResponse = JsonNode.Parse(content);
-            displayName = graphResponse!["displayName"].GetValue<string>();
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage response = await client.GetAsync(graphApiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var graphResponse = JsonNode.Parse(content);
+                displayName = graphResponse!["displayName"].GetValue<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error response from Graph API
+            System.Diagnostics.Trace.WriteLine($"Error getting display name: {ex.Message}");
         }
         return displayName;
     }
