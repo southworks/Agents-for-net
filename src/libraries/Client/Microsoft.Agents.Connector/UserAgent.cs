@@ -98,9 +98,9 @@ namespace Microsoft.Agents.Connector
             var splitFramework = frameworkName.Replace(",", string.Empty).Replace(" ", string.Empty).Split('=');
             if (splitFramework.Length > 1)
             {
-                ProductInfoHeaderValue.TryParse($"{splitFramework[0]}/{splitFramework[1]}", out _frameworkProductInfo);
+                _ = ProductInfoHeaderValue.TryParse($"{splitFramework[0]}/{splitFramework[1]}", out _frameworkProductInfo);
             }
-            else if (splitFramework.Length > 0)
+            else
             {
                 frameworkName = splitFramework[0];
 
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Connector
                 if (version.Success)
                 {
                     frameworkName = frameworkName.Replace(version.Value, string.Empty).Trim();
-                    ProductInfoHeaderValue.TryParse($"{frameworkName}/{version.Value}", out _frameworkProductInfo);
+                    _ = ProductInfoHeaderValue.TryParse($"{frameworkName}/{version.Value}", out _frameworkProductInfo);
                 }
             }
 
