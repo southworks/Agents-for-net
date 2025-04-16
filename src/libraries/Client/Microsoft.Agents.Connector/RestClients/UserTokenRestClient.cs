@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Threading;
@@ -108,7 +109,11 @@ namespace Microsoft.Agents.Connector.RestClients
                 var value = _cache.Get(cacheKey);
                 if (value != null)
                 {
-                    return (TokenResponse)value;
+                    var toExpiration = ((TokenResponse)value).Expiration - DateTime.UtcNow;
+                    if (toExpiration.Minutes >= 3)
+                    {
+                        return (TokenResponse)value;
+                    }
                 }
             }
 
@@ -122,18 +127,24 @@ namespace Microsoft.Agents.Connector.RestClients
 
                     if (response?.Token != null)
                     {
+                        // Token Service isn't returning Expiration in TokenResponse
+                        var jwtToken = new JwtSecurityToken(response.Token);
+                        response.Expiration = jwtToken.ValidTo;
+
                         _cache.Add(
                             new CacheItem(cacheKey) { Value = response },
                             new CacheItemPolicy()
                             {
-                                SlidingExpiration = TimeSpan.FromMinutes(5)
+                                SlidingExpiration = TimeSpan.FromMinutes(3)
                             });
                     }
 
                     return response;
+
                 case 404:
                     // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
+
                 default:
                     throw new HttpRequestException($"GetTokenAsync {httpResponse.StatusCode}");
             }

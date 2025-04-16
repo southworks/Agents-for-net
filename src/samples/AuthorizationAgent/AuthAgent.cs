@@ -59,7 +59,7 @@ public class AuthAgent : AgentApplication
     {
         if (turnContext.Activity.Text == "auto")
         {
-            await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{UserAuthorization.DefaultHandlerName}', token length: {UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName).Length}", cancellationToken: cancellationToken);
+            await turnContext.SendActivityAsync($"Auto Sign In: Successfully logged in to '{UserAuthorization.DefaultHandlerName}', token length: {(await UserAuthorization.GetTurnTokenForCaller(turnContext, UserAuthorization.DefaultHandlerName)).Length}", cancellationToken: cancellationToken);
         }
         else
         {
