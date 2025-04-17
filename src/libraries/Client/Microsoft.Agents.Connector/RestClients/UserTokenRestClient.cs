@@ -270,10 +270,12 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId = null, string code = null, string state = null, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default)
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrEmpty(userId);
             ArgumentException.ThrowIfNullOrEmpty(connectionName);
+            ArgumentException.ThrowIfNullOrEmpty(channelId);
+            ArgumentException.ThrowIfNullOrEmpty(state);
 
             using var message = CreateGetTokenOrSignInResourceRequest(userId, connectionName, channelId, code, state, finalRedirect, fwdUrl);
             using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
@@ -281,6 +283,8 @@ namespace Microsoft.Agents.Connector.RestClients
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
+                case 404:
+                    var json = await httpResponse.Content.ReadAsStringAsync();
                     return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
                 default:
                     throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");

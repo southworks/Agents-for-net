@@ -80,15 +80,13 @@ namespace Microsoft.Agents.Connector
         /// <summary>
         /// Get the token or sign in resource for a user.
         /// </summary>
-        /// <param name="userId">The user id that will be associated with the token.</param>
         /// <param name="connectionName">Name of the auth connection to use.</param>
-        /// <param name="channelId">The channel Id that will be associated with the token.</param>
+        /// <param name="activity"></param>
         /// <param name="code">(Optional) Optional user entered code to validate.</param>
-        /// <param name="state">State.</param>
         /// <param name="finalRedirect">The final URL that the OAuth flow will redirect to.</param>
-        /// <param name="fwdUrl">The URL to forward the user to after sign in.</param>
+        /// <param name="fwdUrl"></param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl, CancellationToken cancellationToken);
+        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default);
     }
 }

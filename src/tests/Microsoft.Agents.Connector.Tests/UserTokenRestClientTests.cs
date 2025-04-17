@@ -404,17 +404,17 @@ namespace Microsoft.Agents.Connector.Tests
 
 
         [Fact]
-        public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullUserId()
+        public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullActivity()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(null, ConnectionName, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(ConnectionName, null, Code, FinalRedirect, FwdUrl, CancellationToken.None));
         }
 
         [Fact]
         public async Task GetTokenOrSignInResourceAsync_ShouldThrowOnNullConnectionName()
         {
             var client = UseClient();
-            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(UserId, null, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => client.GetTokenOrSignInResourceAsync(null, new Activity(), Code, FinalRedirect, FwdUrl, CancellationToken.None));
         }
 
         [Fact]
@@ -435,7 +435,13 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            var result = await client.GetTokenOrSignInResourceAsync(UserId, ConnectionName, ChannelId, Code, State, FinalRedirect, FwdUrl, CancellationToken.None);
+            var activity = new Activity()
+            {
+                From = new ChannelAccount() { Id = UserId },
+                ChannelId = ChannelId
+            };
+
+            var result = await client.GetTokenOrSignInResourceAsync(ConnectionName, activity, Code, FinalRedirect, FwdUrl, CancellationToken.None);
 
             Assert.NotNull(result);
             Assert.Equal(responseContent.TokenResponse.Token, result.TokenResponse.Token);

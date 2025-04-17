@@ -68,6 +68,6 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="fwdUrl"> Fwd URL.</param>
         /// <param name="cancellationToken"> The cancellation token.</param>
         /// <returns>A Task representing the <see cref="TokenOrSignInResourceResponse"/> of the HTTP operation.</returns>
-        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId = default, string code = default, string state = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default);
+        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default);
     }
 }

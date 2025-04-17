@@ -160,9 +160,9 @@ namespace Microsoft.Agents.Builder.Testing.Adapters
             });
         }
 
-        public Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
+        public Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect, string fwdUrl, CancellationToken cancellationToken)
         {
-            var tokenResponse = GetUserTokenAsync(userId, connectionName, channelId, code, cancellationToken).Result;
+            var tokenResponse = GetUserTokenAsync(activity.From.Id, connectionName, activity.ChannelId, code, cancellationToken).Result;
             if (tokenResponse is not null)
             {
                 return Task.FromResult(new TokenOrSignInResourceResponse { TokenResponse = tokenResponse });
