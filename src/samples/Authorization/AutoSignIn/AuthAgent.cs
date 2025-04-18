@@ -66,7 +66,7 @@ public class AuthAgent : AgentApplication
         UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
 
         // Registers a general event handler that will pick up any message activity that is not covered by the previous events handlers. 
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last, autoSignInHandler: "graph");
     }
 
     /// <summary>
