@@ -109,8 +109,8 @@ namespace Microsoft.Agents.Connector.RestClients
                 var value = _cache.Get(cacheKey);
                 if (value != null)
                 {
-                    var toExpiration = ((TokenResponse)value).Expiration - DateTime.UtcNow;
-                    if (toExpiration.Minutes >= 3)
+                    var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
+                    if (toExpiration?.Minutes >= 3)
                     {
                         return (TokenResponse)value;
                     }
@@ -123,13 +123,17 @@ namespace Microsoft.Agents.Connector.RestClients
             switch ((int)httpResponse.StatusCode)
             {
                 case 200:
-                    var response = ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+                    var response = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
 
                     if (response?.Token != null)
                     {
                         // Token Service isn't returning Expiration in TokenResponse
-                        var jwtToken = new JwtSecurityToken(response.Token);
-                        response.Expiration = jwtToken.ValidTo;
+                        if (response.Expiration == null)
+                        {
+                            var jwtToken = new JwtSecurityToken(response.Token);
+                            response.Expiration = jwtToken.ValidTo;
+                        }
 
                         _cache.Add(
                             new CacheItem(cacheKey) { Value = response },

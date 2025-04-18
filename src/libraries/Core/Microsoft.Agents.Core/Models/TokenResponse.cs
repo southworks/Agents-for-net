@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> The user token. </summary>
         public string Token { get; set; }
         /// <summary> Expiration for the token, in ISO 8601 format (e.g. "2007-04-05T14:30Z"). </summary>
-        public DateTime Expiration { get; set; }
+        public DateTimeOffset? Expiration { get; set; }
 
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
