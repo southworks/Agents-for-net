@@ -8,6 +8,7 @@ using Microsoft.Agents.Core.Models;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,23 +93,16 @@ public class AuthAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                string WelcomeMsg = """
-                        $"Welcome to the ManualSignIn Example."
-                        "This Agent requires you to manually sign you in."
-                        "You can use the following commands to interact with the agent:"
-                        "-signin: Sign into the agent."
-                        "-signout: Sign out of the agent and force it to reset the login flow on next message."
-                        ""
-                        "Type anything else to see the agent echo back your message."
-                        $"Welcome to the ManualSignIn Example."
-                        "This Agent requires you to manually sign you in."
-                        "You can use the following commands to interact with the agent:"
-                        "-signin: Sign into the agent."
-                        "-signout: Sign out of the agent and force it to reset the login flow on next message."
-                        ""
-                        "Type anything else to see the agent echo back your message."
-                    """;
-                await turnContext.SendActivityAsync(MessageFactory.Text(WelcomeMsg), cancellationToken);
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Welcome to the ManualSignIn Example.");
+                sb.AppendLine("This Agent requires you to manually sign you in.");
+                sb.AppendLine("You can use the following commands to interact with the agent:");
+                sb.AppendLine("-signin: Sign into the agent.");
+                sb.AppendLine("-signout: Sign out of the agent and force it to reset the login flow on next message.");
+                sb.AppendLine("");
+                sb.AppendLine("Type anything else to see the agent echo back your message.");
+
+                await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
             }
         }
     }
