@@ -121,10 +121,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     var auth = httpRequest.Headers.Authorization;
                     if (auth.Count != 0)
                     {
-                        var authValues = auth.First().Split(' ');
+                        var authHeaderValue = auth.First();
+                        var authValues = authHeaderValue.Split(' ');
                         if (authValues.Length == 2 && authValues[0].Equals("bearer", StringComparison.OrdinalIgnoreCase))
                         {
-                            var jwt = new JwtSecurityToken(auth.First().Split(' ')[1]);
+                            var jwt = new JwtSecurityToken(authValues[1]);
                             claimsIdentity = new ClaimsIdentity(jwt.Claims);
                         }
                     }
