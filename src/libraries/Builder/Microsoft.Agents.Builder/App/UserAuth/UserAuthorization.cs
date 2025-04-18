@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 var diff = token.Expiration - DateTimeOffset.UtcNow;
-                if (diff.HasValue && diff?.TotalMinutes > 0)
+                if (diff.HasValue && diff?.TotalMinutes >= 3)
                 {
                     return token.Token;
                 }
