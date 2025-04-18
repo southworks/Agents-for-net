@@ -519,6 +519,94 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
         }
 
+        [Fact]
+        public async Task Test_AutoSignInForRouteFlow_AutoOn()
+        {
+            // arrange
+            var storage = new MemoryStorage();
+            var adapter = new TestAdapter();
+
+            // mock IUserAuthorization that returns null the first attempt, then a token after that.
+            // This simulate the "not signed in" initial state.
+            int attempt = 0;
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    if (attempt++ == 0)
+                    {
+                        return Task.FromResult((string)null);
+                    }
+                    return Task.FromResult(GraphToken);
+                });
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+
+            // second mock IUserAuthorization that returns null the first attempt, then a token after that.
+            // This simulate the "not signed in" initial state.
+            int sharePointAttempt = 0;
+            var sharePointMock = new Mock<IUserAuthorization>();
+            sharePointMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    if (sharePointAttempt++ == 0)
+                    {
+                        return Task.FromResult((string)null);
+                    }
+                    return Task.FromResult(SharePointToken);
+                });
+            sharePointMock
+                .Setup(e => e.Name)
+                .Returns(SharePointName);
+
+            // Setup app
+            var options = new TestApplicationOptions(storage)
+            {
+                Adapter = adapter,
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object, sharePointMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOn
+                }
+            };
+            var app = new TestApplication(options);
+
+            // Default AutoSignIn "global" handler.
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            },
+            rank: RouteRank.Last);
+
+            // Route Handler for "-sharepoint" using SharePointName OAuth
+            app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
+            {
+                Assert.NotNull(app.UserAuthorization.GetTurnToken(SharePointName));
+
+                // GraphName token should be available since it was global auto
+                Assert.NotNull(app.UserAuthorization.GetTurnToken(GraphName));
+
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            },
+            autoSignInHandler: SharePointName);
+
+            // act
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+            .Send("hi")   // test "global" AutoSignIn
+            .Send("magic code")
+            .AssertReply("You said: hi")
+            .Send("-sharepoint")  // test per-route Auto
+            .Send("magic code")
+            .AssertReply("You said: -sharepoint")
+            .StartTestAsync();
+        }
+
         private static TurnContext MockTurnContext()
         {
             return new TurnContext(new SimpleAdapter(), new Activity()
