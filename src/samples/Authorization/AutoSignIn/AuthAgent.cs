@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
@@ -33,7 +34,9 @@ public class AuthAgent : AgentApplication
     /// <param name="options">AgentApplication Configuration objects to configure and setup the Agent Application</param>
     public AuthAgent(AgentApplicationOptions options) : base(options)
     {
-        
+        // NOT FOR SAMPLE.  Overriding config value for POC
+        Options.UserAuthorization.AutoSignIn = UserAuthorizationOptions.AutoSignInOff;
+
          //During setup of the Agent Application, Register Event Handlers for the Agent. 
          //For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
          //Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent. .
