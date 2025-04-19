@@ -18,12 +18,12 @@ public class AuthAgent : AgentApplication
     /// <summary>
     /// Default Sign In Name
     /// </summary>
-    private string _defaultDisplayName = "Unknown User";
+    private readonly string _defaultDisplayName = "Unknown User";
 
     /// <summary>
-    /// Authorization Handler Name to use for queries 
+    /// Authorization Handler Name to get a token from.
     /// </summary>
-    private string _signInHandlerName = string.Empty;
+    private readonly string _signInHandlerName = "graph";
 
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
@@ -36,9 +36,6 @@ public class AuthAgent : AgentApplication
         // For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
         // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent. .
         // This handler should only register events and setup state as it can be called multiple times before agent events are invoked. 
-
-        // This sets the default signin handler to the default handler name.  This is used to identify the handler that will be used for the sign-in process later in this code. 
-        _signInHandlerName = UserAuthorization.DefaultHandlerName;
 
         // When a conversation update event is triggered. 
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
