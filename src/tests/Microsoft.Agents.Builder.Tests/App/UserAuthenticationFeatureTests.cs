@@ -108,8 +108,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, GraphName));
-            Assert.Equal(GraphToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+            Assert.Equal(GraphToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
         }
 
         [Fact]
@@ -131,8 +131,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, SharePointName));
-            Assert.Equal(SharePointToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
+            Assert.Equal(SharePointToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
         }
 
         [Fact]
@@ -177,8 +177,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, GraphName));
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, SharePointName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
         }
 
         [Fact]
@@ -200,8 +200,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, SharePointName));
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, GraphName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
         }
 
         [Fact]
@@ -215,7 +215,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
         }
 
         [Fact]
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     {
                         return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken });
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -310,7 +310,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
         }
 
         [Fact]
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     {
                         return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken });
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -408,7 +408,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
         }
 
         private static TurnContext MockTurnContext()

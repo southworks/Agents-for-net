@@ -114,6 +114,8 @@ namespace Microsoft.Agents.Connector.RestClients
                     {
                         return (TokenResponse)value;
                     }
+
+                    _cache.Remove(cacheKey);
                 }
             }
 

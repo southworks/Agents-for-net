@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using Microsoft.VisualBasic;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -80,7 +81,7 @@ public class AuthAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                string displayName = await GetDisplayName(turnContext);
+                string displayName = await GetDisplayName(turnContext, turnState);
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine($"Welcome to the AutoSignIn Example, **{displayName}**!.");
                 sb.AppendLine("This Agent automatically signs you in when you first connect.");
@@ -114,7 +115,7 @@ public class AuthAgent : AgentApplication
 
         // With AutoSignIn, if we got this far, the UserAuthorization.GetTurnTokenForCaller can be used throughout the turn
         // to get a non-expired token.  GetTurnTokenForCaller will handle refreshing the token if needed.
-        string displayName = await GetDisplayName(turnContext);
+        string displayName = await GetDisplayName(turnContext, turnState);
         if (displayName.Equals(_defaultDisplayName))
         {
             // Handle error response from Graph API
@@ -150,14 +151,14 @@ public class AuthAgent : AgentApplication
     /// </summary>
     /// <param name="turnContext"><see cref="ITurnState"/></param>
     /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    private async Task<string> GetDisplayName(ITurnContext turnContext, ITurnState turnState)
     {
         string displayName = _defaultDisplayName;
 
         // Use UserAuthorization.GetTurnTokenForCaller whenever you need to use the token immediately.  This token is retrieved
         // at turn start.  But, during long running operations the token could expire, and GetTurnTokenForCaller will automatically
         // refresh the token.
-        string accessToken = await UserAuthorization.GetTurnTokenForCaller(turnContext, UserAuthorization.DefaultHandlerName);
+        string accessToken = await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, UserAuthorization.DefaultHandlerName);
         
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try

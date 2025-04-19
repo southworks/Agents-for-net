@@ -105,12 +105,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// initial acquisition and use.
         /// </remarks>
         /// <param name="turnContext"></param>
+        /// <param name="turnState"></param>
         /// <param name="handlerName"></param>
         /// <param name="exchangeConnection"></param>
         /// <param name="exchangeScopes"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<string> GetTurnTokenForCaller(ITurnContext turnContext, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<string> GetTurnTokenForCaller(ITurnContext turnContext, ITurnState turnState, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
@@ -158,7 +159,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             }
 
             // Handle the case where we already have a token for this handler and the Agent is calling this again.
-            var existingCachedToken = await GetTurnTokenForCaller(turnContext, handlerName);
+            var existingCachedToken = await GetTurnTokenForCaller(turnContext, turnState, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (existingCachedToken != null)
             {
                 // call the handler directly
