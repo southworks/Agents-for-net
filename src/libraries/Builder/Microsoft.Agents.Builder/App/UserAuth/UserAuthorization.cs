@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 }
                 
                 var handler = _dispatcher.Get(handlerName);
-                var response = await handler.GetRefreshedUserTokenAsync(turnContext, handlerName, exchangeConnection: exchangeConnection, exchangeScopes: exchangeScopes, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var response = await handler.GetRefreshedUserTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
                     _authTokens[handlerName] = response;
