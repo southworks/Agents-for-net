@@ -196,7 +196,7 @@ public class AuthAgent : AgentApplication
 
     private async Task<JsonNode> GetGraphInfo(string handleName)
     {
-        string accessToken = UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName);
+        string accessToken = UserAuthorization.GetTurnToken(handleName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {
