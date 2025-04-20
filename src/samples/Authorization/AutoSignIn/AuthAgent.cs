@@ -25,14 +25,14 @@ public class AuthAgent : AgentApplication
 
     /// <summary>
     /// Describes the agent registration for the Authorization Agent
-    /// This agent will handle the sign-in and sign-out processes for a user.
+    /// This agent will handle the sign-in and sign-out OAuth processes for a user.
     /// </summary>
     /// <param name="options">AgentApplication Configuration objects to configure and setup the Agent Application</param>
     public AuthAgent(AgentApplicationOptions options) : base(options)
     {
         // During setup of the Agent Application, Register Event Handlers for the Agent. 
         // For this example we will register a welcome message for the user when they join the conversation, then configure sign-in and sign-out commands.
-        // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent. .
+        // Additionally, we will add events to handle notifications of sign-in success and failure,  these notifications will report the local log instead of back to the calling agent.
 
         // This handler should only register events and setup state as it can be called multiple times before agent events are invoked. 
         
@@ -82,13 +82,13 @@ public class AuthAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                string displayName = await GetDisplayName(turnContext);
+                string displayName = await GetDisplayName();
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine($"Welcome to the AutoSignIn Example, **{displayName}**!.");
+                sb.AppendLine($"Welcome to the AutoSignIn Example, **{displayName}**!");
                 sb.AppendLine("This Agent automatically signs you in when you first connect.");
                 sb.AppendLine("You can use the following commands to interact with the agent:");
-                sb.AppendLine("-me: Displays ... using a different OAuth Connection.");
-                sb.AppendLine("-signout: Sign out of the agent and force it to reset the login flow on next message.");
+                sb.AppendLine("**-me**: Displays detailed information using a different OAuth Token.");
+                sb.AppendLine("**-signout**: Sign out of the agent and force it to reset the login flow on next message.");
                 if (displayName.Equals(_defaultDisplayName))
                 {
                     sb.AppendLine("**WARNING: We were unable to get your display name with the current access token.. please use the -signout command before proceeding**");
@@ -110,8 +110,30 @@ public class AuthAgent : AgentApplication
     private async Task OnMe(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // If the sign in is successful, the user will be signed in and the token will be available from the UserAuthorization.GetTurnToken("me") call. 
-        // If the sign in was not successful, this won't be reached.  Instead, OnUserSignInFailure route would have been called. 
-        await turnContext.SendActivityAsync($"me TODO, Token are same: {UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName) == UserAuthorization.GetTurnToken("me")}", cancellationToken: cancellationToken);
+        // If the sign in was not successful, this won't be reached.  Instead, OnUserSignInFailure route would have been called.
+
+        // For this sample, two OAuth Connections are setup to demonstrate multiple OAuth Connections and Auto SignIn handling and routing.
+        // For ease of setup, both connections are using the same App Reg for API Permissions.  In a real Agent, these would be using different
+        // App Registrations with different permissions. In this cases, we are using two different tokens to access external services.
+
+        var displayName = await GetDisplayName();
+        var graphInfo = await GetGraphInfo("me");
+
+        // Just to verify "auto" handler setup.  This wouldn't be needed in a production Agent and here just to verify sample setup.
+        if (displayName.Equals(_defaultDisplayName) || graphInfo == null)
+        {
+            await turnContext.SendActivityAsync($"Failed to get information from handlers '{UserAuthorization.DefaultHandlerName}' and/or 'me'. \nDid you update the scope correctly in Azure bot Service?. If so type in -signout to force signout the current user", cancellationToken: cancellationToken);
+            return;
+        }
+
+        // Just to verify we in fact have two different tokens.  This wouldn't be needed in a production Agent and here just to verify sample setup.
+        if (UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName) == UserAuthorization.GetTurnToken("me"))
+        {
+            await turnContext.SendActivityAsync($"It would seem '{UserAuthorization.DefaultHandlerName}' and 'me' are using the same OAuth Connection", cancellationToken: cancellationToken);
+        }
+
+        var meInfo = $"Name: {displayName}\r\nJob Title: {graphInfo["jobTitle"].GetValue<string>()}\r\nEmail: {graphInfo["mail"].GetValue<string>()}";
+        await turnContext.SendActivityAsync(meInfo, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -130,7 +152,7 @@ public class AuthAgent : AgentApplication
         // If the sign in was not successful, this won't be reached.  Instead, OnUserSignInFailure route would have been called. 
         
         // We have the access token, now try to get your user name from graph. 
-        string displayName = await GetDisplayName(turnContext);
+        string displayName = await GetDisplayName();
         if (displayName.Equals(_defaultDisplayName))
         {
             // Handle error response from Graph API
@@ -161,11 +183,19 @@ public class AuthAgent : AgentApplication
     /// <summary>
     /// Gets the display name of the user from the Graph API using the access token.
     /// </summary>
-    /// <param name="turnContext"><see cref="ITurnState"/></param>
-    /// <returns></returns>
-    private async Task<string> GetDisplayName(ITurnContext turnContext)
+    private async Task<string> GetDisplayName()
     {
         string displayName = _defaultDisplayName;
+        var graphInfo = await GetGraphInfo(UserAuthorization.DefaultHandlerName);
+        if (graphInfo != null)
+        {
+            displayName = graphInfo!["displayName"].GetValue<string>();
+        }
+        return displayName;
+    }
+
+    private async Task<JsonNode> GetGraphInfo(string handleName)
+    {
         string accessToken = UserAuthorization.GetTurnToken(UserAuthorization.DefaultHandlerName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
@@ -176,8 +206,7 @@ public class AuthAgent : AgentApplication
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var graphResponse = JsonNode.Parse(content);
-                displayName = graphResponse!["displayName"].GetValue<string>();
+                return JsonNode.Parse(content);
             }
         }
         catch (Exception ex)
@@ -185,6 +214,6 @@ public class AuthAgent : AgentApplication
             // Handle error response from Graph API
             System.Diagnostics.Trace.WriteLine($"Error getting display name: {ex.Message}");
         }
-        return displayName;
+        return null;
     }
 }
