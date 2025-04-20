@@ -102,9 +102,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This is a mechanism to access a previously acquired user token during the turn. It should be
-        /// considered a convenience method to get a token for each handler.  Not as a way to 
-        /// initiate the signin process.  This will also handle refreshing the token if expired between
-        /// initial acquisition and use.
+        /// considered a method to get a token for each handler, not as a way to initiate the signin process.
+        /// This will also handle refreshing the token if expired between initial acquisition and use.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>
