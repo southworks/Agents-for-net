@@ -59,8 +59,9 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition OBONotExchangeableToken = new AgentErrorDefinition(baseBuilderErrorCode - 16, Properties.Resources.OBONotExchangeableToken, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBONotSupported = new AgentErrorDefinition(baseBuilderErrorCode - 17, Properties.Resources.OBONotSupported, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition OBOExchangeFailed = new AgentErrorDefinition(baseBuilderErrorCode - 18, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UnexpectedAuthorizationState = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.OBOExchangeFailed, "https://aka.ms/AgentsSDK-Error01");
 
-        internal static AgentErrorDefinition AnonymousNotAllowed = new AgentErrorDefinition(baseBuilderErrorCode - 19, Properties.Resources.AnonymousNotAllowed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AnonymousNotAllowed = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.AnonymousNotAllowed, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

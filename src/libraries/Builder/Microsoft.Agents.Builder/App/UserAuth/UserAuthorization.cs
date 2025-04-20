@@ -11,6 +11,8 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Authentication;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -128,6 +130,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     _authTokens[handlerName] = response;
                     return response.Token;
                 }
+
+                // This is a critical error since the only way we are here is we had a token (user signed in) yet
+                // didn't get a token back.  We are not it a place to handle a multi-turn sign in.
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedAuthorizationState, null, handlerName);
             }
 
             return null;

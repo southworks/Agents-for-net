@@ -201,4 +201,8 @@
     <value>Raised when JWT authentication has not been enabled for the sending channel.</value>
     <comment>Anonymous access is not allowed for this channel.</comment>
   </data>
+  <data name="UnexpectedAuthorizationState" xml:space="preserve">
+    <value>Unexpected state for handler '{0]' </value>
+    <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
+  </data>
 </root>
