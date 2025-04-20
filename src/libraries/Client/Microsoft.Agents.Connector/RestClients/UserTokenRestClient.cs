@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 if (value != null)
                 {
                     var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
-                    if (toExpiration?.TotalMinutes >= 3) // Align with sliding expiration
+                    if (toExpiration?.TotalMinutes >= 5) // Align with sliding expiration
                     {
                         return (TokenResponse)value;
                     }
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Connector.RestClients
                             new CacheItem(cacheKey) { Value = response },
                             new CacheItemPolicy()
                             {
-                                SlidingExpiration = TimeSpan.FromMinutes(3)
+                                SlidingExpiration = TimeSpan.FromMinutes(5)
                             });
                     }
 
