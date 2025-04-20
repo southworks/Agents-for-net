@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 if (value != null)
                 {
                     var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
-                    if (toExpiration?.TotalMinutes >= 3)
+                    if (toExpiration?.TotalMinutes >= 5)
                     {
                         return (TokenResponse)value;
                     }

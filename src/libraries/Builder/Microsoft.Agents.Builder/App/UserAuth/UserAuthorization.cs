@@ -116,13 +116,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
                 var diff = token.Expiration - DateTimeOffset.UtcNow;
-                if (diff.HasValue && diff?.TotalMinutes >= 3)
+                if (diff.HasValue && diff?.TotalMinutes >= 5)
                 {
                     return token.Token;
                 }
                 
                 var handler = _dispatcher.Get(handlerName);
-                var response = await handler.GetRefreshedUserTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+                var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
                     _authTokens[handlerName] = response;

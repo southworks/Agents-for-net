@@ -96,9 +96,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <summary>
         /// Get user token
         /// </summary>
-        public virtual async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string connectionName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public virtual async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, connectionName, null, cancellationToken).ConfigureAwait(false);
+            var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
             return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 

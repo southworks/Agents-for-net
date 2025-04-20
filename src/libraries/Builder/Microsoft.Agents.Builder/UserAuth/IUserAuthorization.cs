@@ -45,6 +45,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <returns></returns>
         Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
-        Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string connectionName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
+        Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default);
     }
 }
