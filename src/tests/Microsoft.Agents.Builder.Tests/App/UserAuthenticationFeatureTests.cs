@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             MockGraph = new Mock<IUserAuthorization>();
             MockGraph
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(5) }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) }));
             MockGraph
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             MockSharePoint = new Mock<IUserAuthorization>();
             MockSharePoint
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = SharePointToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(5) }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = SharePointToken, Expiration = DateTime.UtcNow + TimeSpan.FromMinutes(30) }));
             MockSharePoint
                 .Setup(e => e.Name)
                 .Returns(SharePointName);
@@ -215,7 +215,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     {
                         return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) });
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var graphMock = new Mock<IUserAuthorization>();
             graphMock
                 .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) }));
+                .Returns(Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
             graphMock
                 .Setup(e => e.Name)
                 .Returns(GraphName);
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     {
                         return Task.FromResult((TokenResponse)null);
                     }
-                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5) });
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
                 });
             graphMock
                 .Setup(e => e.Name)
