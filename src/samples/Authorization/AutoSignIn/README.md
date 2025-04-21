@@ -59,7 +59,7 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
       ```json
       "AgentApplication": {
         "UserAuthorization": {
-          "Default": "auto",
+          "DefaultHandlerName": "auto",
           "AutoSignin": true,
           "Handlers": {
             "auto": {
