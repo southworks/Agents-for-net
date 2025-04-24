@@ -15,11 +15,11 @@ namespace Microsoft.Agents.Core.HeaderPropagation;
 public class HeaderPropagationContext()
 {
     private static readonly AsyncLocal<IDictionary<string, StringValues>> _headersFromRequest = new();
-    private static Dictionary<string, StringValues> _headersToPropagate = new();
+    private static HeaderPropagationEntryCollection _headersToPropagate = new();
 
     static HeaderPropagationContext()
     {
-        HeaderPropagationAttribute.SetHeadersSerialization();
+        HeaderPropagationAttribute.LoadHeaders();
     }
 
     /// <summary>
@@ -41,20 +41,16 @@ public class HeaderPropagationContext()
 
     /// <summary>
     /// Gets or sets the headers to allow during the propagation.
-    /// Providing a header with a value will override the one in the request, otherwise the value from the request will be used.
     /// </summary>
-    public static IDictionary<string, StringValues> HeadersToPropagate
+    public static HeaderPropagationEntryCollection HeadersToPropagate
     {
         get
         {
-            var defaultHeaders = new Dictionary<string, StringValues> {
-                { "x-ms-correlation-id", "" }
-            };
-            return defaultHeaders.Concat(_headersToPropagate).ToDictionary(StringComparer.InvariantCultureIgnoreCase);
+            return _headersToPropagate;
         }
         set
         {
-            _headersToPropagate = _headersToPropagate.Concat(value).ToDictionary(StringComparer.InvariantCultureIgnoreCase);
+            _headersToPropagate = value ?? new();
         }
     }
 
@@ -72,12 +68,28 @@ public class HeaderPropagationContext()
             return result;
         }
 
-        foreach (var item in HeadersToPropagate)
+        // Ensure the default headers are always set by overriding the LoadHeaders configuration.
+        _headersToPropagate.Propagate("x-ms-correlation-id");
+
+        foreach (var header in HeadersToPropagate.Entries)
         {
-            if (requestHeaders.TryGetValue(item.Key, out var header))
+            var headerExists = requestHeaders.TryGetValue(header.Key, out var requestHeader);
+
+            switch (header.Action)
             {
-                var value = !string.IsNullOrWhiteSpace(item.Value) ? item.Value : header;
-                result.TryAdd(item.Key, value);
+                case HeaderPropagationEntryAction.Add:
+                    result.TryAdd(header.Key, header.Value);
+                    break;
+                case HeaderPropagationEntryAction.Append when headerExists:
+                    StringValues newValue = requestHeader.Concat(header.Value).ToArray();
+                    result[header.Key] = newValue;
+                    break;
+                case HeaderPropagationEntryAction.Propagate when headerExists:
+                    result[header.Key] = requestHeader;
+                    break;
+                case HeaderPropagationEntryAction.Override:
+                    result[header.Key] = header.Value;
+                    break;
             }
         }
 
