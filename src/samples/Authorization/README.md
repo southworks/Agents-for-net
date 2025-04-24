@@ -1,8 +1,57 @@
-﻿# AuthorizationAgent
+﻿# User Authorization Samples
+
+These Samples demonstrate 3 methods of acquiring User tokens from inside an agent.  Each method has specific use cases where they can be applied.
+
+| Type of Authorization Flow | Sample Name | Description
+|----------------------------|-------------|----------------------------------------------------
+| Automatic Sign In| AutoSignIn | This sample demonstrates the use of the AgentSDK's built in Automatic Sign in Flow.  This Flow triggers anytime a message request is submitted ot the Agent.
+| Manual Sign In| ManualSignIn | This sample demonstrates the use of an on-demand login request. This request only logs in if the user or code requests it.
+| On Behalf of| OBOSignIn | This Sample utilizes the Automatic Sign In and Token Exchange.
+
+# User Authorization Samples General Setup
+
+>[!Warning]
+> It's important you follow these instructions prior to running the samples as this contains the common setup needed by all samples.
+
+These Samples use the OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authorizes users to various identity providers such as Entria ID (formally Azure Active Directory), GitHub, Uber, etc.
+
+These samples are designed to though Azure Bot Services, are are not intended to work with the Bot Framework Emulator, Teams Test Tool at this time. 
+
+## Prerequisites
+
+Access and Software
+- [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
+- [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
+- Access to create Registrations on Azure Bot Service
+- Access to create Entra ID Application Registrations
+- (Optional) Access to deploy M365\Teams Applications
+
+### Setup Entra Applications 
+
+For these samples you will need to create two Entra ID Application Registrations.  
+- Agent Application Identity
+  - This identity will be used by your Agent and Azure Bot Services to Communicate with each other
+- User Application Identity
+  - This is used as the broker application that will be used for end user authentication, API permissions and provide the token for the user to the Agent.
+
+#### Create the Agent Application Identity
+
+You if you have an exiting Bot Service Agent Registration that you want to reuse and you have the Application(client) ID, Tenant ID, and Client Secret, you can skip this step.  Otherwise, follow the steps below to create a new Agent Application Registration.
+
+For the purposes of local development we will use an application registration that is registered in the same tenant as the Azure Bot Service.  This is not a requirement, but it does make local development easier. We will also 
+1. Create a new Entra ID Application Registration
+1. Go to the [Azure Portal](https://portal.azure.com)
+1. Select **Microsoft Entra ID** from the Azure Services List
+1. Select **App registrations** in the left menu
+   - Name: `AgentApp`
+   - Supported Account Types: `Accounts in this organizational directory only (Single tenant)`
+   - Click **Register**
+   - Record the Agent Application ID (Client ID) and Directory (Tenant ID) for use below
+   - Click **Authentication** in the left menu
+   - 
 
 This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use user authorization in your Agent.
 
-The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authorizes users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
 
 - ## Prerequisites
 
