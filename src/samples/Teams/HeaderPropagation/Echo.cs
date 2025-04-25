@@ -8,10 +8,8 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.Models;
-using System;
 
-namespace EchoAgent;
+namespace HeaderPropagation;
 
 public class Echo : AgentApplication
 {

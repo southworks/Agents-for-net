@@ -1,6 +1,16 @@
 ﻿# HeaderPropagation Sample
 
 This sample shows how to enable the Header Propagation feature to capture all incoming request headers and propagate them to outgoing requests.
+To achieve this behavior, the header propagation functionality requires the bot to use the `Extensions.Teams` package, as it contains the necessary configuration to decide which headers are going to be propagated to outgoing requests.
+
+Additionally, to enable this functionality, the Header Propagation middleware is required as follows:
+```cs
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+// Add the HeaderPropagation middleware to propagate incoming request headers to outgoing ones.
+app.UseHeaderPropagation();
+```
 
 ## Prerequisites
 
@@ -51,7 +61,7 @@ This sample shows how to enable the Header Propagation feature to capture all in
       1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
       1. Set the **ClientSecret** to the Secret that was created for your identity.
       
-      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
+      > Storing sensitive values in appsettings is not recommended.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
 1. Manually update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder

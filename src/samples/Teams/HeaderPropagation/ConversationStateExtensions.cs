@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Builder.State;
 
-namespace EchoAgent;
+namespace HeaderPropagation;
 
 public static class ConversationStateExtensions
 {

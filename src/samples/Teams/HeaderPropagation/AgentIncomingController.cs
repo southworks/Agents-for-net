@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
 
-namespace EchoAgent;
+namespace HeaderPropagation;
 
 // ASP.Net Controller that receives incoming HTTP requests from the Azure Bot Service or other configured event activity protocol sources.
 // When called, the request has already been authorized and credentials and tokens validated.
