@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.20/MicrosoftTeams.schema.json",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "manifestVersion": "1.20",
   "id": "<<TEAMS_APP_ID>>",
   "name": {
@@ -10,9 +10,9 @@
   "developer": {
     "name": "",
     "mpnId": "",
-    "websiteUrl": "https://www.example.com",
-    "privacyUrl": "https://www.example.com/priv",
-    "termsOfUseUrl": "https://www.example.com/tou"
+    "websiteUrl": "",
+    "privacyUrl": "",
+    "termsOfUseUrl": ""
   },
   "description": {
     "short": "",
@@ -39,7 +39,7 @@
   ],
   "bots": [
     {
-      "botId": "<<BOT_ID>>",
+      "botId": "",
       "scopes": [
         "personal",
         "team",
@@ -53,24 +53,24 @@
   ],
   "composeExtensions": [
     {
-      "botId": "<<BOT_ID>>",
+      "botId": "",
       "commands": [
         {
           "id": "findNuGetPackage",
           "type": "query",
-          "title": "Find NuGet Package",
-          "description": "Find NuGet package according to the NuGet package name",
-          "initialRun": false,
+          "title": "findNuGetPackage",
+          "description": "findNuGetPackage",
+          "initialRun": true,
           "fetchTask": false,
           "context": [
-            "compose",
-            "commandBox"
+            "commandBox",
+            "compose"
           ],
           "parameters": [
             {
               "name": "NuGetPackageName",
-              "title": "NuGet Package Name",
-              "description": "The name of the NuGet package to be searched",
+              "title": "NuGetPackageName",
+              "description": "NuGetPackageName",
               "inputType": "text"
             }
           ]
@@ -79,5 +79,9 @@
       "canUpdateConfiguration": true
     }
   ],
-  "validDomains": []
+  "validDomains": [],
+  "webApplicationInfo": {
+    "id": "",
+    "resource": ""
+  }
 }
