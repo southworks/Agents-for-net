@@ -4,6 +4,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
@@ -15,9 +16,11 @@ namespace TeamsAgent
     public class TeamsAgent : AgentApplication
     {
         IHttpClientFactory _httpClientFactory;
-        public TeamsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory) : base(options)
+        ILogger<TeamsAgent> _logger;
+        public TeamsAgent(AgentApplicationOptions options, IHttpClientFactory httpClientFactory, ILogger<TeamsAgent> logger) : base(options)
         {
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
             RegisterExtension(new TeamsAgentExtension(this), tae =>
             {
                 tae.OnMessageEdit(MessageEdited);
@@ -36,6 +39,7 @@ namespace TeamsAgent
             if (package is null)
             {
                 await turnContext.SendActivityAsync("selected item is not a packageItem", cancellationToken: cancellationToken);
+                _logger.LogWarning("Selected Item cannot be deserialized as a PackageItem");
                 return null!;
             }
 
@@ -72,6 +76,12 @@ namespace TeamsAgent
 
         private async Task<MessagingExtensionResult> OnQuery(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken)
         {
+            var cmd = ProtocolJsonSerializer.ToObject<CommandValue<string>>(turnContext.Activity.Value);
+            if (cmd.CommandId != "findNuGetPackage")
+            {
+                _logger.LogWarning("Received unexpected commandID {cmdName}", cmd.CommandId);
+                return await Task.FromResult(new MessagingExtensionResult());
+            }
 
             JsonElement el = query.Parameters.TryGetValue<JsonElement>("NuGetPackageName");
 
