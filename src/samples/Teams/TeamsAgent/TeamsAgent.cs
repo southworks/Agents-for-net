@@ -75,13 +75,26 @@ namespace TeamsAgent
 
             JsonElement el = query.Parameters.TryGetValue<JsonElement>("NuGetPackageName");
 
+            if (el.ValueKind == JsonValueKind.Undefined)
+            {
+                return await Task.FromResult(new MessagingExtensionResult());
+            }
+
             string text = el.GetString() ?? string.Empty;
 
 
             IEnumerable<PackageItem> packages = await FindPackages(text);
             List<MessagingExtensionAttachment> attachments = [.. packages.Select(package =>
             {
-                string cardValue = "{{\"id\": \"{package.PackageId}\", \"version\": \"{package.Version}\", \"description\": \"{PackageItem.NormalizeString(package.Description!)}\", \"projectUrl\": \"{package.ProjectUrl}\", \"iconUrl\": \"{package.IconUrl}\"}}";
+                string cardValue = $$$"""
+                {
+                    "id": "{{{package.PackageId}}}",
+                    "version" : "{{{package.Version}}}",
+                    "description" : "{{{PackageItem.NormalizeString(package.Description!)}}}",
+                    "projectUrl" : "{{{package.ProjectUrl}}}",
+                    "iconUrl" : "{{{package.IconUrl}}}"
+                }
+                """;
 
                 ThumbnailCard previewCard = new() { Title = package.PackageId, Tap = new CardAction { Type = "invoke", Value = cardValue } };
                 if (!string.IsNullOrEmpty(package.IconUrl))
