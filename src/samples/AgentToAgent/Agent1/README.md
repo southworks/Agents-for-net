@@ -1,7 +1,6 @@
 ﻿# Agent1 Sample
 
-This is a the sample Agent of an Agent communicating with another Agent. For this sample, `Agent1` is communicating with another Agent (`Agent2`) for a multi-turn conversation.
-
+This is a sample Agent of an Agent communicating with another Agent. For this sample, `Agent1` is communicating with another Agent (`Agent2`) for a multi-turn conversation.
 ## Prerequisites
 
 - [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
