@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <param name="settings">Settings for this instance.</param>
         public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
         {
-            ArgumentNullException.ThrowIfNull(systemServiceProvider);
+            AssertionHelpers.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
 
             _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
@@ -84,7 +85,11 @@ namespace Microsoft.Agents.Authentication.Msal
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
                         accessToken = string.Empty; // flush the access token if it is about to expire.
+#if !NETSTANDARD
                         _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                        _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
                     }
 
                     if (!string.IsNullOrEmpty(accessToken))
@@ -94,7 +99,11 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else
                 {
+#if !NETSTANDARD
                     _cacheList.Remove(instanceUri, out ExecuteAuthenticationResults _);
+#else
+                    _cacheList.TryRemove(instanceUri, out ExecuteAuthenticationResults _);
+#endif
                 }
             }
 
@@ -261,7 +270,11 @@ namespace Microsoft.Agents.Authentication.Msal
                     foreach (var scope in _connectionSettings.Scopes)
                     {
                         var scopePlaceholder = scope;
-                        if (scopePlaceholder.ToLower().Contains("{instance}"))
+#if !NETSTANDARD
+                        if (scopePlaceholder.Contains("{instance}", StringComparison.CurrentCultureIgnoreCase))
+#else
+                        if (scopePlaceholder.ToString().Contains("{instance}"))
+#endif
                         {
                             scopePlaceholder = scopePlaceholder.Replace("{instance}", $"{instanceUrl.Scheme}://{instanceUrl.Host}");
                         }
