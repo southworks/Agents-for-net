@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
                         if (property.PropertyType == typeof(object) && propertyValue is string s)
                         {
-                            if (ProtocolJsonSerializer.ObjectAsString)
+                            if (!ProtocolJsonSerializer.UnpackObjectStrings)
                             {
                                 writer.WriteRawValue(s);
                             }
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 if (element.ValueKind == JsonValueKind.String)
                 {
-                    if (ProtocolJsonSerializer.ObjectAsString)
+                    if (!ProtocolJsonSerializer.UnpackObjectStrings)
                     {
                         var json = element.GetRawText();
                         setter(json);
