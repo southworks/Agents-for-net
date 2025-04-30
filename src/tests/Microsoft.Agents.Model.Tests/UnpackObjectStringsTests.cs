@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Model.Tests
 {
     public class UnpackObjectStringsTests
     {
-        [Fact]
+        [Fact(Skip = "Needs to run separately")]
         public void ObjectWithEscapedStrings()
         {
             ProtocolJsonSerializer.SerializationOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
