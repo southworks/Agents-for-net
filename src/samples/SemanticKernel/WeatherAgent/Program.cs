@@ -50,6 +50,7 @@ else
 // Add AgentApplicationOptions from appsettings config.
 builder.AddAgentApplicationOptions();
 
+// Add the Agent
 builder.AddAgent<MyAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -73,4 +74,3 @@ app.Urls.Add($"http://localhost:3978");
 
 
 app.Run();
-
