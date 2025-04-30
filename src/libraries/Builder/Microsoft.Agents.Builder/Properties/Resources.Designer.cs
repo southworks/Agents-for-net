@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unexpected state for handler &apos;{0]&apos; .
+        ///   Looks up a localized string similar to Unexpected state for handler &apos;{0}&apos; .
         /// </summary>
         internal static string UnexpectedAuthorizationState {
             get {
