@@ -425,9 +425,12 @@ namespace Microsoft.Agents.Connector.Tests
         [Fact]
         public async Task GetTokenOrSignInResourceAsync_ShouldReturnTokenOrSignInResourceResponse()
         {
+            // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+            var token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs";
+
             var responseContent = new TokenOrSignInResourceResponse
             {
-                TokenResponse = new TokenResponse { Token = "test-token" },
+                TokenResponse = new TokenResponse { Token = token },
                 SignInResource = new SignInResource { SignInLink = "test-link" }
             };
 
