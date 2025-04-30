@@ -81,7 +81,7 @@ public class WeatherForecastAgent
             sb.Append(response.Content);
         }
 
-        // Make sure the response is in the correct format and retry if neccesary
+        // Make sure the response is in the correct format and retry if necessary
         try
         {
             string resultContent = sb.ToString();

@@ -19,20 +19,20 @@ public class WeatherForecastPlugin(ITurnContext turnContext)
     /// <param name="location">The location to get the weather for</param>
     /// <returns></returns>
     [KernelFunction]
-    public Task<WeatherForecast> GetForecastForDate(string date,  string location)
+    public async Task<WeatherForecast> GetForecastForDate(string date,  string location)
     {
         string searchingForDate = date;
         if ( DateTime.TryParse(date, out DateTime searchingDate) )
         {
             searchingForDate = searchingDate.ToLongDateString();
         }
-        turnContext.StreamingResponse.QueueInformativeUpdateAsync($"Looking up the Weather in {location} for {searchingForDate}");
+        await turnContext.StreamingResponse.QueueInformativeUpdateAsync($"Looking up the Weather in {location} for {searchingForDate}");
 
         // Simulate a delay for the weather service call
-        return Task.FromResult(new WeatherForecast
+        return new WeatherForecast
         {
             Date = date,
             TemperatureC = Random.Shared.Next(-20, 55)
-        });
+        };
     }
 }
