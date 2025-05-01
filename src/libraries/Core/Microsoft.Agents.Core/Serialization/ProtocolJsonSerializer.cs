@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
         static ProtocolJsonSerializer()
@@ -30,6 +30,25 @@ namespace Microsoft.Agents.Core.Serialization
                 .ApplyCoreOptions();
 
             return options;
+        }
+
+        public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
+        {
+            lock(SerializationOptions)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                foreach (var converter in extensionConverters)
+                {
+                    newOptions.Converters.Add(converter);
+                }
+
+                SerializationOptions = newOptions;
+            }
         }
 
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
