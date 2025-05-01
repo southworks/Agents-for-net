@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using EchoBot;
+using EmptyAgent;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
@@ -17,18 +17,17 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 
+// Add AgentApplicationOptions from config.
+builder.AddAgentApplicationOptions();
+
+// Add the Agent
+builder.AddAgent<MyAgent>();
+
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
 // that state survives Agent restarts, and operate correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Add AgentApplicationOptions from config.
-builder.AddAgentApplicationOptions();
-
-// Add the bot (which is transient)
-builder.AddAgent<MyAgent>();
-
 
 WebApplication app = builder.Build();
 

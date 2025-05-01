@@ -8,7 +8,7 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace EchoBot;
+namespace EmptyAgent;
 
 public class MyAgent : AgentApplication
 {
