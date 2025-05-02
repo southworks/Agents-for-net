@@ -1,6 +1,6 @@
-﻿# EchoAgent Sample
+﻿# FullAuthentication Sample
 
-This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request and echo the text of the request back to the caller.
+This is a sample of a simple Agent that is hosted on an Asp.net core web service, with JWT Token Validation.  This Agent is configured to accept a request and echo the text of the request back to the caller.
 
 This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK messaging loop. It can also be used as a the base for a custom Agent that you choose to develop.
 
@@ -36,6 +36,13 @@ Read more about [Running an Agent](../../../docs/HowTo/running-an-agent.md)
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
+      "TokenValidation": {
+        "Audiences": [
+          "{{ClientId}}" // this is the Client ID used for the Azure Bot
+        ],
+        "TenantId": "{{TenantId}}" 
+      },
+   
       "Connections": {
         "ServiceConnection": {
           "Settings": {
