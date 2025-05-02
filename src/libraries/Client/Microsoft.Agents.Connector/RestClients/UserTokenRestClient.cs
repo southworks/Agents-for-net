@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Connector.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -53,7 +54,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> ExchangeAsyncAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
+        public async Task<object> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -107,8 +108,11 @@ namespace Microsoft.Agents.Connector.RestClients
                     return ProtocolJsonSerializer.ToObject<TokenResponse>(json1);
 #endif
 
+                case 500:
+                    throw new HttpRequestException(ErrorHelper.TokenServiceExchangeFailed.description);
+
                 default:
-                    throw new HttpRequestException($"ExchangeAsyncAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceExchangeUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
 
@@ -138,7 +142,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
                 default:
-                    throw new HttpRequestException($"GetTokenAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceExchangeUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
 
@@ -185,7 +189,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     }
                 default:
-                    throw new HttpRequestException($"GetAadTokensAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetAadTokenUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
 
@@ -229,7 +233,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 204:
                     return null;
                 default:
-                    throw new HttpRequestException($"SignOutAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceSignOutUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
 
@@ -271,7 +275,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     }
                 default:
-                    throw new HttpRequestException($"GetTokenStatusAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetTokenStatusUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
 
@@ -291,38 +295,6 @@ namespace Microsoft.Agents.Connector.RestClients
                 request.Content = new StringContent(ProtocolJsonSerializer.ToJson(body), System.Text.Encoding.UTF8, "application/json");
             }
             return request;
-        }
-
-        /// <inheritdoc/>
-        public async Task<TokenResponse> ExchangeTokenAsync(string userId, string connectionName, string channelId, TokenExchangeRequest body = null, CancellationToken cancellationToken = default)
-        {
-
-            AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
-            AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
-            AssertionHelpers.ThrowIfNullOrEmpty(channelId, nameof(channelId));
-
-            using var message = CreateExchangeTokenRequest(userId, connectionName, channelId, body);
-            using var httpClient = await _transport.GetHttpClientAsync().ConfigureAwait(false);
-            using var httpResponse = await httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
-            switch ((int)httpResponse.StatusCode)
-            {
-                case 200:
-                case 404:
-                    {
-#if !NETSTANDARD
-                        return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
-#else
-                        var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        if (string.IsNullOrEmpty(json))
-                        {
-                            return null;
-                        }
-                        return ProtocolJsonSerializer.ToObject<TokenResponse>(json);
-#endif
-                    }
-                default:
-                    throw new HttpRequestException($"ExchangeTokenAsync {httpResponse.StatusCode}");
-            }
         }
 
         internal HttpRequestMessage CreateGetTokenOrSignInResourceRequest(string userId, string connectionName, string channelId, string code, string state, string finalRedirect, string fwdUrl)
@@ -369,7 +341,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
 #endif
                 default:
-                    throw new HttpRequestException($"GetTokenOrSignInResourceAsync {httpResponse.StatusCode}");
+                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetTokenOrSignInResourceUnexpected.description, httpResponse.StatusCode.ToString()));
             }
         }
     }

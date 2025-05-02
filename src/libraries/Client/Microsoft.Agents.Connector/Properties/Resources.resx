@@ -170,4 +170,25 @@
   <data name="SendUploadAttachment" xml:space="preserve">
     <value>UploadAttachment operation returned an invalid status code '({0}) {1}'</value>
   </data>
+  <data name="TokenServiceExchangeFailed" xml:space="preserve">
+    <value>The Token Service was unable to exchange the token.  Check OAuth Connection config on the Azure Bot and try again.</value>
+  </data>
+  <data name="TokenServiceExchangeUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for Exchange: {0}</value>
+  </data>
+  <data name="TokenServiceGetAadTokenUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for GetAadToken: {0}</value>
+  </data>
+  <data name="TokenServiceGetTokenOrSignInResourceUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for GetTokenOrSignInResource: {0}</value>
+  </data>
+  <data name="TokenServiceGetTokenStatusUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for GetTokenStatus: {0}</value>
+  </data>
+  <data name="TokenServiceGetTokenUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for GetToken: {0}</value>
+  </data>
+  <data name="TokenServiceSignOutUnexpected" xml:space="preserve">
+    <value>The Token Service returned an unexpected response for SignOut: {0}</value>
+  </data>
 </root>

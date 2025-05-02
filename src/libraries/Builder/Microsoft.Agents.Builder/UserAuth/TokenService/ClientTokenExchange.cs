@@ -137,6 +137,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             TokenResponse tokenExchangeResponse = null;
             var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
+            string exceptionMessage = null;
 
             try
             {
@@ -151,14 +152,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
                 else
                 {
-                    throw new NotSupportedException("Token Exchange is not supported by the current adapter.");
+                    throw new NotSupportedException("Token Exchange is not supported by the Agent.");
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Ignore Exceptions
                 // If token exchange failed for any reason, tokenExchangeResponse above stays null,
                 // and hence we send back a failure invoke response to the caller.
+                exceptionMessage = ex.Message;
             }
 
             if (string.IsNullOrEmpty(tokenExchangeResponse?.Token))
@@ -170,12 +172,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     Id = tokenExchangeRequest.Id,
                     ConnectionName = connectionName,
-                    FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
+                    FailureDetail = "The Agent is unable to exchange token.",
                 };
 
-                await SendInvokeResponseAsync(turnContext, invokeResponse, HttpStatusCode.PreconditionFailed, cancellationToken).ConfigureAwait(false);
+                await SendInvokeResponseAsync(turnContext, invokeResponse, exceptionMessage == null ? HttpStatusCode.PreconditionFailed : HttpStatusCode.InternalServerError, cancellationToken).ConfigureAwait(false);
 
-                return false;
+                throw new AuthException(exceptionMessage ?? invokeResponse.FailureDetail, AuthExceptionReason.Other);
             }
 
             return true;
