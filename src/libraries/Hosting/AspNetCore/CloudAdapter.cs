@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 // If Auth is not configured, we still need the claims from the JWT token.
                 // Currently, the stack does rely on certain Claims.  If the Bearer token
-                // was sent, we can get them from there.  The JWT token is NOT valadated though.
+                // was sent, we can get them from there.  The JWT token is NOT validated though.
                 var claimsIdentity = (ClaimsIdentity)httpRequest.HttpContext.User.Identity;
                 if (!claimsIdentity.IsAuthenticated && !claimsIdentity.Claims.Any())
                 {
