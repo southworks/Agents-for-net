@@ -33,6 +33,8 @@ WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseRouting();
+
+app.MapGet("/", () => "Microsoft Agents SDK Sample");
 app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
@@ -42,6 +44,5 @@ app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, 
 // Hardcoded for brevity and ease of testing. 
 // In production, this should be set in configuration.
 app.Urls.Add($"http://localhost:3978");
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 app.Run();
