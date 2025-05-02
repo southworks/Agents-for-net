@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Serialization
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
-        private static object _optionsLock = new object();
+        private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
