@@ -16,7 +16,8 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; internal set; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; } = CreateConnectorOptions();
+        public static bool UnpackObjectStrings { get; set; } = true;
 
         static ProtocolJsonSerializer()
         {
@@ -57,6 +58,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
+            options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
 
             return options;
         }
