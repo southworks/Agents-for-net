@@ -19,6 +19,8 @@ namespace Microsoft.Agents.Core.Serialization
         public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
+        private static object _optionsLock = new object();
+
         static ProtocolJsonSerializer()
         {
             SerializationInitAttribute.InitSerialization();
@@ -34,7 +36,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
         {
-            lock(SerializationOptions)
+            lock(_optionsLock)
             {
                 var newOptions = SerializationOptions;
                 if (newOptions.IsReadOnly)

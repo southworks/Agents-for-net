@@ -12,16 +12,14 @@ namespace Microsoft.Agents.Core.Serialization
     {
         internal static void InitSerialization()
         {
-            // Register handler for new assembly loads
+            // Register handler for new assembly loads.  This is needed because
+            // C# doesn't load a package until accessed.
             AppDomain.CurrentDomain.AssemblyLoad += (s, o) => InitAssembly(o.LoadedAssembly);
 
             // Call serialization init on currently loaded assemblies.
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (assembly.FullName.StartsWith("Microsoft.Agents"))
-                {
-                    InitAssembly(assembly);
-                }
+                InitAssembly(assembly);
             }
         }
 
