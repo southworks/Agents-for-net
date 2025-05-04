@@ -17,9 +17,9 @@ namespace Microsoft.Agents.Connector
             AssertionHelpers.ThrowIfNull(uri, nameof(uri));
             string uriString = uri.ToString();
 #if !NETSTANDARD
-            if (!uriString.Contains('/'))
+            if (!uriString.EndsWith('/'))
 #else
-            if (!uriString.Contains("/"))
+            if (!uriString.EndsWith("/"))
 #endif
             {
                 uriString += "/";

@@ -125,5 +125,10 @@ namespace Microsoft.Agents.Authentication
                 ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
                 : null;
         }
+
+        public static bool AllowAnonymous(ClaimsIdentity identity)
+        {
+            return !identity.IsAuthenticated && !identity.Claims.Any();
+        }
     }
 }
