@@ -24,8 +24,6 @@ namespace TeamsConversationSsoQuickstart
             ConversationState conversationState)
             : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
         {
-            base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
-
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.
