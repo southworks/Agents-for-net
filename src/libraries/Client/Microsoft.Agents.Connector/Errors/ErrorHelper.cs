@@ -59,5 +59,8 @@ namespace Microsoft.Agents.Connector.Errors
         internal static AgentErrorDefinition TokenServiceSignOutUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 20, Properties.Resources.TokenServiceSignOutUnexpected, "https://aka.ms/AgentsSDK-Error21");
         internal static AgentErrorDefinition TokenServiceGetTokenStatusUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 21, Properties.Resources.TokenServiceGetTokenStatusUnexpected, "https://aka.ms/AgentsSDK-Error22");
         internal static AgentErrorDefinition TokenServiceGetTokenOrSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.TokenServiceGetTokenOrSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error23");
+        internal static AgentErrorDefinition TokenServiceGetSignInUrlUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.TokenServiceGetSignInUrlUnexpected, "https://aka.ms/AgentsSDK-Error24");
+        internal static AgentErrorDefinition TokenServiceGetSignInResourceUnexpected = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.TokenServiceGetSignInResourceUnexpected, "https://aka.ms/AgentsSDK-Error25");
+        internal static AgentErrorDefinition TokenServiceExchangeErrorResponse = new AgentErrorDefinition(baseBuilderErrorCode - 25, Properties.Resources.TokenServiceExchangeErrorResponse, "https://aka.ms/AgentsSDK-Error26");
     }
 }

@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<object> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
+        public async Task<TokenResponse> ExchangeAsync(string userId, string connectionName, string channelId, TokenExchangeRequest exchangeRequest, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -78,19 +78,17 @@ namespace Microsoft.Agents.Connector.RestClients
                     return ProtocolJsonSerializer.ToObject<TokenResponse>(json);
 #endif
 
+                // Consent Required
                 case 400:
 #if !NETSTANDARD
-                    var errorJson = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    return ProtocolJsonSerializer.ToObject<ErrorResponse>(errorJson);
+                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
-                    var errorJson = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    if (string.IsNullOrEmpty(errorJson))
-                    {
-                        return null;
-                    }
-                    return ProtocolJsonSerializer.ToObject<ErrorResponse>(errorJson);
+                    ErrorResponse errorBody = ProtocolJsonSerializer.ToObject<ErrorResponse>(httpResponse.Content.ReadAsStringAsync().Result);
 #endif
+                    errorBody.Error.Code = Error.ConsentRequiredCode;
+                    throw new ErrorResponseException($"({errorBody.Error.Code}) {errorBody.Error.Message}") { Body = errorBody };
 
+                // Unclear what this means
                 case 404:
 #if !NETSTANDARD
                     var json = await httpResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -108,11 +106,13 @@ namespace Microsoft.Agents.Connector.RestClients
                     return ProtocolJsonSerializer.ToObject<TokenResponse>(json1);
 #endif
 
+                // Normal when OAuth Connection config is wrong
                 case 500:
-                    throw new HttpRequestException(ErrorHelper.TokenServiceExchangeFailed.description);
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeFailed, cancellationToken, connectionName);
 
+                // Unknown
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceExchangeUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     // there isn't a body provided in this case.  This can happen when the code is invalid.
                     return null;
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceExchangeUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     }
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetAadTokenUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetAadTokenUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 case 204:
                     return null;
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceSignOutUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceSignOutUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Connector.RestClients
 #endif
                     }
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetTokenStatusUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenStatusUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
 
@@ -341,7 +341,7 @@ namespace Microsoft.Agents.Connector.RestClients
                     return ProtocolJsonSerializer.ToObject<TokenOrSignInResourceResponse>(json);
 #endif
                 default:
-                    throw new HttpRequestException(string.Format(ErrorHelper.TokenServiceGetTokenOrSignInResourceUnexpected.description, httpResponse.StatusCode.ToString()));
+                    throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceGetTokenOrSignInResourceUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
         }
     }

@@ -303,7 +303,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     return false;
                 }
 
-                // An InvalidActivity is expected, but anything else is a hard error and the flow is cancelled.
+                // Hard error and the flow is cancelled.  It is possible there is a scenario where a retry is desired, but
+                // unhandled at the moment.
                 if (response.Status == SignInStatus.Error)
                 {
                     // Clear user auth state

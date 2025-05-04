@@ -214,7 +214,16 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection config on the Azure Bot and try again..
+        ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection configuration for &apos;{0}&apos; on the Azure Bot and try again.  The response is &apos;{1}&apos;.
+        /// </summary>
+        internal static string TokenServiceExchangeErrorResponse {
+            get {
+                return ResourceManager.GetString("TokenServiceExchangeErrorResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection configuration for &apos;{0}&apos; on the Azure Bot and try again..
         /// </summary>
         internal static string TokenServiceExchangeFailed {
             get {
@@ -223,7 +232,7 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for Exchange: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for Exchange: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceExchangeUnexpected {
             get {
@@ -232,7 +241,7 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetAadToken: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetAadToken: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceGetAadTokenUnexpected {
             get {
@@ -241,7 +250,25 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenOrSignInResource: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetSignInResource: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetSignInResourceUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetSignInResourceUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetSignInUrl: &apos;({0}) {1}&apos;.
+        /// </summary>
+        internal static string TokenServiceGetSignInUrlUnexpected {
+            get {
+                return ResourceManager.GetString("TokenServiceGetSignInUrlUnexpected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenOrSignInResource: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceGetTokenOrSignInResourceUnexpected {
             get {
@@ -250,7 +277,7 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenStatus: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetTokenStatus: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceGetTokenStatusUnexpected {
             get {
@@ -259,7 +286,7 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetToken: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for GetToken: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceGetTokenUnexpected {
             get {
@@ -268,7 +295,7 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The Token Service returned an unexpected response for SignOut: {0}.
+        ///   Looks up a localized string similar to The Token Service returned an unexpected response for SignOut: &apos;({0}) {1}&apos;.
         /// </summary>
         internal static string TokenServiceSignOutUnexpected {
             get {

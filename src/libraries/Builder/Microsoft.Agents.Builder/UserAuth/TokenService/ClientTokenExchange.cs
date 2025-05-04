@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Connector;
+using Microsoft.Agents.Builder.Errors;
 
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
@@ -63,10 +63,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
 
                 // Only one token exchange should proceed from here. Deduplication is performed second because in the case
-                // of failure due to consent required, every caller needs to receive the 
+                // of failure due to consent required, every caller needs to receive the InvokeResponse
                 if (!await DeduplicatedTokenExchangeIdAsync(turnContext, _storage, cancellationToken).ConfigureAwait(false))
                 {
-                    // If the token is not exchangeable, do not process this activity further.
+                    // Stop if the token has already been exchanged.
                     return false;
                 }
             }
@@ -137,30 +137,19 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             TokenResponse tokenExchangeResponse = null;
             var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
-            string exceptionMessage = null;
+            Exception exception = null;
 
             try
             {
-                var userTokenClient = turnContext.Services.Get<IUserTokenClient>();
-                if (userTokenClient != null)
-                {
-                    tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(
-                        turnContext,
-                        connectionName,
-                        new TokenExchangeRequest { Token = tokenExchangeRequest.Token },
-                        cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    throw new NotSupportedException("Token Exchange is not supported by the Agent.");
-                }
+                tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(
+                    turnContext,
+                    connectionName,
+                    new TokenExchangeRequest { Token = tokenExchangeRequest.Token },
+                    cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                // Ignore Exceptions
-                // If token exchange failed for any reason, tokenExchangeResponse above stays null,
-                // and hence we send back a failure invoke response to the caller.
-                exceptionMessage = ex.Message;
+                exception = ex;
             }
 
             if (string.IsNullOrEmpty(tokenExchangeResponse?.Token))
@@ -172,12 +161,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     Id = tokenExchangeRequest.Id,
                     ConnectionName = connectionName,
-                    FailureDetail = "The Agent is unable to exchange token.",
+                    FailureDetail = exception?.Message ?? ErrorHelper.ExchangeTokenUnexpectedNull.description,
                 };
 
-                await SendInvokeResponseAsync(turnContext, invokeResponse, exceptionMessage == null ? HttpStatusCode.PreconditionFailed : HttpStatusCode.InternalServerError, cancellationToken).ConfigureAwait(false);
+                await SendInvokeResponseAsync(turnContext, invokeResponse, exception == null ? HttpStatusCode.PreconditionFailed : HttpStatusCode.InternalServerError, cancellationToken).ConfigureAwait(false);
 
-                throw new AuthException(exceptionMessage ?? invokeResponse.FailureDetail, AuthExceptionReason.Other);
+                throw new AuthException(invokeResponse.FailureDetail, AuthExceptionReason.Other, exception);
             }
 
             return true;

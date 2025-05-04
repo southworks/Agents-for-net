@@ -97,6 +97,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ExchangeToken returned an empty token..
+        /// </summary>
+        internal static string ExchangeTokenUnexpectedNull {
+            get {
+                return ResourceManager.GetString("ExchangeTokenUnexpectedNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An instance of this extention has allready been registred for this application. {0}.
         /// </summary>
         internal static string ExtensionAlreadyRegistered {
@@ -246,6 +255,15 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string UserAuthorizationTypeNotFound {
             get {
                 return ResourceManager.GetString("UserAuthorizationTypeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of IUserTokenClient is not available.  This is most likely due to the registered IChannelServiceClientFactory not creating one..
+        /// </summary>
+        internal static string UserTokenClientNotAvailable {
+            get {
+                return ResourceManager.GetString("UserTokenClientNotAvailable", resourceCulture);
             }
         }
     }

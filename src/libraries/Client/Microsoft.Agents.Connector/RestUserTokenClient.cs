@@ -13,8 +13,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Agents.Core.Errors;
-using System.Diagnostics;
 using Microsoft.Agents.Core;
 
 namespace Microsoft.Agents.Connector
@@ -128,24 +126,7 @@ namespace Microsoft.Agents.Connector
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
 
             _logger.LogInformation("ExchangeAsync ConnectionName: {connectionName}", connectionName);
-            var result = await _userTokenClient.ExchangeAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
-            if (result == null)
-            {
-                return null;
-            }
-
-            if (result is ErrorResponse errorResponse)
-            {
-                throw new InvalidOperationException($"Unable to exchange token: ({errorResponse?.Error?.Code}) {errorResponse?.Error?.Message}");
-            }
-            else if (result is TokenResponse tokenResponse)
-            {
-                return tokenResponse;
-            }
-            else
-            {
-                throw new InvalidOperationException($"ExchangeAsync returned improper result: {result.GetType()}");
-            }
+            return await _userTokenClient.ExchangeAsync(userId, connectionName, channelId, exchangeRequest, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

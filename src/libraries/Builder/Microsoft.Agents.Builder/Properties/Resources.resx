@@ -200,4 +200,10 @@
   <data name="ExtensionAlreadyRegistered" xml:space="preserve">
     <value>An instance of this extention has allready been registred for this application. {0}</value>
   </data>
+  <data name="UserTokenClientNotAvailable" xml:space="preserve">
+    <value>An instance of IUserTokenClient is not available.  This is most likely due to the registered IChannelServiceClientFactory not creating one.</value>
+  </data>
+  <data name="ExchangeTokenUnexpectedNull" xml:space="preserve">
+    <value>ExchangeToken returned an empty token.</value>
+  </data>
 </root>

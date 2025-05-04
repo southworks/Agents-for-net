@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.UserAuth
                 SignInResponse newResponse = new(SignInStatus.Error)
                 {
                     Error = ex,
-                    Cause = AuthExceptionReason.Other
+                    Cause = AuthExceptionReason.Exception
                 };
                 if (ex is AuthException authEx)
                 {
