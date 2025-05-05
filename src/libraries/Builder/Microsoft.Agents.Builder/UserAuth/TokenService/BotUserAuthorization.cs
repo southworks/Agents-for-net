@@ -23,7 +23,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
-        //private readonly ClientTokenExchange _dedupe;
 
         /// <summary>
         /// Name of the authentication handler
@@ -44,7 +43,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(oauthSettings);
-            //_dedupe = new ClientTokenExchange(_settings, _storage);
         }
 
         /// <summary>
@@ -64,12 +62,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                     throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
                 }
             }
-
-            /*
-            var isMatch = context.Activity.IsType(ActivityTypes.Message)
-                && context.Activity.ChannelId != Channels.Msteams
-                && !string.IsNullOrEmpty(context.Activity.Text);
-            */
 
             var isMatch = context.Activity.IsType(ActivityTypes.Message);
 
@@ -115,11 +107,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>The token response if available.</returns>
         public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            //if (_settings.EnableSso && !await _dedupe.DedupeAsync(turnContext, cancellationToken).ConfigureAwait(false))
-            //{
-            //    return null;
-            //}
-
             var state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
             // Handle start or continue of the flow.
@@ -128,6 +115,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             TokenResponse tokenResponse;
             if (!state.FlowStarted)
             {
+                // TBD:  Might need to check for a signin/tokenExchange arriving after flow is over.
+
                 // If the user is already signed in, tokenResponse will be non-null
                 tokenResponse = await OnGetOrStartFlowAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
             }
@@ -214,6 +203,5 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public bool FlowStarted = false;
         public DateTime FlowExpires = DateTime.MinValue;
         public int ContinueCount = 0;
-        public int ExchangeAttempt = 0;
     }
 }
