@@ -21,7 +21,7 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Samples;
+namespace FullAuthentication;
 
 public static class AspNetExtensions
 {
