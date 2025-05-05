@@ -20,21 +20,6 @@ namespace Microsoft.Agents.Connector.RestClients
     {
         private readonly IRestTransport _transport = transport ?? throw new ArgumentNullException(nameof(_transport));
 
-        internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-
-            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetToken")
-                .AppendQuery("userId", userId)
-                .AppendQuery("connectionName", connectionName)
-                .AppendQuery("channelId", channelId)
-                .AppendQuery("code", code);
-
-            request.Headers.Add("Accept", "application/json");
-            return request;
-        }
-
         internal HttpRequestMessage CreateExchangeRequest(string userId, string connectionName, string channelId, TokenExchangeRequest body)
         {
             var request = new HttpRequestMessage();
@@ -114,6 +99,21 @@ namespace Microsoft.Agents.Connector.RestClients
                 default:
                     throw RestClientExceptionHelper.CreateErrorResponseException(httpResponse, ErrorHelper.TokenServiceExchangeUnexpected, cancellationToken, ((int)httpResponse.StatusCode).ToString(), httpResponse.StatusCode.ToString());
             }
+        }
+
+        internal HttpRequestMessage CreateGetTokenRequest(string userId, string connectionName, string channelId, string code)
+        {
+            var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+
+            request.RequestUri = new Uri(_transport.Endpoint, "api/usertoken/GetToken")
+                .AppendQuery("userId", userId)
+                .AppendQuery("connectionName", connectionName)
+                .AppendQuery("channelId", channelId)
+                .AppendQuery("code", code);
+
+            request.Headers.Add("Accept", "application/json");
+            return request;
         }
 
         /// <inheritdoc/>
