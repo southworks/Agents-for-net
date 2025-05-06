@@ -61,15 +61,20 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 case 200:
 #if !NETSTANDARD
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(httpResponse.Content.ReadAsStream(cancellationToken));
 #else
                     var json = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                     if (string.IsNullOrEmpty(json))
                     {
                         return null;
                     }
-                    return ProtocolJsonSerializer.ToObject<TokenResponse>(json);
+                    var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(json);
 #endif
+                    if (tokenResponse?.Token != null)
+                    {
+                        AddTokenResponseToCache(CacheKey(userId, connectionName, channelId), tokenResponse);
+                    }
+                    return tokenResponse;
 
                 // Consent Required
                 case 400:
