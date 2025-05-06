@@ -33,12 +33,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// the sign in is complete, the turn continues with the original message. On failure, <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/>
     /// is called.
     /// 
-    /// Manual Sign In:
-    /// <see cref="SignInUserAsync"/> is used to get a cached token or start the sign in.  In either case, the
-    /// <see cref="OnUserSignInSuccess(Func{ITurnContext, ITurnState, string, string, CancellationToken, Task})"/> and
-    /// <see cref="OnUserSignInFailure(Func{ITurnContext, ITurnState, string, SignInResponse, CancellationToken, Task})"/> should
-    /// be set to handle continuation.  That is, after calling SignInUserAsync, the turn should be considered complete,
-    /// and performing actions after that could be confusing.  i.e., Perform additional turn activity in OnUserSignInSuccess.
     /// </summary>
     /// <remarks>
     /// This is always executed in the context of a turn for the user in <see cref="ITurnContext.Activity.From"/>.
@@ -303,8 +297,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This should be called to start or continue the user auth until true is returned, which indicates sign in is complete.
-        /// When complete, the token is cached and can be access via <see cref="GetTurnTokenAsync"/>.  For manual sign in, the <see cref="OnUserSignInSuccess"/> or 
-        /// <see cref="OnUserSignInFailure"/> are called at completion.
+        /// When complete, the token is cached and can be access via <see cref="GetTurnTokenAsync"/>.  
+        /// <see cref="OnUserSignInFailure"/> is called on an error completion.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>
