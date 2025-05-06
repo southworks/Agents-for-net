@@ -356,7 +356,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
         }
 
         [Fact]
@@ -410,7 +410,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
         }
 
         [Fact]
