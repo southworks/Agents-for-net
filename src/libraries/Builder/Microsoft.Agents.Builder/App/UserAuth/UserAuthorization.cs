@@ -240,26 +240,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public async Task SignOutUserAsync(ITurnContext turnContext, ITurnState turnState, string? flowName = null, CancellationToken cancellationToken = default)
         {
             var flow = flowName ?? DefaultHandlerName;
-            await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
             DeleteCachedToken(flow);
-        }
-
-        /// <summary>
-        /// Clears all UserAuth state for the user.  This includes cached tokens, and flow related state.
-        /// </summary>
-        /// <param name="turnContext"></param>
-        /// <param name="turnState"></param>
-        /// <param name="handlerName"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private async Task ResetStateAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, CancellationToken cancellationToken = default)
-        {
-            handlerName ??= DefaultHandlerName;
-            
-            await SignOutUserAsync(turnContext, turnState, handlerName, cancellationToken).ConfigureAwait(false);
-
             DeleteSignInState(turnState);
-            await _dispatcher.ResetStateAsync(turnContext, handlerName, cancellationToken).ConfigureAwait(false);
+            await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
         }
 
 #if MANUAL_SIGNIN
