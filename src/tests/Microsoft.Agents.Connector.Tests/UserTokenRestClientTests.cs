@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector.RestClients;
 using Microsoft.Agents.Connector.Types;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using Xunit;
@@ -110,7 +111,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, Code, CancellationToken.None));
         }
 
         [Fact]
@@ -159,7 +160,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(async () => await client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(async () => await client.SignOutUserAsync(UserId, ConnectionName, ChannelId, CancellationToken.None));
         }
 
         [Fact]
@@ -201,7 +202,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetTokenStatusAsync(UserId, ChannelId, Include, CancellationToken.None));
         }
 
         [Fact]
@@ -255,7 +256,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.GetAadTokensAsync(UserId, ConnectionName, AadResourceUrls, ChannelId, CancellationToken.None));
         }
 
         [Fact]
@@ -313,7 +314,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -347,7 +348,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(() => client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]
@@ -367,7 +368,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var client = UseClient();
 
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
+            await Assert.ThrowsAsync<ErrorResponseException>(async () => await client.ExchangeTokenAsync(UserId, ConnectionName, ChannelId, TokenExchangeRequest, CancellationToken.None));
         }
 
         [Fact]

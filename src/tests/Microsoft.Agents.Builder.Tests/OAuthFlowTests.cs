@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Moq;
 using System;
@@ -153,7 +154,15 @@ namespace Microsoft.Agents.Builder.Tests
                 ChannelId = "channel-id",
                 Text = "invoke",
             };
+
             var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            var mockTokenClient = new Mock<IUserTokenClient>();
+            mockTokenClient
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ErrorResponseException("exception") { Body = new ErrorResponse() { Error = new Error() { Code = Error.ConsentRequiredCode } } });
+
+            context.Services.Set(mockTokenClient.Object);
 
             //Act
             var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);

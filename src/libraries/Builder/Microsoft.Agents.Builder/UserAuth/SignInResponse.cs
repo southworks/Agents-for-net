@@ -33,6 +33,6 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <summary>
         /// The token response.  Only available when sign-in status is Complete.
         /// </summary>
-        public TokenResponse Token { get; set; }
+        public TokenResponse TokenResponse { get; set; }
     }
 }

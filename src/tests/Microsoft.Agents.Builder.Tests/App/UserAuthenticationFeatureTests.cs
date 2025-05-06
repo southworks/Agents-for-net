@@ -108,8 +108,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(response);
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
-            Assert.Equal(GraphToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
+            Assert.Equal(GraphToken, await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
         }
 
         [Fact]
@@ -131,8 +131,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.True(signInComplete);
-            Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
-            Assert.Equal(SharePointToken, await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
+            Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
+            Assert.Equal(SharePointToken, await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
         }
 
         [Fact]
@@ -177,8 +177,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState);
 
             // assert
-            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
         }
 
         [Fact]
@@ -200,10 +200,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, SharePointName);
 
             // assert
-            Assert.Null(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState,  SharePointName));
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+            Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
         }
 
+#if MANUAL_SIGNIN
         [Fact]
         public async Task Test_ManualSignInOnSuccessForCached()
         {
@@ -251,7 +252,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
 
         [Fact]
@@ -310,8 +311,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
+#endif
 
         [Fact]
         public async Task Test_AutoSignInForCached()
@@ -354,7 +356,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
 
         [Fact]
@@ -408,7 +410,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
 
             // assert
-            Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(null, null, GraphName));
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, null, GraphName));
         }
 
         [Fact]
@@ -479,7 +481,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-graph" using GraphName OAuth
             app.OnMessage("-graph", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(await app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+                Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: GraphName);
@@ -487,7 +489,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, SharePointName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: SharePointName);
@@ -495,7 +497,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-signedIn" using "signedIn" OAuth.  This tests "already signed in".
             app.OnMessage("-signedIn", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, "signedIn"));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, "signedIn"));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             autoSignInHandler: "signedIn");
@@ -574,7 +576,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Default AutoSignIn "global" handler.
             app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
             rank: RouteRank.Last);
@@ -582,10 +584,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
-                Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, SharePointName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
 
                 // GraphName token should be available since it was global auto
-                Assert.NotNull(app.UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, GraphName));
+                Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
 
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },

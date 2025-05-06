@@ -83,7 +83,7 @@ public class AuthAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                string displayName = await GetDisplayName(turnContext, turnState);
+                string displayName = await GetDisplayName(turnContext);
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine($"Welcome to the AutoSignIn Example, **{displayName}**!");
                 sb.AppendLine("This Agent automatically signs you in when you first connect.");
@@ -117,8 +117,8 @@ public class AuthAgent : AgentApplication
         // For ease of setup, both connections are using the same App Reg for API Permissions.  In a real Agent, these would be using different
         // App Registrations with different permissions. In this cases, we are using two different tokens to access external services.
 
-        var displayName = await GetDisplayName(turnContext, turnState);
-        var graphInfo = await GetGraphInfo(turnContext, turnState, "me");
+        var displayName = await GetDisplayName(turnContext);
+        var graphInfo = await GetGraphInfo(turnContext, "me");
 
         // Just to verify "auto" handler setup.  This wouldn't be needed in a production Agent and here just to verify sample setup.
         if (displayName.Equals(_defaultDisplayName) || graphInfo == null)
@@ -128,7 +128,7 @@ public class AuthAgent : AgentApplication
         }
 
         // Just to verify we in fact have two different tokens.  This wouldn't be needed in a production Agent and here just to verify sample setup.
-        if (await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, UserAuthorization.DefaultHandlerName) == await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, "me"))
+        if (await UserAuthorization.GetTurnTokenAsync(turnContext, UserAuthorization.DefaultHandlerName) == await UserAuthorization.GetTurnTokenAsync(turnContext, "me"))
         {
             await turnContext.SendActivityAsync($"It would seem '{UserAuthorization.DefaultHandlerName}' and 'me' are using the same OAuth Connection", cancellationToken: cancellationToken);
         }
@@ -153,7 +153,7 @@ public class AuthAgent : AgentApplication
         // If the sign in was not successful, this won't be reached.  Instead, OnUserSignInFailure route would have been called. 
         
         // We have the access token, now try to get your user name from graph. 
-        string displayName = await GetDisplayName(turnContext, turnState);
+        string displayName = await GetDisplayName(turnContext);
         if (displayName.Equals(_defaultDisplayName))
         {
             // Handle error response from Graph API
@@ -184,10 +184,10 @@ public class AuthAgent : AgentApplication
     /// <summary>
     /// Gets the display name of the user from the Graph API using the access token.
     /// </summary>
-    private async Task<string> GetDisplayName(ITurnContext turnContext, ITurnState turnState)
+    private async Task<string> GetDisplayName(ITurnContext turnContext)
     {
         string displayName = _defaultDisplayName;
-        var graphInfo = await GetGraphInfo(turnContext, turnState, UserAuthorization.DefaultHandlerName);
+        var graphInfo = await GetGraphInfo(turnContext, UserAuthorization.DefaultHandlerName);
         if (graphInfo != null)
         {
             displayName = graphInfo!["displayName"].GetValue<string>();
@@ -195,9 +195,9 @@ public class AuthAgent : AgentApplication
         return displayName;
     }
 
-    private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext, ITurnState turnState, string handleName)
+    private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext, string handleName)
     {
-        string accessToken = await UserAuthorization.GetTurnTokenForCaller(turnContext, turnState, handleName);
+        string accessToken = await UserAuthorization.GetTurnTokenAsync(turnContext, handleName);
         string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
         try
         {
