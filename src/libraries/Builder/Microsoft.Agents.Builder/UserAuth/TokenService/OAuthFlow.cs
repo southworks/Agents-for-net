@@ -338,6 +338,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
                         if (!isConsentRequired)
                         {
+                            // Unclear if this will ever happen except for a hard transient error since the deduping would have done
+                            // this already.  Leaving for some defensive coding.
                             // This is a critical error.  Either request failure, or OAuth Connection misconfiguration.
                             // A 400 seems to cause Teams to not retry.  412 or 500 does not.
                             // Callers should catch and clean up state because all bets are off.  This is a hammer and

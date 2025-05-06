@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
@@ -32,7 +33,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// local development. IStorage's ETag implementation for token exchange activity
     /// deduplication.
     /// </remarks>
-    internal class DeduplicateTokenExchange(IStorage storage)
+    internal class Deduplicate(OAuthSettings settings, IStorage storage)
     {
 
         /// <summary>
@@ -43,13 +44,19 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="connectionName"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>true to continue processing the turn.</returns>
-        public async Task<bool> DedupeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        public async Task<bool> ProceedWithExchangeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (ShouldExchange(turnContext))
+            if (ShouldDeduplicate(turnContext))
             {
+                // If the TokenExchange is NOT successful, the InvokeResponse will have already been sent.
+                if (!await IsTokenExchangeableAsync(turnContext, settings.AzureBotOAuthConnectionName, storage, cancellationToken).ConfigureAwait(false))
+                {
+                    return false;
+                }
+
                 // Only one token exchange should proceed from here. Deduplication is performed second because in the case
                 // of failure due to consent required, every caller needs to receive the InvokeResponse
-                if (!await DeduplicatedTokenExchangeIdAsync(turnContext, storage, cancellationToken).ConfigureAwait(false))
+                if (await IsDuplicateTokenExchangeIdAsync(turnContext, storage, cancellationToken).ConfigureAwait(false))
                 {
                     // Stop if the token has already been exchanged.
                     return false;
@@ -59,7 +66,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return true;
         }
 
-        private static bool ShouldExchange(ITurnContext turnContext)
+        private static bool ShouldDeduplicate(ITurnContext turnContext)
         {
             // Teams
             if (string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase)
@@ -78,7 +85,70 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return false;
         }
 
-        private static async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
+        // true if the token can be exchanged, otherwise OAuth can't proceed.
+        // In the case of ConsentRequired, end user needs to consent and Teams will send another TokenExchange Invoke.
+        private static async Task<bool> IsTokenExchangeableAsync(ITurnContext turnContext, string connectionName, IStorage storage, CancellationToken cancellationToken)
+        {
+            TokenResponse tokenExchangeResponse = null;
+            var tokenExchangeRequest = ProtocolJsonSerializer.ToObject<TokenExchangeInvokeRequest>(turnContext.Activity.Value);
+
+            try
+            {
+                // Try to exchange the token
+                tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(
+                    turnContext,
+                    connectionName,
+                    new TokenExchangeRequest { Token = tokenExchangeRequest.Token },
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // The token cannot be exchanged.
+                // ExchangeTokenAsync will throws for ConsentRequired (400), or other non-success.  We need to know which we are getting.
+                bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
+
+                // If this isn't a consent error, we still can only proceed for one Exchange request (multiple clients)
+                if (!isConsentRequired && await IsDuplicateTokenExchangeIdAsync(turnContext, storage, cancellationToken).ConfigureAwait(false))
+                {
+                    // This is the duplicate Invoke.  Bail now.  IsDuplicateTokenExchangeIdAsync will have sent the expected InvokeResponse.
+                    throw new DuplicateExchangeException();
+                }
+
+                // This will be the first response to Teams:
+                //    ConsentRequired: PreconditionFailed
+                //    Error: BadRequest
+                var exchangeResponse = new TokenExchangeInvokeResponse
+                {
+                    Id = tokenExchangeRequest.Id,
+                    ConnectionName = connectionName,
+                    FailureDetail = ex.Message,
+                };
+
+                await turnContext.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.InvokeResponse,
+                        Value = new InvokeResponse
+                        {
+                            Status = isConsentRequired ? (int)HttpStatusCode.PreconditionFailed : (int)HttpStatusCode.BadRequest,
+                            Body = exchangeResponse
+                        },
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                if (!isConsentRequired)
+                {
+                    throw new AuthException(exchangeResponse.FailureDetail, AuthExceptionReason.Exception, ex);
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        // true if the Invoke is a duplicate
+        private static async Task<bool> IsDuplicateTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
             var id = turnContext.Activity.Value.ToJsonElements()["id"].ToString();
 
@@ -92,6 +162,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             try
             {
                 // Writing the IStoreItem with ETag of unique id will succeed only once
+                // NOTE: There is not, and has never been, a way to clean this up.  Possibly trap when the entire
+                // process is done and delete?
                 await storage.WriteAsync(storeItems, cancellationToken).ConfigureAwait(false);
             }
             catch (EtagException)
@@ -109,10 +181,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         },
                     }, 
                     cancellationToken).ConfigureAwait(false);
-                return false;
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         private class TokenStoreItem : IStoreItem

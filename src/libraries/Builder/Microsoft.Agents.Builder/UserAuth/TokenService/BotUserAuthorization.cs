@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
-        private readonly DeduplicateTokenExchange _dedupe;
+        private readonly Deduplicate _dedupe;
 
         /// <summary>
         /// Name of the authentication handler
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(oauthSettings);
-            _dedupe = new DeduplicateTokenExchange(_storage);
+            _dedupe = new Deduplicate(_settings, _storage);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>The token response if available.</returns>
         public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (_settings.EnableSso && !await _dedupe.DedupeAsync(turnContext, cancellationToken).ConfigureAwait(false))
+            if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
             {
                 throw new DuplicateExchangeException();
             }
