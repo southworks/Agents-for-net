@@ -6,7 +6,12 @@ using Microsoft.Agents.Core.HeaderPropagation;
 namespace Microsoft.Agents.Extensions.Teams.Connector
 {
     [HeaderPropagation]
+
+#if !NETSTANDARD
     internal class HeaderPropagation : IHeaderPropagationAttribute
+#else
+    internal class HeaderPropagation
+#endif
     {
         public static void LoadHeaders(HeaderPropagationEntryCollection collection)
         {
