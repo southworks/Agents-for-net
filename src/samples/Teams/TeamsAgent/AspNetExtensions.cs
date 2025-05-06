@@ -4,24 +4,16 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Validators;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Samples;
+namespace TeamsAgent;
 
 public static class AspNetExtensions
 {
@@ -74,7 +66,7 @@ public static class AspNetExtensions
 
         if (!tokenValidationSection.Exists())
         {
-            logger?.LogError("Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json",tokenValidationSectionName);
+            logger?.LogError("Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json", tokenValidationSectionName);
             throw new InvalidOperationException($"Missing configuration section '{tokenValidationSectionName}'. This section is required to be present in appsettings.json");
         }
 
@@ -238,7 +230,7 @@ public static class AspNetExtensions
             List<Claim> claims = [.. context.User.Claims];
 
             // allow ABS
-            var issuer = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim);
+            Claim? issuer = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim);
             if (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer))
             {
                 context.Succeed(this);
@@ -246,7 +238,7 @@ public static class AspNetExtensions
             else
             {
                 // Get azp or appid claim 
-                var party = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AuthorizedParty);
+                Claim? party = claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AuthorizedParty);
                 party ??= claims.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
 
                 // party must be in allowed list
