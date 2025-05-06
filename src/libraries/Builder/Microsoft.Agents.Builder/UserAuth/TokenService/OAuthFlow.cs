@@ -5,7 +5,9 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -34,6 +36,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// be waiting on.</para>
     /// </remarks>
     /// <param name="settings"></param>
+    /// <param name="storage"></param>
     public class OAuthFlow(OAuthSettings settings)
     {
         private readonly OAuthSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -318,7 +321,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                         {
                             Id = tokenExchangeRequest.Id,
                             ConnectionName = _settings.AzureBotOAuthConnectionName,
-                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the bot's active OAuthPrompt. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
+                            FailureDetail = "The Agent received an InvokeActivity with a TokenExchangeInvokeRequest containing a ConnectionName that does not match the ConnectionName expected by the Agents active OAuthFlow. Ensure these names match when sending the InvokeActivityInvalid ConnectionName in the TokenExchangeInvokeRequest",
                         }, cancellationToken).ConfigureAwait(false);
                 }
                 else

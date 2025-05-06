@@ -7,9 +7,9 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.Builder.Compat;
 
 namespace TeamsConversationSsoQuickstart
 {
@@ -24,6 +24,8 @@ namespace TeamsConversationSsoQuickstart
             ConversationState conversationState)
             : base(channelServiceClientFactory, activityTaskQueue, logger: logger)
         {
+            base.Use(new TeamsSSOTokenExchangeMiddleware(storage, configuration["ConnectionName"]));
+
             OnTurnError = async (turnContext, exception) =>
             {
                 // Log any leaked exception from the application.

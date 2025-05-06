@@ -12,8 +12,6 @@ using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core;
-using Microsoft.Extensions.Options;
-using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -284,6 +282,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     exchangeScopes: signInState.PassedOBOScopes,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
+                if (response.Status == SignInStatus.Duplicate)
+                {
+                    return false;
+                }
+
                 if (response.Status == SignInStatus.Pending)
                 {
                     if (!flowContinuation)
@@ -417,12 +420,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             }
 
             _app.AddRoute(routeSelector, routeHandler);
-        }
-
-        public static bool IsSignInCompletionEvent(IActivity activity)
-        {
-            return string.Equals(activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(activity?.Name, SignInCompletionEventName);
         }
 
         /// <summary>

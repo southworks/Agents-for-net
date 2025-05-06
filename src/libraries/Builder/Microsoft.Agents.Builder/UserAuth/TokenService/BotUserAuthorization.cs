@@ -23,6 +23,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private readonly OAuthSettings _settings;
         private readonly IStorage _storage;
+        private readonly DeduplicateTokenExchange _dedupe;
 
         /// <summary>
         /// Name of the authentication handler
@@ -43,6 +44,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(oauthSettings);
+            _dedupe = new DeduplicateTokenExchange(_storage);
         }
 
         /// <summary>
@@ -107,6 +109,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>The token response if available.</returns>
         public async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            if (_settings.EnableSso && !await _dedupe.DedupeAsync(turnContext, cancellationToken).ConfigureAwait(false))
+            {
+                throw new DuplicateExchangeException();
+            }
+
             var state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
             // Handle start or continue of the flow.
@@ -115,8 +122,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             TokenResponse tokenResponse;
             if (!state.FlowStarted)
             {
-                // TBD:  Might need to check for a signin/tokenExchange arriving after flow is over.
-
                 // If the user is already signed in, tokenResponse will be non-null
                 tokenResponse = await OnGetOrStartFlowAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
             }
