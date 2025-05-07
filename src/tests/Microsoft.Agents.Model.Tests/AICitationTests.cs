@@ -15,9 +15,6 @@ namespace Microsoft.Agents.Model.Tests
             // Arrange
             var entityOut = new AIEntity()
             {
-                AtType = "atType",
-                AtContext = "atContext",
-                AtId = "atId",
                 Citation = [
                     new ClientCitation()
                     {
@@ -36,7 +33,7 @@ namespace Microsoft.Agents.Model.Tests
                 ]
             };
 
-            var expected = "{\"citation\":[{\"position\":1,\"appearance\":{\"name\":\"name\",\"text\":\"text\",\"url\":\"url\",\"abstract\":\"\",\"image\":{\"type\":\"ImageObject\",\"name\":\"image\"},\"@type\":\"DigitalDocument\"},\"@type\":\"Claim\"}],\"type\":\"https://schema.org/Message\",\"@type\":\"atType\",\"@context\":\"atContext\",\"@id\":\"atId\",\"additionalType\":[\"AIGeneratedContent\"],\"properties\":{}}";
+            var expected = "{\"citation\":[{\"position\":1,\"appearance\":{\"name\":\"name\",\"text\":\"text\",\"url\":\"url\",\"abstract\":\"\",\"image\":{\"type\":\"ImageObject\",\"name\":\"image\"},\"@type\":\"DigitalDocument\"},\"@type\":\"Claim\"}],\"type\":\"https://schema.org/Message\",\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[\"AIGeneratedContent\"],\"properties\":{}}";
 
             // Test serialize
             var jsonOut = ProtocolJsonSerializer.ToJson(entityOut);
