@@ -7,9 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 
-/// <summary>
-/// Contains classes and methods for handling authentication and claims processing for Microsoft Agents.
-/// </summary>
+
 namespace Microsoft.Agents.Authentication
 {
     /// <summary>
@@ -17,6 +15,15 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     public static class AgentClaims
     {
+        /// <summary>
+        /// Retrieves the AppId from the given claims identity.
+        /// </summary>
+        /// <param name="claimsIdentity">The claims identity containing the token information.</param>
+        /// <returns>The AppId as a string, or null if not found.</returns>
+        /// <remarks>
+        /// For requests from the channel, the AppId is in the Audience claim of the JWT token.
+        /// For the emulator, it is in the AppId claim. For unauthenticated requests, anonymous claimsIdentity is provided if auth is disabled.
+        /// </remarks>
         public static string GetAppId(ClaimsIdentity claimsIdentity)
         {
             // Verify we have a sensible Claims Identity
