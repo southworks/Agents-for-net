@@ -53,6 +53,20 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
+        public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
+        {
+            lock (_optionsLock)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                SerializationOptions = applyFunc(newOptions);
+            }
+        }
+
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)
         {
             options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
