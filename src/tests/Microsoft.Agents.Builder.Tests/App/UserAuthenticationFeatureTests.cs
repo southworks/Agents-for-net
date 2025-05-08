@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Moq;
@@ -771,6 +772,65 @@ namespace Microsoft.Agents.Builder.Tests.App
             .AssertReply("You said: -sharepoint")
             .StartTestAsync();
         }
+
+        // tests UserAuthentication.ExchangeTurnToken call IUserAuthorization.GetRefreshedUserTokenAsync for an exchangeable token
+        [Fact]
+        public async Task Test_AutoWithOBO_Runtime()
+        {
+            // arrange
+            var storage = new MemoryStorage();
+            var adapter = new TestAdapter();
+
+            // mock IUserAuthorization that returns null the first attempt, then a token after that.
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true });
+                });
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+            graphMock
+                .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return Task.FromResult(new TokenResponse() { Token = "NewGraphToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
+                });
+
+            // arrange
+            var options = new TestApplicationOptions(storage)
+            {
+                Adapter = adapter,
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName);
+                Assert.NotNull(token);
+                Assert.Equal("NewGraphToken", token);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            });
+
+            // act
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+            .Send("first message")
+            .AssertReply("You said: first message")
+            .StartTestAsync();
+
+            // assert
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+        }
+
 
         private static TurnContext MockTurnContext()
         {
