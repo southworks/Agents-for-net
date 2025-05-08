@@ -117,10 +117,10 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <returns></returns>
         public async Task<string> GetTurnTokenAsync(ITurnContext turnContext, string handlerName = default, CancellationToken cancellationToken = default)
         {
-            return await ExchangeTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await ExchangeTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<string> ExchangeTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
+        public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
