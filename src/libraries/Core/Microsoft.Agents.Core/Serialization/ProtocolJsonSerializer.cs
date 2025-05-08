@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Core.Serialization
             SerializationInitAttribute.InitSerialization();
         }
 
-        public static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
