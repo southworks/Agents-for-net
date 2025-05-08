@@ -41,7 +41,7 @@ public class AuthAgent : AgentApplication
 
         // Demonstrates the use of Per-Route Auto sign-in.  This will automatically get a token using the indicated OAuth handler for this message route.
         // This Route will automatically get a token using the "me" UserAuthorization.Handler in config.
-        OnMessage("-me", OnMe, autoSignInHandler: "me");
+        OnMessage("-me", OnMe, autoSignInHandlers: ["me"]);
 
         // Handles the user sending a SignOut command using the specific keywords '-signout'
         OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>

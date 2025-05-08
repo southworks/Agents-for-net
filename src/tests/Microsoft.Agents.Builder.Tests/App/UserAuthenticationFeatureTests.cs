@@ -336,7 +336,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Adapter = adapter,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
-                    AutoSignIn = UserAuthorizationOptions.AutoSignInOn
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
                 }
             };
             var app = new TestApplication(options);
@@ -389,7 +389,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Adapter = adapter,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object)
                 {
-                    AutoSignIn = UserAuthorizationOptions.AutoSignInOn
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
                 }
             };
             var app = new TestApplication(options);
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public async Task Test_AutoSignInForRouteFlow_AutoOff()
+        public async Task Test_PerRoute_AutoOff()
         {
             // arrange
             var storage = new MemoryStorage();
@@ -484,7 +484,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
-            autoSignInHandler: GraphName);
+            autoSignInHandlers: [GraphName]);
 
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
@@ -492,7 +492,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
-            autoSignInHandler: SharePointName);
+            autoSignInHandlers: [SharePointName]);
 
             // Route Handler for "-signedIn" using "signedIn" OAuth.  This tests "already signed in".
             app.OnMessage("-signedIn", async (turnContext, turnState, cancellationToken) =>
@@ -500,7 +500,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, "signedIn"));
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
-            autoSignInHandler: "signedIn");
+            autoSignInHandlers: ["signedIn"]);
 
             // act
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
@@ -514,13 +514,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             .Send("magic code")
             .AssertReply("You said: -sharepoint")
             .Send("-signedIn")
-            .Send("magic code")
             .AssertReply("You said: -signedIn")
             .StartTestAsync();
         }
 
         [Fact]
-        public async Task Test_AutoSignInForRouteFlow_AutoOn()
+        public async Task Test_PerRouteFlow_AutoOn()
         {
             // arrange
             var storage = new MemoryStorage();
@@ -568,7 +567,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Adapter = adapter,
                 UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object, sharePointMock.Object)
                 {
-                    AutoSignIn = UserAuthorizationOptions.AutoSignInOn
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
                 }
             };
             var app = new TestApplication(options);
@@ -584,6 +583,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Route Handler for "-sharepoint" using SharePointName OAuth
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
+                // SharePointName token because it was on the Route
                 Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
 
                 // GraphName token should be available since it was global auto
@@ -591,7 +591,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
                 await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
             },
-            autoSignInHandler: SharePointName);
+            autoSignInHandlers: [SharePointName]);
 
             // act
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>

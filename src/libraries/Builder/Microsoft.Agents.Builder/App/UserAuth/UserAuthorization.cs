@@ -115,17 +115,27 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// <param name="exchangeScopes"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<string> GetTurnTokenAsync(ITurnContext turnContext, string handlerName, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public async Task<string> GetTurnTokenAsync(ITurnContext turnContext, string handlerName = default, CancellationToken cancellationToken = default)
+        {
+            return await ExchangeTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<string> ExchangeTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
-                var diff = token.Expiration - DateTimeOffset.UtcNow;
-                if (diff.HasValue && diff?.TotalMinutes >= 5)
+                // An exchangeable token needs to be exchange first.
+                if (!token.IsExchangeable)
                 {
-                    return token.Token;
+                    var diff = token.Expiration - DateTimeOffset.UtcNow;
+                    if (diff.HasValue && diff?.TotalMinutes >= 5)
+                    {
+                        return token.Token;
+                    }
                 }
-                
-                var handler = _dispatcher.Get(handlerName);
+
+                // Get a new token if near expiration, or it's an exchangeable token.
+                var handler = _dispatcher.Get(handlerName ?? DefaultHandlerName);
                 var response = await handler.GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
                 if (response?.Token != null)
                 {
@@ -307,8 +317,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     turnContext, 
                     activeFlowName, 
                     forceSignIn: !flowContinuation,
-                    exchangeConnection: signInState.PassedOBOConnectionName,
-                    exchangeScopes: signInState.PassedOBOScopes,
+                    exchangeConnection: signInState.RuntimeOBOConnectionName,
+                    exchangeScopes: signInState.RuntimeOBOScopes,
                     cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 if (response.Status == SignInStatus.Duplicate)
@@ -501,8 +511,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public bool IsActive() => !string.IsNullOrEmpty(ActiveHandler);
         public string ActiveHandler { get; set; }
         public IActivity ContinuationActivity { get; set; }
-        public string PassedOBOConnectionName { get; set; }
-        public IList<string> PassedOBOScopes { get; set; }
+        public string RuntimeOBOConnectionName { get; set; }
+        public IList<string> RuntimeOBOScopes { get; set; }
 
 #if MANUAL_SIGNIN
         public ManualContext ManualContext { get; set; }

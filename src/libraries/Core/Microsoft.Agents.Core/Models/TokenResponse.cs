@@ -36,6 +36,8 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Expiration for the token, in ISO 8601 format (e.g. "2007-04-05T14:30Z"). </summary>
         public DateTimeOffset? Expiration { get; set; }
 
+        public bool IsExchangeable { get; set; }
+
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
         /// might appear in the serialized REST JSON object.

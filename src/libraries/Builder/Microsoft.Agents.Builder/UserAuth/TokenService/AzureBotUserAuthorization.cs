@@ -116,6 +116,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
 
             var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            var scopes = exchangeScopes ?? _settings.OBOScopes;
 
             try
             {
@@ -123,6 +124,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 if (!IsExchangeableToken(token.Token))
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
+                }
+
+                // need connection and scopes to exchange.  If missing the Agent can do it themselves.
+                if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
+                {
+                    token.IsExchangeable = true;
+                    return token;
                 }
 
                 // Can the named Connection even do this?
@@ -134,7 +142,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 // Do exchange.
                 try
                 {
-                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(exchangeScopes ?? _settings.OBOScopes, token.Token).ConfigureAwait(false);
+                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(scopes, token.Token).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
