@@ -72,6 +72,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new CardActionConverter());
             options.Converters.Add(new ChannelAccountConverter());
             options.Converters.Add(new EntityConverter());
+            options.Converters.Add(new AIEntityConverter());
             options.Converters.Add(new TokenExchangeInvokeResponseConverter());
             options.Converters.Add(new TokenExchangeInvokeRequestConverter());
             options.Converters.Add(new TokenResponseConverter());
