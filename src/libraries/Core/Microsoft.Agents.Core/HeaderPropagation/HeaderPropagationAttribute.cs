@@ -30,17 +30,19 @@ public class HeaderPropagationAttribute : Attribute
     {
         foreach (var type in GetLoadHeadersTypes(assembly))
         {
+#if !NETSTANDARD
+            if (!typeof(IHeaderPropagationAttribute).IsAssignableFrom(type))
+            {
+                throw new InvalidOperationException(
+                    $"Type '{type.FullName}' is marked with [HeaderPropagation] but does not implement IHeaderPropagationAttribute.");
+            }
+#endif
+
             var loadHeaders = type.GetMethod(nameof(LoadHeaders), BindingFlags.Static | BindingFlags.Public);
 
             if (loadHeaders == null)
             {
                 continue;
-            }
-
-            if (!typeof(IHeaderPropagationAttribute).IsAssignableFrom(type))
-            {
-                throw new InvalidOperationException(
-                    $"Type '{type.FullName}' is marked with [HeaderPropagation] but does not implement IHeaderPropagationAttribute.");
             }
 
             loadHeaders.Invoke(assembly, [HeaderPropagationContext.HeadersToPropagate]);

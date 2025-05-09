@@ -3,6 +3,7 @@
 
 namespace Microsoft.Agents.Core.HeaderPropagation;
 
+#if !NETSTANDARD
 /// <summary>
 /// Interface to ensure that the header propagation attribute is implemented correctly.
 /// </summary>
@@ -14,3 +15,4 @@ public interface IHeaderPropagationAttribute
     /// <param name="collection">A collection to operate over the headers.</param>
     abstract static void LoadHeaders(HeaderPropagationEntryCollection collection);
 }
+#endif

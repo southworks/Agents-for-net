@@ -34,7 +34,11 @@ public class HeaderPropagationContext()
         set
         {
             // Create a copy to ensure headers are not modified by the original request.
+#if !NETSTANDARD
             var headers = value?.ToDictionary(StringComparer.InvariantCultureIgnoreCase);
+#else
+            var headers = value?.ToDictionary(x => x.Key, x => x.Value, StringComparer.InvariantCultureIgnoreCase);
+#endif
             _headersFromRequest.Value = FilterHeaders(headers);
         }
     }
@@ -78,7 +82,11 @@ public class HeaderPropagationContext()
             switch (header.Action)
             {
                 case HeaderPropagationEntryAction.Add:
+#if !NETSTANDARD
                     result.TryAdd(header.Key, header.Value);
+#else
+                    result.Add(header.Key, header.Value);
+#endif
                     break;
                 case HeaderPropagationEntryAction.Append when headerExists:
                     StringValues newValue = requestHeader.Concat(header.Value).ToArray();
