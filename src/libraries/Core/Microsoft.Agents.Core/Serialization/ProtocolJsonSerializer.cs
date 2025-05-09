@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Core.Serialization
             SerializationInitAttribute.InitSerialization();
         }
 
-        public static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions CreateConnectorOptions()
         {
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
@@ -50,6 +50,20 @@ namespace Microsoft.Agents.Core.Serialization
                 }
 
                 SerializationOptions = newOptions;
+            }
+        }
+
+        public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
+        {
+            lock (_optionsLock)
+            {
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
+
+                SerializationOptions = applyFunc(newOptions);
             }
         }
 
