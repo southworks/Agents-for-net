@@ -2,8 +2,8 @@
 
 This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use authorization in your Agent using OAuth and OBO.
 
-- The sample uses the bot authorization capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authenticates users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
-- This sample shows how to use an OBO Exchange to communicate with Microsoft Copilot Studio
+- The sample uses the Agent SDK User Authorization capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop an Agent that authorizes users with various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
+- This sample shows how to use an OBO Exchange to communicate with Microsoft Copilot Studio using the CopilotStudioClient.
 
 - ## Prerequisites
 
@@ -35,7 +35,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
          1. Grant Admin Consent for your tenant.
       1. **Expose an API** tab
          1. Click **Add a Scope**
-         1. **Application ID URI** should be: api://botid-{{appid}}
+         1. **Application ID URI** should be: `api://botid-{{appid}}`
          1. **Scope Name** is "defaultScope"
          1. **Who can consent** is **Admins and users**
          1. Enter values for the required Consent fields
@@ -48,7 +48,7 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
    1. For **Service Provider** select **Azure Active Directory v2**
    1. **Client id** and **Client Secret** are the values created in step #3.
    1. Enter the **Tenant ID**
-   1. **Scopes** is "api://botid-{{appid}}/defaultScope"
+   1. **Scopes** is `api://botid-{{appid}}/defaultScope`
 
 1. Configuring the Agent settings
    > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL authorization provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)

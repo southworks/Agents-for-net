@@ -51,14 +51,17 @@ builder.AddAgent(sp =>
             sp.GetService<IHttpClientFactory>(),
             tokenProviderFunction: async (s) =>
             {
-                // The result of a sign in is cached in Authorization (for the duration of the turn).
+                // In this sample, the Azure Bot OAuth Connection is configured to return an 
+                // exchangeable token, that can be exchange for different scopes.  This can be
+                // done multiple times using different scopes.
                 return await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, "mcs", exchangeScopes: scopes);
             },
             NullLogger.Instance,
             "mcs");
     }
 
-    // Since Auto SignIn is enabled, by the time this is called the sign in has already happened.
+    // Since Auto SignIn is enabled, by the time this is called the token is already available via UserAuthorization.GetTurnTokenAsync or
+    // UserAuthorization.ExchangeTurnTokenAsync.
     // NOTE:  This is a slightly unusual way to handle incoming Activities (but perfectly) valid.  For this sample,
     // we just want to proxy messages to/from a Copilot Studio Agent.
     app.OnActivity((turnContext, cancellationToken) => Task.FromResult(true), async (turnContext, turnState, cancellationToken) =>
@@ -95,7 +98,7 @@ builder.AddAgent(sp =>
 
     app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
     {
-        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Error.Message}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Cause}/{response.Error.Message}", cancellationToken: cancellationToken);
     });
 
     return app;
