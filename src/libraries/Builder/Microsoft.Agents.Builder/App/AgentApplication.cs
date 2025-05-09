@@ -704,6 +704,8 @@ namespace Microsoft.Agents.Builder.App
                     // Handle user auth
                     if (_userAuth != null)
                     {
+                        // For AutoSignIn, this will initiate the OAuth flow.  Otherwise, this will continue OAuth flows
+                        // start by a Route (when `autoSignInHandlers` are specified on the Route).
                         var signInComplete = await _userAuth.StartOrContinueSignInUserAsync(turnContext, turnState, cancellationToken: cancellationToken).ConfigureAwait(false);
                         if (!signInComplete)
                         {
