@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
+
 #if !NETSTANDARD
 using System.Runtime.Loader;
 #endif
@@ -114,12 +116,16 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
+            catch(DuplicateExchangeException)
+            {
+                return new SignInResponse(SignInStatus.Duplicate);
+            }
             catch (Exception ex)
             {
                 SignInResponse newResponse = new(SignInStatus.Error)
                 {
                     Error = ex,
-                    Cause = AuthExceptionReason.Other
+                    Cause = AuthExceptionReason.Exception
                 };
                 if (ex is AuthException authEx)
                 {
