@@ -459,6 +459,53 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal(responseContent.SignInResource.SignInLink, result.SignInResource.SignInLink);
         }
 
+        [Fact]
+        public async Task TokenNotExchangeable()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDQ3NDAyMDAsImlhdCI6MTc0NDc0MDIwMH0.YU5txFNPoG_htI7FmdsnckgkA5S2Zv3Ju56RFw1XBfs"
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.False(tokenResponse.IsExchangeable);
+        }
+
+        [Fact]
+        public async Task TokenExchangeable()
+        {
+            var httpTokenResponse = new TokenResponse
+            {
+                // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="This is a fake token for unit testing.")]
+                Token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhcGk6Ly8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJJc3N1ZXIiOiJJc3N1ZXIiLCJleHAiOjE3NDcwNTU2NDksImlhdCI6MTc0NzA1NTY0OX0.fAOK0HU59CgcA6SiU6feDdUmG2ZC5Nc8RzHlOPjfgWk"
+            };
+
+            var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(httpTokenResponse))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync(httpResponse);
+
+            var client = UseClient();
+
+            var tokenResponse = await client.GetUserTokenAsync(UserId, ConnectionName, ChannelId, null, CancellationToken.None);
+            Assert.NotNull(tokenResponse);
+            Assert.True(tokenResponse.IsExchangeable);
+        }
+
+
         private static RestUserTokenClient UseClient()
         {
             var httpFactory = new Mock<IHttpClientFactory>();

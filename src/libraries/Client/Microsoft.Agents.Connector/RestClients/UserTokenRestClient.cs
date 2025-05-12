@@ -420,7 +420,7 @@ namespace Microsoft.Agents.Connector.RestClients
 
         private static void AddTokenResponseToCache(string cacheKey, TokenResponse tokenResponse)
         {
-            if (tokenResponse?.Token != null)
+            if (tokenResponse != null && tokenResponse.Token != null)
             {
                 var jwtToken = new JwtSecurityToken(tokenResponse.Token);
 
@@ -443,8 +443,8 @@ namespace Microsoft.Agents.Connector.RestClients
 
         private static bool IsExchangeableToken(JwtSecurityToken jwtToken)
         {
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud")?.Value;
-            return (bool)(aud?.StartsWith("api://"));
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud");
+            return aud != null && aud.Value.StartsWith("api://");
         }
     }
 }
