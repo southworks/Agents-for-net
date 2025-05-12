@@ -773,7 +773,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             .StartTestAsync();
         }
 
-        // tests UserAuthentication.ExchangeTurnToken call IUserAuthorization.GetRefreshedUserTokenAsync for an exchangeable token
+        // tests UserAuthentication.ExchangeTurnToken calls IUserAuthorization.GetRefreshedUserTokenAsync for an exchangeable token (regardless of expiration)
         [Fact]
         public async Task Test_AutoWithOBO_Runtime()
         {
@@ -831,6 +831,93 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
         }
 
+        // token refreshes within 5 minutes of expiration
+        [Fact]
+        public async Task Test_Auto_GetTurnTokenRefresh()
+        {
+            // arrange
+            var storage = new MemoryStorage();
+            var adapter = new TestAdapter();
+
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return Task.FromResult(new TokenResponse() { Token = GraphToken, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
+                });
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+            graphMock
+                .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    // shouldn't get called
+                    return Task.FromResult(new TokenResponse() { Token = null, Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
+                });
+
+            var graphRefreshMock = new Mock<IUserAuthorization>();
+            graphRefreshMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return Task.FromResult(new TokenResponse() { Token = "OldToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(4) });
+                });
+            graphRefreshMock
+                .Setup(e => e.Name)
+                .Returns("RefreshGraphName");
+            graphRefreshMock
+                .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return Task.FromResult(new TokenResponse() { Token = "NewGraphToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) });
+                });
+
+            // arrange
+            var options = new TestApplicationOptions(storage)
+            {
+                Adapter = adapter,
+                UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, graphMock.Object, graphRefreshMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny,
+                    DefaultHandlerName = GraphName
+                }
+            };
+            var app = new TestApplication(options);
+
+            // auto
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
+                Assert.NotNull(token);
+                Assert.Equal(GraphToken, token);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            }, rank: RouteRank.Last);
+
+            // should get a new token (calls GetRefreshedUserTokenAsync)
+            app.OnMessage("refresh", async (turnContext, turnState, cancellationToken) =>
+            {
+                var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, "RefreshGraphName");
+                Assert.NotNull(token);
+                Assert.Equal("NewGraphToken", token);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            }, autoSignInHandlers: ["RefreshGraphName"]);
+
+            // act
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+            .Send("first message")
+            .AssertReply("You said: first message")
+            .Send("refresh")
+            .AssertReply("You said: refresh")
+            .StartTestAsync();
+
+            // assert
+            Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+        }
 
         private static TurnContext MockTurnContext()
         {
