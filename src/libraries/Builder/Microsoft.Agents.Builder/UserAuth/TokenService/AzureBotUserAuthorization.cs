@@ -6,10 +6,8 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
-using Microsoft.MarkedNet;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -109,14 +107,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 return null;
             }
 
+            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
+            var scopes = exchangeScopes ?? _settings.OBOScopes;
+
             // If OBO is not set return token as-is.
-            if (string.IsNullOrEmpty(_settings.OBOConnectionName) && string.IsNullOrEmpty(exchangeConnection))
+            if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
             {
                 return token;
             }
-
-            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
-            var scopes = exchangeScopes ?? _settings.OBOScopes;
 
             try
             {
@@ -124,13 +122,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 if (!token.IsExchangeable)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
-                }
-
-                // need connection and scopes to exchange.  If missing the Agent can do it themselves.
-                if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
-                {
-                    token.IsExchangeable = true;
-                    return token;
                 }
 
                 // Can the named Connection even do this?
@@ -148,13 +139,17 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
                 }
-            }
-            finally
-            {
+
                 if (token == null)
                 {
-                    await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                    // AcquireTokenOnBehalfOf returned null
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, $"[{(exchangeScopes == null ? "null" : string.Join(",", exchangeScopes))}]"]);
                 }
+            }
+            catch (Exception)
+            {
+                await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+                throw;
             }
 
             return token ?? null;
