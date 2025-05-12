@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Moq;
@@ -775,7 +776,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         // tests UserAuthentication.ExchangeTurnToken calls IUserAuthorization.GetRefreshedUserTokenAsync for an exchangeable token (regardless of expiration)
         [Fact]
-        public async Task Test_AutoWithOBO_Runtime()
+        public async Task Test_AutoWithOBO_SkipCache()
         {
             // arrange
             var storage = new MemoryStorage();
@@ -829,6 +830,125 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(null, GraphName));
+        }
+
+        [Fact]
+        public async Task Test_AutoWithOBO_ConfigExchange()
+        {
+            var userTokenClient = new Mock<IUserTokenClient>();
+            userTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new TokenOrSignInResourceResponse() { TokenResponse = new TokenResponse() { Token = "exchangeableToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true } }));
+
+            // "oboConnection" provider
+            IList<string> oboScopes = ["oboScopes"];
+
+            var accessTokenProvider = new Mock<IAccessTokenProvider>();
+            accessTokenProvider
+                .Setup(p => p.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<String>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult("NewToken"));
+
+            var oboExchangeProvider = accessTokenProvider.As<IOBOExchange>();
+            oboExchangeProvider
+                .Setup(o => o.AcquireTokenOnBehalfOf(oboScopes, "exchangeableToken"))
+                .Returns(Task.FromResult(new TokenResponse() { Token = "NewToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
+
+            var connections = new ConfigurationConnections(new Dictionary<string, IAccessTokenProvider> { { "oboConnection", accessTokenProvider.Object } }, null);
+
+            // arrange
+            var storage = new MemoryStorage();
+            var adapter = new TestAdapter(tokenClient: userTokenClient.Object);
+
+            // handler "graph" with both OBO values
+            var handler = new AzureBotUserAuthorization(GraphName, storage, connections, new OAuthSettings() { OBOConnectionName = "oboConnection", OBOScopes = oboScopes });
+
+            var options = new TestApplicationOptions(storage)
+            {
+                Adapter = adapter,
+                UserAuthorization = new UserAuthorizationOptions(connections, handler)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
+                Assert.NotNull(token);
+                Assert.Equal("NewToken", token);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            });
+
+            // act
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+            .Send("first message")
+            .AssertReply("You said: first message")
+            .StartTestAsync();
+        }
+
+        [Fact]
+        public async Task Test_AutoWithOBO_RuntimeScopes()
+        {
+            var userTokenClient = new Mock<IUserTokenClient>();
+            userTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new TokenOrSignInResourceResponse() { TokenResponse = new TokenResponse() { Token = "exchangeableToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true } }));
+            userTokenClient
+                .Setup(c => c.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new TokenResponse() { Token = "exchangeableToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30), IsExchangeable = true }));
+
+            // "oboConnection" provider
+            IList<string> runtimeOboScopes = ["oboScopes"];
+
+            var accessTokenProvider = new Mock<IAccessTokenProvider>();
+            accessTokenProvider
+                .Setup(p => p.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<String>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult("NewToken"));
+
+            var oboExchangeProvider = accessTokenProvider.As<IOBOExchange>();
+            oboExchangeProvider
+                .Setup(o => o.AcquireTokenOnBehalfOf(runtimeOboScopes, "exchangeableToken"))
+                .Returns(Task.FromResult(new TokenResponse() { Token = "NewToken", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) }));
+
+            var connections = new ConfigurationConnections(new Dictionary<string, IAccessTokenProvider> { { "oboConnection", accessTokenProvider.Object } }, null);
+
+            // arrange
+            var storage = new MemoryStorage();
+            var adapter = new TestAdapter(tokenClient: userTokenClient.Object);
+
+            // handler "graph" with both OBO connection name only
+            var handler = new AzureBotUserAuthorization(GraphName, storage, connections, new OAuthSettings() { OBOConnectionName = "oboConnection" });
+
+            var options = new TestApplicationOptions(storage)
+            {
+                Adapter = adapter,
+                UserAuthorization = new UserAuthorizationOptions(connections, handler)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName, exchangeScopes: runtimeOboScopes);
+                Assert.NotNull(token);
+                Assert.Equal("NewToken", token);
+                await turnContext.SendActivityAsync(MessageFactory.Text($"You said: {turnContext.Activity.Text}"), cancellationToken);
+            });
+
+            // act
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+            .Send("first message")
+            .AssertReply("You said: first message")
+            .StartTestAsync();
         }
 
         // token refreshes within 5 minutes of expiration
