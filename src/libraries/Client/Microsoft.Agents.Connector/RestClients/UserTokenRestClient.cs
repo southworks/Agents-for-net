@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Threading;
@@ -421,10 +422,13 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             if (tokenResponse?.Token != null)
             {
-                // Token Service isn't returning Expiration in TokenResponse
+                var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+
+                tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
+
                 if (tokenResponse.Expiration == null)
                 {
-                    var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+                    // Token Service isn't returning Expiration in TokenResponse
                     tokenResponse.Expiration = jwtToken.ValidTo;
                 }
 
@@ -435,6 +439,12 @@ namespace Microsoft.Agents.Connector.RestClients
                         SlidingExpiration = TimeSpan.FromMinutes(5)
                     });
             }
+        }
+
+        private static bool IsExchangeableToken(JwtSecurityToken jwtToken)
+        {
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud")?.Value;
+            return (bool)(aud?.StartsWith("api://"));
         }
     }
 }

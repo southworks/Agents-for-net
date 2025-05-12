@@ -121,7 +121,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             try
             {
                 // Can we even exchange this?
-                if (!IsExchangeableToken(token.Token))
+                if (!token.IsExchangeable)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
                 }
@@ -158,13 +158,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
 
             return token ?? null;
-        }
-
-        private static bool IsExchangeableToken(string token)
-        {
-            JwtSecurityToken jwtToken = new(token);
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
-            return (bool)(aud?.StartsWith("api://"));
         }
 
         private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)

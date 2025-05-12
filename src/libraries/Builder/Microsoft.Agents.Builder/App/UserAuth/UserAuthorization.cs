@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             if (_authTokens.TryGetValue(handlerName, out var token))
             {
-                // An exchangeable token needs to be exchange first.
+                // An exchangeable token needs to be exchanged.
                 if (!token.IsExchangeable)
                 {
                     var diff = token.Expiration - DateTimeOffset.UtcNow;
