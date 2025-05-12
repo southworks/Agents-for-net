@@ -2,19 +2,19 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
 
 namespace HeaderPropagation;
 
 public static class ConversationStateExtensions
 {
-    public static int MessageCount(this ConversationState state) => state.GetValue<int>("countKey");
-
-    public static void MessageCount(this ConversationState state, int value) => state.SetValue("countKey", value);
-
-    public static int IncrementMessageCount(this ConversationState state)
+    public static void SaveActivity(this ConversationState state, IActivity activity)
     {
-        int count = state.GetValue<int>("countKey");
-        state.SetValue("countKey", ++count);
-        return count;
+        state.SetValue($"history/{activity.Id}", activity);
+    }
+
+    public static IActivity GetActivity(this ConversationState state, string activityId)
+    {
+        return state.GetValue<IActivity>($"history/{activityId}");
     }
 }

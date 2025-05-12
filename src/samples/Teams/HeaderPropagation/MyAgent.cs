@@ -5,15 +5,15 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.App;
 using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Agents.Extensions.Teams.App;
 
 namespace HeaderPropagation;
 
-public class Echo : AgentApplication
+public class MyAgent : AgentApplication
 {
-    public Echo(AgentApplicationOptions options) : base(options)
+    public MyAgent(AgentApplicationOptions options) : base(options)
     {
         RegisterExtension(new TeamsAgentExtension(this), (ext) =>
         {
@@ -25,7 +25,9 @@ public class Echo : AgentApplication
 
     private async Task OnMessageEditAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await OnMessageAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+        var prevActivity = turnState.Conversation.GetActivity(turnContext.Activity.Id);
+
+        await turnContext.SendActivityAsync($"Activity '{prevActivity.Id}' modified from '{prevActivity.Text}' to '{turnContext.Activity.Text}'", cancellationToken: cancellationToken);
     }
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -41,9 +43,8 @@ public class Echo : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // Increment count state.
-        int count = turnState.Conversation.IncrementMessageCount();
+        turnState.Conversation.SaveActivity(turnContext.Activity);
 
-        await turnContext.SendActivityAsync($"[{count}] you said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 }
