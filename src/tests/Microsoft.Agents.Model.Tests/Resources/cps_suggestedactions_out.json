@@ -9,8 +9,7 @@
     "role": "bot"
   },
   "conversation": {
-    "id": "fe5203d5-03ce-44f1-8fb7-d26bf06ee40f",
-    "properties": {}
+    "id": "fe5203d5-03ce-44f1-8fb7-d26bf06ee40f"
   },
   "recipient": {
     "id": "94219457-c13e-44ca-b91c-24078a4997c6",
