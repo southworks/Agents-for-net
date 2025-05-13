@@ -31,15 +31,15 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        public static Uri EnsureTrailingSlash(this Uri uri)
+        internal static Uri EnsureTrailingSlash(this Uri uri)
         {
 
             AssertionHelpers.ThrowIfNull(uri, nameof(uri));
             string uriString = uri.ToString();
 #if !NETSTANDARD
-            if (!uriString.Contains('/'))
+            if (!uriString.EndsWith('/'))
 #else
-            if (!uriString.Contains("/"))
+            if (!uriString.EndsWith("/"))
 #endif
             {
                 uriString += "/";
