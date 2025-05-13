@@ -65,6 +65,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var propertyValue = property.GetValue(value);
 
+#if SKIP_EMPTY_LISTS
                     if (propertyValue is IList list)
                     {
                         if (list == null || list.Count == 0)
@@ -72,7 +73,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                             continue;
                         }
                     }
-
+#endif
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {
@@ -267,6 +268,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 var CollectionPropertyValue = System.Text.Json.JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
                 if (CollectionPropertyValue is IList prospectiveList)
                 {
+#if SKIP_EMPTY_LISTS
                     if (prospectiveList.Count != 0)
                     {
                         property.SetValue(value, CollectionPropertyValue);
@@ -275,6 +277,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         property.SetValue(value, null);
                     }
+#else
+                    property.SetValue(value, CollectionPropertyValue);
+#endif
                 }
                 return;
             }
