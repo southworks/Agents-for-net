@@ -100,6 +100,12 @@ public class AttachmentsAgent : AgentApplication
     private static async Task<IActivity> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
     {
         // Look at the user input, and figure out what kind of attachment to send.
+
+        if (string.IsNullOrEmpty(activity.Text))
+        {
+            return null;
+        }
+
         IActivity reply = null;
 
         if (activity.Text.StartsWith('1'))
