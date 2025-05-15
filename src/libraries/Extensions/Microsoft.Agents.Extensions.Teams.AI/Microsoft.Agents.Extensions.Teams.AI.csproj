@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTeams</ComponentAreaName>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>NU5125;OPENAI001</NoWarn>
@@ -39,5 +39,9 @@
     <ProjectReference Include="..\..\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+	  <None Include="readme.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 </Project>
