@@ -42,9 +42,11 @@ public class AttachmentsAgent : AgentApplication
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var reply = await ProcessInput(turnContext, turnState, cancellationToken);
-
-        // Respond to the user.
-        await turnContext.SendActivityAsync(reply, cancellationToken);
+        if (reply != null)
+        {
+            // Respond to the user.
+            await turnContext.SendActivityAsync(reply, cancellationToken);
+        }
         await DisplayOptionsAsync(turnContext, cancellationToken);
     }
 
@@ -61,9 +63,13 @@ public class AttachmentsAgent : AgentApplication
                 // need to provide a value for other parameters like 'text' or 'displayText'.
                 new CardAction(ActionTypes.ImBack, title: "1. Inline Attachment", value: "1"),
                 new CardAction(ActionTypes.ImBack, title: "2. Internet Attachment", value: "2"),
-                new CardAction(ActionTypes.ImBack, title: "3. Uploaded Attachment", value: "3"),
             ],
         };
+
+        if (!turnContext.Activity.ChannelId.Equals(Channels.Msteams, StringComparison.OrdinalIgnoreCase))
+        {
+            card.Buttons.Add(new CardAction(ActionTypes.ImBack, title: "3. Uploaded Attachment", value: "3"));
+        }
 
         var reply = MessageFactory.Attachment(card.ToAttachment());
         await turnContext.SendActivityAsync(reply, cancellationToken);
@@ -94,7 +100,8 @@ public class AttachmentsAgent : AgentApplication
     private static async Task<IActivity> HandleOutgoingAttachment(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
     {
         // Look at the user input, and figure out what kind of attachment to send.
-        IActivity reply;
+        IActivity reply = null;
+
         if (activity.Text.StartsWith('1'))
         {
             reply = MessageFactory.Text("This is an inline attachment.");
@@ -112,11 +119,6 @@ public class AttachmentsAgent : AgentApplication
             // Get the uploaded attachment.
             var uploadedAttachment = await UploadAttachmentAsync(turnContext, activity.ServiceUrl, activity.Conversation.Id, cancellationToken);
             reply.Attachments = [uploadedAttachment];
-        }
-        else
-        {
-            // The user did not enter input that this bot was built to handle.
-            reply = MessageFactory.Text("Your input was not recognized please try again.");
         }
 
         return reply;

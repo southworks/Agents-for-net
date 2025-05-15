@@ -2,8 +2,10 @@
 // Licensed under the MIT License.
 
 using HandlingAttachments;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -16,17 +18,19 @@ using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 
 // Register FileDownloaders
-builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [new AttachmentDownloader(sp.GetService<IHttpClientFactory>())]);
+builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
+    new AttachmentDownloader(sp.GetService<IHttpClientFactory>()),
+    new TeamsAttachmentDownloader(new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" }, sp.GetService<IConnections>(), sp.GetService<IHttpClientFactory>())
+]);
 
 // Add ApplicationOptions
 builder.AddAgentApplicationOptions();
 
-// Add the bot (which is transient)
+// Add the Agent
 builder.AddAgent<AttachmentsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
