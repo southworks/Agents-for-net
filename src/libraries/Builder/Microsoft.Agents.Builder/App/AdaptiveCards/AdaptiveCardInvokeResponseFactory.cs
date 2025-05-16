@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System.Net;
 
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
 {
@@ -47,6 +48,26 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 StatusCode = 200,
                 Type = "application/vnd.microsoft.activity.message",
                 Value = message
+            };
+        }
+
+        /// <summary>
+        /// Creates an Error AdaptiveCardInvokeResponse.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="statusCode">Defaults to HttpStatusCode.BadRequest.</param>
+        /// <param name="code">Defaults to HttpStatusCode.ToString()</param>
+        public static AdaptiveCardInvokeResponse Error(string message, HttpStatusCode statusCode = HttpStatusCode.BadRequest, string code = null)
+        {
+            return new AdaptiveCardInvokeResponse()
+            {
+                StatusCode = (int) statusCode,
+                Type = "application/vnd.microsoft.error",
+                Value = new Error()
+                {
+                    Code = code ?? statusCode.ToString(),
+                    Message = message
+                }
             };
         }
     }
