@@ -14,16 +14,6 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <summary>
         /// Returns response with type "application/vnd.microsoft.card.adaptive".
         /// </summary>
-        /// <param name="adaptiveCard">An AdaptiveCard instance.</param>
-        /// <returns>The response that includes an Adaptive Card that the client should display.</returns>
-        public static AdaptiveCardInvokeResponse AdaptiveCard(global::AdaptiveCards.AdaptiveCard adaptiveCard)
-        {
-            return AdaptiveCard(adaptiveCard.ToJson());
-        }
-
-        /// <summary>
-        /// Returns response with type "application/vnd.microsoft.card.adaptive".
-        /// </summary>
         /// <param name="adaptiveCardJson">An AdaptiveCard JSON value.</param>
         /// <returns>The response that includes an Adaptive Card that the client should display.</returns>
         public static AdaptiveCardInvokeResponse AdaptiveCard(string adaptiveCardJson)
