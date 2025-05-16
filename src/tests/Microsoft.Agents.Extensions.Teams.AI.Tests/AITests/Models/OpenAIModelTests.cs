@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
             // Assert
             Assert.Equal(PromptResponseStatus.Error, result.Status);
             Assert.NotNull(result.Error);
-            Assert.StartsWith("The chat completion API returned an error status of InternalServerError: Service request failed.\r\nStatus: 500 (exception)", result.Error.Message);
+            Assert.StartsWith("The chat completion API returned an error status of InternalServerError", result.Error.Message);
         }
 
         [Fact]

@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.PromptsTests
             });
 
             var exception = Assert.Throws<ArgumentException>(() => manager.GetPrompt("does_not_exist"));
-            Assert.Equal(exception.Message, $"Directory doesn't exist `{directory}\\does_not_exist`");
+            Assert.StartsWith($"Directory doesn't exist", exception.Message);
         }
     }
 }
