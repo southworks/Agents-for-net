@@ -13,15 +13,15 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <summary>
         /// Returns response with type "application/vnd.microsoft.card.adaptive".
         /// </summary>
-        /// <param name="adaptiveCard">An Adaptive Card.</param>
+        /// <param name="adaptiveCardJson">An AdaptiveCard JSON value.</param>
         /// <returns>The response that includes an Adaptive Card that the client should display.</returns>
-        public static AdaptiveCardInvokeResponse AdaptiveCard(AdaptiveCard adaptiveCard)
+        public static AdaptiveCardInvokeResponse AdaptiveCard(string adaptiveCardJson)
         {
             return new AdaptiveCardInvokeResponse
             {
                 StatusCode = 200,
                 Type = "application/vnd.microsoft.card.adaptive",
-                Value = adaptiveCard
+                Value = adaptiveCardJson
             };
         }
 
