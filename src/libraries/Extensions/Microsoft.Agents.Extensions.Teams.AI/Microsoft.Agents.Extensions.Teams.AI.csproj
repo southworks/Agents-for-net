@@ -28,6 +28,7 @@
     <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.Identity.Client" />
+    <PackageReference Include="Google.Protobuf" /> 
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" /> <!-- This package is required to support gpt-3.x and gpt-4 models -->
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" />  <!-- This package is required to support gpt-4o models -->
     <PackageReference Include="OpenAI" />
