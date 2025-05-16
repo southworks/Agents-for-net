@@ -5,7 +5,6 @@ using Microsoft.Agents.Extensions.Teams.AI.Prompts;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections;
 using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
 using Microsoft.Agents.Extensions.Teams.AI.Exceptions;
-using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Extensions.Teams.AI.Utilities;
 using System.ClientModel.Primitives;
 using System.Net;
@@ -20,7 +19,6 @@ using Azure.AI.OpenAI.Chat;
 using OpenAI.Chat;
 using System.Reflection;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Extensions.Teams.AI.Application;
 
 #pragma warning disable AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 namespace Microsoft.Agents.Extensions.Teams.AI.Models

@@ -34,14 +34,14 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         [Action(AIConstants.FlaggedInputActionName, isDefault: true)]
         public Task<string> FlaggedInputAction()
         {
-            _logger.LogError($"The users input has been moderated but no handler was registered for {AIConstants.FlaggedInputActionName}");
+            _logger.LogError($"The user's input has been moderated but no handler was registered for {AIConstants.FlaggedInputActionName}");
             return Task.FromResult(AIConstants.StopCommand);
         }
 
         [Action(AIConstants.FlaggedOutputActionName, isDefault: true)]
         public Task<string> FlaggedOutputAction()
         {
-            _logger.LogError($"The bots output has been moderated but no handler was registered for {AIConstants.FlaggedOutputActionName}");
+            _logger.LogError($"The bot's output has been moderated but no handler was registered for {AIConstants.FlaggedOutputActionName}");
             return Task.FromResult(AIConstants.StopCommand);
         }
 
@@ -94,11 +94,6 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
 
             bool isTeamsChannel = turnContext.Activity.ChannelId == Channels.Msteams;
 
-            if (isTeamsChannel)
-            {
-                content.Replace("\n", "<br>");
-            }
-
             // If the response from the AI includes citations, those citations will be parsed and added to the SAY command.
             List<ClientCitation> citations = new();
 
@@ -108,10 +103,6 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
                 foreach (Citation citation in command.Response.Context.Citations)
                 {
                     string abs = CitationUtils.Snippet(citation.Content, 477);
-                    if (isTeamsChannel)
-                    {
-                        content.Replace("\n", "<br>");
-                    };
 
                     citations.Add(new ClientCitation()
                     {

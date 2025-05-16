@@ -5,7 +5,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.State
     /// <summary>
     /// The class representing a record.
     /// </summary>
-    public class Record : Dictionary<string, object>
+    internal class Record : Dictionary<string, object>
     {
         /// <summary>
         /// Tries to get the value from the dictionary.

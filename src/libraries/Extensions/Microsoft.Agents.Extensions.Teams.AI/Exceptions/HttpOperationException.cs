@@ -6,7 +6,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Exceptions
     /// <summary>
     /// Exception thrown when an HTTP operation fails.
     /// </summary>
-    public sealed class HttpOperationException : Exception
+    internal sealed class HttpOperationException : Exception
     {
         /// <summary>
         /// HTTP status code.

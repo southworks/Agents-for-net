@@ -2,8 +2,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts;
 using Microsoft.Agents.Extensions.Teams.AI.Tokenizers;
-using Microsoft.Agents.Extensions.Teams.AI.State;
-using Microsoft.Agents.Extensions.Teams.AI.Application;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Models
 {

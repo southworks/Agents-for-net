@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Utilities
     /// <summary>
     /// LLM Response JSON Parsing Utilities
     /// </summary>
-    public class ResponseJsonParsers
+    internal class ResponseJsonParsers
     {
         /// <summary>
         /// Parse all objects from a response string.

@@ -6,10 +6,7 @@ using Microsoft.Agents.Extensions.Teams.AI.Models;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections;
 using Microsoft.Agents.Extensions.Teams.AI.Validators;
-using Microsoft.Agents.Extensions.Teams.AI.State;
 using static Microsoft.Agents.Extensions.Teams.AI.Models.IPromptCompletionModelEvents;
-using Microsoft.Agents.Extensions.Teams.AI.Application;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Clients
