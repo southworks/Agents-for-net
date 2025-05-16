@@ -157,14 +157,17 @@ namespace TeamsAgent
         private Task MessageEdited(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             turnContext.SendActivityAsync("Message Edited: " + turnContext.Activity.Id, cancellationToken: cancellationToken);
 
-        private Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
-            turnContext.SendActivityAsync(MessageFactory.Text("Welcome to the TeamsAgent sample!"), cancellationToken);
-
-        private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             TeamsChannelAccount member = await TeamsInfo.GetMemberAsync(turnContext, turnContext.Activity.From.Id, cancellationToken);
             string msg = member.Name ?? "not teams user";
             await turnContext.SendActivityAsync($"hi {msg}, use the '+' option on Teams message textbox to start the MessageExtension search", cancellationToken: cancellationToken);
+        }
+
+        private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        {
+            var numFiles = turnState.Temp.InputFiles.Count;
+            await turnContext.SendActivityAsync("found files " + numFiles);
         }
     }
 
