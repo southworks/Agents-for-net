@@ -1,5 +1,4 @@
-﻿using AdaptiveCards.Rendering;
-using Microsoft.Agents.Builder;
+﻿using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
@@ -93,8 +92,24 @@ namespace TeamsAgent
                 _logger.LogWarning("Received unexpected commandID {cmdName}", cmd.CommandId);
                 return await Task.FromResult(new MessagingExtensionResult());
             }
-
-            JsonElement el = query.Parameters.TryGetValue<JsonElement>("NuGetPackageName");
+            JsonElement el = default;
+            if (query.Parameters.TryGetValue("NuGetPackageName", out var elObj))
+            {
+                if (elObj is JsonElement element)
+                {
+                    el = element;
+                }
+                else
+                {
+                    _logger.LogWarning("Received unexpected type for NuGetPackageName: {type}", elObj.GetType());
+                    return await Task.FromResult(new MessagingExtensionResult());
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Query Parameters does not include NuGetPackageName");
+                return await Task.FromResult(new MessagingExtensionResult());
+            }
 
             if (el.ValueKind == JsonValueKind.Undefined)
             {
