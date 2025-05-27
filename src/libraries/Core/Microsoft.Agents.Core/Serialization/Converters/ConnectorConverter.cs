@@ -316,6 +316,13 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         ?? policy?.ConvertName(prop.Name)
                         ?? prop.Name;
 
+                    if (dict.ContainsKey(resolvedName))
+                    {
+                        throw new InvalidOperationException(
+                            $"Duplicate JSON property name detected: '{resolvedName}' maps to multiple properties in type '{t.FullName}'."
+                        );
+                    }
+
                     dict[resolvedName] = prop;
                 }
 

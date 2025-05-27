@@ -414,6 +414,21 @@ namespace Microsoft.Agents.Model.Tests
             }
         }
 
+        [Fact]
+        public void DuplicateNameActivitySerializationShouldThrow()
+        {
+            // This should throw an exception because the property name 'id' is duplicated.
+            var activityJson = new DuplicateNameActivity
+            {
+                Id = "12345",
+                MyId = "67890"
+            };
+            // Expect an InvalidOperationException from System.Text.Json (Note: The ConnectorConverter is not used here because the compile-time type is 'object').
+            Assert.Throws<InvalidOperationException>(() => ProtocolJsonSerializer.ToJson(activityJson));
+            // Expect an InvalidOperationException from ConnectorConverter.
+            Assert.Throws<InvalidOperationException>(() => JsonSerializer.Serialize<Activity>(activityJson, ProtocolJsonSerializer.SerializationOptions));
+        }
+
 
 #if SKIP_EMPTY_LISTS
         [Fact]
@@ -511,6 +526,13 @@ namespace Microsoft.Agents.Model.Tests
 
             [JsonPropertyName("@public")]
             public string Public { get; set; }
+        }
+
+        private class DuplicateNameActivity : Activity
+        {
+
+            [JsonPropertyName("id")]
+            public string MyId { get; set; }
         }
     }
 }   
