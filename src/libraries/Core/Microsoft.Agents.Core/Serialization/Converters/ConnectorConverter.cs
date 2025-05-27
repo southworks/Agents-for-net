@@ -15,7 +15,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
     public abstract class ConnectorConverter<T> : JsonConverter<T> where T : new()
     {
         private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
-        private static readonly ConcurrentDictionary<(Type, bool, JsonNamingPolicy), Dictionary<string, PropertyInfo>> PropertyNameCache = new();
+        private static readonly ConcurrentDictionary<(Type, bool, Type), Dictionary<string, (PropertyInfo, bool)>> JsonPropertyMetadataCache = new();
+        
         public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
@@ -25,7 +26,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var value = new T();
 
-            var properties = GetPropertyMap(typeof(T), options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
+            var propertyMetadataMap = GetJsonPropertyMetadata(typeof(T), options.PropertyNameCaseInsensitive, options.PropertyNamingPolicy);
 
             while (reader.Read())
             {
@@ -38,9 +39,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 {
                     var propertyName = reader.GetString();
 
-                    if (properties.ContainsKey(propertyName))
+                    if (propertyMetadataMap.TryGetValue(propertyName, out var entry))
                     {
-                        ReadProperty(ref reader, value, propertyName, options, properties);
+                        ReadProperty(ref reader, value, propertyName, options, entry.Property);
                     }
                     else
                     {
@@ -58,11 +59,12 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
             var type = value.GetType();
             var properties = GetCachedProperties(type);
-            var resolvedNames = GetPropertyMap(type, false, options.PropertyNamingPolicy); // case-insensitivity doesn’t matter here
+            var propertyMetadataMap = GetJsonPropertyMetadata(type, false, options.PropertyNamingPolicy); // case-insensitivity doesn’t matter here
+            var reverseMap = propertyMetadataMap.ToDictionary(kv => kv.Value.Property, kv => (kv.Key, kv.Value.IsIgnored));
 
             foreach (var property in properties)
             {
-                if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+                if (!reverseMap.TryGetValue(property, out var propertyMetadata) || propertyMetadata.IsIgnored)
                 {
                     continue;
                 }
@@ -83,7 +85,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {
-                        var propertyName = resolvedNames.FirstOrDefault(kv => kv.Value == property).Key ?? property.Name;
+                        var propertyName = propertyMetadata.Key ?? property.Name;
 
                         writer.WritePropertyName(propertyName);
 
@@ -258,10 +260,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             setter(deserialized);
         }
 
-        private void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, Dictionary<string, PropertyInfo> properties)
+        private void ReadProperty(ref Utf8JsonReader reader, T value, string propertyName, JsonSerializerOptions options, PropertyInfo property)
         {
-            var property = properties[propertyName];
-
             if (TryReadExtensionData(ref reader, value, property.Name, options))
             {
                 return;
@@ -302,31 +302,32 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             return PropertyCache.GetOrAdd(type, static t => t.GetProperties());
         }
 
-        private static Dictionary<string, PropertyInfo> GetPropertyMap(Type type, bool caseInsensitive, JsonNamingPolicy? namingPolicy)
+        private static Dictionary<string, (PropertyInfo Property, bool IsIgnored)> GetJsonPropertyMetadata(Type type, bool caseInsensitive, JsonNamingPolicy? namingPolicy)
         {
-            return PropertyNameCache.GetOrAdd((type, caseInsensitive, namingPolicy), static key =>
+            var cacheKey = (type, caseInsensitive, namingPolicy?.GetType());
+            return JsonPropertyMetadataCache.GetOrAdd(cacheKey, key =>
             {
-                var (t, insensitive, policy) = key;
+                var (t, insensitive, _) = key;
                 var comparer = insensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-                var dict = new Dictionary<string, PropertyInfo>(comparer);
+                var metadata  = new Dictionary<string, (PropertyInfo, bool)>(comparer);
 
                 foreach (var prop in GetCachedProperties(t))
                 {
                     var resolvedName = prop.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
-                        ?? policy?.ConvertName(prop.Name)
+                        ?? namingPolicy?.ConvertName(prop.Name)
                         ?? prop.Name;
 
-                    if (dict.ContainsKey(resolvedName))
+                    if (metadata.ContainsKey(resolvedName))
                     {
                         throw new InvalidOperationException(
                             $"Duplicate JSON property name detected: '{resolvedName}' maps to multiple properties in type '{t.FullName}'."
                         );
                     }
 
-                    dict[resolvedName] = prop;
+                    metadata [resolvedName] = (prop, prop.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always);
                 }
 
-                return dict;
+                return metadata;
             });
         }
     }
