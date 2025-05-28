@@ -25,12 +25,18 @@ namespace TeamsAgent
                 tae.OnMessageEdit(MessageEdited);
                 tae.MessageExtensions.OnQuery("findNuGetPackage", OnQuery);
                 tae.MessageExtensions.OnSelectItem(OnSelectItem);
+                tae.MessageExtensions.OnQueryLink(OnQueryLink);
             });
             AdaptiveCards.OnSearch("dataset", OnSearchDS);
             OnMessage("/help", (t, _, ct) => t.SendActivityAsync("TeamsAgent demo", cancellationToken: ct));
             OnMessageReactionsAdded(OnMessageReaction);
             OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
             OnActivity(ActivityTypes.Message, OnMessageAsync);
+        }
+
+        private Task<MessagingExtensionResult> OnQueryLink(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new MessagingExtensionResult() { Text = "On Query Link" });
         }
 
         private Task<IList<AdaptiveCardsSearchResult>> OnSearchDS(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
