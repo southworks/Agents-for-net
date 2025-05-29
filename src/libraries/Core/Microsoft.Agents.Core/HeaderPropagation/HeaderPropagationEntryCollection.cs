@@ -14,6 +14,8 @@ public class HeaderPropagationEntryCollection
 {
     private readonly Dictionary<string, HeaderPropagationEntry> _entries = [];
 
+    private static readonly object _optionsLock = new object();
+
     /// <summary>
     /// Gets the collection of header entries to be propagated to the outgoing request.
     /// </summary>
@@ -32,12 +34,15 @@ public class HeaderPropagationEntryCollection
     /// <param name="value">The value to add for the specified key.</param>
     public void Add(string key, StringValues value)
     {
-        _entries[key] = new HeaderPropagationEntry
+        lock (_optionsLock)
         {
-            Key = key,
-            Value = value,
-            Action = HeaderPropagationEntryAction.Add
-        };
+            _entries[key] = new HeaderPropagationEntry
+            {
+                Key = key,
+                Value = value,
+                Action = HeaderPropagationEntryAction.Add
+            };
+        }
     }
 
     /// <summary>
@@ -50,12 +55,15 @@ public class HeaderPropagationEntryCollection
     /// <param name="value">The value to add for the specified key.</param>
     public void Append(string key, StringValues value)
     {
-        _entries[key] = new HeaderPropagationEntry
+        lock (_optionsLock)
         {
-            Key = key,
-            Value = value,
-            Action = HeaderPropagationEntryAction.Append
-        };
+            _entries[key] = new HeaderPropagationEntry
+            {
+                Key = key,
+                Value = value,
+                Action = HeaderPropagationEntryAction.Append
+            };
+        }
     }
 
     /// <summary>
@@ -67,11 +75,14 @@ public class HeaderPropagationEntryCollection
     /// <param name="key">The key of the element to add.</param>
     public void Propagate(string key)
     {
-        _entries[key] = new HeaderPropagationEntry
+        lock (_optionsLock)
         {
-            Key = key,
-            Action = HeaderPropagationEntryAction.Propagate
-        };
+            _entries[key] = new HeaderPropagationEntry
+            {
+                Key = key,
+                Action = HeaderPropagationEntryAction.Propagate
+            };
+        }
     }
 
     /// <summary>
@@ -84,11 +95,14 @@ public class HeaderPropagationEntryCollection
     /// <param name="value">The value to add for the specified key.</param>
     public void Override(string key, StringValues value)
     {
-        _entries[key] = new HeaderPropagationEntry
+        lock (_optionsLock)
         {
-            Key = key,
-            Value = value,
-            Action = HeaderPropagationEntryAction.Override
-        };
+            _entries[key] = new HeaderPropagationEntry
+            {
+                Key = key,
+                Value = value,
+                Action = HeaderPropagationEntryAction.Override
+            };
+        }
     }
 }

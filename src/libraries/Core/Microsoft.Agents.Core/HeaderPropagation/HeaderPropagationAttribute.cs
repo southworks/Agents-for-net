@@ -51,12 +51,28 @@ public class HeaderPropagationAttribute : Attribute
 
     private static IEnumerable<Type> GetLoadHeadersTypes(Assembly assembly)
     {
-        foreach (Type type in assembly.GetTypes())
+        IList<Type> result = [];
+
+        Type[] types;
+
+        try
+        {
+            types = assembly.GetTypes();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"HeaderPropagationAttribute.GetLoadHeadersTypes: {ex.Message}");
+            return result;
+        }
+
+        foreach (Type type in types)
         {
             if (type.GetCustomAttributes(typeof(HeaderPropagationAttribute), true).Length > 0)
             {
-                yield return type;
+                result.Add(type);
             }
         }
+
+        return result;
     }
 }
