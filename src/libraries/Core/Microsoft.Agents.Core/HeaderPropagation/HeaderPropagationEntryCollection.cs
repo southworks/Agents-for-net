@@ -57,10 +57,18 @@ public class HeaderPropagationEntryCollection
     {
         lock (_optionsLock)
         {
+            StringValues newValue;
+
+            if (_entries.TryGetValue(key, out var entry))
+            {
+                // If the key already exists, append the new value to the existing one.
+                newValue = StringValues.Concat(entry.Value, value);
+            }
+
             _entries[key] = new HeaderPropagationEntry
             {
                 Key = key,
-                Value = value,
+                Value = !StringValues.IsNullOrEmpty(newValue) ? newValue : value,
                 Action = HeaderPropagationEntryAction.Append
             };
         }
