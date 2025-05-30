@@ -540,20 +540,24 @@ namespace Microsoft.Agents.Builder
                         StreamId = response.Id;
                     }
                 }
-                catch (ErrorResponseException ex)
+                catch (Exception ex)
                 {
+                    // We are not rethrowing from here since this is likely being called
+                    // from the Timer thread and will crash the app.  A more elegant 
+                    // solution would be to get it back to the calling thread.
+
+                    if (ex is ErrorResponseException errorResponse)
+                    {
+                        if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
+                        {
+                            System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                        }
+                    }
+
                     lock (this)
                     {
                         StopStream();
-
-                        if (TeamsStreamCancelled.Equals(ex.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
-                        {
-                            _cancelled = true;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        _cancelled = true;
                     }
                 }
             }
