@@ -316,7 +316,7 @@ namespace Microsoft.Agents.Builder
             var activity = FinalMessage ?? new Activity();
 
             activity.Type = ActivityTypes.Message;
-            activity.Text = Message; // !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
+            activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
             activity.Entities ??= [];
 
             // make sure the supplied Activity doesn't have a streamInfo already.
