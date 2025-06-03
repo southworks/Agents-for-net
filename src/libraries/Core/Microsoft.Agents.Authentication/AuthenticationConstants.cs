@@ -70,7 +70,6 @@ namespace Microsoft.Agents.Authentication
         /// <summary>
         /// Audience Claim. 
         /// </summary>
-        /// <seealso cref="https://tools.ietf.org/html/rfc7519#section-4.1.3"/>
         /// <remarks>
         /// The "aud" (audience) claim identifies the recipients that the JWT is
         /// intended for. Each principal intended to process the JWT MUST
@@ -83,6 +82,8 @@ namespace Microsoft.Agents.Authentication
         /// single case-sensitive string containing a StringOrURI value. The
         /// interpretation of audience values is generally application specific.
         /// Use of this claim is OPTIONAL.
+        /// 
+        /// For more details, see <a href="https://tools.ietf.org/html/rfc7519#section-4.1.3">RFC 7519 Section 4.1.3</a>.
         /// </remarks>
         public const string AudienceClaim = "aud";
 
