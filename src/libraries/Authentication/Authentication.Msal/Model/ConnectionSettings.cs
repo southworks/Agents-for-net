@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     }
                     if (AuthType == AuthTypes.WorkloadIdentity && string.IsNullOrEmpty(FederatedTokenFile))
                     {
-                        throw new ArgumentNullException(nameof(Authority), "FederatedTokenFile is required");
+                        throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile is required");
                     }
                     break;
                 default:
