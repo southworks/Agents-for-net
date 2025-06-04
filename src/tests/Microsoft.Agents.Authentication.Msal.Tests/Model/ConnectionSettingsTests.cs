@@ -224,7 +224,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
                 { "Connections:Settings:ClientId", "test-client-id" },
                 { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
-                { "Connections:Settings:FederatedClientId", "test-federated-client-id" },
                 { "Connections:Settings:FederatedTokenFile", "test-token-file" }
             };
 
@@ -238,7 +237,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
             Assert.Equal("test-client-id", settings.ClientId);
             Assert.Equal("test-tenant-id", settings.TenantId);
             Assert.Equal("https://botframework/test.com", settings.Authority);
-            Assert.Equal("test-federated-client-id", settings.FederatedClientId);
             Assert.Equal("test-token-file", settings.FederatedTokenFile);
             Assert.Null(settings.AssertionRequestOptions);
         }
@@ -252,7 +250,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
                 { "Connections:Settings:ClientId", "test-client-id" },
                 { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
-                { "Connections:Settings:FederatedClientId", "test-federated-client-id" },
             };
 
             IConfiguration configuration = new ConfigurationBuilder()
@@ -271,7 +268,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
                 { "Connections:Settings:ClientId", "test-client-id" },
                 { "Connections:Settings:AuthorityEndpoint", "https://botframework/test.com" },
                 { "Connections:Settings:TenantId", "test-tenant-id" },
-                { "Connections:Settings:FederatedClientId", "test-federated-client-id" },
                 { "Connections:Settings:FederatedTokenFile", "test-token-file" },
                 { "Connections:Settings:AssertionRequestOptions:ClientId", "option-client-id" },
                 { "Connections:Settings:AssertionRequestOptions:TokenEndpoint", "option-token-endpoint" },
@@ -290,7 +286,6 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
             Assert.Equal("test-client-id", settings.ClientId);
             Assert.Equal("test-tenant-id", settings.TenantId);
             Assert.Equal("https://botframework/test.com", settings.Authority);
-            Assert.Equal("test-federated-client-id", settings.FederatedClientId);
             Assert.Equal("test-token-file", settings.FederatedTokenFile);
             Assert.NotNull(settings.AssertionRequestOptions);
             Assert.Equal("option-client-id", settings.AssertionRequestOptions.ClientID);

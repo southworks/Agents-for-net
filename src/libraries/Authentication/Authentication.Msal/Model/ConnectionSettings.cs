@@ -126,7 +126,6 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     // No additional validation needed
                     break;
                 case AuthTypes.FederatedCredentials:
-                case AuthTypes.WorkloadIdentity:
                     if (string.IsNullOrEmpty(ClientId))
                     {
                         throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
@@ -134,6 +133,16 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     if (string.IsNullOrEmpty(FederatedClientId))
                     {
                         throw new ArgumentNullException(nameof(FederatedClientId), "FederatedClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
+                    {
+                        throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
+                case AuthTypes.WorkloadIdentity:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
                     }
                     if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
                     {
