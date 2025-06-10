@@ -407,7 +407,7 @@ namespace Microsoft.Agents.Connector.RestClients
             if (value != null)
             {
                 var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
-                if (toExpiration?.TotalMinutes >= 5) // Align with sliding expiration
+                if (!toExpiration.HasValue || toExpiration?.TotalMinutes >= 5) // Align with sliding expiration
                 {
                     return (TokenResponse)value;
                 }
@@ -422,35 +422,21 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             if (tokenResponse != null && tokenResponse.Token != null)
             {
-                if (tokenResponse.Expiration == null)
+                try
                 {
-                    // Token Service isn't returning Expiration in TokenResponse.  Try to
-                    // get from token.
-
-                    if (tokenResponse.Token.StartsWith("gho_"))
+                    var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+                    if (tokenResponse.Expiration == null)
                     {
-                        // GitHub OAuth App docs indicate the tokens don't expire until revoked or unused
-                        // for one year.  For purposes of efficiency we'll cache it briefly.
-                        tokenResponse.Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30);
-                        tokenResponse.IsExchangeable = false;
+                        tokenResponse.Expiration = jwtToken.ValidTo;
                     }
-                    else
-                    {
-                        try
-                        {
-                            var jwtToken = new JwtSecurityToken(tokenResponse.Token);
-                            tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
-                            if (tokenResponse.Expiration == null)
-                            {
-                                tokenResponse.Expiration = jwtToken.ValidTo;
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            // Since we don't have an expiration, we can't cache it.
-                            return;
-                        }
-                    }
+                    tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
+                }
+                catch (Exception)
+                {
+                    // If the TokenResponse doesn't contain an expiration, we can cache it and it will 
+                    // be available for the duration of the sliding expiration, but expiration calcs
+                    // won't be available to callers.
+                    tokenResponse.IsExchangeable = false;
                 }
 
                 _cache.Add(
