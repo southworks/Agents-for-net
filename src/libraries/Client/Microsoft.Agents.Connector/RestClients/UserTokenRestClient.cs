@@ -422,14 +422,34 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             if (tokenResponse != null && tokenResponse.Token != null)
             {
-                var jwtToken = new JwtSecurityToken(tokenResponse.Token);
-
-                tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
-
-                if (tokenResponse.Expiration == null)
+                if (tokenResponse.Expiration != null)
                 {
-                    // Token Service isn't returning Expiration in TokenResponse
-                    tokenResponse.Expiration = jwtToken.ValidTo;
+                    tokenResponse.Expiration = tokenResponse.Expiration;
+                }
+                else if (tokenResponse.Token.StartsWith("gho_"))
+                {
+                    // GitHub OAuth App docs indicate the tokens don't expire until revoked or unused
+                    // for one year.  For purposes of efficiency we'll cache it briefly.
+                    tokenResponse.Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30);
+                    tokenResponse.IsExchangeable = false;
+                }
+                else
+                {
+                    try
+                    {
+                        var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+                        tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
+                        if (tokenResponse.Expiration == null)
+                        {
+                            // Token Service isn't returning Expiration in TokenResponse
+                            tokenResponse.Expiration = jwtToken.ValidTo;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Since we don't have an expiration, we can't cache it.
+                        return;
+                    }
                 }
 
                 _cache.Add(
