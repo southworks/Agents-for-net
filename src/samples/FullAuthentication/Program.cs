@@ -9,16 +9,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-builder.Logging.AddConsole();
 
-// Add AgentApplicationOptions from config.
+// Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
 // Add the Agent
@@ -26,30 +24,32 @@ builder.AddAgent<MyAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operate correctly
+// that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 
 // Configure the HTTP request pipeline.
 
-// Add AspNet token validation
+// Add AspNet token validation for Azure Bot Service and Entra.
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseRouting();
+// Enable AspNet authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
+
+// This receives incoming messages from Azure Bot Service or other SDK Agents
 app.MapPost(
     "/api/messages",
     async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
     {
         await adapter.ProcessAsync(request, response, agent, cancellationToken);
     })
-    .RequireAuthorization();
+    .RequireAuthorization();  // Require authorization for the incoming message endpoint
 
 if (app.Environment.IsDevelopment())
 {
