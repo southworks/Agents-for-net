@@ -30,7 +30,8 @@ builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
     ];
 });
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<TeamsAgent.TeamsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.

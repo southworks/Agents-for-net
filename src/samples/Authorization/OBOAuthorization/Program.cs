@@ -29,7 +29,8 @@ builder.AddAgentApplicationOptions();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent(sp =>
 {
     const string MCSConversationPropertyName = "MCSConversationId";

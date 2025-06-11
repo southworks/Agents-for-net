@@ -21,7 +21,8 @@ builder.Services.AddHttpClient();
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<HostAgent>();
 
 // Add the Agent-to-Agent handling

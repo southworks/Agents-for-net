@@ -29,7 +29,8 @@ builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
     new TeamsAttachmentDownloader(new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" }, sp.GetService<IConnections>(), sp.GetService<IHttpClientFactory>())
 ]);
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<AttachmentsAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.

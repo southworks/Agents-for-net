@@ -19,7 +19,8 @@ builder.Services.AddHttpClient();
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<MyAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.

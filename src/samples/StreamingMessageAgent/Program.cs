@@ -30,7 +30,8 @@ builder.Services.AddTransient<ChatClient>(sp =>
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
+// Add the AgentApplication, which contains the logic for responding to
+// user messages.
 builder.AddAgent<StreamingAgent>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
