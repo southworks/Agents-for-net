@@ -9,6 +9,41 @@ This is a sample of a simple Agent that is hosted on an Asp.net core web service
   - It also support configuration for other Azure clouds such as US Gov, Gallatin or others.
 - If your agent will not be communicating with Azure Bot Service, any AspNet mechanism to authenticate requests can be used instead.
 
+## Overview of adding AspNet Authentication to an Agent
+1. Add the AspNet middleware to the Agent in `Program.cs`:
+   ```csharp
+   // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+   // configured in the appsettings.json "TokenValidation" section.
+   builder.Services.AddControllers();
+   builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+   ```
+1. Enable the AspNet authentication middleware in the Agent pipeline in `Program.cs`, after the line to build the app (`var app = builder.Build();`):
+   ```csharp
+   app.UseAuthentication();
+   app.UseAuthorization();
+   ```
+1. Require authorization for the Agents incoming message endpoint in `Program.cs`:
+   ```csharp
+   app.MapPost(
+      "/api/messages",
+      async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+      {
+          await adapter.ProcessAsync(request, response, agent, cancellationToken);
+      })
+      .RequireAuthorization();  // Require authorization for the incoming message endpoint
+   ```
+1. Configure the token validation settings in `appsettings.json`:
+   ```json
+   "TokenValidation": {
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   }
+   ```
+   - Replace **{{ClientId}}** with the Client ID of your Azure Bot or Entra application.
+   - Replace **{{TenantId}}** with the Tenant Id where your application is registered.
+
 ## Prerequisites
 
 - [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0

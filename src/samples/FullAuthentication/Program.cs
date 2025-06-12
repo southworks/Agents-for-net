@@ -13,7 +13,6 @@ using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
@@ -32,7 +31,9 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Configure the HTTP request pipeline.
 
-// Add AspNet token validation for Azure Bot Service and Entra.
+// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
+// configured in the appsettings.json "TokenValidation" section.
+builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 var app = builder.Build();
