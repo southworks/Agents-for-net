@@ -406,8 +406,11 @@ namespace Microsoft.Agents.Connector.RestClients
             var value = _cache.Get(cacheKey);
             if (value != null)
             {
+                // Token Service will renew within 5 minutes of expiration.  Return the cached token
+                // if there is more than that. Otherwise, remove it from the cache and return null.  This
+                // will result in a call to the Token Service to get a new token.
                 var toExpiration = ((TokenResponse)value).Expiration - DateTimeOffset.UtcNow;
-                if (!toExpiration.HasValue || toExpiration?.TotalMinutes >= 5) // Align with sliding expiration
+                if (toExpiration?.TotalMinutes >= 5)
                 {
                     return (TokenResponse)value;
                 }
@@ -427,24 +430,29 @@ namespace Microsoft.Agents.Connector.RestClients
                     var jwtToken = new JwtSecurityToken(tokenResponse.Token);
                     if (tokenResponse.Expiration == null)
                     {
+                        // It's usually the case that the TokenResponse will NOT include an expiration value,
+                        // in which case we will use the JWT token expiration value.
                         tokenResponse.Expiration = jwtToken.ValidTo;
                     }
                     tokenResponse.IsExchangeable = IsExchangeableToken(jwtToken);
                 }
                 catch (Exception)
                 {
-                    // If the TokenResponse doesn't contain an expiration, we can cache it and it will 
-                    // be available for the duration of the sliding expiration, but expiration calcs
-                    // won't be available to callers.
                     tokenResponse.IsExchangeable = false;
                 }
 
-                _cache.Add(
-                    new CacheItem(cacheKey) { Value = tokenResponse },
-                    new CacheItemPolicy()
-                    {
-                        SlidingExpiration = TimeSpan.FromMinutes(5)
-                    });
+                // If the TokenResponse doesn't contain an expiration value then expiration calcs
+                // won't be available to callers.  But the token can otherwise be used.  However,
+                // we'll skip caching for now.
+                if (tokenResponse.Expiration != null)
+                {
+                    _cache.Add(
+                        new CacheItem(cacheKey) { Value = tokenResponse },
+                        new CacheItemPolicy()
+                        {
+                            SlidingExpiration = TimeSpan.FromMinutes(5)
+                        });
+                }
             }
         }
 
