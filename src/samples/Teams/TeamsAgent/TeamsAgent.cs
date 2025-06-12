@@ -31,7 +31,6 @@ public class TeamsAgent : AgentApplication
             tae.MessageExtensions.OnQueryLink(OnQueryLink);
         });
         AdaptiveCards.OnSearch("dataset", OnSearchDS);
-        OnMessage("/help", (t, _, ct) => t.SendActivityAsync("TeamsAgent demo", cancellationToken: ct));
         OnMessageReactionsAdded(OnMessageReaction);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync);
