@@ -25,7 +25,8 @@ builder.AddAgentApplicationOptions();
 // user messages.
 builder.AddAgent<HostAgent>();
 
-// Add the Agent-to-Agent handling
+// Add the Agent-to-Agent handling. This manages communication with other agents
+// and is configured in the appsettings.json "Agent" section.
 builder.AddAgentHost();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
@@ -38,7 +39,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 WebApplication app = builder.Build();
 
-// For the AgentResponseController to receive responses from Agent2
+// For the AgentHost to receive responses from Agent2
 app.UseRouting();
 app.MapControllers();
 

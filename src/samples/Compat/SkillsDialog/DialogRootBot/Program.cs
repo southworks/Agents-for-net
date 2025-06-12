@@ -20,12 +20,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
-// Add the AgentApplication, which contains the logic for responding to
-// user messages. In this sample, the Agent is a ActivityHandler based
-// agent.
+// Add the AgentApplication, which contains the logic for responding to user messages.
+// In this sample, the RootBot is a ActivityHandler based agent.
 builder.AddAgent<RootBot<MainDialog>>();
 
-// Add the AgentHost, but using the back-compat handler for BF Skills
+// Add the Agent-to-Agent handling. This manages communication with other agents and is configured
+// in the appsettings.json "Agent" section.  In Bot Framework, this is similar to the setting in
+// the "BotFrameworkSkills" section. This is also using the handler to support Bot Framework Skill
+// behavior.
 builder.AddAgentHost<SkillChannelApiHandler>();
 
 // Register the MainDialog that will be run by the bot.
@@ -33,7 +35,7 @@ builder.Services.AddSingleton<MainDialog>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operate correctly
+// that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
