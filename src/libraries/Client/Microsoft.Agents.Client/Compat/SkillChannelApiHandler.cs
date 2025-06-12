@@ -86,6 +86,9 @@ namespace Microsoft.Agents.Client.Compat
                 await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
             });
 
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
         }
 
@@ -103,6 +106,9 @@ namespace Microsoft.Agents.Client.Compat
                 resourceResponse = await turnContext.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
             });
 
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
+
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
             return resourceResponse ?? new ResourceResponse(Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
@@ -119,6 +125,9 @@ namespace Microsoft.Agents.Client.Compat
                 var conversationId = turnContext.Activity.Conversation.Id;
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
+
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
 
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
@@ -156,6 +165,9 @@ namespace Microsoft.Agents.Client.Compat
                 var conversationId = turnContext.Activity.Conversation.Id;
                 member = await client.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
             });
+
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
 
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
@@ -256,6 +268,9 @@ namespace Microsoft.Agents.Client.Compat
                         break;
                 }
             });
+
+            // We can't use the incoming ClaimsIdentity to send to the Adapter.
+            var hostClaimsIdentity = AgentClaims.CreateIdentity(_agentHost.HostClientId, AgentClaims.AllowAnonymous(claimsIdentity));
 
             await _adapter.ContinueConversationAsync(claimsIdentity, skillConversationReference.ConversationReference, skillConversationReference.OAuthScope, callback, cancellationToken).ConfigureAwait(false);
 
