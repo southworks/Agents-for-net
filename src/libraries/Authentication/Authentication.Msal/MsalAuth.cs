@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.LoggingExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -241,6 +242,18 @@ namespace Microsoft.Agents.Authentication.Msal
                     _clientAssertion = new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
 
                     cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+                }
+                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+                {
+                    cAppBuilder.WithClientAssertion(() =>
+                    {
+                        // read only once every 5 minutes, less heavy for I/O
+                        if (_lastJwtWorkLoadIdentity != null && DateTimeOffset.UtcNow.Subtract(_lastReadWorkloadIdentity) <= TimeSpan.FromMinutes(5)) 
+                            return _lastJwtWorkLoadIdentity;
+                        _lastReadWorkloadIdentity = DateTimeOffset.UtcNow;
+                        _lastJwtWorkLoadIdentity = File.ReadAllText(_connectionSettings.FederatedTokenFile);
+                        return _lastJwtWorkLoadIdentity;
+                    });
                 }
                 else
                 {

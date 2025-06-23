@@ -6,6 +6,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
 using System;
+using System.IO;
 
 namespace Microsoft.Agents.Authentication.Msal.Model
 {
@@ -148,7 +149,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     {
                         throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
                     }
-                    if (AuthType == AuthTypes.WorkloadIdentity && string.IsNullOrEmpty(FederatedTokenFile))
+                    if (string.IsNullOrEmpty(FederatedTokenFile))
                     {
                         throw new ArgumentNullException(nameof(FederatedTokenFile), "FederatedTokenFile is required");
                     }
