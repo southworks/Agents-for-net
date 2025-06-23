@@ -243,18 +243,6 @@ namespace Microsoft.Agents.Authentication.Msal
 
                     cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
                 }
-                else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
-                {
-                    cAppBuilder.WithClientAssertion(() =>
-                    {
-                        // read only once every 5 minutes, less heavy for I/O
-                        if (_lastJwtWorkLoadIdentity != null && DateTimeOffset.UtcNow.Subtract(_lastReadWorkloadIdentity) <= TimeSpan.FromMinutes(5)) 
-                            return _lastJwtWorkLoadIdentity;
-                        _lastReadWorkloadIdentity = DateTimeOffset.UtcNow;
-                        _lastJwtWorkLoadIdentity = File.ReadAllText(_connectionSettings.FederatedTokenFile);
-                        return _lastJwtWorkLoadIdentity;
-                    });
-                }
                 else
                 {
                     throw new System.NotImplementedException();
