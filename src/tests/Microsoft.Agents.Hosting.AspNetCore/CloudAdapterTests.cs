@@ -412,7 +412,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         private static Record UseRecord(IAgent agent = null, Builder.IMiddleware[] middlewares = null)
         {
             var factory = new Mock<IChannelServiceClientFactory>();
-            var queueLogger = new Mock<ILogger<IAgentHttpAdapter>>();
+            var queueLogger = new Mock<ILogger<CloudAdapter>>();
             var serviceLogger = new Mock<ILogger<HostedActivityService>>();
 
             var sp = new Mock<IServiceProvider>();
@@ -432,7 +432,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Mock<IChannelServiceClientFactory> Factory,
             HostedActivityService Service,
             IActivityTaskQueue Queue,
-            Mock<ILogger<IAgentHttpAdapter>> QueueLogger,
+            Mock<ILogger<CloudAdapter>> QueueLogger,
             Mock<ILogger<HostedActivityService>> HostedServiceLogger)
         {
             public void VerifyMocks()
