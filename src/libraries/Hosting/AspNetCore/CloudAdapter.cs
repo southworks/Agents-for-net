@@ -214,6 +214,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 {
                     // OnTurnError should be catching these.  Possible someone sets that to null.
                     Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
+                    httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                 }
             }
         }
