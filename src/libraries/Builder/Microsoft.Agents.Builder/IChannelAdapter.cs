@@ -133,6 +133,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>Call this method to proactively send a message to a conversation.
         /// Most channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
+        [Obsolete("Use ContinueConversation(ITurnContext.Identity,...)")]
         Task ContinueConversationAsync(string agentId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>
@@ -146,6 +147,7 @@ namespace Microsoft.Agents.Builder
         /// <remarks>Call this method to proactively send a message to a conversation.
         /// Most _channels require a user to initiate a conversation with an Agent
         /// before the Agent can send activities to the user.</remarks>
+        [Obsolete("Use ContinueConversation(ITurnContext.Identity,...)")]
         Task ContinueConversationAsync(string agentId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken);
 
         /// <summary>

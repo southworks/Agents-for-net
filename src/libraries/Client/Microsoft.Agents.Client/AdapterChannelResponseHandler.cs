@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Client
         {
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("ChannelApiResponse: {ConversationId}/{ActivityId}: {Activity}", activity.Conversation.Id, activity.Id, ProtocolJsonSerializer.ToJson(activity));
+                _logger.LogDebug("ChannelApiResponse: ConversationId={ConversationId}, Activity='{Activity}'", activity.Conversation.Id, ProtocolJsonSerializer.ToJson(activity));
             }
 
             var conversationReference = await _channelHost.GetConversationReferenceAsync(conversationId, cancellationToken);

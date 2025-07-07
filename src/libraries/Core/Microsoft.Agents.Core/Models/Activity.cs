@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -264,6 +265,9 @@ namespace Microsoft.Agents.Core.Models
         /// <inheritdoc/>
         public SemanticAction SemanticAction { get; set; }
 
+        [JsonIgnore]
+        public string RequestId { get; set; }
+
         /// <inheritdoc/>
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
 
@@ -371,6 +375,12 @@ namespace Microsoft.Agents.Core.Models
             // Update the reference with the new outgoing Activity's id.
             reference.ActivityId = reply.Id;
             return reference;
+        }
+
+        public IActivity ApplyRequestContinuation(IActivity activity)
+        {
+            RequestId = activity.RequestId;
+            return this;
         }
 
         /// <inheritdoc/>

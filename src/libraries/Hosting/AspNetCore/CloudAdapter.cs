@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Azure;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -11,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? new AdapterOptions();
-            _responseQueue = new ChannelResponseQueue();
+            _responseQueue = new ChannelResponseQueue(Logger);
 
             if (middlewares != null)
             {
@@ -136,14 +136,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
-
-                var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
-
                 if (!IsValidChannelActivity(activity))
                 {
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
+                activity.RequestId ??= Guid.NewGuid().ToString();
+
+                var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
                 try
                 {
@@ -158,39 +158,36 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn Begin
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Begin: {ConversationId}/{ActivityId}", activity.Conversation.Id, activity.Id);
+                            Logger.LogDebug("Turn Begin: RequestId={RequestId}", activity.RequestId);
                         }
 
+                        _responseQueue.StartHandlerForRequest(activity.RequestId);
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
-                        // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
+                        // Queue the activity to be processed by the ActivityTaskQueue, and stop ChannelResponseQueue when the
                         // turn is done.
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, activity, onComplete: (response) =>
                         {
-                            if (Logger.IsEnabled(LogLevel.Debug))
-                            {
-                                Logger.LogDebug("Turn Background Complete: {ConversationId}/{ActivityId}", activity.Conversation.Id, activity.Id);
-                            }
-
                             invokeResponse = response;
-                            _responseQueue.CompleteHandlerForConversation(activity.Conversation.Id);
+                            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                            return Task.CompletedTask;
                         });
 
                         // Handle responses (blocking)
-                        await _responseQueue.HandleResponsesAsync(activity.Conversation.Id, async (activity) =>
+                        await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
                             {
-                                Logger.LogDebug("Turn Response: {ConversationId}/{ActivityId}: {Activity}", activity.Conversation.Id, activity.Id, ProtocolJsonSerializer.ToJson(activity));
+                                Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
-                            await writer.WriteActivity(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+                            await writer.WriteActivity(httpResponse, response, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
                         // Turn done
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn End: {ConversationId}/{ActivityId} with InvokeResponse: {InvokeResponse}", activity.Conversation.Id, activity.Id, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                            Logger.LogDebug("Turn End: RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
                         }
 
                         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -199,7 +196,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Request: {ConversationId}/{ActivityId}: {Activity}", activity.Conversation.Id, activity.Id, ProtocolJsonSerializer.ToJson(activity));
+                            Logger.LogDebug("Activity Accepted: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
                         }
 
                         // Queue the activity to be processed by the ActivityBackgroundService.  There is no response body in
@@ -212,9 +209,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
                 catch (Exception ex)
                 {
-                    // OnTurnError should be catching these.  Possible someone sets that to null.
+                    // OnTurnError should be catching these.  
                     Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
                     httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                 }
             }
         }
@@ -251,7 +249,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 return false;
             }
 
-            await _responseQueue.SendActivitiesAsync(incomingActivity.Conversation.Id, [outActivity], cancellationToken).ConfigureAwait(false);
+            await _responseQueue.SendActivitiesAsync(incomingActivity.RequestId, [outActivity], cancellationToken).ConfigureAwait(false);
 
             return true;
         }

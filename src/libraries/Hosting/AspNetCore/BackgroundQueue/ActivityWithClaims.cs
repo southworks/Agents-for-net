@@ -4,6 +4,7 @@
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
@@ -33,6 +34,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// Invoked when ProcessActivity is done.  Ignored if IsProactive.
         /// </summary>
-        public Action<InvokeResponse> OnComplete { get; set; }
+        public Func<InvokeResponse, Task> OnComplete { get; set; }
     }
 }

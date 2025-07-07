@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
-using Azure;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
@@ -168,7 +167,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     {
                         invokeResponse = new InvokeResponse() {  Status = (int)HttpStatusCode.InternalServerError };
                     }
-                    activityWithClaims.OnComplete?.Invoke(invokeResponse);
+
+                    if (activityWithClaims.OnComplete != null)
+                    {
+                        await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
+                    }
                 }
             }, stoppingToken);
         }
