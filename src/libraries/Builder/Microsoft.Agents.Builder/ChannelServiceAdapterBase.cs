@@ -122,10 +122,10 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
-            return ContinueConversationAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
+            return ContinueConversationAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -138,6 +138,12 @@ namespace Microsoft.Agents.Builder
         public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
             return ContinueConversationAsync(claimsIdentity, continuationActivity, AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken)
+        {
+            return ContinueConversationAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
         }
 
         /// <inheritdoc/>
