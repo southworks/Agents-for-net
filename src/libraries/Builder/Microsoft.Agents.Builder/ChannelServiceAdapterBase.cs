@@ -167,6 +167,9 @@ namespace Microsoft.Agents.Builder
             var claimsIdentity = AgentClaims.CreateIdentity(agentAppId);
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
+            // This is really the "From".  User can supply otherwise default to this Agent.
+            conversationParameters.Agent ??= new ChannelAccount(id: agentAppId, role: RoleTypes.Agent);
+
             // Create the connector client to use for outbound requests.
             using (var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken, useAnonymous: useAnonymousAuthCallback).ConfigureAwait(false))
             {
@@ -285,16 +288,16 @@ namespace Microsoft.Agents.Builder
 
         private static Activity CreateCreateActivity(ConversationResourceResponse createConversationResult, string channelId, string serviceUrl, ConversationParameters conversationParameters)
         {
-            // Create a conversation update activity to represent the result.
+            // Create a conversation update activity to represent the TurnContext.Activity context.
             var activity = Activity.CreateEventActivity();
             activity.Name = ActivityEventNames.CreateConversation;
             activity.ChannelId = channelId;
             activity.ServiceUrl = serviceUrl;
-            activity.Id = createConversationResult.ActivityId ?? Guid.NewGuid().ToString("n");
             activity.Conversation = new ConversationAccount(id: createConversationResult.Id, tenantId: conversationParameters.TenantId);
             activity.ChannelData = conversationParameters.ChannelData;
             activity.Recipient = conversationParameters.Agent;
             activity.From = conversationParameters.Agent;
+            activity.Value = createConversationResult;
             return (Activity)activity;
         }
 

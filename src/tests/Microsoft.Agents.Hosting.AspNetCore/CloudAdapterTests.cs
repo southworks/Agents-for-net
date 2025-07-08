@@ -5,9 +5,11 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Compat;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -21,11 +23,13 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
@@ -581,6 +585,118 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(proactiveReference.Conversation.Id, proactiveActivities[0].Conversation.Id);
             Assert.Equal(proactiveReference.User.Id, proactiveActivities[0].Recipient.Id);
             Assert.Equal(proactiveReference.ActivityId, proactiveActivities[0].ReplyToId);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_CreateConversationNormalDelivery()
+        {
+            // Arrange
+            var turnDone = new EventWaitHandle(false, EventResetMode.AutoReset);
+            var memoryStorage = new MemoryStorage();
+            var origConversationId = Guid.NewGuid().ToString();
+            var newConversationId = Guid.NewGuid().ToString();
+            var serviceUrl = "https://service.com";
+            var record = UseRecord((record) =>
+            {
+                var options = new TestApplicationOptions(memoryStorage)
+                {
+                    Adapter = record.Adapter,
+                };
+                var agent = new TestApplication(options);
+
+                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                {
+                    await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
+                    await context.Adapter.CreateConversationAsync(
+                        "appid",
+                        Channels.Test,
+                        serviceUrl,
+                        AgentClaims.GetTokenAudience(context.Identity),
+                        new ConversationParameters() { Agent = context.Activity.From },
+                        async (innerContext, innerCt) =>
+                        {
+                            // TurnState isn't provided in the continuation lambda.  Lets test it manually.
+                            var turnState = agent.Options.TurnStateFactory();
+                            await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
+
+                            turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
+                            await innerContext.SendActivityAsync($"New Conversation: {context.Activity.Text}", cancellationToken: innerCt);
+
+                            await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
+                        },
+                        ct);
+                    turnDone.Set();
+                });
+
+                return agent;
+            });
+
+            // Capture Connector ReplyToActivity.  Proactive is always via Connector
+            var responses = new List<IActivity>();
+            var mockConnectorClient = new Mock<IConnectorClient>();
+            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((response, ct) => responses.Add(response))
+                .Returns(Task.FromResult(
+                    new ResourceResponse("replyResourceId")
+                ));
+            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((response, ct) => responses.Add(response))
+                .Returns(Task.FromResult(
+                    new ResourceResponse("sendResourceId")
+                ));
+            mockConnectorClient
+                .Setup(c => c.Conversations.CreateConversationAsync(It.IsAny<ConversationParameters>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(
+                    new ConversationResourceResponse() { Id = newConversationId }
+                ));
+
+            record.Factory
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult(mockConnectorClient.Object));
+
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.Normal,
+                ServiceUrl = serviceUrl,
+                Conversation = new(id: origConversationId),
+                Text = "user message",
+                ChannelId = Channels.Test,
+                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
+                Id = "1"
+            };
+            var context = CreateHttpContext(activity);
+
+            // Test
+            await record.Service.StartAsync(CancellationToken.None);
+
+            await Task.Run(async () =>
+            {
+                await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+                Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+                Assert.Equal(0, context.Response.Body.Length);
+            });
+
+            // Wait for turn done since we don't really know this with Normal delivery.
+            turnDone.WaitOne();
+
+            Assert.Equal(2, responses.Count);
+
+            Assert.Equal("Original Conversation: user message", responses[0].Text);
+            Assert.Equal(origConversationId, responses[0].Conversation.Id);
+            Assert.Equal("1", responses[0].ReplyToId);
+
+            Assert.Equal("New Conversation: user message", responses[1].Text);
+            Assert.Equal(newConversationId, responses[1].Conversation.Id);
+            Assert.Null(responses[1].ReplyToId);
+
+            // Just read directly from conversation state
+            var items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
+            var newConvoState = items.First().Value;
+            Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
+
+            await record.Service.StopAsync(CancellationToken.None);
         }
 
         [Fact]
