@@ -203,7 +203,8 @@ namespace Microsoft.Agents.Builder
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
 
-            var conversationReference = this.Activity.GetConversationReference();
+            // ConversationReference for the incoming Activity
+            var conversationReference = Activity.GetConversationReference();
 
             var bufferedActivities = new List<IActivity>(activities.Length);
 

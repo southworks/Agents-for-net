@@ -362,6 +362,8 @@ namespace Microsoft.Agents.Core.Models
                 ChannelId = ChannelId,
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
+                DeliveryMode = DeliveryMode,
+                RequestId = RequestId,
             };
 
             return reference;
@@ -377,12 +379,6 @@ namespace Microsoft.Agents.Core.Models
             return reference;
         }
 
-        public IActivity ApplyRequestContinuation(IActivity activity)
-        {
-            RequestId = activity.RequestId;
-            return this;
-        }
-
         /// <inheritdoc/>
         public IActivity ApplyConversationReference(ConversationReference reference, bool isIncoming = false)
         {
@@ -390,6 +386,7 @@ namespace Microsoft.Agents.Core.Models
             ServiceUrl = reference.ServiceUrl;
             Conversation = reference.Conversation;
             Locale = reference.Locale ?? Locale;
+            RequestId = reference.RequestId;
 
             if (isIncoming)
             {
@@ -397,8 +394,9 @@ namespace Microsoft.Agents.Core.Models
                 Recipient = reference.Agent;
                 if (reference.ActivityId != null)
                 {
-                    Id = reference.ActivityId;
+                    Id ??= reference.ActivityId;
                 }
+                DeliveryMode = reference.DeliveryMode;
             }
             else
             {
@@ -409,6 +407,10 @@ namespace Microsoft.Agents.Core.Models
                 {
                     ReplyToId = reference.ActivityId;
                 }
+
+                // `A3116`: Agents SHOULD NOT send activities with `deliveryMode` of `expectReplies` to channels. 
+                // So we won't send DeliveryMode at all.  Not really needed for outgoing anyway.
+                DeliveryMode = null;
             }
 
             return this;

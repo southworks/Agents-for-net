@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500); // There is a race between StopAsync and start of first background processing,  To be fixed.
+            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 }
             });
 
-            await Task.Delay(500);  // There is a race between StopAsync and start of first background processing,  To be fixed.
+            await Task.Delay(500);  // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             foreach (var request in requests)
@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 _ = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
             });
-            await Task.Delay(500); // There is a race between StopAsync and start of first background processing,  To be fixed.
+            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -411,6 +411,176 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             Assert.Equal(6, lineNumber);
             Assert.NotNull(conversationId);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ExpectRepliesWithContinueConversation()
+        {
+            // Arrange
+            var record = UseRecord((record) =>
+            {
+                var options = new TestApplicationOptions(new MemoryStorage())
+                {
+                    Adapter = record.Adapter,
+                };
+                var agent = new TestApplication(options);
+
+                // This is the scenario where a new "inner" turn is needed, using the ConversationReference of the 
+                // incoming Activity.
+                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                {
+                    await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
+                    await context.Adapter.ContinueConversationAsync(
+                        context.Identity,
+                        context.Activity.GetConversationReference(),
+                        async (innerContext, innerCt) =>
+                        {
+                            await innerContext.SendActivityAsync($"Inner: {context.Activity.Text}", cancellationToken: innerCt);
+                        },
+                        ct);
+                });
+
+                return agent;
+            });
+
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Text = "user message",
+                ChannelId = Channels.Test,
+                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
+                Id = "1"
+            };
+            var context = CreateHttpContext(activity);
+
+            // Test
+            await record.Service.StartAsync(CancellationToken.None);
+            
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            await record.Service.StopAsync(CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(context.Response.Body);
+            var streamText = reader.ReadToEnd();
+
+            var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
+
+            Assert.NotNull(expectedReplies);
+            Assert.Equal(2, expectedReplies.Activities.Count);
+
+            Assert.Equal("Outer: user message", expectedReplies.Activities[0].Text);
+            Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
+            Assert.Equal(activity.From.Id, expectedReplies.Activities[0].Recipient.Id);
+            Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
+
+            // Inner turn has same conversation info as Incoming
+            Assert.Equal("Inner: user message", expectedReplies.Activities[1].Text);
+            Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[1].Conversation.Id);
+            Assert.Equal(activity.From.Id, expectedReplies.Activities[1].Recipient.Id);
+            Assert.Equal("1", expectedReplies.Activities[1].ReplyToId);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_Proactive()
+        {
+            // Arrange
+            var proactiveReference = new ConversationReference()
+            {
+                ServiceUrl = "https://madeup.com",
+                DeliveryMode = DeliveryModes.Normal,   // DeliverMode for proactive doesn't matter here.  Not used.
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                ActivityId = Guid.NewGuid().ToString(),
+                User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Agent = new(role: RoleTypes.Agent),
+            };
+
+            var record = UseRecord((record) =>
+            {
+                var options = new TestApplicationOptions(new MemoryStorage())
+                {
+                    Adapter = record.Adapter,
+                };
+                var agent = new TestApplication(options);
+
+                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                {
+                    await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
+                    await context.Adapter.ContinueConversationAsync(
+                        context.Identity,
+                        proactiveReference,
+                        async (innerContext, innerCt) =>
+                        {
+                            await innerContext.SendActivityAsync($"Proactive: {context.Activity.Text}", cancellationToken: innerCt);
+                        },
+                        ct);
+                });
+
+                return agent;
+            });
+
+            // Capture Connector ReplyToActivity.  Proactive is always via Connector
+            var proactiveActivities = new List<IActivity>();
+            var mockConnectorClient = new Mock<IConnectorClient>();
+            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((response, ct) => proactiveActivities.Add(response))
+                .Returns(Task.FromResult(
+                    new ResourceResponse("replyResourceId")
+                ));
+
+            record.Factory
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult(mockConnectorClient.Object));
+
+            // Using ExpectReplies, but it doesn't matter.  Do this to help separate responses to make Asserts easier
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Text = "user message",
+                ChannelId = Channels.Test,
+                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
+                Id = "1"
+            };
+            var context = CreateHttpContext(activity);
+
+            // Test
+            await record.Service.StartAsync(CancellationToken.None);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            await record.Service.StopAsync(CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(context.Response.Body);
+            var streamText = reader.ReadToEnd();
+
+            var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
+
+            Assert.NotNull(expectedReplies);
+            Assert.Single(expectedReplies.Activities);
+
+            // Assert initial response was via ExpectReplies
+            Assert.Equal("Outer: user message", expectedReplies.Activities[0].Text);
+            Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
+            Assert.Equal(activity.From.Id, expectedReplies.Activities[0].Recipient.Id);
+            Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
+
+            // Assert the proactive response was through Connector and to correct conversation
+            Assert.Single(proactiveActivities);
+            Assert.Equal("Proactive: user message", proactiveActivities[0].Text);
+            Assert.Equal(proactiveReference.Conversation.Id, proactiveActivities[0].Conversation.Id);
+            Assert.Equal(proactiveReference.User.Id, proactiveActivities[0].Recipient.Id);
+            Assert.Equal(proactiveReference.ActivityId, proactiveActivities[0].ReplyToId);
         }
 
         [Fact]
@@ -465,7 +635,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: Guid.NewGuid().ToString()),
                 Text = "-signin",
                 ChannelId = Channels.Test,
-                From = new ChannelAccount(id: Guid.NewGuid().ToString()),
+                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -490,7 +661,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: activity.Conversation.Id),
                 Text = "123456",
                 ChannelId = Channels.Test,
-                From = new ChannelAccount(id: activity.From.Id),
+                From = new ChannelAccount(id: activity.From.Id, role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
                 Id = "2"
             };
             context = CreateHttpContext(activity);
@@ -505,8 +677,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
             Assert.NotNull(expectedReplies);
             Assert.NotEmpty(expectedReplies.Activities);
-            Assert.Equal("GraphToken", expectedReplies.Activities[0].Text);
 
+            // Assert the response was to the initial message (the "-signin" message)
+            Assert.Equal("GraphToken", expectedReplies.Activities[0].Text);
+            Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
+            Assert.Equal(activity.From.Id, expectedReplies.Activities[0].Recipient.Id);
+            Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
+
+            await Task.Delay(500); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
         }
 

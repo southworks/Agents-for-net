@@ -307,8 +307,6 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>A conversation reference for the conversation that contains this Activity.</returns>
         ConversationReference GetConversationReference();
 
-        IActivity ApplyRequestContinuation(IActivity activity);
-
         /// <summary>
         /// Creates a new message Activity as a response to this Activity.
         /// </summary>

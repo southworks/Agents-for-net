@@ -316,11 +316,6 @@ namespace Microsoft.Agents.Builder
         {
             _ = continuationActivity ?? throw new ArgumentNullException(nameof(continuationActivity));
             _ = continuationActivity.Conversation ?? throw new ArgumentException("The continuation Activity should contain a Conversation value.");
-
-            if (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal)
-            {
-                _ = continuationActivity.ServiceUrl ?? throw new ArgumentException("The continuation Activity should contain a ServiceUrl value.");
-            }
         }
 
         private static InvokeResponse ProcessTurnResults(TurnContext turnContext)
