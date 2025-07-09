@@ -700,6 +700,122 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
+        public async Task ProcessAsync_ContinueConversationNormalDelivery()
+        {
+            // Arrange
+            var turnDone = new EventWaitHandle(false, EventResetMode.AutoReset);
+            var memoryStorage = new MemoryStorage();
+            var initialConversationId = Guid.NewGuid().ToString();
+            var proactiveConversationId = Guid.NewGuid().ToString();
+            var serviceUrl = "https://service.com";
+
+            var proactiveReference = new ConversationReference()
+            {
+                ServiceUrl = serviceUrl,
+                DeliveryMode = DeliveryModes.Normal,   // DeliverMode for proactive doesn't matter here.  Not used.
+                Conversation = new(id: proactiveConversationId),
+                ActivityId = Guid.NewGuid().ToString(),
+                User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Agent = new(role: RoleTypes.Agent),
+                ChannelId = Channels.Test
+            };
+
+            var record = UseRecord((record) =>
+            {
+                var options = new TestApplicationOptions(memoryStorage)
+                {
+                    Adapter = record.Adapter,
+                };
+                var agent = new TestApplication(options);
+
+                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                {
+                    await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
+                    await context.Adapter.ContinueConversationAsync(
+                        context.Identity,
+                        proactiveReference,
+                        async (innerContext, innerCt) =>
+                        {
+                            // TurnState isn't provided in the continuation lambda.  Lets test it manually.
+                            var turnState = agent.Options.TurnStateFactory();
+                            await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
+
+                            turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
+                            await innerContext.SendActivityAsync($"Proactive Conversation: {context.Activity.Text}", cancellationToken: innerCt);
+
+                            await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
+                        },
+                        ct);
+                    turnDone.Set();
+                });
+
+                return agent;
+            });
+
+            // Capture Connector ReplyToActivity.  Proactive is always via Connector
+            var responses = new List<IActivity>();
+            var mockConnectorClient = new Mock<IConnectorClient>();
+            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((response, ct) => responses.Add(response))
+                .Returns(Task.FromResult(
+                    new ResourceResponse("replyResourceId")
+                ));
+            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((response, ct) => Assert.Fail())
+                .Returns(Task.FromResult(
+                    new ResourceResponse("sendResourceId")
+                ));
+
+            record.Factory
+                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns(Task.FromResult(mockConnectorClient.Object));
+
+            var activity = new Activity()
+            {
+                Type = ActivityTypes.Message,
+                DeliveryMode = DeliveryModes.Normal,
+                ServiceUrl = serviceUrl,
+                Conversation = new(id: initialConversationId),
+                Text = "user message",
+                ChannelId = Channels.Test,
+                From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
+                Recipient = new(role: RoleTypes.Agent),
+                Id = "1"
+            };
+            var context = CreateHttpContext(activity);
+
+            // Test
+            await record.Service.StartAsync(CancellationToken.None);
+
+            await Task.Run(async () =>
+            {
+                await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+                Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+                Assert.Equal(0, context.Response.Body.Length);
+            });
+
+            // Wait for turn done since we don't really know this with Normal delivery.
+            turnDone.WaitOne();
+
+            Assert.Equal(2, responses.Count);
+
+            Assert.Equal("Original Conversation: user message", responses[0].Text);
+            Assert.Equal(initialConversationId, responses[0].Conversation.Id);
+            Assert.Equal("1", responses[0].ReplyToId);
+
+            Assert.Equal("Proactive Conversation: user message", responses[1].Text);
+            Assert.Equal(proactiveConversationId, responses[1].Conversation.Id);
+            Assert.Equal(proactiveReference.ActivityId, responses[1].ReplyToId);
+
+            // Just read directly from conversation state
+            var items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
+            var newConvoState = items.First().Value;
+            Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
+
+            await record.Service.StopAsync(CancellationToken.None);
+        }
+
+        [Fact]
         public async Task ProcessAsync_OAuthExpectReplies()
         {
             // Arrange
