@@ -449,7 +449,12 @@ namespace Microsoft.Agents.Builder
         {
             _isTeamsChannel = string.Equals(Channels.Msteams, turnContext.Activity.ChannelId, StringComparison.OrdinalIgnoreCase);
 
-            if (_isTeamsChannel)
+            if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
+            {
+                // No point in streaming for ExpectReplies.  Treat as non-streaming channel.
+                IsStreamingChannel = false;
+            }
+            else if (_isTeamsChannel)
             {
                 // Teams MUST use the Activity.Id returned from the first Informative message for
                 // subsequent intermediate messages.  Do not set StreamId here.
@@ -457,7 +462,8 @@ namespace Microsoft.Agents.Builder
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (string.Equals(turnContext.Activity.ChannelId, Channels.Webchat, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(turnContext.Activity.ChannelId, Channels.Webchat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(turnContext.Activity.ChannelId, Channels.Directline, StringComparison.OrdinalIgnoreCase))
             {
                 Interval = 500;
                 IsStreamingChannel = true;
@@ -465,11 +471,15 @@ namespace Microsoft.Agents.Builder
                 // WebChat will use whatever StreamId is created.
                 StreamId = Guid.NewGuid().ToString();
             }
-            else
+            else if (string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
                 // Support streaming for DeliveryMode.Stream
-                IsStreamingChannel = string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase);
+                IsStreamingChannel = true;
                 Interval = 100;
+            }
+            else
+            {
+                IsStreamingChannel = false;
             }
         }
 
