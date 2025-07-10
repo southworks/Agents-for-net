@@ -26,9 +26,6 @@ namespace Microsoft.Agents.Builder
     ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
     /// </summary>
     /// <remarks>
-    /// Teams channels require that <see cref="QueueInformativeUpdateAsync"/> is called before calling <see cref="QueueTextChunk"/>.
-    /// </remarks>
-    /// <remarks>
     /// Only Teams and WebChat support streaming messages.  However, channels that do not support
     /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
     /// </remarks>
