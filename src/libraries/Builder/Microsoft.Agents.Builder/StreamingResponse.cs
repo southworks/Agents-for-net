@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,6 @@ namespace Microsoft.Agents.Builder
         private bool _ended = false;
         private Timer _timer;
         private bool _messageUpdated = false;
-        private bool _informativeSent = false;
         private bool _isTeamsChannel;
         private bool _cancelled;
 
@@ -179,8 +179,6 @@ namespace Microsoft.Agents.Builder
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
-                _informativeSent = true;
-
                 queueFunc = () =>
                 {
                     return new Activity
@@ -227,11 +225,6 @@ namespace Microsoft.Agents.Builder
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
                 }
 
-                if (!_informativeSent && _isTeamsChannel)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsRequiresInformativeFirst, null);
-                }
-
                 // buffer all chunks
                 Message += text;
 
@@ -240,7 +233,9 @@ namespace Microsoft.Agents.Builder
 
                 _messageUpdated = true;
 
-                StartStream();
+                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+                // and we're just now starting the stream.  It uses Interval after the first stream message.
+                StartStream(250);
             }
         }
 
@@ -284,9 +279,8 @@ namespace Microsoft.Agents.Builder
 
                     _ended = true;
 
-                    if (UpdatesSent() == 0 || _cancelled)
+                    if (!IsStreamStarted() || _cancelled)
                     {
-                        // nothing was queued.  nothing to "end".
                         return;
                     }
                 }
@@ -488,11 +482,11 @@ namespace Microsoft.Agents.Builder
             return _timer != null;
         }
 
-        private void StartStream()
+        private void StartStream(int interval = 0)
         {
             if (_timer == null && IsStreamingChannel)
             {
-                _timer = new Timer(SendIntermediateMessage, null, Interval, System.Threading.Timeout.Infinite);
+                _timer = new Timer(SendIntermediateMessage, null, interval == 0 ? Interval : interval, System.Threading.Timeout.Infinite);
             }
         }
 
@@ -519,23 +513,28 @@ namespace Microsoft.Agents.Builder
                     activity = _queue[0]();
                     _queue.RemoveAt(0);
 
-                    // Limit intermediate message to the interval
-                    _timer.Change(Interval, System.Threading.Timeout.Infinite);
+                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
+                    // longer than the Interval. MSAL can take longer than the interval in some cases,
+                    // which case out of sequence messages.
+                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
                 else if (_ended)
                 {
                     _queueEmpty.Set();
                     StopStream();
+                    return;
                 }
                 else
                 {
                     // Nothing is in the queue, and not ending, so chances are
                     // the chunking is slow.  We can speed up the interval to
                     // pick up the next chunk faster.
-                    _timer.Change(200, System.Threading.Timeout.Infinite);
+                    _timer.Change(200, Timeout.Infinite);
+                    return;
                 }
             }
 
+            // Looks a bit odd, but can't call await inside a lock.
             await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -556,6 +555,9 @@ namespace Microsoft.Agents.Builder
                     {
                         StreamId = response.Id;
                     }
+
+                    // Restart the timer with normal Interval (if running)
+                    _timer?.Change(Interval, Timeout.Infinite);
                 }
                 catch (Exception ex)
                 {
@@ -568,6 +570,10 @@ namespace Microsoft.Agents.Builder
                         if (!TeamsStreamCancelled.Equals(errorResponse.Body.Error.Code, StringComparison.OrdinalIgnoreCase))
                         {
                             System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Trace.WriteLine("User cancelled stream on the client side.");
                         }
                     }
 
