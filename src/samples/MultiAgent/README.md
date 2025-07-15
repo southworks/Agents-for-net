@@ -67,7 +67,7 @@ This demonstrates an Agent that implements multiple AgentApplication instances.
             ]
           }
         },
-        "ServiceConnection1": {
+        "ServiceConnection2": {
           "Settings": {
             "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
