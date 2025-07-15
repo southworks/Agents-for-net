@@ -59,7 +59,7 @@ public static class AspNetExtensions
             return;
         }
 
-        services.AddAgentAspNetAuthentication(validationOptions);
+        services.AddAgentAspNetAuthentication(tokenValidationSection.Get<TokenValidationOptions>());
     }
 
     /// <summary>
