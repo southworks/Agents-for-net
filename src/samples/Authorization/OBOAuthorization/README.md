@@ -18,8 +18,10 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       1. Schema name
       1. Environment Id
        
-2. [Create an Azure Bot](https://aka.ms/AgentsSDK-CreateBot)
-   - Record the Application ID, the Tenant ID, and the Client Secret for use in the "ServiceConnection" settings below.
+2. Create an Azure Bot with one of these authentication types
+   - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
+   - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
+   - [User Assigned Managed Identity](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-msi.md)
 
 3. Setting up OAuth for an exchangeable token 
    1. Create a new App Registration
@@ -50,33 +52,33 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
    1. Enter the **Tenant ID**
    1. **Scopes** is `api://botid-{{appid}}/defaultScope`
 
-1. Configuring the Agent settings
-   > The instructions for this sample are for a SingleTenant Azure Bot using ClientSecrets.  The token connection configuration will vary if a different type of Azure Bot was configured.  For more information see [DotNet MSAL authorization provider](https://aka.ms/AgentsSDK-DotNetMSALAuth)
-
-   > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
-
+1. Configuring the authentication connection in the Agent settings
+   > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [DotNet MSAL Authentication](https://github.com/microsoft/Agents/blob/main/docs/HowTo/MSALAuthConfigurationOptions.md).
    1. Open the `appsettings.json` file in the root of the sample project.
 
    1. Find the section labeled `Connections`,  it should appear similar to this:
 
       ```json
       "Connections": {
-          "ServiceConnection": {
+        "ServiceConnection": {
           "Settings": {
-              "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.authorization.Msal.Model.AuthTypes.  The default is ClientSecret.
-              "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-              "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
-              "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-              "Scopes": [
-                "https://api.botframework.com/.default"
-              ]
+            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
+            "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
+            "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
+            "Scopes": [
+              "https://api.botframework.com/.default"
+            ]
           }
-      }
+        }
+      },
       ```
 
-      1. Replace all **{{ClientId}}** with the AppId of the bot.
+      1. Replace all **{{ClientId}}** with the AppId of the Azure Bot.
       1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
-      1. Set the **ClientSecret** to the Secret that was created for your identity.
+      1. Set the **{{ClientSecret}}** to the Secret that was created on the App Registration.
+      
+      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
       
    1. In the same section, edit the **MCSConnection**
       ```json
@@ -102,19 +104,30 @@ This Agent has been created using [Microsoft 365 Agents Framework](https://githu
       }
       ```
    
-1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
+1. Running the Agent
+   1. Running the Agent locally
+      - Requires a tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
+      - **For ClientSecret or Certificate authentication types only.**  Federated Credentials and Managed Identity will not work via a tunnel to a local agent and must be deployed to an App Service or container.
+      
+      1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
 
-   ```bash
-   devtunnel host -p 3978 --allow-anonymous
-   ```
+         ```bash
+         devtunnel host -p 3978 --allow-anonymous
+         ```
 
-1. Update your Azure Bot ``Messaging endpoint`` with the tunnel Url:  `{tunnel-url}/api/messages`
+      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
-1. Run the bot from a terminal or from Visual Studio
+      1. Start the Agent in Visual Studio
 
-1. Test via "Test in WebChat"" on your Azure Bot in the Azure Portal.
+   1. Deploy Agent code to Azure
+      1. VS Publish works well for this.  But any tools used to deploy a web application will also work.
+      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `https://{{appServiceDomain}}/api/messages`
 
-## Running this Agent in Teams or M365
+## Testing this agent with WebChat
+
+   1. Select **Test in WebChat** on the Azure Bot
+
+## Testing this Agent in Teams or M365
 
 1. Update the manifest.json
    - Edit the `manifest.json` contained in the `/appManifest` folder
