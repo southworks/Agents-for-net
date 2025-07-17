@@ -139,6 +139,19 @@ The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.b
 - Sending `-me` will display additional information about you.
 - Note that if running this in Teams and SSO is setup, you shouldn't see any "sign in" prompts.  This is true in this sample since we are only requesting a basic set of scopes that Teams doesn't require additional consent for.
 
+1. ## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
+
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
 

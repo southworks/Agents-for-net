@@ -101,5 +101,18 @@ This sample is intended to introduce you to:
 - From any Topic, add a new **Call an Action** node, and select "Echo messages from user"
 - Test the agent in Copilot Studio.
 
+## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
+
 ## Further reading
 To learn more about building Agents, see our [Microsoft Agents Framework on GitHub](https://github.com/microsoft/agents) repo.

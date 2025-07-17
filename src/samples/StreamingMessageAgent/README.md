@@ -121,5 +121,18 @@ This is a sample of a simple Agent that is hosted on an Asp.net core web service
 
 1. After a short period of time, the agent shows up in Microsoft Teams and Microsoft 365 Copilot.
 
+1. ## Enabling JWT token validation
+1. By default, the AspNet token validation is disabled in order to support local debugging.
+1. Enable by updating appsettings
+   ```json
+   "TokenValidation": {
+     "Enabled": false,
+     "Audiences": [
+       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+     ],
+     "TenantId": "{{TenantId}}"
+   },
+   ```
+
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
