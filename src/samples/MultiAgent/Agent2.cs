@@ -8,11 +8,11 @@ using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace FullAuthentication;
+namespace MultiAgent;
 
-public class MyAgent : AgentApplication
+public class Agent2 : AgentApplication
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
+    public Agent2(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
@@ -24,13 +24,13 @@ public class MyAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                await turnContext.SendActivityAsync(MessageFactory.Text("Agent2: Hello and Welcome!"), cancellationToken);
             }
         }
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"Agent2: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 }
