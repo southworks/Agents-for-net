@@ -13,6 +13,19 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A365
 {
+    /*
+    Demo Activity.Recipient
+
+    "recipient":
+    {
+      "id":"34bde265-6abe-4392-9f2a-90063f156f4a", // AA
+      "name":"saapp1user1@projectkairoentra.onmicrosoft.com", //AU UPN
+      "aadObjectId":"cc8beb3e-8e7a-4f33-91da-08c612099a58", // AU Oid
+      "aadClientId":"52fb5abc-26cb-4ede-b26c-0aa4c1f2154c", // AAI
+      "role":"agentuser"
+    } 
+    */
+
     /// <summary>
     /// AgentExtension for Microsoft A365.
     /// </summary>

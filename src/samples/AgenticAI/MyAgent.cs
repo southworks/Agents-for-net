@@ -20,13 +20,19 @@ public class MyAgent : AgentApplication
             a365.AgentApplication = this;  // Perhaps RegisterExtension should do this
 
             // Register a route for AgenticAI-only Messages.
-            a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync);
+            a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
         });
 
-        // No non-Agentic routes added
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
+    }
+
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
