@@ -62,7 +62,16 @@ public class HeaderPropagationEntryCollection
             if (_entries.TryGetValue(key, out var entry))
             {
                 // If the key already exists, append the new value to the existing one.
-                newValue = StringValues.Concat(entry.Value, value);
+                if (string.Equals(key, "user-agent", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    // Special handling for User-Agent to concatenate values with a space.
+                    newValue = new StringValues(string.Join(" ", [.. entry.Value, value]));
+                }
+                else
+                {
+                    // For other headers, use default concat which separate the list with a comma.
+                    newValue = StringValues.Concat(entry.Value, value);
+                }
             }
 
             _entries[key] = new HeaderPropagationEntry
