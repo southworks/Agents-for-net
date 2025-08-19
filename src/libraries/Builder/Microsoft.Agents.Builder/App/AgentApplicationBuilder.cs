@@ -90,7 +90,6 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Configures the processing of file download requests.
         /// This allows the application to handle file downloads from user messages.
-        /// 
         /// The file downloaders are used to process files that are sent by users in the chat.
         /// They can be used to download files from various sources, such as URLs or local paths.
         /// </summary>
