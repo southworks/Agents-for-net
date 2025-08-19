@@ -33,10 +33,14 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         {
             if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
             {
+                // mock up the typical TokenResponse
                 var tokenResponse = new TokenResponse()
                 {
                     Token = identity.SecurityToken.ToString(),
-                    IsExchangeable = false
+                    IsExchangeable = true
+
+                    // Probably don't need expiration for this.  Would need to extract from JWT token if so.
+                    //Expiration = 
                 };
 
                 return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -52,12 +56,17 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
 
         public async Task<TokenResponse> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            // TBD: This only works for authenticated claimsidentity
             if (context.Identity is CaseSensitiveClaimsIdentity identity)
             {
+                // mock up the typical TokenResponse
                 var tokenResponse = new TokenResponse()
                 {
                     Token = identity.SecurityToken.ToString(),
                     IsExchangeable = true
+
+                    // Probably don't need expiration for this.  Would need to extract from JWT token if so.
+                    //Expiration = 
                 };
 
                 return await HandleOBO(context, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
@@ -85,7 +94,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
             // If OBO is not supplied (by config or passed) return token as-is.
             if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
             {
-                //return token;
+                return token;
             }
 
             try
