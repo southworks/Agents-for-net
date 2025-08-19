@@ -57,7 +57,7 @@ public class HeaderPropagationEntryCollection
     {
         lock (_optionsLock)
         {
-            StringValues newValue;
+            StringValues newValue = value;
 
             if (_entries.TryGetValue(key, out var entry))
             {
@@ -77,7 +77,7 @@ public class HeaderPropagationEntryCollection
             _entries[key] = new HeaderPropagationEntry
             {
                 Key = key,
-                Value = !StringValues.IsNullOrEmpty(newValue) ? newValue : value,
+                Value = newValue,
                 Action = HeaderPropagationEntryAction.Append
             };
         }
