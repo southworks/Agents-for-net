@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
-        /// Constructor. Creates an instance of a <see cref="CloudAdapter"/>.
+        /// Initializes a new instance of the <see cref="CloudAdapter"/> class.
         /// </summary>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
