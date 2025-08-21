@@ -227,34 +227,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
-                AssertionHelpers.ThrowIfNull(activity, nameof(activity));
-
-                string localConversationId = "";
-                if (!string.IsNullOrEmpty(activity.Conversation?.Id))
-                    localConversationId = activity.Conversation!.Id;
-                else
-                    localConversationId = _conversationId;
-
-                Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
-                ExecuteTurnRequest qbody = new() { Activity = (Activity)activity };
-                HttpRequestMessage qreq = new()
-                {
-                    Method = HttpMethod.Post,
-                    RequestUri = uriExecute,
-                    Headers =
-                {
-                    Accept = { s_EventStream }
-                },
-                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
-                    {
-                        Headers =
-                    {
-                        ContentType = s_ApplicationJson,
-                    }
-                    }
-                };
-                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
-                return PostRequestAsync(qreq, ct);
+                return SendActivityAsync(activity, ct);
             }
         }
 
