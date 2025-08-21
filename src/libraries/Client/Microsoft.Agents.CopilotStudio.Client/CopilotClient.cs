@@ -217,7 +217,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
         /// <summary>
         /// [Deprecated] Use SendActivityAsync(IActivity, CancellationToken) instead.
-        /// Sends an activity the remote bot and returns the response as an IAsyncEnumerable of IActivity
+        /// Sends an activity to the remote bot and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="activity" >Activity to send</param>
         /// <param name="ct">Event Cancelation Token</param>
