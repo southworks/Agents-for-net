@@ -169,7 +169,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 Text = question,
                 Conversation = new ConversationAccount { Id = conversationId }
             };
-            return AskQuestionAsync(activity, ct);
+            return SendActivityAsync(activity, ct);
         }
 
         /// <summary>
@@ -178,6 +178,51 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <param name="activity" >Activity to send</param>
         /// <param name="ct">Event Cancelation Token</param>
         /// <returns></returns>
+        public IAsyncEnumerable<IActivity> SendActivityAsync(IActivity activity, CancellationToken ct = default)
+        {
+            using (_logger.BeginScope("D2E:SendActivityAsync"))
+            {
+                AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
+                string localConversationId = "";
+                if (!string.IsNullOrEmpty(activity.Conversation?.Id))
+                    localConversationId = activity.Conversation!.Id;
+                else
+                    localConversationId = _conversationId;
+
+                Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
+                ExecuteTurnRequest qbody = new() { Activity = (Activity)activity };
+                HttpRequestMessage qreq = new()
+                {
+                    Method = HttpMethod.Post,
+                    RequestUri = uriExecute,
+                    Headers =
+                {
+                    Accept = { s_EventStream }
+                },
+                    Content = new ByteArrayContent(Encoding.UTF8.GetBytes(ProtocolJsonSerializer.ToJson(qbody)))
+                    {
+                        Headers =
+                    {
+                        ContentType = s_ApplicationJson,
+                    }
+                    }
+                };
+                qreq.Headers.Add("User-Agent", UserAgentHelper.UserAgentHeader);
+                return PostRequestAsync(qreq, ct);
+            }
+
+        }
+
+
+        /// <summary>
+        /// [Deprecated] Use SendActivityAsync(IActivity, CancellationToken) instead.
+        /// Sends an activity the remote bot and returns the response as an IAsyncEnumerable of IActivity
+        /// </summary>
+        /// <param name="activity" >Activity to send</param>
+        /// <param name="ct">Event Cancelation Token</param>
+        /// <returns></returns>
+        [Obsolete("AskQuestionAsync(IActivity, CancellationToken) is deprecated. Use SendActivityAsync(IActivity, CancellationToken) instead.", false)]
         public IAsyncEnumerable<IActivity> AskQuestionAsync(IActivity activity, CancellationToken ct = default)
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
