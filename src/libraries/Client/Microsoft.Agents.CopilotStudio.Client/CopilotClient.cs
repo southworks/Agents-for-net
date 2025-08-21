@@ -220,7 +220,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// Sends an activity to the remote bot and returns the response as an IAsyncEnumerable of IActivity
         /// </summary>
         /// <param name="activity" >Activity to send</param>
-        /// <param name="ct">Event Cancelation Token</param>
+        /// <param name="ct">Event Cancellation Token</param>
         /// <returns></returns>
         [Obsolete("AskQuestionAsync(IActivity, CancellationToken) is deprecated. Use SendActivityAsync(IActivity, CancellationToken) instead.", false)]
         public IAsyncEnumerable<IActivity> AskQuestionAsync(IActivity activity, CancellationToken ct = default)
