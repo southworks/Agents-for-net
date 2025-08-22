@@ -39,7 +39,6 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
 // configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();
