@@ -1,36 +1,45 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using AgenticAI.AgenticExtension;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models;
-using System.Threading.Tasks;
+using Microsoft.Graph.Models;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AgenticAI;
 
 public class MyAgent : AgentApplication
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
+    public AgentAuthorization AgentAuthorization { get; init; }
+
+    public MyAgent(AgentApplicationOptions options, IConnections connections, IHttpClientFactory httpClientFactory) : base(options)
     {
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        AgentAuthorization = new AgentAuthorization(connections, httpClientFactory);
+
+        // Register a route for AgenticAI-only Messages
+        OnActivity(AgentAuthorization.AgenticAIMessage, OnAgenticMessageAsync);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        // Create the chat message
+        var chatMessage = new ChatMessage
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            Body = new ItemBody
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
+                ContentType = BodyType.Text,
+                Content = $"You said: {turnContext.Activity.Text}"
             }
-        }
-    }
+        };
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        var graphClient = AgentAuthorization.GraphClientForAgentUser(turnContext, ["https://canary.graph.microsoft.com/.default"]);
+        // Send the message to the chat
+        await graphClient.Chats[turnContext.Activity.Conversation.Id].Messages
+            .PostAsync(chatMessage);
     }
 }

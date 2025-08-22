@@ -1,6 +1,10 @@
-﻿using Microsoft.Agents.Authentication;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Identity.Client;
@@ -12,13 +16,29 @@ using System.Threading.Tasks;
 
 #nullable disable
 
-namespace AgenticAI
+namespace AgenticAI.AgenticExtension
 {
+    /*
+      Demo Activity.Recipient
+
+        "recipient":
+        {
+          "id":"34bde265-6abe-4392-9f2a-90063f156f4a", // AA
+          "name":"saapp1user1@projectkairoentra.onmicrosoft.com", //AU UPN
+          "aadObjectId":"cc8beb3e-8e7a-4f33-91da-08c612099a58", // AU Oid
+          "aadClientId":"52fb5abc-26cb-4ede-b26c-0aa4c1f2154c", // AAI
+          "role":"agentuser"
+        } 
+    */
+
     public class AgentAuthorization
     {
         private readonly IConnections _connections;
         private readonly IHttpClientFactory _httpClientFactory;
         //private readonly static MemoryCache _cache = new MemoryCache(nameof(AgenticAuthorization));
+
+        public static readonly RouteSelector AgenticAIMessage = (tc, ct) => Task.FromResult(tc.Activity.Type == ActivityTypes.Message && IsAgenticRequest(tc));
+        public static readonly RouteSelector AgenticAIEvent = (tc, ct) => Task.FromResult(tc.Activity.Type == ActivityTypes.Event && IsAgenticRequest(tc));
 
         public AgentAuthorization(IConnections connections, IHttpClientFactory httpClientFactory = null)
         {
@@ -28,7 +48,7 @@ namespace AgenticAI
             _httpClientFactory = httpClientFactory;
         }
 
-        public bool IsAgenticRequest(ITurnContext turnContext)
+        public static bool IsAgenticRequest(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
@@ -37,7 +57,7 @@ namespace AgenticAI
                 || turnContext.Activity?.Recipient?.Role == RoleTypes.AgentUser;
         }
 
-        public string GetAgentInstanceId(ITurnContext turnContext)
+        public static string GetAgentInstanceId(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
@@ -46,7 +66,7 @@ namespace AgenticAI
             return turnContext?.Activity?.Recipient?.AadClientId;
         }
 
-        public string GetAgentUser(ITurnContext turnContext)
+        public static string GetAgentUser(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
@@ -56,24 +76,19 @@ namespace AgenticAI
         }
 
         // AA -> AAI token
-        public async Task<TokenResponse> GetAgentInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgentInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             if (!IsAgenticRequest(turnContext))
             {
                 return null;
             }
 
-            var (agentTokenResult, instanceTokenResult) = await AAToAAI(turnContext, cancellationToken).ConfigureAwait(false);
-            return new TokenResponse()
-            {
-                Token = instanceTokenResult.AccessToken,
-                IsExchangeable = true,
-                Expiration = instanceTokenResult.ExpiresOn
-            };
+            var (_, instanceTokenResult) = await AAToAAI(turnContext, cancellationToken).ConfigureAwait(false);
+            return instanceTokenResult.AccessToken;
         }
 
         // AA -> AAI -> AAU token
-        public async Task<TokenResponse> GetAgentUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgentUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             if (!IsAgenticRequest(turnContext) || string.IsNullOrEmpty(GetAgentUser(turnContext)))
             {
@@ -87,23 +102,19 @@ namespace AgenticAI
             // THIRD: Get combined user token
             var userToken = await AAIToAAU(
                 GetAgentInstanceId(turnContext),
-                msalProvider.ConnectionSettings.TenantId,  // can get from TurnContext.Identity?
+                msalProvider.ConnectionSettings.TenantId,  // TurnContext.Identity doesn't have tenant for ABS requests
                 agentTokenResult.AccessToken,
                 instanceTokenResult.AccessToken,
                 GetAgentUser(turnContext),
                 scopes);
 
-            return new TokenResponse()
-            {
-                Token = userToken,
-                IsExchangeable = true
-            };
+            return userToken;
         }
 
         private IMSALProvider GetMsalProvider(ITurnContext turnContext)
         {
             // Using ConnectionMap to get Connection for request identity
-            var connection = _connections.GetTokenProvider(turnContext.Identity, null);
+            var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
 
             if (connection is not IMSALProvider msalProvider)
             {
@@ -122,7 +133,7 @@ namespace AgenticAI
             var msalProvider = GetMsalProvider(turnContext);
             var connectionSettings = msalProvider.ConnectionSettings;
 
-            IConfidentialClientApplication msalApplication = msalProvider.CreateClientApplication() as IConfidentialClientApplication 
+            IConfidentialClientApplication msalApplication = msalProvider.CreateClientApplication() as IConfidentialClientApplication
                 ?? throw new InvalidOperationException($"Connection for identity '{AgentClaims.GetAppId(turnContext.Identity)}' is not IConfidentialClientApplication");
 
             //TODO: handle exceptions
@@ -154,7 +165,7 @@ namespace AgenticAI
         {
             // TODO: use MemoryCache?
 
-            using var httpClient = _httpClientFactory?.CreateClient(nameof(AgenticAuthorization)) ?? new HttpClient();
+            using var httpClient = _httpClientFactory?.CreateClient(nameof(AgentAuthorization)) ?? new HttpClient();
 
             var tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
 
@@ -190,6 +201,5 @@ namespace AgenticAI
 
             throw new InvalidOperationException("Failed to parse access token from response");
         }
-
     }
 }

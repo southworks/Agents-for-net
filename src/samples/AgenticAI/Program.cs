@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using AgenticAI;
+using AgenticAI.AgenticExtension;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
@@ -27,9 +28,6 @@ builder.AddAgent<MyAgent>();
 // that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Add AgenticAdapter
-builder.Services.AddAgenticAdapter();
 
 // Configure the HTTP request pipeline.
 
