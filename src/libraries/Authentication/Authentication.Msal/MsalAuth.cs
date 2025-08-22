@@ -183,6 +183,8 @@ namespace Microsoft.Agents.Authentication.Msal
             return (IApplicationBase)InnerCreateClientApplication();
         }
 
+        public IConnectionSettings ConnectionSettings => _connectionSettings;  //TODO: should be immutable
+
         private object InnerCreateClientApplication()
         {
             object msalAuthClient = null;

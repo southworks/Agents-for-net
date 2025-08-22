@@ -22,5 +22,8 @@ namespace Microsoft.Agents.Core.Models
         /// The type for skill roles.
         /// </summary>
         public const string Skill = "skill";
+
+        public const string AgentIdentity = "agentidentity";
+        public const string AgentUser = "agentuser";
     }
 }

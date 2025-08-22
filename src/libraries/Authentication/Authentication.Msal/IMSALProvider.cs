@@ -8,5 +8,6 @@ namespace Microsoft.Agents.Authentication.Msal
     public interface IMSALProvider
     {
         IApplicationBase CreateClientApplication();
+        IConnectionSettings ConnectionSettings { get; }
     }
 }
