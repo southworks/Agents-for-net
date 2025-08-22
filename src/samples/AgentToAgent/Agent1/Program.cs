@@ -67,4 +67,5 @@ else
     app.Urls.Add($"http://localhost:3978");
 }
 
+app.MapControllers();
 app.Run();
