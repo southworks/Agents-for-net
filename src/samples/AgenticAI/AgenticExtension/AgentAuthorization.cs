@@ -51,10 +51,15 @@ namespace AgenticAI.AgenticExtension
         public static bool IsAgenticRequest(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-            AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
+            return IsAgenticRequest(turnContext.Activity);
+        }
 
-            return turnContext.Activity?.Recipient?.Role == RoleTypes.AgentIdentity
-                || turnContext.Activity?.Recipient?.Role == RoleTypes.AgentUser;
+        public static bool IsAgenticRequest(IActivity activity)
+        {
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
+            return activity?.Recipient?.Role == RoleTypes.AgentIdentity
+                || activity?.Recipient?.Role == RoleTypes.AgentUser;
         }
 
         public static string GetAgentInstanceId(ITurnContext turnContext)

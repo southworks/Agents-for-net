@@ -1,8 +1,6 @@
-﻿# EmptyAgent Sample
+﻿# AgenticAI Sample
 
-This is a sample of a simple Agent that is hosted on an Asp.net core web service.  This Agent is configured to accept a request and echo the text of the request back to the caller.
-
-This Agent Sample is intended to introduce you the basic operation of the Microsoft 365 Agents SDK messaging loop. It can also be used as a the base for a custom Agent that you choose to develop.
+This is a base sample that responds in the Teams demo env for Agentic AI.
 
 ## Prerequisites
 
@@ -10,29 +8,13 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
 - [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
 - [Microsoft 365 Agents Toolkit](https://github.com/OfficeDev/microsoft-365-agents-toolkit)
 
-## QuickestStart using Agent Toolkit
-1. If you haven't done so already, install the Agents Playground
- 
-   ```
-   winget install agentsplayground
-   ```
-1. Start the Agent in VS or VS Code in debug
-1. Start Agents Playground.  At a command prompt: `agentsplayground`
-   - The tool will open a web browser showing the Microsoft 365 Agents Playgroun, ready to send messages to your agent. 
-1. Interact with the Agent via the browser
-
-## QuickStart using WebChat or Teams
+## QuickStart using Teams
 
 - Overview of running and testing an Agent
-  - Provision an Azure Bot in your Azure Subscription
+  - The Agentic App has already been created.  You will need that ClientId, TenantId, and secret (if neededing to run locally).
   - Configure your Agent settings to use to desired authentication type
   - Running an instance of the Agent app (either locally or deployed to Azure)
-  - Test in a client
-
-1. Create an Azure Bot with one of these authentication types
-   - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
-   - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
-   - [User Assigned Managed Identity](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-msi.md)
+  - Test in the Kairo Teams web client
 
 1. Configuring the authentication connection in the Agent settings
    > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [DotNet MSAL Authentication](https://github.com/microsoft/Agents/blob/main/docs/HowTo/MSALAuthConfigurationOptions.md).
@@ -48,6 +30,7 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
             "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
             "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
+            "TenantId": "{{TenantId}}"
             "Scopes": [
               "https://api.botframework.com/.default"
             ]
@@ -76,33 +59,6 @@ This Agent Sample is intended to introduce you the basic operation of the Micros
       1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
 
       1. Start the Agent in Visual Studio
-
-   1. Deploy Agent code to Azure
-      1. VS Publish works well for this.  But any tools used to deploy a web application will also work.
-      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `https://{{appServiceDomain}}/api/messages`
-
-## Testing this agent with WebChat
-
-   1. Select **Test in WebChat** on the Azure Bot
-
-## Testing this Agent in Teams or M365
-
-1. Update the manifest.json
-   - Edit the `manifest.json` contained in the `/appManifest` folder
-     - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
-     - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
-   - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
-     - `manifest.json`
-     - `outline.png`
-     - `color.png`
-
-1. Your Azure Bot should have the **Microsoft Teams** channel added under **Channels**.
-
-1. Navigate to the Microsoft Admin Portal (MAC). Under **Settings** and **Integrated Apps,** select **Upload Custom App**.
-
-1. Select the `manifest.zip` created in the previous step. 
-
-1. After a short period of time, the agent shows up in Microsoft Teams and Microsoft 365 Copilot.
 
 ## Enabling JWT token validation
 1. By default, the AspNet token validation is disabled in order to support local debugging.
