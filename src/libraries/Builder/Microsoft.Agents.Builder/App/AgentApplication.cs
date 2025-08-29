@@ -629,7 +629,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            if (turnContext.Activity.Type != ActivityTypes.Message || turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
                 return;
             }

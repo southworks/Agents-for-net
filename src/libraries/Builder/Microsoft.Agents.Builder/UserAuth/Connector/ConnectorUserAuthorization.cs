@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,56 +32,84 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
 
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
+            var tokenResponse = CreateTokenResponse(turnContext);
+
+            if (tokenResponse.Expiration != null)
             {
-                // mock up the typical TokenResponse
-                var tokenResponse = new TokenResponse()
+                var diff = tokenResponse.Expiration - DateTimeOffset.UtcNow;
+                if (diff.HasValue && diff?.TotalMinutes <= 0)
                 {
-                    Token = identity.SecurityToken.ToString(),
-                    IsExchangeable = true
-
-                    // Probably don't need expiration for this.  Would need to extract from JWT token if so.
-                    //Expiration = 
-                };
-
-                return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+                    // TODO: throw defined error.  Nothing we can do here to get a refreshed token.
+                    throw new InvalidOperationException($"Token for '{Name}' is expired");
+                }
             }
 
-            throw new InvalidOperationException();
+            return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        {
+            return await GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
         public Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            // No concept of reset with ConnectorAuth
             return Task.CompletedTask;
-        }
-
-        public async Task<TokenResponse> SignInUserAsync(ITurnContext context, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
-        {
-            // TBD: This only works for authenticated claimsidentity
-            if (context.Identity is CaseSensitiveClaimsIdentity identity)
-            {
-                // mock up the typical TokenResponse
-                var tokenResponse = new TokenResponse()
-                {
-                    Token = identity.SecurityToken.ToString(),
-                    IsExchangeable = true
-
-                    // Probably don't need expiration for this.  Would need to extract from JWT token if so.
-                    //Expiration = 
-                };
-
-                return await HandleOBO(context, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
-            }
-
-            // TODO: define error
-            throw new InvalidOperationException();
         }
 
         public Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            // No concept of sign-out with ConnectorAuth
             return Task.CompletedTask;
         }
 
+        private static TokenResponse CreateTokenResponse(ITurnContext turnContext)
+        {
+            if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
+            {
+                var tokenResponse = new TokenResponse()
+                {
+                    Token = identity.SecurityToken.UnsafeToString(),
+                };
+
+                try
+                {
+                    var jwtToken = new JwtSecurityToken(tokenResponse.Token);
+                    tokenResponse.Expiration = jwtToken.ValidTo;
+                    tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
+                }
+                catch (Exception)
+                {
+                    tokenResponse.IsExchangeable = false;
+                }
+
+                return tokenResponse;
+            }
+
+            // TODO: throw defined error
+            throw new InvalidOperationException();
+        }
+
+        // Get the ConnectorUserAuthorization settings
+        private static OBOSettings GetOBOSettings(IConfigurationSection config)
+        {
+            var settings = config.Get<OBOSettings>();
+
+            if (settings.OBOScopes == null)
+            {
+                // try reading as a string to compensate for users just setting a non-array string
+                var configScope = config.GetSection(nameof(OBOSettings.OBOScopes)).Get<string>();
+                if (!string.IsNullOrEmpty(configScope))
+                {
+                    settings.OBOScopes = [configScope];
+                }
+            }
+
+            return settings;
+        }
+
+        // TODO: this is the same code as in AzureBotUserAuthorization.  Refactor.
         private async Task<TokenResponse> HandleOBO(ITurnContext turnContext, TokenResponse token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(token?.Token))
@@ -136,6 +165,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
             return token ?? null;
         }
 
+        // TODO: this is the same code as in AzureBotUserAuthorization.  Refactor.
         private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)
         {
             if (_connections.TryGetConnection(connectionName, out var tokenProvider))
@@ -149,23 +179,6 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
 
             oboExchangeProvider = null;
             return false;
-        }
-
-        private static OBOSettings GetOBOSettings(IConfigurationSection config)
-        {
-            var settings = config.Get<OBOSettings>();
-
-            if (settings.OBOScopes == null)
-            {
-                // try reading as a string to compensate for users just setting a non-array string
-                var configScope = config.GetSection(nameof(OBOSettings.OBOScopes)).Get<string>();
-                if (!string.IsNullOrEmpty(configScope))
-                {
-                    settings.OBOScopes = [configScope];
-                }
-            }
-
-            return settings;
         }
     }
 }

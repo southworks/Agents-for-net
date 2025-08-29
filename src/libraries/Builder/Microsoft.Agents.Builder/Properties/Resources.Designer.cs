@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes {1}.  Check your connection name and scope(s) for correctness..
+        ///   Looks up a localized string similar to OBO exchange failed for connection &apos;{0}&apos; with scopes &apos;{1}&apos;.  Check your OBOConnectionName and scope(s)..
         /// </summary>
         internal static string OBOExchangeFailed {
             get {
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to OBO for &apos;{0}&apos; cannot exchange an application that does not have an api:// audience..
+        ///   Looks up a localized string similar to OBO for &apos;{0}&apos; is not setup for exchangeable tokens.  For Token Service handlers, the &apos;Scopes&apos; field on the Azure Bot OAuth Connection should be in the format of &apos;api://{{appid_uri}}/{{scopeName}}&apos;..
         /// </summary>
         internal static string OBONotExchangeableToken {
             get {
