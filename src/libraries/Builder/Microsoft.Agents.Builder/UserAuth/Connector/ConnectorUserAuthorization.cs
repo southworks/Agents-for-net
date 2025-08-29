@@ -21,15 +21,37 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         private readonly OBOSettings _settings;
         private readonly IConnections _connections;
 
+        /// <summary>
+        /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="storage"></param>
+        /// <param name="connections"></param>
+        /// <param name="configurationSection"></param>
+        /// <exception cref="ArgumentNullException"></exception>
         public ConnectorUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+            : this(name, connections, GetOBOSettings(configurationSection))
         {
-            _settings = GetOBOSettings(configurationSection);
+        }
+
+        /// <summary>
+        /// Code-first constructor.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="connections"></param>
+        /// <param name="settings"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ConnectorUserAuthorization(string name, IConnections connections, OBOSettings settings)
+        {
+            _settings = settings;
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
+        /// <inheritdoc/>
         public string Name { get; private set; }
 
+        /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
             var tokenResponse = CreateTokenResponse(turnContext);
@@ -47,17 +69,29 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
             return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            // There is no "sign in" or external token retrieval in this handler.  A single impl is sufficient.
             return await GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// This is a no-op for this handler.
+        /// </summary>
+        /// <param name="turnContext"></param>
+        /// <param name="cancellationToken"></param>
         public Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             // No concept of reset with ConnectorAuth
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// This is a no-op for this handler.
+        /// </summary>
+        /// <param name="turnContext"></param>
+        /// <param name="cancellationToken"></param>
         public Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             // No concept of sign-out with ConnectorAuth
