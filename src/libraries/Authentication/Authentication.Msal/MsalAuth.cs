@@ -182,7 +182,9 @@ namespace Microsoft.Agents.Authentication.Msal
 
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for OBO Exchange.");
         }
+        #endregion
 
+        #region IMSALProvider
         public IApplicationBase CreateClientApplication()
         {
             return (IApplicationBase)InnerCreateClientApplication();

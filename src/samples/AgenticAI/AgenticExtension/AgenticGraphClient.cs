@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Extensions.A365;
 using Microsoft.Graph;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
@@ -12,16 +14,16 @@ using System.Threading.Tasks;
 
 namespace AgenticAI.AgenticExtension
 {
-    public static class AgentGraphClient
+    public static class AgenticGraphClient
     {
-        public static GraphServiceClient GraphClientForAgentUser(this AgentAuthorization agentAuthorization, ITurnContext turnContext, IList<string> scopes)
+        public static GraphServiceClient GraphClientForAgentUser(this A365Extension a365, ITurnContext turnContext, IList<string> scopes)
         {
             try
             {
                 // Create an async token provider that calls GetAgenticUserTokenAsync each time
                 var authProvider = new ManualTokenAuthenticationProvider(() =>
                 {
-                    return agentAuthorization.GetAgentUserTokenAsync(turnContext, scopes);
+                    return a365.GetAgentUserTokenAsync(turnContext, scopes);
                 });
                 return new GraphServiceClient(authProvider, baseUrl: "https://canary.graph.microsoft.com/testprodbetateamsgraphdev");
             }

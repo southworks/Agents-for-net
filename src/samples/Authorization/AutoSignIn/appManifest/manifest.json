@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
   "manifestVersion": "1.22",
   "version": "1.0.0",
-  "id": "${{AAD_APP_CLIENT_ID}}",
+  "id": "73803982-f0e6-4bff-aa80-1628ea3a7b80",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -25,14 +25,14 @@
   "copilotAgents": {
     "customEngineAgents": [
       {
-        "id": "${{AAD_APP_CLIENT_ID}}",
+        "id": "73803982-f0e6-4bff-aa80-1628ea3a7b80",
         "type": "bot"
       }
     ]
   },
   "bots": [
     {
-      "botId": "${{AAD_APP_CLIENT_ID}}",
+      "botId": "73803982-f0e6-4bff-aa80-1628ea3a7b80",
       "scopes": [
         "personal"
       ],
@@ -46,10 +46,10 @@
   ],
   "validDomains": [
     "token.botframework.com",
-    "<<BOT_DOMAIN>>"
+    "trboehre-relay.servicebus.windows.net"
   ],
   "webApplicationInfo": {
-    "id": "${{AAD_APP_CLIENT_ID}}",
-    "resource": "api://botid-${{AAD_APP_CLIENT_ID}}"
+    "id": "73803982-f0e6-4bff-aa80-1628ea3a7b80",
+    "resource": "api://botid-73803982-f0e6-4bff-aa80-1628ea3a7b80"
   }
 }

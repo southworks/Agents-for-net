@@ -4,12 +4,12 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.A365;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph.Models;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,7 +22,7 @@ namespace AgenticAI.AgenticExtension
     /// </summary>
     public class AgenticAdapter : CloudAdapter
     {
-        private readonly AgentAuthorization _agentAuthorization;
+        private readonly A365Extension _a365;
 
         public AgenticAdapter(
             IChannelServiceClientFactory channelServiceClientFactory, 
@@ -31,16 +31,15 @@ namespace AgenticAI.AgenticExtension
             AdapterOptions options = null, 
             IMiddleware[] middlewares = null, 
             IConfiguration config = null,
-            IConnections connections = null,
-            IHttpClientFactory httpClientFactory = null) 
+            A365Extension a365 = null)
             : base(channelServiceClientFactory, activityTaskQueue, logger, options, middlewares, config)
         {
-            _agentAuthorization = new AgentAuthorization(connections, httpClientFactory);
+            _a365 = a365;
         }
 
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            if (!AgentAuthorization.IsAgenticRequest(incomingActivity))
+            if (!A365Extension.IsAgenticRequest(incomingActivity))
             {
                 return await base.HostResponseAsync(incomingActivity, outActivity, cancellationToken);
             }
@@ -50,7 +49,7 @@ namespace AgenticAI.AgenticExtension
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            if (!AgentAuthorization.IsAgenticRequest(turnContext))
+            if (!A365Extension.IsAgenticRequest(turnContext))
             {
                 return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
             }
@@ -67,7 +66,7 @@ namespace AgenticAI.AgenticExtension
                     }
                 };
 
-                var graphClient = _agentAuthorization.GraphClientForAgentUser(turnContext, ["https://canary.graph.microsoft.com/.default"]);
+                var graphClient = _a365.GraphClientForAgentUser(turnContext, ["https://canary.graph.microsoft.com/.default"]);
 
                 // Send the message to the chat
                 await graphClient.Chats[turnContext.Activity.Conversation.Id].Messages
