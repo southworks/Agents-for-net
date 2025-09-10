@@ -17,7 +17,7 @@ public class MyAgent : AgentApplication
     {
         RegisterExtension(a365Extension, a365 =>
         {
-            a365.AgentApplication = this;
+            a365.AgentApplication = this;  // Perhaps RegisterExtension should do this
 
             // Register a route for AgenticAI-only Messages.
             a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync);

@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Extensions.A365
         }
         #endregion
 
-        public void OnActivity(AgentApplication agentApplication, string activityType, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = 32767, string[] autoSignInHandlers = null, ChannelId channelId = null)
+        public void OnActivity(string activityType, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = 32767, string[] autoSignInHandlers = null, ChannelId channelId = null)
         {
             AddRoute(AgentApplication, (tc, ct) => Task.FromResult(tc.Activity.IsType(activityType) && channelId == null || tc.Activity.ChannelId == channelId), routeHandler, isInvokeRoute, rank, autoSignInHandlers);
         }
