@@ -23,6 +23,7 @@ public class MyAgent : AgentApplication
             a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
         });
 
+        // Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 

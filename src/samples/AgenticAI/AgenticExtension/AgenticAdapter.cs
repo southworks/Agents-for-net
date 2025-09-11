@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A365;
@@ -39,7 +38,7 @@ namespace AgenticAI.AgenticExtension
 
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            if (!A365Extension.IsAgenticRequest(incomingActivity))
+            if (!A365Extension.IsAgenticRequest(incomingActivity) || incomingActivity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
                 return await base.HostResponseAsync(incomingActivity, outActivity, cancellationToken);
             }
@@ -49,7 +48,7 @@ namespace AgenticAI.AgenticExtension
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            if (!A365Extension.IsAgenticRequest(turnContext))
+            if (!A365Extension.IsAgenticRequest(turnContext) || turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
                 return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
             }

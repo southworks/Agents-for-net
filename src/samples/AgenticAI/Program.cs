@@ -24,7 +24,8 @@ builder.Services.AddTransient<A365Extension>();
 
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
-builder.AddAgent<MyAgent, AgenticAdapter>();
+builder.AddAgent<MyAgent>();
+builder.Services.AddSingleton<AgenticAdapter>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -48,12 +49,12 @@ app.UseAuthorization();
 app.MapGet("/", () => "Microsoft Agents SDK Sample");
 
 // This receives incoming messages from Azure Bot Service or other SDK Agents
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, CloudAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
 
-var agenticRoute = app.MapPost("/agentic/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+var agenticRoute = app.MapPost("/agentic/messages", async (HttpRequest request, HttpResponse response, AgenticAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
 {
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
