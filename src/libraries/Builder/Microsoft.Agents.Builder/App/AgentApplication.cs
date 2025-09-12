@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type,nameof(type));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) =>
-                Task.FromResult(context.Activity.IsType(type) && channelId == null ? true : context.Activity.ChannelId == channelId);
+                Task.FromResult(context.Activity.IsType(type) && (channelId == null || context.Activity.ChannelId == channelId));
             OnActivity(routeSelector, handler, rank, autoSignInHandlers);
             return this;
         }
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) =>
-                Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type) && channelId == null ? true : context.Activity.ChannelId == channelId);
+                Task.FromResult(context.Activity?.Type != null && typePattern.IsMatch(context.Activity?.Type) && (channelId == null || context.Activity.ChannelId == channelId));
             OnActivity(routeSelector, handler, rank, autoSignInHandlers);
             return this;
         }
@@ -289,7 +289,7 @@ namespace Microsoft.Agents.Builder.App
             async Task<bool> wrapper(ITurnContext turnContext, CancellationToken cancellationToken)
             {
                 return turnContext.Activity.IsType(ActivityTypes.ConversationUpdate)
-                    && channelId == null || turnContext.Activity.ChannelId == channelId
+                    && (channelId == null || turnContext.Activity.ChannelId == channelId)
                     && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
@@ -341,7 +341,7 @@ namespace Microsoft.Agents.Builder.App
                 => Task.FromResult
                 (
                     context.Activity.IsType(ActivityTypes.Message)
-                    && channelId == null || context.Activity.ChannelId == channelId
+                    && (channelId == null || context.Activity.ChannelId == channelId)
                     && context.Activity?.Text != null
                     && context.Activity.Text.Equals(text, StringComparison.OrdinalIgnoreCase)
                 );
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.App
                 => Task.FromResult
                 (
                     context.Activity.IsType(ActivityTypes.Message)
-                    && channelId == null || context.Activity.ChannelId == channelId
+                    && (channelId == null || context.Activity.ChannelId == channelId)
                     && context.Activity?.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
@@ -401,7 +401,7 @@ namespace Microsoft.Agents.Builder.App
             // Enforce Activity.Type Message
             async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
             {
-                return context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return context.Activity.IsType(ActivityTypes.Message) && (channelId == null || context.Activity.ChannelId == channelId) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
             AddRoute(outerSelector, handler, false, rank, autoSignInHandlers);
@@ -465,7 +465,7 @@ namespace Microsoft.Agents.Builder.App
                 => Task.FromResult
                 (
                     context.Activity.IsType(ActivityTypes.Event)
-                    && channelId == null || context.Activity.ChannelId == channelId
+                    && (channelId == null || context.Activity.ChannelId == channelId)
                     && context.Activity?.Name != null
                     && context.Activity.Name.Equals(eventName, StringComparison.OrdinalIgnoreCase)
                 );
@@ -490,7 +490,7 @@ namespace Microsoft.Agents.Builder.App
                 => Task.FromResult
                 (
                     context.Activity.IsType(ActivityTypes.Event)
-                    && channelId == null || context.Activity.ChannelId == channelId
+                    && (channelId == null || context.Activity.ChannelId == channelId)
                     && context.Activity?.Name != null
                     && namePattern.IsMatch(context.Activity.Name)
                 );
@@ -516,7 +516,7 @@ namespace Microsoft.Agents.Builder.App
             async Task<bool> outerSelector(ITurnContext context, CancellationToken cancellationToken)
             {
                 return context.Activity.IsType(ActivityTypes.Event)
-                    && channelId == null || context.Activity.ChannelId == channelId
+                    && (channelId == null || context.Activity.ChannelId == channelId)
                     && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
@@ -538,7 +538,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
             (
                 context.Activity.IsType(ActivityTypes.MessageReaction)
-                && channelId == null || context.Activity.ChannelId == channelId
+                && (channelId == null || context.Activity.ChannelId == channelId)
                 && context.Activity?.ReactionsAdded != null
                 && context.Activity.ReactionsAdded.Count > 0
             );
@@ -560,7 +560,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
             (
                 context.Activity.IsType(ActivityTypes.MessageReaction)
-                && channelId == null || context.Activity.ChannelId == channelId
+                && (channelId == null || context.Activity.ChannelId == channelId)
                 && context.Activity?.ReactionsRemoved != null
                 && context.Activity.ReactionsRemoved.Count > 0
             );
@@ -582,7 +582,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
             (
                 context.Activity.IsType(ActivityTypes.Invoke)
-                && channelId == null || context.Activity.ChannelId == channelId
+                && (channelId == null || context.Activity.ChannelId == channelId)
                 && string.Equals(context.Activity?.Name, "handoff/action")
             );
             async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

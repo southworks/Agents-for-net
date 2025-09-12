@@ -22,5 +22,10 @@ namespace Microsoft.Agents.Core.Models
         /// The type for skill roles.
         /// </summary>
         public const string Skill = "skill";
+
+        /// <summary>
+        /// Indicates the ChannelAccount is via the Power Platform Connector
+        /// </summary>
+        public const string ConnectorUser = "connectoruser";
     }
 }
