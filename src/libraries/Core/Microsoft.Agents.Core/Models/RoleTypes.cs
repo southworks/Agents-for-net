@@ -23,7 +23,14 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         public const string Skill = "skill";
 
+        /// <summary>
+        /// Agentic AI - AAI role
+        /// </summary>
         public const string AgentIdentity = "agentidentity";
+
+        /// <summary>
+        /// Agentic AI - AAI role
+        /// </summary>
         public const string AgentUser = "agentuser";
     }
 }

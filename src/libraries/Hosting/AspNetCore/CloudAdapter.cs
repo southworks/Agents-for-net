@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -134,7 +133,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
             else
             {
-                // Deserialize the incoming Activity
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 if (!IsValidChannelActivity(activity))
                 {
@@ -151,8 +149,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         InvokeResponse invokeResponse = null;
 
-                        IChannelResponseWriter writer = activity.DeliveryMode == DeliveryModes.Stream
-                            ? new ActivityStreamedResponseWriter()
+                        IChannelResponseHandler writer = activity.DeliveryMode == DeliveryModes.Stream
+                            ? new ActivityResponseHandler()
                             : new ExpectRepliesResponseWriter(activity);
 
                         // Turn Begin
@@ -169,11 +167,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, activity, agentType: agent.GetType(), headers: httpRequest.Headers, onComplete: (response) =>
                         {
                             invokeResponse = response;
+
+                            // Stops response handling and waits for HandleResponsesAsync to finish
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+
                             return Task.CompletedTask;
                         });
 
-                        // Handle responses (blocking)
+                        // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
@@ -181,7 +182,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                                 Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
-                            await writer.WriteActivity(httpResponse, response, cancellationToken).ConfigureAwait(false);
+                            await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
                         }, cancellationToken).ConfigureAwait(false);
 
                         // Turn done
