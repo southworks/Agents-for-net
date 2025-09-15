@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             _settings = oauthSettings ?? throw new ArgumentNullException(nameof(oauthSettings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(oauthSettings);
-            _dedupe = new Deduplicate(_settings, _storage);
+            _dedupe = new Deduplicate(_storage);
         }
 
         /// <inheritdoc/>

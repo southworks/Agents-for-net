@@ -167,14 +167,15 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <inheritdoc/>
-        public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        public async Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
+            var results = new Dictionary<string, IStoreItem>(changes.Count);
             if (changes.Count == 0)
             {
                 // No-op for no changes.
-                return;
+                return results;
             }
 
             // this should only happen once - assuming this is a singleton
@@ -212,7 +213,9 @@ namespace Microsoft.Agents.Storage.Blobs
                         var blobHttpHeaders = new BlobHttpHeaders();
                         blobHttpHeaders.ContentType = "application/json";
 
-                        await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+                        var response = await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+
+                        results[keyValuePair.Key] = new WriteResult() {  ETag = response.Value.ETag.ToString() };
                     }
                 }
                 catch (RequestFailedException ex)
@@ -229,10 +232,12 @@ namespace Microsoft.Agents.Storage.Blobs
                     throw new EtagException($"Etag conflict: {ex.Message}");
                 }
             }
+
+            return results;
         }
 
         //<inheritdoc/>
-        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        public Task<IDictionary<string, IStoreItem>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
             

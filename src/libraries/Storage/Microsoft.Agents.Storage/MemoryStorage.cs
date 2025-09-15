@@ -113,12 +113,15 @@ namespace Microsoft.Agents.Storage
         /// <param name="changes">The items to write, indexed by key.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute. Throws ArgumentException for an ETag conflict.</returns>
+        /// <returns>A task that represents the work queued to execute. Throws EtagException for an ETag conflict.</returns>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
+        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            var results = new Dictionary<string, IStoreItem>(changes.Count);
+
             lock (_syncroot)
             {
                 foreach (var change in changes)
@@ -148,20 +151,21 @@ namespace Microsoft.Agents.Storage
                         {
                             throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
                         }
-
-                        newState["ETag"] = (_eTag++).ToString(CultureInfo.InvariantCulture);
                     }
 
+                    var newETag = (_eTag++).ToString(CultureInfo.InvariantCulture);
+                    results[change.Key] = new WriteResult() { ETag = newETag };
+                    newState["ETag"] = newETag;
                     newState?.AddTypeInfo(change.Value);
                     _memory[change.Key] = newState;
                 }
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult((IDictionary<string, IStoreItem>)results);
         }
 
         //<inheritdoc/>
-        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        public Task<IDictionary<string, IStoreItem>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 

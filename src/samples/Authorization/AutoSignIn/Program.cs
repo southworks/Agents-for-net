@@ -2,13 +2,16 @@
 // Licensed under the MIT License.
 
 using AutoSignIn;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.Storage.Blobs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +29,17 @@ builder.AddAgent<AuthAgent>();
 // For production Agents, persisted storage should be used so
 // that state survives Agent restarts, and operates correctly
 // in a cluster of Agent instances.
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
+//builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+builder.Services.AddSingleton<IStorage>(sp =>
+{
+    // Get a TokenCredential from your defined Connections
+    var tokenCredential = sp.GetService<IConnections>()!.GetConnection("ServiceConnection").GetTokenCredential();
+
+    return new BlobsStorage(
+       new Uri("https://trboehreasdkt1storage.blob.core.windows.net/agent-state"),
+       tokenCredential);
+});
 
 // Configure the HTTP request pipeline.
 
