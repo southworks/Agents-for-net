@@ -13,12 +13,10 @@ namespace AgenticAI;
 
 public class MyAgent : AgentApplication
 {
-    public MyAgent(AgentApplicationOptions options, A365Extension a365Extension) : base(options)
+    public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        RegisterExtension(a365Extension, a365 =>
+        RegisterExtension(new A365Extension(this), a365 =>
         {
-            a365.AgentApplication = this;  // Perhaps RegisterExtension should do this
-
             // Register a route for AgenticAI-only Messages.
             a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
         });
@@ -30,7 +28,7 @@ public class MyAgent : AgentApplication
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
     }
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

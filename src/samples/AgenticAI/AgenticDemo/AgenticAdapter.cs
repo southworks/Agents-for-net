@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.A365;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
@@ -14,14 +15,14 @@ using System.Threading.Tasks;
 
 #nullable disable
 
-namespace AgenticAI.AgenticExtension
+namespace AgenticAI.AgenticDemo
 {
     /// <summary>
     /// Temporary Adapter that can repsond to Teams using the Agentic AI tokens and Graph.
     /// </summary>
     public class AgenticAdapter : CloudAdapter
     {
-        private readonly A365Extension _a365;
+        private readonly AgenticAuthorization _agenticAuthorization;
 
         public AgenticAdapter(
             IChannelServiceClientFactory channelServiceClientFactory, 
@@ -30,15 +31,15 @@ namespace AgenticAI.AgenticExtension
             AdapterOptions options = null, 
             IMiddleware[] middlewares = null, 
             IConfiguration config = null,
-            A365Extension a365 = null)
+            IConnections connections = null)
             : base(channelServiceClientFactory, activityTaskQueue, logger, options, middlewares, config)
         {
-            _a365 = a365;
+            _agenticAuthorization = new AgenticAuthorization(connections);
         }
 
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
-            if (!A365Extension.IsAgenticRequest(incomingActivity) || incomingActivity.DeliveryMode == DeliveryModes.ExpectReplies)
+            if (!AgenticAuthorization.IsAgenticRequest(incomingActivity) || incomingActivity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
                 return await base.HostResponseAsync(incomingActivity, outActivity, cancellationToken);
             }
@@ -48,7 +49,7 @@ namespace AgenticAI.AgenticExtension
 
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
         {
-            if (!A365Extension.IsAgenticRequest(turnContext) || turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
+            if (!AgenticAuthorization.IsAgenticRequest(turnContext) || turnContext.Activity.DeliveryMode == DeliveryModes.ExpectReplies)
             {
                 return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
             }
@@ -65,7 +66,7 @@ namespace AgenticAI.AgenticExtension
                     }
                 };
 
-                var graphClient = _a365.GraphClientForAgentUser(turnContext, ["https://canary.graph.microsoft.com/.default"]);
+                var graphClient = _agenticAuthorization.GraphClientForAgentUser(turnContext, ["https://canary.graph.microsoft.com/.default"]);
 
                 // Send the message to the chat
                 await graphClient.Chats[turnContext.Activity.Conversation.Id].Messages

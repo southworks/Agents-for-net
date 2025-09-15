@@ -2,9 +2,8 @@
 // Licensed under the MIT License.
 
 using AgenticAI;
-using AgenticAI.AgenticExtension;
+using AgenticAI.AgenticDemo;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Extensions.A365;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -19,8 +18,6 @@ builder.Services.AddHttpClient();
 
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
-
-builder.Services.AddTransient<A365Extension>();
 
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.

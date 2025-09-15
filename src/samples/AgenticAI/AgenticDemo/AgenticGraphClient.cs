@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.A365;
 using Microsoft.Graph;
 using Microsoft.Kiota.Abstractions;
@@ -12,11 +13,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AgenticAI.AgenticExtension
+namespace AgenticAI.AgenticDemo
 {
     public static class AgenticGraphClient
     {
-        public static GraphServiceClient GraphClientForAgentUser(this A365Extension a365, ITurnContext turnContext, IList<string> scopes)
+        public static GraphServiceClient GraphClientForAgentUser(this AgenticAuthorization a365, ITurnContext turnContext, IList<string> scopes)
         {
             try
             {

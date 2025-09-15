@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Extensions.A365
+namespace Microsoft.Agents.Builder.UserAuth.A365
 {
     /// <summary>
     /// The settings for A365Authorization.

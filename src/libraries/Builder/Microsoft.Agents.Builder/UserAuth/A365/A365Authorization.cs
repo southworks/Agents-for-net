@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
@@ -13,14 +12,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.A365
+namespace Microsoft.Agents.Builder.UserAuth.A365
 {
     /// <summary>
     /// Handles OAuth using the Azure Bot Token Service.
     /// </summary>
     public class A365Authorization : IUserAuthorization
     {
-        private readonly A365Extension _a365;
+        private readonly IConnections _connections;
         private readonly A365AuthSettings _a365AuthSettings;
 
         /// <summary>
@@ -33,7 +32,6 @@ namespace Microsoft.Agents.Extensions.A365
         public A365Authorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
             : this(name, storage, connections, configurationSection.Get<A365AuthSettings>())
         {
-
         }
 
         /// <summary>
@@ -45,27 +43,36 @@ namespace Microsoft.Agents.Extensions.A365
         /// <param name="connections"></param>
         public A365Authorization(string name, IStorage storage, IConnections connections, A365AuthSettings settings) 
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
-            _a365 = new A365Extension(connections);
 
+            _connections = connections;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             _a365AuthSettings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
         public string Name { get; private set; }
 
         /// <inheritdoc/>
-        public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
+        public Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            var token = await _a365.GetAgentUserTokenAsync(turnContext, exchangeScopes ?? _a365AuthSettings.Scopes, cancellationToken).ConfigureAwait(false);
-            return new TokenResponse(token: token);
+            return GetRefreshedUserTokenAsync(turnContext, exchangeConnection, exchangeScopes, cancellationToken);
         }
 
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            var token = await _a365.GetAgentUserTokenAsync(turnContext, exchangeScopes ?? _a365AuthSettings.Scopes, cancellationToken).ConfigureAwait(false);
+            var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            if (connection is not IAgenticTokenProvider agenticTokenProvider)
+            {
+                throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
+            }
+
+            var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
+                AgenticAuthorization.GetAgentInstanceId(turnContext),
+                AgenticAuthorization.GetAgentUser(turnContext),
+                exchangeScopes ?? _a365AuthSettings.Scopes,
+                cancellationToken).ConfigureAwait(false);
+
             return new TokenResponse(token: token);
         }
 
