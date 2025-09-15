@@ -3,12 +3,12 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Builder.UserAuth.A365
+namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
 {
     /// <summary>
-    /// The settings for A365Authorization.
+    /// The settings for AgenticAuth Authorization.
     /// </summary>
-    public class A365AuthSettings
+    public class AgenticAuthSettings
     {
         public IList<string> Scopes { get; set; }
     }

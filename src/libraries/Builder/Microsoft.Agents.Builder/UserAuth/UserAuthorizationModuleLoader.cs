@@ -3,7 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Builder.UserAuth.A365;
+using Microsoft.Agents.Builder.UserAuth.AgenticAuth;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Builder.UserAuth
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
             }
-            else if (string.Equals(nameof(A365Authorization), typeName, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(nameof(AgenticAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
             {
-                typeName = typeof(A365Authorization).FullName;
+                typeName = typeof(AgenticAuthorization).FullName;
             }
 
             // This throws for invalid assembly name.

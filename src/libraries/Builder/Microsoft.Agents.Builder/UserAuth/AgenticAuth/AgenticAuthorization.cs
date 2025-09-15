@@ -12,15 +12,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.UserAuth.A365
+namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
 {
     /// <summary>
     /// Handles OAuth using the Azure Bot Token Service.
     /// </summary>
-    public class A365Authorization : IUserAuthorization
+    public class AgenticAuthorization : IUserAuthorization
     {
         private readonly IConnections _connections;
-        private readonly A365AuthSettings _a365AuthSettings;
+        private readonly AgenticAuthSettings _a365AuthSettings;
 
         /// <summary>
         /// Required constructor for type loader construction.
@@ -29,8 +29,8 @@ namespace Microsoft.Agents.Builder.UserAuth.A365
         /// <param name="storage"></param>
         /// <param name="connections"></param>
         /// <param name="configurationSection"></param>
-        public A365Authorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
-            : this(name, storage, connections, configurationSection.Get<A365AuthSettings>())
+        public AgenticAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+            : this(name, storage, connections, configurationSection.Get<AgenticAuthSettings>())
         {
         }
 
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.UserAuth.A365
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
-        public A365Authorization(string name, IStorage storage, IConnections connections, A365AuthSettings settings) 
+        public AgenticAuthorization(string name, IStorage storage, IConnections connections, AgenticAuthSettings settings) 
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
 
@@ -61,15 +61,16 @@ namespace Microsoft.Agents.Builder.UserAuth.A365
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            var connection = _connections.GetConnection("AgentBluePrint");
+            //var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
             if (connection is not IAgenticTokenProvider agenticTokenProvider)
             {
                 throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
             }
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
-                AgenticAuthorization.GetAgentInstanceId(turnContext),
-                AgenticAuthorization.GetAgentUser(turnContext),
+                App.AgenticAuthorization.GetAgentInstanceId(turnContext),
+                App.AgenticAuthorization.GetAgentUser(turnContext),
                 exchangeScopes ?? _a365AuthSettings.Scopes,
                 cancellationToken).ConfigureAwait(false);
 
