@@ -61,8 +61,16 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            var connection = _connections.GetConnection("AgentBluePrint");
-            //var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            IAccessTokenProvider connection = null;
+            if (!string.IsNullOrEmpty(_a365AuthSettings.AlternateBlueprintConnectionName))
+            {
+                connection = _connections.GetConnection(_a365AuthSettings.AlternateBlueprintConnectionName);
+            }
+            else
+            {
+                connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            }
+
             if (connection is not IAgenticTokenProvider agenticTokenProvider)
             {
                 throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");

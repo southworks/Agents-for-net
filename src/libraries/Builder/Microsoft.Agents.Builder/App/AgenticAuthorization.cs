@@ -67,7 +67,6 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             return IsAgenticRequest(turnContext.Activity);
         }
-
         public static bool IsAgenticRequest(IActivity activity)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
