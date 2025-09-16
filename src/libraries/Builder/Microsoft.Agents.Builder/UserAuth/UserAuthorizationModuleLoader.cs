@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Builder.UserAuth
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
             }
-            else if (string.Equals(nameof(AgenticAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
             {
-                typeName = typeof(AgenticAuthorization).FullName;
+                typeName = typeof(AgenticUserAuthorization).FullName;
             }
 
             // This throws for invalid assembly name.
