@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.A365;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,13 +12,12 @@ namespace AgenticAI;
 
 public class MyAgent : AgentApplication
 {
+    public static readonly RouteSelector AgenticMessage = (tc, ct) => Task.FromResult(tc.Activity.Type == ActivityTypes.Message && AgenticAuthorization.IsAgenticRequest(tc));
+
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        RegisterExtension(new A365Extension(this), a365 =>
-        {
-            // Register a route for AgenticAI-only Messages.
-            a365.OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
-        });
+        // Register a route for Agentic-only Messages.
+        OnActivity(AgenticMessage, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
 
         // Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);

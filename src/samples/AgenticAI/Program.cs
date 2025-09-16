@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using AgenticAI;
-using AgenticAI.AgenticDemo;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
@@ -22,7 +21,6 @@ builder.AddAgentApplicationOptions();
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
 builder.AddAgent<MyAgent>();
-builder.Services.AddSingleton<AgenticAdapter>();
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -51,15 +49,9 @@ var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, Htt
     await adapter.ProcessAsync(request, response, agent, cancellationToken);
 });
 
-var agenticRoute = app.MapPost("/agentic/messages", async (HttpRequest request, HttpResponse response, AgenticAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
-
 if (!app.Environment.IsDevelopment())
 {
     incomingRoute.RequireAuthorization();
-    agenticRoute.RequireAuthorization();
 }
 else
 {
