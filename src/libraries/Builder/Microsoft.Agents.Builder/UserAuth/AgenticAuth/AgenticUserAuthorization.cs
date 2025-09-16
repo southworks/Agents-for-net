@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
     /// <summary>
     /// Handles OAuth using the Azure Bot Token Service.
     /// </summary>
-    public class AgenticAuthorization : IUserAuthorization
+    public class AgenticUserAuthorization : IUserAuthorization
     {
         private readonly IConnections _connections;
         private readonly AgenticAuthSettings _a365AuthSettings;
@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <param name="storage"></param>
         /// <param name="connections"></param>
         /// <param name="configurationSection"></param>
-        public AgenticAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
+        public AgenticUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
             : this(name, storage, connections, configurationSection.Get<AgenticAuthSettings>())
         {
         }
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
         /// <param name="connections"></param>
-        public AgenticAuthorization(string name, IStorage storage, IConnections connections, AgenticAuthSettings settings) 
+        public AgenticUserAuthorization(string name, IStorage storage, IConnections connections, AgenticAuthSettings settings) 
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
 
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
                 App.AgenticAuthorization.GetAgentInstanceId(turnContext),
-                App.AgenticAuthorization.GetAgentUser(turnContext),
+                App.AgenticAuthorization.GetAgenticUser(turnContext),
                 exchangeScopes ?? _a365AuthSettings.Scopes,
                 cancellationToken).ConfigureAwait(false);
 

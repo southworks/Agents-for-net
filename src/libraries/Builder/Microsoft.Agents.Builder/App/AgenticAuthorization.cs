@@ -26,6 +26,40 @@ namespace Microsoft.Agents.Builder.App
         } 
         */
 
+        /*
+        Example 1 
+        "recipient": { 
+            "id": "ts-smartcard-agent@testcsaaa.onmicrosoft.com", 
+            "name": "Smart Card Agent", 
+            "agenticUserId": "ac28ca57-8b82-4ff3-9f91-3309c824d67f",  // AAU 
+            "agenticAppId": "34d5cf6a-b842-4df1-84bb-1b035b58b833", // AAI 
+            "tenantId": "5369a35c-46a5-4677-8ff9-2e65587654e7", 
+            "role": "agenticUser" 
+        }, 
+        "from": {  
+            "id": "29:1sH5NArUwkWAX-VmfHH3cfem2S89f2nB0N6aJ5zEjBoxT17fhSMdlYu_55ZyR8_OKFxS3BMnaGldHH3wdf_9K4Q",  
+            "name": "MattB",  
+            "aadObjectId": "2e278178-80f8-4263-a9b2-761ce462a197",  
+            "role": "user"  
+        } 
+
+        Example 2: 
+        "recipient": { 
+            "id": "ts-smartcard-agent@testcsaaa.onmicrosoft.com", 
+            "name": "Smart Card Agent", 
+            "agenticUserId": "ac28ca57-8b82-4ff3-9f91-3309c824d67f",  // AAU 
+            "agenticAppId": "34d5cf6a-b842-4df1-84bb-1b035b58b833", // AAI 
+            "tenantId": "5369a35c-46a5-4677-8ff9-2e65587654e7", 
+            "role": " agenticAppInstance" 
+        }, 
+        "from": {  
+            "id": "29:1sH5NArUwkWAX-VmfHH3cfem2S89f2nB0N6aJ5zEjBoxT17fhSMdlYu_55ZyR8_OKFxS3BMnaGldHH3wdf_9K4Q",  
+            "name": "MattB",  
+            "aadObjectId": "2e278178-80f8-4263-a9b2-761ce462a197",  
+            "role": "user"  
+        } 
+        */
+
         private readonly IConnections _connections;
 
         public static bool IsAgenticRequest(ITurnContext turnContext)
@@ -38,8 +72,8 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            return activity?.Recipient?.Role == RoleTypes.AgentIdentity
-                || activity?.Recipient?.Role == RoleTypes.AgentUser;
+            return activity?.Recipient?.Role == RoleTypes.AgenticIdentity
+                || activity?.Recipient?.Role == RoleTypes.AgenticUser;
         }
 
         public static string GetAgentInstanceId(ITurnContext turnContext)
@@ -48,16 +82,16 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
             if (!IsAgenticRequest(turnContext)) return null;
-            return turnContext?.Activity?.Recipient?.AadClientId;
+            return turnContext?.Activity?.Recipient?.AgenticAppId;
         }
 
-        public static string GetAgentUser(ITurnContext turnContext)
+        public static string GetAgenticUser(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
             if (!IsAgenticRequest(turnContext)) return null;
-            return turnContext?.Activity?.Recipient?.Name;  // What the demo is using for AU UserUpn
+            return turnContext?.Activity?.Recipient?.Id;  // What the demo is using for AU UserUpn
         }
 
         public AgenticAuthorization(IConnections connections)
@@ -66,7 +100,7 @@ namespace Microsoft.Agents.Builder.App
             _connections = connections;
         }
 
-        public async Task<string> GetAgentInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             if (!IsAgenticRequest(turnContext))
             {
@@ -82,9 +116,9 @@ namespace Microsoft.Agents.Builder.App
             throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
         }
 
-        public async Task<string> GetAgentUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
         {
-            if (!IsAgenticRequest(turnContext) || string.IsNullOrEmpty(GetAgentUser(turnContext)))
+            if (!IsAgenticRequest(turnContext) || string.IsNullOrEmpty(GetAgenticUser(turnContext)))
             {
                 return null;
             }
@@ -92,7 +126,7 @@ namespace Microsoft.Agents.Builder.App
             var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
-                return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgentInstanceId(turnContext), GetAgentUser(turnContext), scopes, cancellationToken);
+                return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgentInstanceId(turnContext), GetAgenticUser(turnContext), scopes, cancellationToken);
             }
 
             throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");

@@ -24,7 +24,7 @@ namespace AgenticAI.AgenticDemo
                 // Create an async token provider that calls GetAgenticUserTokenAsync each time
                 var authProvider = new ManualTokenAuthenticationProvider(() =>
                 {
-                    return a365.GetAgentUserTokenAsync(turnContext, scopes);
+                    return a365.GetAgenticUserTokenAsync(turnContext, scopes);
                 });
                 return new GraphServiceClient(authProvider, baseUrl: "https://canary.graph.microsoft.com/testprodbetateamsgraphdev");
             }
