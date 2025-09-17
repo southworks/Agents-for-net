@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.UserAuth.AgenticAuth;
 using Microsoft.Agents.Builder.UserAuth.Connector;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core;
@@ -46,16 +47,15 @@ namespace Microsoft.Agents.Builder.UserAuth
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
             }
-            // For our known handler types, allow just the class name and expand to full type name.
-            else if (typeName.Equals(nameof(AzureBotUserAuthorization), StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
             {
-                typeName = typeof(AzureBotUserAuthorization).FullName;
+                typeName = typeof(AgenticUserAuthorization).FullName;
             }
             else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
             }
-
+            
             // This throws for invalid assembly name.
 #if !NETSTANDARD
                 Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
