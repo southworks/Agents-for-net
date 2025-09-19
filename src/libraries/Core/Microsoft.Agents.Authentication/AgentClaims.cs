@@ -20,15 +20,14 @@ namespace Microsoft.Agents.Authentication
         {
             AssertionHelpers.ThrowIfNull(jwtToken, nameof(jwtToken));
 
-            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud")?.Value;
-            var appId = GetAppId(jwtToken);  // this will use either "appid" or "azp" based on 'ver'
             var idtyp = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "idtyp")?.Value;
-
             if ("user".Equals(idtyp))
             {
                 return false;
             }
 
+            var aud = jwtToken.Claims.FirstOrDefault(claim => claim.Type == "aud")?.Value;
+            var appId = GetAppId(jwtToken);  // this will use either "appid" or "azp" based on 'ver'
             return (bool)(aud?.Contains(appId));
         }
 
