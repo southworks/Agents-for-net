@@ -141,12 +141,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
                 activity.RequestId ??= Guid.NewGuid().ToString();
 
-                //!!! DO NOT COMMIT THIS
-                if (activity.ChannelId == "pva-studio")
-                {
-                    activity.DeliveryMode ??= DeliveryModes.ExpectReplies;
-                }
-
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
                 try
