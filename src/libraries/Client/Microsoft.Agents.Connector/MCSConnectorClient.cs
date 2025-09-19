@@ -17,9 +17,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Connector
 {
     /// <summary>
-    /// The Connector REST API allows your Agent to send and receive messages to channels configured in the Azure Bot Service.
-    /// The Connector service uses industry-standard REST and JSON over HTTPS.
+    /// This is an IConnectorClient suited for communicating with Microsoft Copilot Studio via a Power Apps Connector request.
     /// </summary>
+    /// <remarks>
+    /// The only supported operations are <c>IConversations.SendToConversationAsync</c> and <c>IConversations.ReplyToActivityAsync</c>.
+    /// </remarks>
     public class MCSConnectorClient : RestClientBase, IConnectorClient
     {
         public IAttachments Attachments { get; }
@@ -28,8 +30,8 @@ namespace Microsoft.Agents.Connector
 
         public Uri BaseUri => base.Endpoint;
 
-        public MCSConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, Func<Task<string>> tokenProviderFunction, string namedClient = nameof(RestConnectorClient))
-            : base(endpoint, httpClientFactory, namedClient, tokenProviderFunction)
+        public MCSConnectorClient(Uri endpoint, IHttpClientFactory httpClientFactory, string namedClient = nameof(MCSConnectorClient))
+            : base(endpoint, httpClientFactory, namedClient, null)
         {
             AssertionHelpers.ThrowIfNull(endpoint, nameof(endpoint));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));

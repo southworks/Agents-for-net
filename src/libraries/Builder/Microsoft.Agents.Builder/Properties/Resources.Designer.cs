@@ -187,6 +187,24 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unexpected request token for handler &apos;{0}&apos;..
+        /// </summary>
+        internal static string UnexpectedConnectorRequestToken {
+            get {
+                return ResourceManager.GetString("UnexpectedConnectorRequestToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The token for handler &apos;{0}&apos; has expired..
+        /// </summary>
+        internal static string UnexpectedConnectorTokenExpiration {
+            get {
+                return ResourceManager.GetString("UnexpectedConnectorTokenExpiration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set..
         /// </summary>
         internal static string UserAuthenticationRequiresAdapter {

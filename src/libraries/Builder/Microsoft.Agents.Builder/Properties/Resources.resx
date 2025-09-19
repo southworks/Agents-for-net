@@ -206,4 +206,12 @@
     <value>Unexpected state for handler '{0}' </value>
     <comment>Raised when attempting to refresh a near expired cached token, but received a null token.</comment>
   </data>
+  <data name="UnexpectedConnectorRequestToken" xml:space="preserve">
+    <value>Unexpected request token for handler '{0}'.</value>
+    <comment>Raised when handling tokens supplied by Copilot Studio Connectors.</comment>
+  </data>
+  <data name="UnexpectedConnectorTokenExpiration" xml:space="preserve">
+    <value>The token for handler '{0}' has expired.</value>
+    <comment>Raised when an authorization token from a Copilot Studio Connector request has expired.</comment>
+  </data>
 </root>

@@ -10,16 +10,17 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.UserAuth.Connector
 {
-    public class ConnectorUserAuthorization : IUserAuthorization
+    /// <summary>
+    /// User Authorization handling for Copilot Studio Connector requests.
+    /// </summary>
+    public class ConnectorUserAuthorization : OBOExchange, IUserAuthorization
     {
         private readonly OBOSettings _settings;
-        private readonly IConnections _connections;
 
         /// <summary>
         /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
@@ -41,11 +42,15 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         /// <param name="connections"></param>
         /// <param name="settings"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConnectorUserAuthorization(string name, IConnections connections, OBOSettings settings)
+        public ConnectorUserAuthorization(string name, IConnections connections, OBOSettings settings) : base(connections)
         {
             _settings = settings;
-            _connections = connections ?? throw new ArgumentNullException(nameof(connections));
             Name = name ?? throw new ArgumentNullException(nameof(name));
+        }
+
+        protected override OBOSettings GetOBOSettings()
+        {
+            return _settings;
         }
 
         /// <inheritdoc/>
@@ -61,12 +66,19 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
                 var diff = tokenResponse.Expiration - DateTimeOffset.UtcNow;
                 if (diff.HasValue && diff?.TotalMinutes <= 0)
                 {
-                    // TODO: throw defined error.  Nothing we can do here to get a refreshed token.
-                    throw new InvalidOperationException($"Token for '{Name}' is expired");
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedConnectorTokenExpiration, null, [Name]);
                 }
             }
 
-            return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -98,7 +110,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
             return Task.CompletedTask;
         }
 
-        private static TokenResponse CreateTokenResponse(ITurnContext turnContext)
+        private TokenResponse CreateTokenResponse(ITurnContext turnContext)
         {
             if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
             {
@@ -121,8 +133,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
                 return tokenResponse;
             }
 
-            // TODO: throw defined error
-            throw new InvalidOperationException();
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedConnectorRequestToken, null, [Name]);
         }
 
         // Get the ConnectorUserAuthorization settings
@@ -141,78 +152,6 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
             }
 
             return settings;
-        }
-
-        // TODO: this is the same code as in AzureBotUserAuthorization.  Refactor.
-        private async Task<TokenResponse> HandleOBO(ITurnContext turnContext, TokenResponse token, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrEmpty(token?.Token))
-            {
-                return null;
-            }
-
-            var connectionName = exchangeConnection ?? _settings.OBOConnectionName;
-            IList<string> scopes = exchangeScopes ?? _settings.OBOScopes;
-
-            // If OBO is not supplied (by config or passed) return token as-is.
-            if (string.IsNullOrEmpty(connectionName) || scopes == null || !scopes.Any())
-            {
-                return token;
-            }
-
-            try
-            {
-                // Can we even exchange this?
-                if (!token.IsExchangeable)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotExchangeableToken, null, [connectionName]);
-                }
-
-                // Can the named Connection even do this?
-                if (!TryGetOBOProvider(connectionName, out var oboExchangeProvider))
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBONotSupported, null, [connectionName]);
-                }
-
-                // Do exchange.
-                try
-                {
-                    token = await oboExchangeProvider.AcquireTokenOnBehalfOf(scopes, token.Token).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, ex, [connectionName, string.Join(",", scopes)]);
-                }
-
-                if (token == null)
-                {
-                    // AcquireTokenOnBehalfOf returned null
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.OBOExchangeFailed, null, [connectionName, string.Join(",", scopes)]);
-                }
-            }
-            catch (Exception)
-            {
-                await SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
-                throw;
-            }
-
-            return token ?? null;
-        }
-
-        // TODO: this is the same code as in AzureBotUserAuthorization.  Refactor.
-        private bool TryGetOBOProvider(string connectionName, out IOBOExchange oboExchangeProvider)
-        {
-            if (_connections.TryGetConnection(connectionName, out var tokenProvider))
-            {
-                if (tokenProvider is IOBOExchange oboExchange)
-                {
-                    oboExchangeProvider = oboExchange;
-                    return true;
-                }
-            }
-
-            oboExchangeProvider = null;
-            return false;
         }
     }
 }
