@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Core.Models
         /// Implicitly converts a <see cref="ChannelId"/> instance to a string.
         /// </summary>
         /// <param name="channelId">The <see cref="ChannelId"/> instance.</param>
-        public static implicit operator string?(ChannelId channelId)
+        public static implicit operator string?(ChannelId? channelId)
         {
             return channelId?.ToString();
         }
@@ -123,13 +123,15 @@ namespace Microsoft.Agents.Core.Models
         /// fullNotation is controlled by the property <c>ProtocolJsonSerializer.ChannelIdIncludesProduct</c>
         /// </summary>
         /// <returns>The channel ID as a string.</returns>
-        public override string? ToString()
+        public override string ToString()
         {
             if (_fullNotation && !string.IsNullOrEmpty(SubChannel))
             {
                 return $"{Channel}:{SubChannel}";
             }
-            return Channel;
+
+            // ToString should not return null. If Channel is null, return empty string?
+            return Channel!;
         }
     }
 }
