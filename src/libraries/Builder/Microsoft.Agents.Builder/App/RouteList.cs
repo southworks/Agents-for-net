@@ -59,6 +59,7 @@ namespace Microsoft.Agents.Builder.App
         Other = 0,
         Agentic = 1,
         Invoke = 2,
+        AgenticInvoke = 3
     }
 
     class RouteEntry
