@@ -26,7 +26,7 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
-	<Target Name = "GetAnalyzers" AfterTargets="AfterBuild">
+	<Target Name = "GetAnalyzers" BeforeTargets="GenerateNuspec" >
 		<MSBuild 
 			Projects="@(ProjectReference)"
 			Condition="'%(ProjectReference.Filename)' == 'Microsoft.Agents.Core.Analyzers'"
@@ -35,7 +35,8 @@
 		</MSBuild>
 	</Target>
 
-	<Target Name="AddAnalyzers" AfterTargets="GetAnalyzers" Condition="'$(TargetFramework)' == 'netstandard2.0'">
+	<Target Name="AddAnalyzers" AfterTargets="GetAnalyzers">
+	  <Message Importance="high" Text="Discovered Analyzers: @(Analyzers)" />
 	  <ItemGroup>
 	    <TfmSpecificPackageFile Include="@(Analyzers)">
 	      <PackagePath>analyzers/dotnet/cs</PackagePath>

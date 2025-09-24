@@ -3,11 +3,12 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <ComponentAreaName>CplCoreAnalyzers</ComponentAreaName>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <Import Project="..\..\..\Build.Common.core.props" />
