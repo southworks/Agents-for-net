@@ -30,7 +30,7 @@
 	  _GetTfmSpecificContentForPackage is called for each TargetFramework in a multitargeted project from _WalkEachTargetPerFramework target.
 	  This is the time to get all the necessary project references and add them to the package.
 	-->
-	<Target Name = "GetAnalyzers" BeforeTargets="_GetTfmSpecificContentForPackage" Condition="$(TargetFramework) == 'netstandard2.0'">
+	<Target Name="GetAnalyzers" BeforeTargets="_GetTfmSpecificContentForPackage" Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<MSBuild 
 			Projects="@(ProjectReference)"
 			Condition="'%(ProjectReference.Filename)' == 'Microsoft.Agents.Core.Analyzers'"
@@ -39,7 +39,7 @@
 		</MSBuild>
 	</Target>
 
-	<Target Name="AddAnalyzers" DependsOnTargets="GetAnalyzers" Condition="$(TargetFramework) == 'netstandard2.0'">
+	<Target Name="AddAnalyzers" DependsOnTargets="GetAnalyzers" Condition="'$(TargetFramework)' == 'netstandard2.0'">
 	  <ItemGroup>
 	    <TfmSpecificPackageFile Include="@(Analyzers)">
 	      <PackagePath>analyzers/dotnet/cs</PackagePath>
@@ -58,7 +58,7 @@
 		In order for packing targets to work correctly in this situation - analyzer project either should have <TargetFramework> (without 's'),
 		or be referenced with Condition on a single TargetFramework.
 	   -->
-	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" Condition="$(TargetFramework) == 'netstandard2.0'" />
+	  <ProjectReference Include="..\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"	ReferenceOutputAssembly="false" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 
 </Project>
