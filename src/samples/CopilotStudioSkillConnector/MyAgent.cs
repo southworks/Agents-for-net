@@ -36,7 +36,7 @@ namespace CopilotStudioSkillConnector
             //
 
             // Handle Messages from MCS with auth
-            OnActivity(ActivityTypes.Message, OnMCSMessage, channelId: Channels.CopilotStudio, autoSignInHandlers: ["mcs"]);
+            OnActivity((tc,ct) => Task.FromResult(tc.Activity.IsType(ActivityTypes.Message) && tc.Activity.Recipient.Role == RoleTypes.ConnectorUser), OnMCSMessage, autoSignInHandlers: ["mcs"]);
 
             // Handle Messages from ABS with Token Service Auth
             OnActivity(ActivityTypes.Message, OnABSMessage, autoSignInHandlers: ["abs"]);
