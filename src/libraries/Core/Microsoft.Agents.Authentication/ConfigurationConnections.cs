@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication.Errors;
 using Microsoft.Agents.Authentication.Model;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -164,6 +165,12 @@ namespace Microsoft.Agents.Authentication
 
             // Otherwise, return the first connection.
             return GetConnectionInstance(_connections.FirstOrDefault().Value);
+        }
+
+        /// <inheritdoc/>
+        public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, IActivity activity)
+        {
+            return GetTokenProvider(claimsIdentity, activity.ServiceUrl);
         }
 
         /// <summary>

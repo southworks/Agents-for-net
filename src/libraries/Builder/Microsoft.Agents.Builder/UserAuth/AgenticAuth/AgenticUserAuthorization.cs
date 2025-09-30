@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             }
             else
             {
-                connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+                connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             }
 
             if (connection is not IAgenticTokenProvider agenticTokenProvider)

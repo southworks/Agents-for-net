@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Builder.App
                 return null;
             }
 
-            var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
                 return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgentInstanceId(turnContext), cancellationToken);
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Builder.App
                 return null;
             }
 
-            var connection = _connections.GetTokenProvider(turnContext.Identity, "agentic");
+            var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
                 return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgentInstanceId(turnContext), GetAgenticUser(turnContext), scopes, cancellationToken);
