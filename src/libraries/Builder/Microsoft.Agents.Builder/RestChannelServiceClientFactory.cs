@@ -106,10 +106,10 @@ namespace Microsoft.Agents.Builder
                 _httpClientFactory,
                 () =>
                 {
-                    try
+                    var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                    if (connection is IAgenticTokenProvider agenticTokenProvider)
                     {
-                        var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
-                        if (connection is IAgenticTokenProvider agenticTokenProvider)
+                        try
                         {
                             if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
                             {
@@ -124,16 +124,18 @@ namespace Microsoft.Agents.Builder
                                 connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
                                 cancellationToken);
                         }
-
-                        throw new InvalidOperationException("Mapped Connection is not IAgenticTokenProvider");
+                        catch (Exception ex)
+                        {
+                            // have to do it this way b/c of the lambda expression. 
+                            throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
+                                    ErrorHelper.AgenticTokenProviderFailed, ex, AgenticAuthorization.GetAgentInstanceId(turnContext), AgenticAuthorization.GetAgenticUser(turnContext), turnContext.Activity.Recipient.Role);
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        // TODO: Define new error for this
-
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
+                                ErrorHelper.NullIAgenticTokenProvider, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName));
