@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Builder
         {
             if (!AgenticAuthorization.IsAgenticRequest(turnContext))
             {
-                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
+                return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
             }
 
             return Task.FromResult<IConnectorClient>(new RestConnectorClient(
@@ -120,8 +120,8 @@ namespace Microsoft.Agents.Builder
 
                             return agenticTokenProvider.GetAgenticUserTokenAsync(
                                 AgenticAuthorization.GetAgentInstanceId(turnContext), 
-                                AgenticAuthorization.GetAgenticUser(turnContext), 
-                                [AuthenticationConstants.ApxProductionScope], 
+                                AgenticAuthorization.GetAgenticUser(turnContext),
+                                connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
                                 cancellationToken);
                         }
 

@@ -170,7 +170,20 @@ namespace Microsoft.Agents.Authentication
         /// <inheritdoc/>
         public IAccessTokenProvider GetTokenProvider(ClaimsIdentity claimsIdentity, IActivity activity)
         {
-            return GetTokenProvider(claimsIdentity, activity.ServiceUrl);
+            var connection = GetTokenProvider(claimsIdentity, activity.ServiceUrl);
+
+            // This is for if the Agentic BlueprintId is not the same as the AppId
+            if (connection != null 
+                && (RoleTypes.AgenticIdentity.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)
+                || RoleTypes.AgenticUser.Equals(activity?.Recipient?.Role, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (!string.IsNullOrEmpty(connection.ConnectionSettings?.AlternateBlueprintConnectionName))
+                {
+                    connection = GetConnection(connection.ConnectionSettings.AlternateBlueprintConnectionName);
+                }
+            }
+
+            return connection;
         }
 
         /// <summary>

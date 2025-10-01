@@ -69,6 +69,8 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
         #region IAccessTokenProvider
+        public ImmutableConnectionSettings ConnectionSettings => new(_connectionSettings);
+
         public async Task<string> GetAccessTokenAsync(string resourceUrl, IList<string> scopes, bool forceRefresh = false)
         {
             var result = await InternalGetAccessTokenAsync(resourceUrl, scopes, forceRefresh).ConfigureAwait(false);
