@@ -1,14 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using AgentNotification;
-using AgentNotification.Models;
-using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Kairo.Sdk.AgentsSdkExtensions.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,34 +12,15 @@ namespace AgenticAI;
 
 public class MyAgent : AgentApplication
 {
+    public static readonly RouteSelector AgenticMessage = (tc, ct) => Task.FromResult(tc.Activity.Type == ActivityTypes.Message && AgenticAuthorization.IsAgenticRequest(tc));
+
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         // Register a route for Agentic-only Messages.
-        RegisterExtension(new Agents365(this), ext => { 
-            ext.OnAgentNotification("*", OnAgent365Notification, autoSignInHandlers: new string[] { "agentic" });
-        });
-
-        OnActivity(ActivityTypes.Message, OnAgenticMessageAsync, isAgenticOnly:true, autoSignInHandlers: ["agentic"]);
+        OnActivity(AgenticMessage, OnAgenticMessageAsync, autoSignInHandlers: ["agentic"]);
 
         // Non-agentic messages go here
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private async Task OnAgent365Notification(ITurnContext turnContext, ITurnState turnState, AgentNotificationActivity agentNotificationActivity, CancellationToken cancellationToken)
-    {
-        var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);
-
-        if (agentNotificationActivity.NotificationType == NotificationTypeEnum.EmailNotification)
-        {
-            var response = MessageFactory.Text("This is an email");
-            response.Entities.Add(
-                new EmailResponse(agentNotificationActivity?.EmailNotification?.HtmlBody) // Echo back what I sent. 
-                );
-
-            await turnContext.SendActivityAsync(response, cancellationToken);
-        }
-        else
-            await turnContext.SendActivityAsync($"(Agentic) You said: {turnContext.Activity.Text}, user token len={aauToken.Length}", cancellationToken: cancellationToken);
     }
 
     private async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -56,7 +33,4 @@ public class MyAgent : AgentApplication
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
-
-
 }
- 
