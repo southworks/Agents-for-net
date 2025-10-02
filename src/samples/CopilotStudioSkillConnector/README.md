@@ -1,7 +1,7 @@
-﻿# CopilotStudioSkillNext
+﻿# CopilotStudioSkillConnector
 
-- The sample uses the Agent SDK User Authorization capabilities the Microsoft Copilot Studio Skill Connector.
-- This sample shows how to use an OBO Exchange to communicate back to Microsoft Copilot Studio using the CopilotStudioClient.
+- This sample responds to Power Apps Connector requests from Copilot Studio.
+- This sample shows how to use an OBO Exchange to read from Graph to get their name and respond with "Hi, {{name}}"
 
 - ## Prerequisites
 
@@ -11,13 +11,7 @@
 
 ## Running this sample
 
-1. Create a Agent in [Copilot Studio](https://copilotstudio.microsoft.com)
-   1. Publish your newly created Copilot
-   1. Go to Settings => Advanced => Metadata and copy the following values. You will need them later:
-      1. Schema name
-      1. Environment Id
-       
-2. Create an Azure Bot with one of these authentication types
+1. Create an Azure Bot with one of these authentication types
    - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
    - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
 
@@ -39,13 +33,10 @@
       "Connections": {
         "ServiceConnection": {
           "Settings": {
-            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
+            "AuthType": "ClientSecret",          // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
             "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-            "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
-            "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
-            "Scopes": [
-              "https://api.botframework.com/.default"
-            ]
+            "ClientId": "{{ClientId}}",          // this is the Client ID used for the connection.
+            "ClientSecret": "{{ClientSecret}}"   // this is the Client Secret used for the connection.
           }
         }
       },
@@ -57,14 +48,7 @@
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
-   1. Setup the Copilot Studio Agent information
-      ```json
-      "CopilotStudioAgent": {
-        "EnvironmentId": "", // Environment ID of environment with the CopilotStudio App.
-        "SchemaName": "", // Schema Name of the Copilot to use
-      }
-      ```
-
+ 
 4. Add the MCS Connector Agent
    - TBD
  
