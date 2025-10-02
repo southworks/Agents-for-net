@@ -283,7 +283,6 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new InvalidOperationException("Failed to parse access token from response");
             }
 
-            var now = DateTime.UtcNow;
             _cache.Add(
                 new CacheItem(cacheKey) { Value = acccessTokenResult },
                 new CacheItemPolicy()
