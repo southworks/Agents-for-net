@@ -214,4 +214,8 @@
     <value>Unable to get Agentic token for InstanceId '{0}', UPN '{1}', Role '{2}'</value>
     <comment>Raised when getting a token for Agentic responses.</comment>
   </data>
+  <data name="NotAnAgenticRequest" xml:space="preserve">
+    <value>Invalid operation '{0}' on a non-Agentic request.</value>
+    <comment>Raised when an Agentic operation is attempted against a non-Agentic request.</comment>
+  </data>
 </root>

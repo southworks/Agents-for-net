@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -23,27 +25,21 @@ namespace Microsoft.Agents.Builder.App
         public static bool IsAgenticRequest(IActivity activity)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
-
-            return activity?.Recipient?.Role == RoleTypes.AgenticIdentity
-                || activity?.Recipient?.Role == RoleTypes.AgenticUser;
+            return activity.IsAgenticRequest();
         }
 
         public static string GetAgentInstanceId(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
-
-            if (!IsAgenticRequest(turnContext)) return null;
-            return turnContext?.Activity?.Recipient?.AgenticAppId;
+            return turnContext.Activity.GetAgentInstanceId();
         }
 
         public static string GetAgenticUser(ITurnContext turnContext)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
-
-            if (!IsAgenticRequest(turnContext)) return null;
-            return turnContext?.Activity?.Recipient?.Id;  // What the demo is using for AU UserUpn
+            return turnContext.Activity.GetAgenticUser();
         }
 
         public AgenticAuthorization(IConnections connections)
@@ -65,7 +61,8 @@ namespace Microsoft.Agents.Builder.App
                 return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgentInstanceId(turnContext), cancellationToken);
             }
 
-            throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
         }
 
         public async Task<string> GetAgenticUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
@@ -81,7 +78,8 @@ namespace Microsoft.Agents.Builder.App
                 return await agenticTokenProvider.GetAgenticUserTokenAsync(GetAgentInstanceId(turnContext), GetAgenticUser(turnContext), scopes, cancellationToken);
             }
 
-            throw new InvalidOperationException("Connection doesn't support IAgenticTokenProvider");
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
         }
     }
 }

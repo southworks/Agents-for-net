@@ -151,6 +151,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid operation &apos;{0}&apos; on a non-Agentic request..
+        /// </summary>
+        internal static string NotAnAgenticRequest {
+            get {
+                return ResourceManager.GetString("NotAnAgenticRequest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No UserAuthorization Handlers were defined..
         /// </summary>
         internal static string NoUserAuthorizationHandlers {
