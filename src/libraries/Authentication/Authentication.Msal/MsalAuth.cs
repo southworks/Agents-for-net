@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Authentication.Msal
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
     public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider, IAgenticTokenProvider
     {
-        private readonly static MemoryCache _cache = new MemoryCache(nameof(MsalAuth));
+        private readonly static MemoryCache _agenticTokenCache = new MemoryCache(nameof(MsalAuth));
 
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
@@ -211,7 +211,7 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(upn, nameof(upn));
 
             var cacheKey = $"{agentAppInstanceId}/{upn}/{string.Join(";", scopes)}";
-            var value = _cache.Get(cacheKey);
+            var value = _agenticTokenCache.Get(cacheKey);
             if (value != null)
             {
                 return ((HttpMsalResponse)value).AccessToken;
@@ -283,7 +283,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 throw new InvalidOperationException("Failed to parse access token from response");
             }
 
-            _cache.Add(
+            _agenticTokenCache.Add(
                 new CacheItem(cacheKey) { Value = acccessTokenResult },
                 new CacheItemPolicy()
                 {

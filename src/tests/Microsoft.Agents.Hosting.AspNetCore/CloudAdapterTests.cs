@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Name = "invoke",
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 Conversation = new(id: Guid.NewGuid().ToString()),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 From = new(id: "fromId", role: RoleTypes.User)
             };
             var context = CreateHttpContext(activity);
@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Name = "invoke",
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 Conversation = new(id: Guid.NewGuid().ToString()),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 From = new(id: "fromId", role: RoleTypes.User)
             };
             var context = CreateHttpContext(activity);
@@ -247,7 +247,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     Name = "invoke",
                     DeliveryMode = DeliveryModes.Normal,
                     Conversation = new(id: convoId),
-                    Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                    Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                     From = new(id: "userId", role: RoleTypes.User)
                 };
                 var context = CreateHttpContext(activity);
@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                         DeliveryMode = DeliveryModes.ExpectReplies,
                         Conversation = new(id: convoId),
                         Text = $"{message}",
-                        Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                        Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                         From = new(id: "fromId", role: RoleTypes.User)
                     };
 
@@ -374,7 +374,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Name = "invoke",
                 DeliveryMode = DeliveryModes.Stream,
                 Conversation = new(id: Guid.NewGuid().ToString()),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 From = new(id: "fromId", role: RoleTypes.User)
             });
 
@@ -476,7 +476,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -523,7 +523,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: Guid.NewGuid().ToString()),
                 ActivityId = Guid.NewGuid().ToString(),
                 User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Agent = new(id: "receipientId", role: RoleTypes.Agent),
+                Agent = new(id: "recipientId", role: RoleTypes.Agent),
             };
 
             var record = UseRecord((record) =>
@@ -572,7 +572,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -688,7 +688,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -741,7 +741,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: proactiveConversationId),
                 ActivityId = Guid.NewGuid().ToString(),
                 User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Agent = new(id: "receipientId", role: RoleTypes.Agent),
+                Agent = new(id: "recipientId", role: RoleTypes.Agent),
                 ChannelId = Channels.Test
             };
 
@@ -804,7 +804,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -893,7 +893,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "-signin",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -919,7 +919,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "123456",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: activity.From.Id, role: RoleTypes.User),
-                Recipient = new(id: "receipientId", role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "2"
             };
             context = CreateHttpContext(activity);
