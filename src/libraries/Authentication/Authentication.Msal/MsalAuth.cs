@@ -19,8 +19,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Caching;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Microsoft.Agents.Authentication.Msal
 {
@@ -34,6 +37,8 @@ namespace Microsoft.Agents.Authentication.Msal
     /// <see href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview"/>
     public class MsalAuth : IAccessTokenProvider, IOBOExchange, IMSALProvider, IAgenticTokenProvider
     {
+        private readonly static MemoryCache _cache = new MemoryCache(nameof(MsalAuth));
+
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
         private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList;
@@ -205,6 +210,13 @@ namespace Microsoft.Agents.Authentication.Msal
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(upn, nameof(upn));
 
+            var cacheKey = $"{agentAppInstanceId}/{upn}/{string.Join(";", scopes)}";
+            var value = _cache.Get(cacheKey);
+            if (value != null)
+            {
+                return ((HttpMsalResponse)value).AccessToken;
+            }
+
             var agentToken = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
@@ -228,34 +240,6 @@ namespace Microsoft.Agents.Authentication.Msal
             var aauToken = await instanceApp
                 .AcquireTokenForClient(scopes)
                 .ExecuteAsync(cancellationToken).ConfigureAwait(false);
-
-            var publicApp = PublicClientApplicationBuilder
-                .Create(agentAppInstanceId)
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
-                .WithExtraQueryParameters(new Dictionary<string, string>()
-                    {
-                        { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
-                        { "client_assertion", agentToken },
-                        { "username", upn },
-                        { "user_federated_identity_credential", instanceToken },
-                        { "grant_type", "user_fic" }
-                    })
-                .WithLegacyCacheCompatibility(false)
-                .WithCacheOptions(new CacheOptions(true))
-                .WithHttpClientFactory(_msalHttpClient)
-                .Build();
-            var account = (await publicApp.GetAccountsAsync()).FirstOrDefault();
-
-            try
-            {
-                var publicToken = await publicApp
-                    .AcquireTokenSilent(scopes, upn)
-                    .ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Trace.WriteLine(ex.GetType().FullName);
-            }
 
             return aauToken.AccessToken;
             */
@@ -290,17 +274,31 @@ namespace Microsoft.Agents.Authentication.Msal
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"Failed to acquire user federated identity token: {responseContent}");
+                throw new InvalidOperationException($"Failed to acquire Agentic User token: {response.StatusCode}/{responseContent}");
             }
 
-            var tokenResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
-
-            if (tokenResponse != null && tokenResponse.TryGetValue("access_token", out var accessToken))
+            var acccessTokenResult = System.Text.Json.JsonSerializer.Deserialize<HttpMsalResponse>(responseContent);
+            if (string.IsNullOrEmpty(acccessTokenResult.AccessToken))
             {
-                return accessToken?.ToString() ?? throw new InvalidOperationException("Access token is null");
+                throw new InvalidOperationException("Failed to parse access token from response");
             }
 
-            throw new InvalidOperationException("Failed to parse access token from response");
+            var now = DateTime.UtcNow;
+            _cache.Add(
+                new CacheItem(cacheKey) { Value = acccessTokenResult },
+                new CacheItemPolicy()
+                {
+                    AbsoluteExpiration = DateTime.UtcNow.AddSeconds(acccessTokenResult.ExpiresIn).Subtract(TimeSpan.FromMinutes(5))
+                });
+
+            return acccessTokenResult.AccessToken;
+
+            //var tokenResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
+            //if (tokenResponse != null && tokenResponse.TryGetValue("access_token", out var accessToken))
+            //{
+            //    return accessToken?.ToString() ?? throw new InvalidOperationException("Access token is null");
+            //}
+            //throw new InvalidOperationException("Failed to parse access token from response");
         }
         #endregion
 
@@ -470,5 +468,23 @@ namespace Microsoft.Agents.Authentication.Msal
                 _cacheList.TryAdd(instanceUri, authResultPayload);
             }
         }
+    }
+
+    class HttpMsalResponse
+    {
+        [JsonPropertyName("token_type")]
+        public string TokeType { get; set; }
+
+        [JsonPropertyName("scope")]
+        public string Scope { get; set; }
+
+        [JsonPropertyName("expires_in")]
+        public int ExpiresIn { get; set; }
+    
+        [JsonPropertyName("ext_expires_in")]
+        public int ExtExpiresIn { get; set; }
+
+        [JsonPropertyName("access_token")]
+        public string AccessToken { get; set; }
     }
 }
