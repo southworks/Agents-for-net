@@ -62,6 +62,11 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            if (!turnContext.Activity.IsAgenticRequest())
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NotAnAgenticRequest, null, "GetAgenticUserToken");
+            }
+
             IAccessTokenProvider connection;
             if (!string.IsNullOrEmpty(_a365AuthSettings.AlternateBlueprintConnectionName))
             {
@@ -76,11 +81,6 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             {
                 throw ExceptionHelper.GenerateException<InvalidOperationException>(
                     ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
-            }
-
-            if (!turnContext.Activity.IsAgenticRequest())
-            {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NotAnAgenticRequest, null, "GetAgenticUserToken");
             }
 
             var token = await agenticTokenProvider.GetAgenticUserTokenAsync(

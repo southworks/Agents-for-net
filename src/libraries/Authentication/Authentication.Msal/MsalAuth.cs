@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"Failed to acquire Agentic User token: {response.StatusCode}/{responseContent}");
+                throw new InvalidOperationException($"Failed to acquire Agentic User token: AAI={agentAppInstanceId}, UPN={upn}, Scopes={string.Join(";", scopes)}, Response={response.StatusCode}/{responseContent}");
             }
 
             var acccessTokenResult = System.Text.Json.JsonSerializer.Deserialize<HttpMsalResponse>(responseContent);
