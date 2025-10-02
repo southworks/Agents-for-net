@@ -270,12 +270,6 @@ namespace Microsoft.Agents.Builder
             return ProcessTurnResults(context);
         }
 
-        [Obsolete("Use HostResponseAsync")]
-        protected virtual Task<bool> StreamedResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
-        {
-            return HostResponseAsync(incomingActivity, outActivity, cancellationToken);
-        }
-
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             // ChannelServiceAdapterBase can't handle Stream or ExpectReplies.  Keep SendActivities from trying to send via ConnectorClient.

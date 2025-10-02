@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Auth.Tests
 
             var audience = AgentClaims.GetTokenAudience(claims);
 
-            Assert.Equal("app://appId", audience);
+            Assert.Equal("appId", audience);
         }
 
         [Fact]

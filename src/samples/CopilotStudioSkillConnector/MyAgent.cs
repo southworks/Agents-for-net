@@ -55,6 +55,12 @@ namespace CopilotStudioSkillConnector
         // Forward whatever the user said to MCS and reply with it's responses.
         private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, string handler, CancellationToken cancellationToken)
         {
+            if (turnContext.Activity.Recipient.Role == RoleTypes.ConnectorUser)
+            {
+                await turnContext.SendActivityAsync("Hello from Agents SDK.", cancellationToken: cancellationToken);
+                return;
+            }
+
             var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
             var cpsClient = GetCopilotClient(turnContext, handler);
 

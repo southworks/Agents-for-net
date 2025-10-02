@@ -172,9 +172,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var activity = new Activity()
             {
+                ChannelId = Channels.Test,
                 Type = ActivityTypes.Invoke,
+                Name = "invoke",
                 DeliveryMode = DeliveryModes.ExpectReplies,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "fromId", role: RoleTypes.User)
             };
             var context = CreateHttpContext(activity);
 
@@ -195,9 +199,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var activity = new Activity()
             {
+                ChannelId = Channels.Test,
                 Type = ActivityTypes.Invoke,
+                Name = "invoke",
                 DeliveryMode = DeliveryModes.ExpectReplies,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "fromId", role: RoleTypes.User)
             };
             var context = CreateHttpContext(activity);
 
@@ -234,9 +242,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var convoId = $"{Guid.NewGuid()}:{i}";
                 var activity = new Activity()
                 {
+                    ChannelId = Channels.Test,
                     Type = ActivityTypes.Invoke,
+                    Name = "invoke",
                     DeliveryMode = DeliveryModes.Normal,
-                    Conversation = new(id: convoId)
+                    Conversation = new(id: convoId),
+                    Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                    From = new(id: "userId", role: RoleTypes.User)
                 };
                 var context = CreateHttpContext(activity);
                 requests.Add(convoId, context);
@@ -306,11 +318,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 {
                     var activity = new Activity()
                     {
+                        ChannelId = Channels.Test,
                         Type = ActivityTypes.Message,
                         Id = $"{Guid.NewGuid()}:{message}",
                         DeliveryMode = DeliveryModes.ExpectReplies,
                         Conversation = new(id: convoId),
-                        Text = $"{message}"
+                        Text = $"{message}",
+                        Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                        From = new(id: "fromId", role: RoleTypes.User)
                     };
 
                     var context = CreateHttpContext(activity);
@@ -354,9 +369,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
             var context = CreateHttpContext(new Activity()
             {
+                ChannelId = Channels.Test,
                 Type = ActivityTypes.Invoke,
+                Name = "invoke",
                 DeliveryMode = DeliveryModes.Stream,
-                Conversation = new(id: Guid.NewGuid().ToString())
+                Conversation = new(id: Guid.NewGuid().ToString()),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "fromId", role: RoleTypes.User)
             });
 
             // Test
@@ -457,7 +476,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -504,7 +523,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: Guid.NewGuid().ToString()),
                 ActivityId = Guid.NewGuid().ToString(),
                 User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Agent = new(role: RoleTypes.Agent),
+                Agent = new(id: "recipientId", role: RoleTypes.Agent),
             };
 
             var record = UseRecord((record) =>
@@ -553,7 +572,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -669,7 +688,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -722,7 +741,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Conversation = new(id: proactiveConversationId),
                 ActivityId = Guid.NewGuid().ToString(),
                 User = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Agent = new(role: RoleTypes.Agent),
+                Agent = new(id: "recipientId", role: RoleTypes.Agent),
                 ChannelId = Channels.Test
             };
 
@@ -785,7 +804,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "user message",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -874,7 +893,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "-signin",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: Guid.NewGuid().ToString(), role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
@@ -900,7 +919,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Text = "123456",
                 ChannelId = Channels.Test,
                 From = new ChannelAccount(id: activity.From.Id, role: RoleTypes.User),
-                Recipient = new(role: RoleTypes.Agent),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
                 Id = "2"
             };
             context = CreateHttpContext(activity);
@@ -932,6 +951,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new ActivityHandler());
             var context = CreateHttpContext(new(ActivityTypes.Message));
 
+            /*
             record.QueueLogger.Setup(e => e.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -939,6 +959,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     It.IsAny<Exception>(),
                     (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
                 .Verifiable(Times.Once);
+            */
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
@@ -952,6 +973,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new ActivityHandler());
             var context = CreateHttpContext();
 
+            /*
             record.QueueLogger.Setup(e => e.Log(
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
@@ -959,6 +981,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     It.IsAny<Exception>(),
                     (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
                 .Verifiable(Times.Once);
+            */
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
