@@ -3,7 +3,7 @@
 - This sample responds to Power Apps Connector requests from Copilot Studio.
 - This sample shows how to use an OBO Exchange to read from Graph to get their name and respond with "Hi, {{name}}"
 
-- ## Prerequisites
+## Prerequisites
 
 -  [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
 - [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
