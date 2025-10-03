@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Builder
                     try
                     {
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
-                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, [$"{_tokenServiceAudience}/.default"]);
                     }
                     catch (Exception ex)
                     {
