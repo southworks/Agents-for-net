@@ -1,4 +1,4 @@
-﻿# CopilotStudioSkillConnector
+﻿# CopilotStudioAgentConnector
 
 - This sample responds to Power Apps Connector requests from Copilot Studio.
 - This sample shows how to use an OBO Exchange to read from Graph to get their name and respond with "Hi, {{name}}"

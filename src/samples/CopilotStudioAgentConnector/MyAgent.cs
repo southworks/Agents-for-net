@@ -12,7 +12,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CopilotStudioSkillConnector
+namespace CopilotStudioAgentConnector
 {
     public class MyAgent : AgentApplication
     {
