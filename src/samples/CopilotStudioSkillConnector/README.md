@@ -6,7 +6,7 @@
 - ## Prerequisites
 
 -  [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
--  [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
+- [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
 
 
 ## Running this sample
