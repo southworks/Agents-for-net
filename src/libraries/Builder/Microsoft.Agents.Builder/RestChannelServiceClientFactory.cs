@@ -96,6 +96,11 @@ namespace Microsoft.Agents.Builder
 
         public Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
+            if (turnContext.Activity.Recipient.Role == RoleTypes.ConnectorUser)
+            {
+                return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
+            }
+
             if (!AgenticAuthorization.IsAgenticRequest(turnContext))
             {
                 return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
@@ -157,7 +162,7 @@ namespace Microsoft.Agents.Builder
                     try
                     {
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, _tokenServiceEndpoint);
-                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, null);
+                        return tokenAccess.GetAccessTokenAsync(_tokenServiceAudience, [$"{_tokenServiceAudience}/.default"]);
                     }
                     catch (Exception ex)
                     {

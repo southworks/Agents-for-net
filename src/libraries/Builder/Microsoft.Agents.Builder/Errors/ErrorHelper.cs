@@ -69,6 +69,9 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AgenticTokenProviderFailed = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.AgenticTokenProviderFailed, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition NotAnAgenticRequest = new AgentErrorDefinition(baseBuilderErrorCode - 25, Properties.Resources.NotAnAgenticRequest, "https://aka.ms/AgentsSDK-Error01");
+        // ConnectorUserAuthorization
+        internal static AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(baseBuilderErrorCode - 30, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(baseBuilderErrorCode - 31, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }
