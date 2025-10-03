@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.UserAuth.Connector
         /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="storage"></param>
+        /// <param name="storage">The storage provider used for user authorization data.</param>
         /// <param name="connections"></param>
         /// <param name="configurationSection"></param>
         /// <exception cref="ArgumentNullException"></exception>
