@@ -126,15 +126,28 @@ namespace Microsoft.Agents.Core.Models
         public const string Outlook = "outlook";
 
         /// <summary>
+        /// Microsoft Copilot Studio
+        /// </summary>
+        public const string CopilotStudio = "pva-studio";
+
+        /// <summary>
         /// M365 channel.
         /// </summary>
         public const string M365 = "m365extensions";
+
+        public const string A2A = "a2a";
+        public const string MCP = "mcp";
 
         /// <summary>
         /// M365 Copilot Teams Subchannel
         /// </summary>
         public const string M365CopilotSubChannel = "COPILOT";
         public const string M365Copilot = $"{Msteams}:{M365CopilotSubChannel}";
+
+        /// <summary>
+        /// Agents parent channel
+        /// </summary>
+        public const string Agents = "agents";
 
         /// <summary>
         /// Determine if a number of Suggested Actions are supported by a Channel.

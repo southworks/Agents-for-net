@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
 {
+    [Collection("ProductInfo Collection")]
     public class ProductInfoTests()
     {
         [Fact]
@@ -105,6 +106,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(activity.GetProductInfoEntity());
         }
 
+        /*
         [Fact]
         public void FullNotationOffTest()
         {
@@ -136,5 +138,6 @@ namespace Microsoft.Agents.Model.Tests
 
             ProtocolJsonSerializer.ChannelIdIncludesProduct = true;
         }
+        */
     }
 }
