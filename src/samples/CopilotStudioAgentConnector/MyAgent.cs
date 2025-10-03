@@ -24,17 +24,21 @@ namespace CopilotStudioAgentConnector
 
         private async Task OnMCSMessage(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            var name = await GetDisplayName(turnContext);
+            // Get the users OAuth token.  Since the OBO was configured in appsettings, it has already
+            // been exchanged.  If you don't know scopes until runtime, use ExchangeTurnTokenAsync instead.
+            string accessToken = await UserAuthorization.GetTurnTokenAsync(turnContext, cancellationToken: cancellationToken);
+
+            var name = await GetDisplayName(accessToken);
             await turnContext.SendActivityAsync($"Hi, {name}", cancellationToken: cancellationToken);
         }
 
         /// <summary>
         /// Gets the display name of the user from the Graph API using the access token.
         /// </summary>
-        private async Task<string> GetDisplayName(ITurnContext turnContext)
+        private async Task<string> GetDisplayName(string token)
         {
             string displayName = "Unknown";
-            var graphInfo = await GetGraphInfo(turnContext);
+            var graphInfo = await GetGraphInfo(token);
             if (graphInfo != null)
             {
                 displayName = graphInfo!["displayName"]!.GetValue<string>();
@@ -42,14 +46,13 @@ namespace CopilotStudioAgentConnector
             return displayName;
         }
 
-        private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext)
+        private async Task<JsonNode> GetGraphInfo(string token)
         {
-            string accessToken = await UserAuthorization.GetTurnTokenAsync(turnContext);
             string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
             try
             {
                 using HttpClient client = new();
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 HttpResponseMessage response = await client.GetAsync(graphApiUrl);
                 if (response.IsSuccessStatusCode)
                 {
