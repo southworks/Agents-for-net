@@ -64,6 +64,11 @@ namespace Microsoft.Agents.Builder.Errors
 
         // Extensions
         internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(baseBuilderErrorCode - 22, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
+
+        // Agentic
+        internal static AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(baseBuilderErrorCode - 23, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition AgenticTokenProviderFailed = new AgentErrorDefinition(baseBuilderErrorCode - 24, Properties.Resources.AgenticTokenProviderFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static AgentErrorDefinition NotAnAgenticRequest = new AgentErrorDefinition(baseBuilderErrorCode - 25, Properties.Resources.NotAnAgenticRequest, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }

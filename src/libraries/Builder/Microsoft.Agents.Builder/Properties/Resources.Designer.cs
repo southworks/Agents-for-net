@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to get Agentic token for InstanceId &apos;{0}&apos;, UPN &apos;{1}&apos;, Role &apos;{2}&apos;.
+        /// </summary>
+        internal static string AgenticTokenProviderFailed {
+            get {
+                return ResourceManager.GetString("AgenticTokenProviderFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The method does not match the RouteHandler delegate definition..
         /// </summary>
         internal static string AttributeHandlerInvalid {
@@ -129,6 +138,24 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string IAccessTokenProviderNotFound {
             get {
                 return ResourceManager.GetString("IAccessTokenProviderNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An instance of IAgenticTokenProvider not found or not supported for &apos;{0}&apos;.
+        /// </summary>
+        internal static string IAgenticTokenProviderNotFound {
+            get {
+                return ResourceManager.GetString("IAgenticTokenProviderNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid operation &apos;{0}&apos; on a non-Agentic request..
+        /// </summary>
+        internal static string NotAnAgenticRequest {
+            get {
+                return ResourceManager.GetString("NotAnAgenticRequest", resourceCulture);
             }
         }
         
