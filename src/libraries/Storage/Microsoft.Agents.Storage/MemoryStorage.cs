@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -118,7 +119,14 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
         public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
+            return WriteAsync(changes, cancellationToken);
+        }
+
+        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
+        {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            writeOptions ??= new StorageWriteOptions();
 
             var results = new Dictionary<string, IStoreItem>(changes.Count);
 
@@ -132,6 +140,11 @@ namespace Microsoft.Agents.Storage
 
                     if (_memory.TryGetValue(change.Key, out var oldState))
                     {
+                        if (writeOptions.IfNotExists)
+                        {
+                            throw new ItemExistsException(change.Key);
+                        }
+
                         if (oldState.TryGetPropertyValue("ETag", out var etag))
                         {
                             oldStateETag = etag.ToString();
@@ -145,9 +158,9 @@ namespace Microsoft.Agents.Storage
                     {
                         if (oldStateETag != null
                                 &&
-                           newStoreItem.ETag != "*"
+                            newStoreItem.ETag != "*"
                                 &&
-                           newStoreItem.ETag != oldStateETag)
+                            newStoreItem.ETag != oldStateETag)
                         {
                             throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
                         }

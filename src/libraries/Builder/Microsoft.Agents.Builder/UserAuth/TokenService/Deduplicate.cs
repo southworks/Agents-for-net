@@ -4,10 +4,8 @@
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
-using Microsoft.Identity.Client.Extensions.Msal;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +27,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// </remarks>
     internal class Deduplicate(IStorage storage)
     {
-
         /// <summary>
         /// Deduplicates exchange token requests.
         /// </summary>
@@ -44,7 +41,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 // Only one token exchange should proceed from here. Deduplication is performed second because in the case
                 // of failure due to consent required, every caller needs to receive the InvokeResponse
-                if (await IsDuplicateTokenExchangeIdAsync(turnContext, storage, cancellationToken).ConfigureAwait(false))
+                if (await IsDuplicateTokenExchangeAsync(turnContext, storage, cancellationToken).ConfigureAwait(false))
                 {
                     // Do NOT proceed processing this message, some other thread or machine already has processed it.
                     // But we must send an InvokeResponse
@@ -67,6 +64,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             return true;
         }
 
+        public Task DeleteTokenExchangeAsync(ITurnContext turnContext)
+        {
+            var key = TokenStoreItem.GetStorageKey(turnContext);
+            return storage.DeleteAsync([key]);
+        }
+
         private static bool ShouldDeduplicate(ITurnContext turnContext)
         {
             // Teams
@@ -87,44 +90,27 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         }
 
         // true if the Invoke is a duplicate
-        private static async Task<bool> IsDuplicateTokenExchangeIdAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken) 
+        private static async Task<bool> IsDuplicateTokenExchangeAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken) 
         {
-            var id = turnContext.Activity.Value.ToJsonElements()["id"].ToString();
-            var key = TokenStoreItem.GetStorageKey(turnContext, id);
-
-            var items = await storage.ReadAsync<TokenStoreItem>(new string[] { key }, cancellationToken).ConfigureAwait(false);
-            var item = items.FirstOrDefault().Value;
-
-            var changes = new Dictionary<string, object>
-            {
-                [key] = new TokenStoreItem { ETag = item?.ETag },
-            };
-
-            if (item == null)
-            {
-                // Create the item in the Storage for the first time to gather the ETag, to then use it later for concurrency control and avoid deduplication.
-                var result = await storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
-                (changes[key] as TokenStoreItem).ETag = result[key].ETag;
-            }
-
             try
             {
-                await storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+                var key = TokenStoreItem.GetStorageKey(turnContext);
+                await storage.WriteAsync(new Dictionary<string, object>() { { key, new TokenStoreItem() } }, new StorageWriteOptions(true), cancellationToken).ConfigureAwait(false);
+                return false;
             }
-            catch (EtagException)
+            catch (ItemExistsException)
             {
                 return true;
             }
-
-            return false;
         }
 
         private class TokenStoreItem : IStoreItem
         {
             public string ETag { get; set; }
 
-            public static string GetStorageKey(ITurnContext turnContext, string id)
+            public static string GetStorageKey(ITurnContext turnContext)
             {
+                var id = turnContext.Activity.Value.ToJsonElements()["id"].ToString();
                 return $"oauth/{turnContext.Activity.ChannelId}/{turnContext.Activity.Conversation?.Id}/{id}";
             }
         }

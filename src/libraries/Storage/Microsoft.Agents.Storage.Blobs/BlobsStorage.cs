@@ -167,9 +167,16 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <inheritdoc/>
-        public async Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        {
+            return WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
+        }
+
+        public async Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            writeOptions ??= new StorageWriteOptions();
 
             var results = new Dictionary<string, IStoreItem>(changes.Count);
             if (changes.Count == 0)
@@ -190,9 +197,18 @@ namespace Microsoft.Agents.Storage.Blobs
                 var storeItem = newValue as IStoreItem;
 
                 // "*" eTag in IStoreItem converts to null condition for AccessCondition
-                var accessCondition = (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != "*")
+                BlobRequestConditions accessCondition;
+
+                if (writeOptions.IfNotExists)
+                {
+                    accessCondition = new BlobRequestConditions() { IfNoneMatch = new ETag("*") };
+                }
+                else
+                {
+                    accessCondition = (!string.IsNullOrEmpty(storeItem?.ETag) && storeItem?.ETag != "*")
                     ? new BlobRequestConditions() { IfMatch = new ETag(storeItem?.ETag) }
                     : null;
+                }
 
                 var blobName = GetBlobName(keyValuePair.Key);
                 var blobReference = _containerClient.GetBlobClient(blobName);
@@ -219,17 +235,21 @@ namespace Microsoft.Agents.Storage.Blobs
                     }
                 }
                 catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.BadRequest
-                && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
+                    when (ex.Status == (int)HttpStatusCode.BadRequest
+                    && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
                 {
                     throw new InvalidOperationException(
                         $"An error occurred while trying to write an object. The underlying '{BlobErrorCode.InvalidBlockList}' error is commonly caused due to concurrently uploading an object larger than 128MB in size.",
                         ex);
                 }
-                catch (RequestFailedException ex)
-                when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
                 {
                     throw new EtagException($"Etag conflict: {ex.Message}");
+                }
+                catch (RequestFailedException ex)
+                    when (ex.Status == ((int)HttpStatusCode.Conflict) && ex.ErrorCode.Equals("BlobAlreadyExists", StringComparison.OrdinalIgnoreCase ))
+                {
+                    throw new ItemExistsException(keyValuePair.Key);
                 }
             }
 

@@ -162,6 +162,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
             }
+            catch(ConsentRequiredException)
+            {
+                await _dedupe.DeleteTokenExchangeAsync(turnContext);
+                return null;
+            }
 
             if (tokenResponse == null)
             {

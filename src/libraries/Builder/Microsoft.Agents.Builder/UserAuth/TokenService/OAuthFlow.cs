@@ -244,6 +244,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         // Throws:
         //    ErrorResponseException
         //    UserCancelledException
+        //    ConsentRequiredException - caller should noop if no specific action required.
         private async Task<TokenResponse> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse result = null;
@@ -367,6 +368,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
                                 FailureDetail = Error.ConsentRequiredCode,
                             }, cancellationToken).ConfigureAwait(false);
+
+                        throw new ConsentRequiredException();
                     }
                     else
                     {
