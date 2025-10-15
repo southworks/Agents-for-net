@@ -257,7 +257,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 { "scope", string.Join(" ", scopes) },
                 { "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" },
                 { "client_assertion", agentToken },
-                { "username", agenticUserId },
+                { "user_id", agenticUserId },
                 { "user_federated_identity_credential", instanceToken },
                 { "grant_type", "user_fic" }
             };
