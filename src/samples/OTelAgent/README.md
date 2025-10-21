@@ -37,7 +37,7 @@ The sample helps you:
    ```
 1. Start the Agent in VS or VS Code in debug
 1. Start Agents Playground.  At a command prompt: `agentsplayground`
-   - The tool will open a web browser showing the Microsoft 365 Agents Playgroun, ready to send messages to your agent. 
+   - The tool will open a web browser showing the Microsoft 365 Agents Playground, ready to send messages to your agent. 
 1. Interact with the Agent via the browser
 
 ## QuickStart using WebChat or Teams
