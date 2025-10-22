@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Authentication
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)
-                ? $"{AgentClaims.GetOutgoingAppId(identity)}"
+                ? $"api://{AgentClaims.GetOutgoingAppId(identity)}"
                 : AuthenticationConstants.BotFrameworkScope;
         }
 
