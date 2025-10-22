@@ -7,11 +7,6 @@
 
 This release introduces first-class Agent-to-Agent hosting, deepens agentic authorization flows, and ships an OAuth-enabled Copilot Studio connector. It also brings extensible serialization, richer feedback orchestration, and refreshed samples to help you build production-grade agent experiences.
 
-## 🔄 Breaking Changes
-
-### Client API Rename
-- `AskQuestionAsync` has been replaced with `SendActivityAsync` across the Copilot Studio client APIs for clearer intent and alignment with other SDKs. Update any direct usages before upgrading. ([#422](https://github.com/microsoft/Agents-for-net/pull/422))
-
 ## 🚀 Major Features & Enhancements
 
 ### Agent-to-Agent Hosting (Preview)
