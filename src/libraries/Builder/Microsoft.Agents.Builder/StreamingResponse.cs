@@ -640,7 +640,7 @@ namespace Microsoft.Agents.Builder
                         // Stream not allowed?
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
                         else if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
-                            (bool)errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed))
+                            errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
                         {
                             _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
                             System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
