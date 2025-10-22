@@ -22,7 +22,7 @@ This release introduces first-class A2A hosting (preview), and Copilot Studio Co
 - Added helper methods to `MessageFactory` and entity models so experiences can surface citations without hand-coding payloads. ([#427](https://github.com/microsoft/Agents-for-net/pull/427))
  
 ### Feedback Loop
-- Enabled feedback loop handling in AgentApplication, making it easier to capture user evaluations during conversations. This existed in the Teams Extension, but is now part of AgentApplication.  Not all channels support this, but expanded support is coming. ([#480](https://github.com/microsoft/Agents-for-net/pull/480), [#476](https://github.com/microsoft/Agents-for-net/pull/476))
+- Enabled feedback loop handling in AgentApplication, making it easier to capture user evaluations during conversations. This existed in the Teams Extension, but is now part of AgentApplication.  Not all channels support this, but expanded support is coming. ([#480](https://github.com/microsoft/Agents-for-net/pull/480))
 
 ## 📚 Documentation & Developer Experience
 
