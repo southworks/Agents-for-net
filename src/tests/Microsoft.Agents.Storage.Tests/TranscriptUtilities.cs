@@ -233,8 +233,10 @@ namespace Microsoft.Agents.Storage.Tests
             var fullRoot = Path.GetFullPath(root);
             var fullTarget = Path.GetFullPath(targetPath);
 
-            var relativePath = Path.GetRelativePath(fullRoot, fullTarget);
-            if (relativePath.StartsWith("..") || Path.IsPathRooted(relativePath))
+            // Manual relative path check for .NET Framework compatibility
+            // This works for both .NET Framework and .NET Core/.NET
+            if (!fullTarget.StartsWith(fullRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(fullTarget, fullRoot, StringComparison.OrdinalIgnoreCase))
             {
                 throw new UnauthorizedAccessException($"Access to path '{targetPath}' is denied.");
             }
