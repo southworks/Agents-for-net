@@ -85,11 +85,13 @@ namespace Microsoft.Agents.Core.Validation
                 return false;
             }
 
+            /*
             if (string.IsNullOrEmpty(activity?.Recipient?.Id))
             {
                 System.Diagnostics.Trace.WriteLine("A2070: Channels MUST include the recipient and recipient.id fields when transmitting an activity to a single recipient.");
                 return false;
             }
+            */
 
             return true;
         }
