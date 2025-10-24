@@ -34,22 +34,20 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
         /// <exception cref="System.ArgumentException"></exception>
-        public TeamsAttachmentDownloader(TeamsAttachmentDownloaderOptions options, IConnections connections, IHttpClientFactory httpClientFactory)
+        public TeamsAttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, TeamsAttachmentDownloaderOptions options = null)
         {
-            AssertionHelpers.ThrowIfNull(options, nameof(options));
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
-            _options = options;
-            if (string.IsNullOrEmpty(_options.TokenProviderName))
-            {
-                throw new ArgumentException("TeamsAttachmentDownloader.TokenProviderName is empty.");
-            }
+            _options = options ?? new();
 
-            _accessTokenProvider = connections.GetConnection(_options.TokenProviderName);
-            if (_accessTokenProvider == null)
+            if (!connections.TryGetConnection(_options.TokenProviderName, out _accessTokenProvider))
             {
-                throw new ArgumentException("TeamsAttachmentDownloader.TokenProviderName not found.");
+                _accessTokenProvider = connections.GetDefaultConnection();
+                if (_accessTokenProvider == null)
+                {
+                    throw new ArgumentException("TeamsAttachmentDownloader.TokenProviderName not found.");
+                }
             }
 
             _httpClientFactory = httpClientFactory;
