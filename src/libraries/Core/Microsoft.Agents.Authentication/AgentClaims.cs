@@ -194,11 +194,11 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
-        /// Creates an Agent Identity.
+        /// Creates an ingress Agent ClaimsIdentity.
         /// </summary>
         /// <param name="audience">The aud of the claim.  Typically the ClientId of the Agent.</param>
         /// <param name="anonymous"></param>
-        /// <param name="appId">The appId of the incoming token.</param>
+        /// <param name="appId">The appId of the sender. Not supplying the appId will work correctly against Azure Bot Service, but not to another Agent.</param>
         /// <returns></returns>
         public static ClaimsIdentity CreateIdentity(string audience, bool anonymous = false, string appId = null)
         {
