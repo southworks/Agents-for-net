@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -81,6 +82,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public async Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await _storage.DeleteAsync([GetStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
+            await _dedupe.DeleteTokenExchangeAsync(turnContext);
         }
 
         /// <inheritdoc/>
@@ -142,11 +144,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnFlowTurn(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
-            {
-                throw new DuplicateExchangeException();
-            }
-
             var state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
             // Handle start or continue of the flow.
@@ -166,6 +163,20 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             await SaveFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
 
+            if (string.IsNullOrEmpty(tokenResponse?.Token))
+            {
+                return null;
+            }
+
+            // Duplication check is done after successful token exchange to allow MS Teams show the consent prompt per platform (e.g., web, mobile) in case of failing the token exchange.
+            // If the duplication check is done before, only one platform will show the consent prompt.
+            // Note: in case this check needs to be done before token exchange, consider adding the isSsoUserConsentFlow === undefined flag,
+            // to allow multiple token exchanges when the flag is set (indicating user consent flow), duplicated across platforms will still apply (showing one consent prompt).
+            if (_settings.EnableSso && !await _dedupe.ProceedWithExchangeAsync(turnContext, cancellationToken).ConfigureAwait(false))
+            {
+                throw new DuplicateExchangeException();
+            }
+
             return tokenResponse;
         }
 
@@ -180,6 +191,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             // If a TokenResponse is returned, there was a cached token already.  Otherwise, start the process of getting a new token.
             if (tokenResponse == null)
             {
+                await _dedupe.DeleteTokenExchangeAsync(turnContext);
                 var expires = DateTime.UtcNow.AddMilliseconds(_settings.Timeout ?? OAuthSettings.DefaultTimeoutValue.TotalMilliseconds);
 
                 state.FlowStarted = true;
@@ -207,7 +219,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             catch (ConsentRequiredException)
             {
-                await _dedupe.DeleteTokenExchangeAsync(turnContext);
                 return null;
             }
 

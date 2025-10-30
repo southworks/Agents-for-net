@@ -11,6 +11,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder.Errors;
 using System.Collections.Generic;
 using Microsoft.Agents.Core.Errors;
+using System.Diagnostics;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -185,6 +186,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 // Auth flow hasn't start yet.
                 activeFlowName ??= handlerName ?? DefaultHandlerName;
 
+                if (string.IsNullOrEmpty(signInState.ActiveHandler))
+                {
+                    Debug.WriteLine($"[Auth] Begin - {turnContext.Activity.RequestId} - {turnContext.Activity.Name ?? turnContext.Activity.Text}");
+                    // Bank the incoming Activity so it can be executed after sign in is complete.
+                    //signInState.ContinuationActivity = turnContext.Activity;
+                    //signInState.ActiveHandler = activeFlowName;
+
+                    //await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+
                 // Get token or start flow for specified flow.
                 SignInResponse response = await _dispatcher.SignUserInAsync(
                     turnContext,
@@ -196,11 +207,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 if (response.Status == SignInStatus.Duplicate)
                 {
+                    Debug.WriteLine($"[Auth] Duplicate - {turnContext.Activity.RequestId} - {turnContext.Activity.Name ?? turnContext.Activity.Text}");
                     return false;
                 }
 
                 if (response.Status == SignInStatus.Pending)
                 {
+                    Debug.WriteLine($"[Auth] Pending - {turnContext.Activity.RequestId} - {turnContext.Activity.Name ?? turnContext.Activity.Text}");
                     if (!flowContinuation)
                     {
                         // Bank the incoming Activity so it can be executed after sign in is complete.
@@ -218,6 +231,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 // unhandled at the moment.
                 if (response.Status == SignInStatus.Error)
                 {
+                    Debug.WriteLine($"[Auth] Error - {turnContext.Activity.RequestId} - {turnContext.Activity.Name ?? turnContext.Activity.Text}");
                     // Clear user auth state
                     await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
                     DeleteSignInState(turnState);
@@ -237,6 +251,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 if (response.Status == SignInStatus.Complete)
                 {
+                    Debug.WriteLine($"[Auth] Complete - {turnContext.Activity.RequestId} - {turnContext.Activity.Name ?? turnContext.Activity.Text}");
                     DeleteSignInState(turnState);
                     CacheToken(activeFlowName, response);
 
@@ -247,6 +262,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         // flow.  No further action needed.
                         if (!ProtocolJsonSerializer.Equals(signInState.ContinuationActivity, turnContext.Activity))
                         {
+                            Debug.WriteLine($"[Auth] Complete/Proactive - {turnContext.Activity.RequestId} - Activity:{turnContext.Activity.Name ?? turnContext.Activity.Text} - ContinuationActivity:{signInState.ContinuationActivity.Name ?? signInState.ContinuationActivity.Text}");
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);

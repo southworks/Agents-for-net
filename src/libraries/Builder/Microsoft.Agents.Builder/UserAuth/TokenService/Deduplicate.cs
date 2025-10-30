@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using System;
 using System.Collections.Generic;
@@ -37,7 +36,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>true to continue processing the turn.</returns>
         public async Task<bool> ProceedWithExchangeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (ShouldDeduplicate(turnContext))
+             if (ShouldDeduplicate(turnContext))
             {
                 // Only one token exchange should proceed from here. Deduplication is performed second because in the case
                 // of failure due to consent required, every caller needs to receive the InvokeResponse
@@ -90,15 +89,26 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         }
 
         // true if the Invoke is a duplicate
-        private static async Task<bool> IsDuplicateTokenExchangeAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken) 
+        private static async Task<bool> IsDuplicateTokenExchangeAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
             try
             {
                 var key = TokenStoreItem.GetStorageKey(turnContext);
-                await storage.WriteAsync(new Dictionary<string, object>() { { key, new TokenStoreItem() } }, new StorageWriteOptions(true), cancellationToken).ConfigureAwait(false);
+                if (storage is IStorageExt storageExt)
+                {
+                    await storageExt.WriteAsync(new Dictionary<string, object>() { { key, new TokenStoreItem() } }, new StorageWriteOptions(true), cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await storage.WriteAsync(new Dictionary<string, object>() { { key, new TokenStoreItem() } }, cancellationToken).ConfigureAwait(false);
+                }
                 return false;
             }
             catch (ItemExistsException)
+            {
+                return true;
+            }
+            catch (EtagException)
             {
                 return true;
             }
@@ -110,8 +120,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             public static string GetStorageKey(ITurnContext turnContext)
             {
-                var id = turnContext.Activity.Value.ToJsonElements()["id"].ToString();
-                return $"oauth/{turnContext.Activity.ChannelId}/{turnContext.Activity.Conversation?.Id}/{id}";
+                var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
+                var userId = turnContext.Activity.From?.Id ?? throw new InvalidOperationException("invalid activity-missing From.Id");
+                return $"oauth/deduplicate/{channelId}/{userId}";
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +26,19 @@ namespace Microsoft.Agents.Storage
         /// The default value is false, meaning that the write operation will overwrite existing items.
         /// </remarks>
         public bool IfNotExists { get; private set; }
+    }
+
+    public interface IStorageExt : IStorage
+    {
+        /// <summary>
+        /// Writes storage items to storage.
+        /// </summary>
+        /// <param name="changes">The items to write, indexed by key.</param>
+        /// <param name="writeOptions">The write options to use for the operation.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>The task result contains the items written, indexed by key.</returns>
+        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -66,9 +80,7 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default);
-
-        Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default);
+        Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Writes storage items to storage.
@@ -78,7 +90,7 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task<IDictionary<string, IStoreItem>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class;
+        Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class;
 
         /// <summary>
         /// Deletes storage items from storage.

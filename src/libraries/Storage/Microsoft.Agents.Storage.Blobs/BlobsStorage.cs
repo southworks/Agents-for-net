@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Storage.Blobs
     /// property value to the blob's ETag upon read. Afterward, an <see cref="BlobRequestConditions"/> with the ETag value
     /// will be generated during Write. New entities start with a null ETag.
     /// </remarks>
-    public class BlobsStorage : IStorage
+    public class BlobsStorage : IStorageExt
     {
         private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <inheritdoc/>
-        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
             return WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
         }
@@ -244,12 +244,11 @@ namespace Microsoft.Agents.Storage.Blobs
                 }
                 catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
                 {
-                    throw new EtagException($"Etag conflict: {ex.Message}");
+                    throw new EtagException($"Unable to write '{keyValuePair.Key}' due to an ETag conflict.");
                 }
-                catch (RequestFailedException ex)
-                    when (ex.Status == ((int)HttpStatusCode.Conflict) && ex.ErrorCode.Equals("BlobAlreadyExists", StringComparison.OrdinalIgnoreCase ))
+                catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.Conflict)
                 {
-                    throw new ItemExistsException(keyValuePair.Key);
+                    throw new ItemExistsException($"Unable to write '{keyValuePair.Key}' because it already exists.");
                 }
             }
 
@@ -257,7 +256,7 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         //<inheritdoc/>
-        public Task<IDictionary<string, IStoreItem>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
             

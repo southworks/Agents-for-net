@@ -3,8 +3,6 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
@@ -22,7 +20,7 @@ namespace Microsoft.Agents.Storage
     /// </remarks>
     /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
     /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
-    public class MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null) : IStorage
+    public class MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null) : IStorageExt
     {
         // If a JsonSerializer is not provided during construction, this will be the default static JsonSerializer.
         private readonly JsonSerializerOptions _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
@@ -41,7 +39,6 @@ namespace Microsoft.Agents.Storage
         /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
         public Task DeleteAsync(string[] keys, CancellationToken cancellationToken)
         {
-
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
             lock (_syncroot)
@@ -117,11 +114,12 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute. Throws EtagException for an ETag conflict.</returns>
         /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
         /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
+        public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
-            return WriteAsync(changes, cancellationToken);
+            return WriteAsync(changes, new StorageWriteOptions(), cancellationToken);
         }
 
+        //<inheritdoc/>
         public Task<IDictionary<string, IStoreItem>> WriteAsync(IDictionary<string, object> changes, StorageWriteOptions writeOptions, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
@@ -142,7 +140,7 @@ namespace Microsoft.Agents.Storage
                     {
                         if (writeOptions.IfNotExists)
                         {
-                            throw new ItemExistsException(change.Key);
+                            throw new ItemExistsException($"Unable to write '{change.Key}' because it already exists.");
                         }
 
                         if (oldState.TryGetPropertyValue("ETag", out var etag))
@@ -162,7 +160,7 @@ namespace Microsoft.Agents.Storage
                                 &&
                             newStoreItem.ETag != oldStateETag)
                         {
-                            throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
+                            throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict. Old: {oldStateETag} New: {newStoreItem.ETag}.");
                         }
                     }
 
@@ -178,7 +176,7 @@ namespace Microsoft.Agents.Storage
         }
 
         //<inheritdoc/>
-        public Task<IDictionary<string, IStoreItem>> WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+        public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
