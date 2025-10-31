@@ -202,14 +202,22 @@ namespace Microsoft.Agents.Authentication
         /// <returns></returns>
         public static ClaimsIdentity CreateIdentity(string audience, bool anonymous = false, string appId = null)
         {
-            return anonymous
-                ? new ClaimsIdentity()
-                : new ClaimsIdentity(
-                [
+            if (anonymous)
+            {
+                return new ClaimsIdentity();
+            }
+
+            IEnumerable<Claim> claims = [
                     new(AuthenticationConstants.AudienceClaim, audience),
-                    new(AuthenticationConstants.AppIdClaim, appId ?? audience),
                     new(AuthenticationConstants.VersionClaim, "1.0")
-                ]);
+                ];
+
+            if (!string.IsNullOrEmpty(appId))
+            {
+                claims = claims.Append(new(AuthenticationConstants.AppIdClaim, appId));
+            }
+
+            return new ClaimsIdentity(claims);
         }
     }
 }
