@@ -213,7 +213,6 @@ namespace Microsoft.Agents.Builder
 
             ValidateContinuationActivity(continuationActivity);
 
-            audience = audience ?? AgentClaims.GetTokenAudience(claimsIdentity);
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
             // Create a turn context and clients
@@ -222,7 +221,6 @@ namespace Microsoft.Agents.Builder
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
-                audience,
                 useAnonymous: useAnonymousAuthCallback,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
