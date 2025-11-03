@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Authentication.Msal
             var agentTokenResult = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             var autority = !string.IsNullOrEmpty(_connectionSettings.Authority)
-                ? _connectionSettings.Authority.Replace("/common/", tenantId)  // update to use tenantId if "common" but retain original host for regionalization purposes
+                ? _connectionSettings.Authority.Replace("/common/", $"/{tenantId}/")  // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}";
 
             var instanceApp = ConfidentialClientApplicationBuilder
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Authentication.Msal
             using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
 
             var tokenEndpoint = _connectionSettings.Authority != null 
-                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token".Replace("/common/", tenantId) // update to use tenantId if "common" but retain original host for regionalization purposes
+                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token".Replace("/common/", $"/{tenantId}/") // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
 
             var parameters = new Dictionary<string, string>
