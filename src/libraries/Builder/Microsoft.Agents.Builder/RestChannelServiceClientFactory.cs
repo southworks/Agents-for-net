@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Builder
                 return Task.FromResult((IConnectorClient)new MCSConnectorClient(new Uri(turnContext.Activity.ServiceUrl), _httpClientFactory));
             }
 
-            if (!AgenticAuthorization.IsAgenticRequest(turnContext))
+            if (!turnContext.Activity.IsAgenticRequest())
             {
                 // Non agentic, so use legacy tokens
                 return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
@@ -125,13 +125,15 @@ namespace Microsoft.Agents.Builder
                             if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
                             {
                                 return agenticTokenProvider.GetAgenticInstanceTokenAsync(
-                                    AgenticAuthorization.GetAgentInstanceId(turnContext),
+                                    turnContext.Activity.GetAgenticTenantId(),
+                                    turnContext.Activity.GetAgenticInstanceId(),
                                     cancellationToken);
                             }
 
                             return agenticTokenProvider.GetAgenticUserTokenAsync(
-                                AgenticAuthorization.GetAgentInstanceId(turnContext), 
-                                AgenticAuthorization.GetAgenticUser(turnContext),
+                                turnContext.Activity.GetAgenticTenantId(),
+                                turnContext.Activity.GetAgenticInstanceId(),
+                                turnContext.Activity.GetAgenticUser(),
                                 connection.ConnectionSettings.Scopes ?? [AuthenticationConstants.ApxProductionScope], 
                                 cancellationToken);
                         }
@@ -139,7 +141,7 @@ namespace Microsoft.Agents.Builder
                         {
                             // have to do it this way b/c of the lambda expression. 
                             throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                    ErrorHelper.AgenticTokenProviderFailed, ex, AgenticAuthorization.GetAgentInstanceId(turnContext), AgenticAuthorization.GetAgenticUser(turnContext), turnContext.Activity.Recipient.Role);
+                                    ErrorHelper.AgenticTokenProviderFailed, ex, turnContext.Activity.GetAgenticTenantId(), turnContext.Activity.GetAgenticInstanceId(), turnContext.Activity.GetAgenticUser(), turnContext.Activity.Recipient.Role);
                         }
                     }
                     else

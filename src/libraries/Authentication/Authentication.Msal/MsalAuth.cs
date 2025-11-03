@@ -182,16 +182,20 @@ namespace Microsoft.Agents.Authentication.Msal
             throw new InvalidOperationException("Only IConfidentialClientApplication is supported for Agentic.");
         }
 
-        public async Task<string> GetAgenticInstanceTokenAsync(string agentAppInstanceId, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
             var agentTokenResult = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
+            var autority = !string.IsNullOrEmpty(_connectionSettings.Authority)
+                ? _connectionSettings.Authority.Replace("/common/", tenantId)  // update to use tenantId if "common" but retain original host for regionalization purposes
+                : $"https://login.microsoftonline.com/{tenantId}";
+
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentTokenResult))
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
+                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{tenantId}"))
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
@@ -205,7 +209,7 @@ namespace Microsoft.Agents.Authentication.Msal
             return agentInstanceToken.AccessToken;
         }
 
-        public async Task<string> GetAgenticUserTokenAsync(string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticUserTokenAsync(string tenantId, string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
@@ -218,7 +222,7 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             var agentToken = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
-            var instanceToken = await GetAgenticInstanceTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             /*
             var instanceApp = ConfidentialClientApplicationBuilder
@@ -244,12 +248,14 @@ namespace Microsoft.Agents.Authentication.Msal
             return aauToken.AccessToken;
             */
 
+            // ConfidentialClientApplication does not work for this, at least in the version of Microsoft.Identity.Client currently being
+            // used.  It does work in Python.  This should be retested using ConfidentialClientApplication when the Msal package is updated.
             var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
             using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
 
             var tokenEndpoint = _connectionSettings.Authority != null 
-                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token"
-                : $"https://login.microsoftonline.com/{_connectionSettings.TenantId}/oauth2/v2.0/token";
+                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token".Replace("/common/", tenantId) // update to use tenantId if "common" but retain original host for regionalization purposes
+                : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
 
             var parameters = new Dictionary<string, string>
             {

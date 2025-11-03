@@ -13,7 +13,12 @@ namespace Microsoft.Agents.Builder
                 || activity?.Recipient?.Role == RoleTypes.AgenticUser;
         }
 
-        public static string GetAgentInstanceId(this IActivity activity)
+        public static string GetAgenticTenantId(this IActivity activity)
+        {
+            return activity.Conversation?.TenantId;
+        }
+
+        public static string GetAgenticInstanceId(this IActivity activity)
         {
             if (!activity.IsAgenticRequest()) return null;
             return activity?.Recipient?.AgenticAppId;
