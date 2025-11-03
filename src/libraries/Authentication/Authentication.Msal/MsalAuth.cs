@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Authentication.Msal
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentTokenResult))
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{tenantId}"))
+                .WithAuthority(autority)
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
