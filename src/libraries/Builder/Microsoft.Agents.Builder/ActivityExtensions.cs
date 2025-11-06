@@ -9,8 +9,8 @@ namespace Microsoft.Agents.Builder
     {
         public static bool IsAgenticRequest(this IActivity activity)
         {
-            return activity?.Recipient?.Role == RoleTypes.AgenticIdentity
-                || activity?.Recipient?.Role == RoleTypes.AgenticUser;
+            return string.Equals(activity?.Recipient?.Role, RoleTypes.AgenticUser, System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(activity?.Recipient?.Role, RoleTypes.AgenticIdentity, System.StringComparison.OrdinalIgnoreCase);
         }
 
         public static string GetAgenticTenantId(this IActivity activity)
