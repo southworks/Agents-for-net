@@ -186,31 +186,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 // Auth flow hasn't start yet.
                 activeFlowName ??= handlerName ?? DefaultHandlerName;
 
-                if (string.IsNullOrEmpty(signInState.ActiveHandler))
+                if (!flowContinuation)
                 {
                     // Bank the incoming Activity so it can be executed after sign in is complete.
                     signInState.ContinuationActivity = turnContext.Activity;
                     signInState.ActiveHandler = activeFlowName;
 
-                    // Clear any prior state to start with a clean auth flow.
-                    await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken);
+                    // Save state now to avoid potential race with overlapping requests.
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                } else
-                {
-                    var category = turnContext.Activity.Name?.Split('/')?[0].ToLower();
-                    if (category == Category.SignIn && signInState.Category != Category.SignIn)
-                    {
-                        signInState.Category = Category.SignIn;
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    } else if (category != Category.SignIn && signInState.Category == Category.SignIn)
-                    {
-                        // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
-                        // e.g., user interrupts the flow by clicking the Consent Cancel button.
-                        DeleteSignInState(turnState);
-                        await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-                        // Return true since at this point we are in a continuation flow, an we need to start a new flow that is handled later.
-                        return true;
-                    }
                 }
 
                 // Get token or start flow for specified flow.
@@ -245,12 +228,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     if (_userSignInFailureHandler != null)
                     {
                         await _userSignInFailureHandler(turnContext, turnState, activeFlowName, response, signInState.ContinuationActivity, cancellationToken).ConfigureAwait(false);
-                        return false;
+                    }
+                    else
+                    {
+                        await turnContext.SendActivitiesAsync(
+                            _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
+                            cancellationToken).ConfigureAwait(false);
                     }
 
-                    await turnContext.SendActivitiesAsync(
-                        _options.SignInFailedMessage == null ? [MessageFactory.Text("SignIn Failed")] : _options.SignInFailedMessage(activeFlowName, response),
-                        cancellationToken).ConfigureAwait(false);
                     return false;
                 }
 
@@ -268,6 +253,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         {
                             // Since we could be handling an Invoke in this turn, and Teams has expectation for Invoke response times,
                             // we need to continue the conversation in a different turn with the original Activity that triggered sign in.
+                            // It is important to save state now so that the continuationActivity doesn't try to continue the flow again.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await _app.Options.Adapter.ProcessProactiveAsync(
                                 turnContext.Identity, 
