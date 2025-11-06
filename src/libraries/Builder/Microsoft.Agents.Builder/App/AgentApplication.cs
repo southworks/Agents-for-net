@@ -818,6 +818,17 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
 
+                    // Download any input files
+                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
+                    if (fileDownloaders != null && fileDownloaders.Count > 0)
+                    {
+                        foreach (IInputFileDownloader downloader in fileDownloaders)
+                        {
+                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
+                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
+                        }
+                    }
+
                     // Call before turn handler
                     foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                     {
@@ -829,17 +840,6 @@ namespace Microsoft.Agents.Builder.App
                             await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                             return;
-                        }
-                    }
-
-                    // Download any input files
-                    IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
-                    if (fileDownloaders != null && fileDownloaders.Count > 0)
-                    {
-                        foreach (IInputFileDownloader downloader in fileDownloaders)
-                        {
-                            var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
-                            turnState.Temp.InputFiles = [.. turnState.Temp.InputFiles, .. files];
                         }
                     }
 
