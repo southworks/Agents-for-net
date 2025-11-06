@@ -107,9 +107,11 @@ namespace Microsoft.Agents.Builder
 
             if (!AgenticAuthorization.IsAgenticRequest(turnContext))
             {
+                // Non agentic, so use legacy tokens
                 return CreateConnectorClientAsync(turnContext.Identity, turnContext.Activity.ServiceUrl, audience ?? AgentClaims.GetTokenAudience(turnContext.Identity), cancellationToken, scopes, useAnonymous);
             }
 
+            // Use an Agentic token for the ConnectorClient
             return Task.FromResult<IConnectorClient>(new RestConnectorClient(
                 new Uri(turnContext.Activity.ServiceUrl),
                 _httpClientFactory,
