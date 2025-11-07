@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <returns>true to continue processing the turn.</returns>
         public async Task<bool> ProceedWithExchangeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-             if (ShouldDeduplicate(turnContext))
+            if (ShouldDeduplicate(turnContext))
             {
                 // Only one token exchange should proceed from here. Deduplication is performed second because in the case
                 // of failure due to consent required, every caller needs to receive the InvokeResponse

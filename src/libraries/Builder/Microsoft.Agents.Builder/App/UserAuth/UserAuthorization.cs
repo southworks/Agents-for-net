@@ -267,9 +267,9 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // It is important to save state now so that the continuationActivity doesn't try to continue the flow again.
                             await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
                             await _app.Options.Adapter.ProcessProactiveAsync(
-                                turnContext.Identity, 
-                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true), 
-                                _app, 
+                                turnContext.Identity,
+                                signInState.ContinuationActivity.ApplyConversationReference(turnContext.Activity.GetConversationReference(), isIncoming: true),
+                                _app,
                                 cancellationToken).ConfigureAwait(false);
                             return false;
                         }

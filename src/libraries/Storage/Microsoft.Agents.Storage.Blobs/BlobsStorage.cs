@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Storage.Blobs
 
                         var response = await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
 
-                        results[keyValuePair.Key] = new WriteResult() {  ETag = response.Value.ETag.ToString() };
+                        results[keyValuePair.Key] = new WriteResult() { ETag = response.Value.ETag.ToString() };
                     }
                 }
                 catch (RequestFailedException ex)
@@ -259,7 +259,7 @@ namespace Microsoft.Agents.Storage.Blobs
         public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-            
+
             Dictionary<string, object> changesAsObject = new(changes.Count);
             foreach (var change in changes)
             {

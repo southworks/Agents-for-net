@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                                 cancellationToken)
                             .ConfigureAwait(false);
                     }
-                }  
+                }
                 catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
                 {
                     throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict.");
