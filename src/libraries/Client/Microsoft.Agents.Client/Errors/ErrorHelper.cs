@@ -28,10 +28,7 @@ namespace Microsoft.Agents.Client.Errors
     /// </summary>
     internal static partial class ErrorHelper
     {
-        /// <summary>
-        /// Base error code for the authentication provider
-        /// </summary>
-        private static readonly int baseClientErrorCode = -90000;
+        // Base error code for the client: -90000
 
         internal static AgentErrorDefinition AgentHostMissingProperty = new AgentErrorDefinition(-90000, Properties.Resources.AgentHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AgentMissingProperty = new AgentErrorDefinition(-90001, Properties.Resources.AgentMissingProperty, "https://aka.ms/AgentsSDK-Error01");

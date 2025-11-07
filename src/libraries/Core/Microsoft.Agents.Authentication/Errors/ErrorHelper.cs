@@ -25,10 +25,7 @@ namespace Microsoft.Agents.Authentication.Errors
 /// </summary>
 internal static class ErrorHelper
     {
-        /// <summary>
-        /// Base error code for the authentication provider
-        /// </summary>
-        private static int baseAuthProviderErrorCode = -40000;
+        // Base error code for the authentication provider: -40000
 
         internal static AgentErrorDefinition MissingAuthenticationConfiguration = new(-40000, Properties.Resources.Error_MissingAuthenticationConfig, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static AgentErrorDefinition ConnectionNotFoundByName = new(-40001, Properties.Resources.Error_ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");

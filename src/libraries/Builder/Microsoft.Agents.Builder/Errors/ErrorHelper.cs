@@ -28,10 +28,7 @@ namespace Microsoft.Agents.Builder.Errors
     /// </summary>
     internal static partial class ErrorHelper
     {
-        /// <summary>
-        /// Base error code for the authentication provider
-        /// </summary>
-        private static readonly int baseBuilderErrorCode = -50000;
+        // Base error code for the builder: -50000
 
         internal static AgentErrorDefinition NullIAccessTokenProvider = new AgentErrorDefinition(-50000, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition NullUserTokenProviderIAccessTokenProvider = new AgentErrorDefinition(-50001, Properties.Resources.IAccessTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");

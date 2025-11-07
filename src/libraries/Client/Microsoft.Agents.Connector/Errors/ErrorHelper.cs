@@ -30,10 +30,7 @@ namespace Microsoft.Agents.Connector.Errors
     /// </summary>
     internal static partial class ErrorHelper
     {
-        /// <summary>
-        /// Base error code for the authentication provider
-        /// </summary>
-        private static readonly int baseBuilderErrorCode = -60000;
+        // Base error code for the connector: -60000
 
         internal static AgentErrorDefinition InvalidAccessTokenForAgentCallback = new AgentErrorDefinition(-60000, Properties.Resources.ConversationResponseUnAuthorized, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition SendGetConversationsError = new AgentErrorDefinition(-60001, Properties.Resources.GetConversationsError, "https://aka.ms/AgentsSDK-Error02");
