@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition StreamingResponseEnded = new AgentErrorDefinition(-50006, Properties.Resources.StreamingResponseEnded, "https://aka.ms/AgentsSDK-Error01");
 
         // UserAuth (base, not Application)
-        internal static AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(-50008, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(-50008, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationRequiresAdapter = new AgentErrorDefinition(-50009, Properties.Resources.UserAuthorizationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationHandlerNotFound = new AgentErrorDefinition(-50010, Properties.Resources.UserAuthorizationHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition UserAuthorizationDefaultHandlerNotFound = new AgentErrorDefinition(-50010, Properties.Resources.UserAuthorizationDefaultHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
