@@ -46,7 +46,6 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition UserAuthorizationNotConfigured = new AgentErrorDefinition(-50008, Properties.Resources.UserAuthorizationNotConfigured, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition UserAuthorizationRequiresAdapter = new AgentErrorDefinition(-50009, Properties.Resources.UserAuthorizationRequiresAdapter, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition UserAuthorizationHandlerNotFound = new AgentErrorDefinition(-50010, Properties.Resources.UserAuthorizationHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static readonly AgentErrorDefinition UserAuthorizationDefaultHandlerNotFound = new AgentErrorDefinition(-50010, Properties.Resources.UserAuthorizationDefaultHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition FailedToCreateUserAuthorizationHandler = new AgentErrorDefinition(-50011, Properties.Resources.FailedToCreateUserAuthorizationHandler, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition NoUserAuthorizationHandlers = new AgentErrorDefinition(-50012, Properties.Resources.NoUserAuthorizationHandlers, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition UserAuthorizationTypeNotFound = new AgentErrorDefinition(-50013, Properties.Resources.UserAuthorizationTypeNotFound, "https://aka.ms/AgentsSDK-Error01");
@@ -69,6 +68,7 @@ namespace Microsoft.Agents.Builder.Errors
         // ConnectorUserAuthorization
         internal static readonly AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(-50030, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/AgentsSDK-Error01");
         internal static readonly AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(-50031, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition UserAuthorizationDefaultHandlerNotFound = new AgentErrorDefinition(-50032, Properties.Resources.UserAuthorizationDefaultHandlerNotFound, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }
