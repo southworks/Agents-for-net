@@ -33,7 +33,7 @@ internal static class ErrorHelper
         internal static AgentErrorDefinition AuthProviderTypeNotFound = new(-40003, Properties.Resources.Error_AuthModuleNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static AgentErrorDefinition AuthProviderTypeInvalidConstructor = new(-40004, Properties.Resources.Error_InvalidAuthProviderConstructor, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static readonly AgentErrorDefinition ConfigurationSectionNotFound = new(-40005, Properties.Resources.Error_ConfigurationSectionNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentErrorDefinition ConfigurationSectionNotProvided = new(-40006, Properties.Resources.Error_ConfigurationSectionNotProvided, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static readonly AgentErrorDefinition ConfigurationSectionNotProvided = new(-40006, Properties.Resources.Error_ConfigurationSectionNotProvided, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
 
     }
 }
