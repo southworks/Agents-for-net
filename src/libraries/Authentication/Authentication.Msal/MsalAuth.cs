@@ -188,14 +188,10 @@ namespace Microsoft.Agents.Authentication.Msal
 
             var agentTokenResult = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
-            var autority = !string.IsNullOrEmpty(_connectionSettings.Authority)
-                ? _connectionSettings.Authority.Replace("/common", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
-                : $"https://login.microsoftonline.com/{tenantId}";
-
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentTokenResult))
-                .WithAuthority(autority)
+                .WithAuthority(getAgenticAuthority(_connectionSettings, tenantId))
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
@@ -253,9 +249,11 @@ namespace Microsoft.Agents.Authentication.Msal
             var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
             using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
 
+            /*
             var tokenEndpoint = _connectionSettings.Authority != null 
                 ? $"{_connectionSettings.Authority}/oauth2/v2.0/token".Replace("/common", $"/{tenantId}") // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
+            */
 
             var parameters = new Dictionary<string, string>
             {
@@ -270,7 +268,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
             var content = new FormUrlEncodedContent(parameters);
 
-            var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(getAgenticAuthority(_connectionSettings, tenantId), content, cancellationToken).ConfigureAwait(false);
 
 #if !NETSTANDARD
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -304,6 +302,18 @@ namespace Microsoft.Agents.Authentication.Msal
             //    return accessToken?.ToString() ?? throw new InvalidOperationException("Access token is null");
             //}
             //throw new InvalidOperationException("Failed to parse access token from response");
+        }
+
+        private static string getAgenticAuthority(ConnectionSettings connectionSettings, string tenantId)
+        {
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                return connectionSettings.Authority ?? $"https://login.microsoftonline.com/{connectionSettings.TenantId}";
+            }
+
+            return !string.IsNullOrEmpty(connectionSettings.Authority)
+                ? connectionSettings.Authority.Replace("/common", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
+                : $"https://login.microsoftonline.com/{tenantId}";
         }
         #endregion
 

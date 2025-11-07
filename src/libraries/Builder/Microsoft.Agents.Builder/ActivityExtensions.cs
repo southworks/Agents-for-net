@@ -15,6 +15,10 @@ namespace Microsoft.Agents.Builder
 
         public static string GetAgenticTenantId(this IActivity activity)
         {
+            if (!string.IsNullOrEmpty(activity?.Recipient?.TenantId))
+            {
+                return activity?.Recipient?.TenantId;
+            }
             return activity.Conversation?.TenantId;
         }
 
