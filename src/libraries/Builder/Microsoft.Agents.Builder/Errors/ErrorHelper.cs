@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static AgentErrorDefinition ExtensionAlreadyRegistered = new AgentErrorDefinition(-50022, Properties.Resources.ExtensionAlreadyRegistered, "https://aka.ms/AgentsSDK-Error01");
 
         // Agentic
-        internal static AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(-50023, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(-50023, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition AgenticTokenProviderFailed = new AgentErrorDefinition(-50024, Properties.Resources.AgenticTokenProviderFailed, "https://aka.ms/AgentsSDK-Error01");
         internal static AgentErrorDefinition NotAnAgenticRequest = new AgentErrorDefinition(-50025, Properties.Resources.NotAnAgenticRequest, "https://aka.ms/AgentsSDK-Error01");
         // ConnectorUserAuthorization
