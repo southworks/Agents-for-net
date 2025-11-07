@@ -30,13 +30,13 @@ namespace Microsoft.Agents.Client.Errors
     {
         // Base error code for the client: -90000
 
-        internal static AgentErrorDefinition AgentHostMissingProperty = new AgentErrorDefinition(-90000, Properties.Resources.AgentHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition AgentMissingProperty = new AgentErrorDefinition(-90001, Properties.Resources.AgentMissingProperty, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition AgentNotFound = new AgentErrorDefinition(-90002, Properties.Resources.AgentNotFound, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToAgentFailed = new AgentErrorDefinition(-90003, Properties.Resources.SendToAgentFailed, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToAgentUnsuccessful = new AgentErrorDefinition(-90004, Properties.Resources.SendToAgentUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition SendToAgentUnauthorized = new AgentErrorDefinition(-90005, Properties.Resources.SendToAgentUnauthorized, "https://aka.ms/AgentsSDK-Error01");
-        internal static AgentErrorDefinition AgentTokenProviderNotFound = new AgentErrorDefinition(-90006, Properties.Resources.AgentTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition AgentHostMissingProperty = new AgentErrorDefinition(-90000, Properties.Resources.AgentHostMissingProperty, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition AgentMissingProperty = new AgentErrorDefinition(-90001, Properties.Resources.AgentMissingProperty, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition AgentNotFound = new AgentErrorDefinition(-90002, Properties.Resources.AgentNotFound, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition SendToAgentFailed = new AgentErrorDefinition(-90003, Properties.Resources.SendToAgentFailed, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition SendToAgentUnsuccessful = new AgentErrorDefinition(-90004, Properties.Resources.SendToAgentUnsuccessful, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition SendToAgentUnauthorized = new AgentErrorDefinition(-90005, Properties.Resources.SendToAgentUnauthorized, "https://aka.ms/AgentsSDK-Error01");
+        internal static readonly AgentErrorDefinition AgentTokenProviderNotFound = new AgentErrorDefinition(-90006, Properties.Resources.AgentTokenProviderNotFound, "https://aka.ms/AgentsSDK-Error01");
     }
 
 }
