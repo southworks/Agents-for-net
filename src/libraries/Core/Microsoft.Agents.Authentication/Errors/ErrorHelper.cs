@@ -28,7 +28,7 @@ internal static class ErrorHelper
         // Base error code for the authentication provider: -40000
 
         internal static AgentErrorDefinition MissingAuthenticationConfiguration = new(-40000, Properties.Resources.Error_MissingAuthenticationConfig, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
-        internal static AgentErrorDefinition ConnectionNotFoundByName = new(-40001, Properties.Resources.Error_ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
+        internal static readonly AgentErrorDefinition ConnectionNotFoundByName = new(-40001, Properties.Resources.Error_ConnectionNotFoundByName, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static AgentErrorDefinition FailedToCreateAuthModuleProvider = new(-40002, Properties.Resources.Error_FailedToCreateAuthModuleProvider, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static AgentErrorDefinition AuthProviderTypeNotFound = new(-40003, Properties.Resources.Error_AuthModuleNotFound, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
         internal static AgentErrorDefinition AuthProviderTypeInvalidConstructor = new(-40004, Properties.Resources.Error_InvalidAuthProviderConstructor, "https://aka.ms/AgentsSDK-DotNetMSALAuth");
