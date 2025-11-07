@@ -117,7 +117,11 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
-            catch(DuplicateExchangeException)
+            catch (CancelledException)
+            {
+                return new SignInResponse(SignInStatus.Cancelled);
+            }
+            catch (DuplicateExchangeException)
             {
                 return new SignInResponse(SignInStatus.Duplicate);
             }
@@ -210,7 +214,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings, _logger]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

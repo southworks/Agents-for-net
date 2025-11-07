@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -24,8 +26,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     /// 
     /// Only one of these token exchange requests should be processed by the Agent.
     /// </remarks>
-    internal class Deduplicate(IStorage storage)
+    internal class Deduplicate(IStorage storage, ILogger logger = null)
     {
+        private ILogger _logger = logger ?? NullLogger.Instance;
+
         /// <summary>
         /// Deduplicates exchange token requests.
         /// </summary>
@@ -89,7 +93,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         }
 
         // true if the Invoke is a duplicate
-        private static async Task<bool> IsDuplicateTokenExchangeAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
+        private async Task<bool> IsDuplicateTokenExchangeAsync(ITurnContext turnContext, IStorage storage, CancellationToken cancellationToken)
         {
             try
             {
@@ -100,7 +104,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
                 else
                 {
-                    await storage.WriteAsync(new Dictionary<string, object>() { { key, new TokenStoreItem() } }, cancellationToken).ConfigureAwait(false);
+                    _logger.LogWarning("Unable to check if token exchange is duplicated because storage does not implement IStorageExt.");
                 }
                 return false;
             }

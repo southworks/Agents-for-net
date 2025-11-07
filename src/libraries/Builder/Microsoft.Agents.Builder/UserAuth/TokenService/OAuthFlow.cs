@@ -327,35 +327,35 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     TokenResponse tokenExchangeResponse = null;
 
-                    try
-                    {
-                       var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
-                       tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                       bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
-                       if (!isConsentRequired)
-                       {
-                           // Unclear if this will ever happen except for a hard transient error since the deduping would have done
-                           // this already.  Leaving for some defensive coding.
-                           // This is a critical error.  Either request failure, or OAuth Connection misconfiguration.
-                           // A 400 seems to cause Teams to not retry.  412 or 500 does not.
-                           // Callers should catch and clean up state because all bets are off.  This is a hammer and
-                           // more work may be possible for a more nuanced handling.
-                           await SendInvokeResponseAsync(
-                               turnContext,
-                               HttpStatusCode.BadRequest,
-                               new TokenExchangeInvokeResponse
-                               {
-                                   Id = tokenExchangeRequest.Id,
-                                   ConnectionName = _settings.AzureBotOAuthConnectionName,
-                                   FailureDetail = ex.Message,
-                               }, cancellationToken).ConfigureAwait(false);
+                    //try
+                    //{
+                    //   var exchangeRequest = new TokenExchangeRequest { Token = tokenExchangeRequest.Token };
+                    //   tokenExchangeResponse = await UserTokenClientWrapper.ExchangeTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, exchangeRequest, cancellationToken).ConfigureAwait(false);
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //   bool isConsentRequired = ex as ErrorResponseException != null && ((ErrorResponseException)ex).Body.Error.Code.Equals(Error.ConsentRequiredCode);
+                    //   if (!isConsentRequired)
+                    //   {
+                    //       // Unclear if this will ever happen except for a hard transient error since the deduping would have done
+                    //       // this already.  Leaving for some defensive coding.
+                    //       // This is a critical error.  Either request failure, or OAuth Connection misconfiguration.
+                    //       // A 400 seems to cause Teams to not retry.  412 or 500 does not.
+                    //       // Callers should catch and clean up state because all bets are off.  This is a hammer and
+                    //       // more work may be possible for a more nuanced handling.
+                    //       await SendInvokeResponseAsync(
+                    //           turnContext,
+                    //           HttpStatusCode.BadRequest,
+                    //           new TokenExchangeInvokeResponse
+                    //           {
+                    //               Id = tokenExchangeRequest.Id,
+                    //               ConnectionName = _settings.AzureBotOAuthConnectionName,
+                    //               FailureDetail = ex.Message,
+                    //           }, cancellationToken).ConfigureAwait(false);
 
-                           throw;
-                       }
-                    }
+                    //       throw;
+                    //   }
+                    //}
 
                     if (tokenExchangeResponse == null || string.IsNullOrEmpty(tokenExchangeResponse.Token))
                     {

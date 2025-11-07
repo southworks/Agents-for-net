@@ -205,6 +205,17 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         exchangeScopes: signInState.RuntimeOBOScopes,
                         cancellationToken: cancellationToken).ConfigureAwait(false);
 
+                if (response.Status == SignInStatus.Cancelled)
+                {
+                    // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
+                    // e.g., user interrupts the flow by clicking the Consent Cancel button.
+                    DeleteSignInState(turnState);
+                    await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
+                    await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    // Return true since at this point we are in a continuation flow, an we need to start a new flow that is handled later.
+                    return true;
+                }
+
                 if (response.Status == SignInStatus.Duplicate)
                 {
                     return false;
@@ -308,11 +319,5 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public IActivity ContinuationActivity { get; set; }
         public string RuntimeOBOConnectionName { get; set; }
         public IList<string> RuntimeOBOScopes { get; set; }
-        public string Category { get; set; }
-    }
-
-    class Category
-    {
-        public const string SignIn = "signin";
     }
 }

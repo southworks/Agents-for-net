@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -27,8 +28,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private readonly IStorage _storage;
         private readonly Deduplicate _dedupe;
 
-        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection)
-            : this(name, storage, connections, GetOAuthSettings(configurationSection))
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
+            : this(name, storage, connections, GetOAuthSettings(configurationSection), logger)
         {
 
         }
@@ -39,15 +40,16 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="name">The authentication name.</param>
         /// <param name="settings">The settings to initialize the class</param>
         /// <param name="storage">The storage to use.</param>
-        /// <param name="connections"></param>
-        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings) 
+        /// <param name="connections">The connections to use.</param>
+        /// <param name="logger">Optional logger.</param>
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, OAuthSettings settings, ILogger logger = null) 
             : base(connections)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _flow = new OAuthFlow(settings);
-            _dedupe = new Deduplicate(_storage);
+            _dedupe = new Deduplicate(_storage, logger);
         }
 
         public string Name { get; private set; }
@@ -157,6 +159,19 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             }
             else
             {
+                var category = turnContext.Activity.Name?.Split('/')?[0].ToLower();
+                if (category == Category.SignIn && state.Category != Category.SignIn)
+                {
+                    state.Category = Category.SignIn;
+                    await SaveFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                }
+                else if (category != Category.SignIn && state.Category == Category.SignIn)
+                {
+                    // This is only for safety in case of unexpected behaviors during the MS Teams sign-in process,
+                    // e.g., user interrupts the flow by clicking the Consent Cancel button.
+                    throw new CancelledException();
+                }
+
                 // For non-Teams Agents, the user sends the "magic code" that will be used to exchange for a token.
                 tokenResponse = await OnContinueFlow(turnContext, state, cancellationToken);
             }
@@ -274,5 +289,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public bool FlowStarted = false;
         public DateTime FlowExpires = DateTime.MinValue;
         public int ContinueCount = 0;
+        public string Category { get; set; }
+
+    }
+
+    class Category
+    {
+        public const string SignIn = "signin";
     }
 }

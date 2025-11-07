@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             return type.GetConstructor(
                 bindingAttr: BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
-                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection)],
+                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection), typeof(ILogger)],
                 modifiers: null);
         }
     }
