@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Authentication
 {
     public interface IAgenticTokenProvider
     {
-        Task<string> GetAgenticApplicationTokenAsync(string agentAppInstanceId, CancellationToken cancellationToken = default);
+        Task<string> GetAgenticApplicationTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default);
 
         Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default);
 

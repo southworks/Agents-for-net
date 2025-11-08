@@ -166,11 +166,11 @@ namespace Microsoft.Agents.Authentication.Msal
         #endregion
 
         #region IAgenticTokenProvider
-        public async Task<string> GetAgenticApplicationTokenAsync(string agentAppInstanceId, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticApplicationTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            if (InnerCreateClientApplication() is IConfidentialClientApplication msalApplication)
+            if (InnerCreateClientApplication(tenantId) is IConfidentialClientApplication msalApplication)
             {
                 var tokenResult = await msalApplication
                     .AcquireTokenForClient(["api://AzureAdTokenExchange/.default"]).WithFmiPath(agentAppInstanceId)
@@ -186,12 +186,12 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            var agentTokenResult = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var agentTokenResult = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentTokenResult))
-                .WithAuthority(getAgenticAuthority(_connectionSettings, tenantId))
+                .WithAuthority(ResolveAuthority(_connectionSettings, tenantId))
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
@@ -217,7 +217,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 return ((HttpMsalResponse)value).AccessToken;
             }
 
-            var agentToken = await GetAgenticApplicationTokenAsync(agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
             /*
@@ -249,11 +249,11 @@ namespace Microsoft.Agents.Authentication.Msal
             var httpClientFactory = _systemServiceProvider.GetService<IHttpClientFactory>();
             using var httpClient = httpClientFactory?.CreateClient(nameof(MsalAuth)) ?? new HttpClient();
 
-            /*
+            
             var tokenEndpoint = _connectionSettings.Authority != null 
-                ? $"{_connectionSettings.Authority}/oauth2/v2.0/token".Replace("/common", $"/{tenantId}") // update to use tenantId if "common" but retain original host for regionalization purposes
+                ? $"{ResolveAuthority(_connectionSettings, tenantId)}/oauth2/v2.0/token" // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
-            */
+            
 
             var parameters = new Dictionary<string, string>
             {
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
             var content = new FormUrlEncodedContent(parameters);
 
-            var response = await httpClient.PostAsync(getAgenticAuthority(_connectionSettings, tenantId), content, cancellationToken).ConfigureAwait(false);
+            var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
 
 #if !NETSTANDARD
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -304,10 +304,17 @@ namespace Microsoft.Agents.Authentication.Msal
             //throw new InvalidOperationException("Failed to parse access token from response");
         }
 
-        private static string getAgenticAuthority(ConnectionSettings connectionSettings, string tenantId)
+        /// <summary>
+        /// This method can optional accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
+        /// </summary>
+        /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
+        /// <param name="tenantId">Tenant Id to use in place of Common</param>
+        /// <returns></returns>
+        private static string ResolveAuthority(ConnectionSettings connectionSettings, string tenantId)
         {
             if (string.IsNullOrEmpty(tenantId))
             {
+                // tenant id is not specified, check to see if authority is set, if it is set use it. 
                 return connectionSettings.Authority ?? $"https://login.microsoftonline.com/{connectionSettings.TenantId}";
             }
 
@@ -317,7 +324,7 @@ namespace Microsoft.Agents.Authentication.Msal
         }
         #endregion
 
-        private object InnerCreateClientApplication()
+        private object InnerCreateClientApplication(string tenantId = null)
         {
             object msalAuthClient = null;
 
@@ -355,11 +362,11 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 if (!string.IsNullOrEmpty(_connectionSettings.Authority))
                 {
-                    cAppBuilder.WithAuthority(_connectionSettings.Authority);
+                    cAppBuilder.WithAuthority(ResolveAuthority(_connectionSettings, tenantId));
                 }
                 else
                 {
-                    cAppBuilder.WithTenantId(_connectionSettings.TenantId);
+                    cAppBuilder.WithTenantId(ResolveAuthority(_connectionSettings, tenantId ?? _connectionSettings.TenantId));
                 }
                 // If Client secret was passed in , get the secret and create it that way 
                 // if Client CertThumbprint was passed in, get the cert and create it that way.
