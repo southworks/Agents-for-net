@@ -1039,7 +1039,6 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(MockTurnContext(), GraphName));
         }
 
-        // token refreshes within 5 minutes of expiration
         [Fact]
         public async Task Test_TokenExchange_Deduplication()
         {
