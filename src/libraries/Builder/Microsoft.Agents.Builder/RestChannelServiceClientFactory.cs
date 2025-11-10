@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
+                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName, 
