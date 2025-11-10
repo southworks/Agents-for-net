@@ -787,7 +787,6 @@ namespace Microsoft.Agents.Builder.App
                 {
                     StartTypingTimer(turnContext);
                 }
-                ;
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))

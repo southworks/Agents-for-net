@@ -162,11 +162,12 @@ namespace Microsoft.Agents.Storage
                         {
                             throw new EtagException($"Unable to write '{change.Key}' due to an ETag conflict. Old: {oldStateETag} New: {newStoreItem.ETag}.");
                         }
+
+                        var newETag = (_eTag++).ToString(CultureInfo.InvariantCulture);
+                        results[change.Key] = new WriteResult() { ETag = newETag };
+                        newState["ETag"] = newETag;
                     }
 
-                    var newETag = (_eTag++).ToString(CultureInfo.InvariantCulture);
-                    results[change.Key] = new WriteResult() { ETag = newETag };
-                    newState["ETag"] = newETag;
                     newState?.AddTypeInfo(change.Value);
                     _memory[change.Key] = newState;
                 }

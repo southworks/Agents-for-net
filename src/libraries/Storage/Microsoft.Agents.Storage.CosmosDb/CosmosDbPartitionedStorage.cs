@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Azure.Cosmos;
@@ -234,17 +235,25 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 var requestOptions = new ItemRequestOptions();
                 var etag = (change.Value as IStoreItem)?.ETag;
 
-                if (etag != null && etag != "*" && etag.Length > 0)
+                if (etag != null && etag != "*")
                 {
-                    requestOptions.IfMatchEtag = etag;
+                    if (etag.Length > 0)
+                    {
+                        requestOptions.IfMatchEtag = etag;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("etag empty");
+                    }
                 }
 
                 try
                 {
+                    ItemResponse<DocumentStoreItem> response;
                     if (writeOptions.IfNotExists)
                     {
                         requestOptions.IfNoneMatchEtag = "*";
-                        await _container.CreateItemAsync(
+                        response = await _container.CreateItemAsync(
                                 documentChange,
                                 partitionKey,
                                 requestOptions,
@@ -254,13 +263,15 @@ namespace Microsoft.Agents.Storage.CosmosDb
                     else
                     {
                         // if we have an etag, do opt. concurrency replace
-                        await _container.UpsertItemAsync(
+                        response = await _container.UpsertItemAsync(
                                 documentChange,
                                 partitionKey,
                                 requestOptions,
                                 cancellationToken)
                             .ConfigureAwait(false);
                     }
+
+                    results[change.Key] = new WriteResult() { ETag = response.ETag };
                 }
                 catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.PreconditionFailed)
                 {
