@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Builder.App
         /// <inheritdoc />
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            if (turnContext.Activity.ChannelId != Channels.Msteams)
+            if (turnContext.Activity.ChannelId != Channels.Msteams && turnContext.Activity.ChannelId != Channels.M365Copilot)
             {
                 return [];
             }
