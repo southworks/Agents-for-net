@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -310,7 +311,7 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return !string.IsNullOrEmpty(connectionSettings.Authority)
-                ? connectionSettings.Authority.Replace("/common", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
+                ? Regex.Replace(connectionSettings.Authority, @"/common(?=/|$)", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}";
         }
 
