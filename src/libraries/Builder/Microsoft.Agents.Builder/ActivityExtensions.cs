@@ -22,11 +22,7 @@ namespace Microsoft.Agents.Builder
         /// </returns>
         public static string GetAgenticTenantId(this IActivity activity)
         {
-            if (!string.IsNullOrEmpty(activity?.Recipient?.TenantId))
-            {
-                return activity?.Recipient?.TenantId;
-            }
-            return activity?.Conversation?.TenantId;
+            return activity?.Recipient?.TenantId ?? activity?.Conversation?.TenantId;
         }
 
         public static string GetAgenticInstanceId(this IActivity activity)
