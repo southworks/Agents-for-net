@@ -266,9 +266,8 @@ namespace Microsoft.Agents.Authentication.Msal
                 { "grant_type", "user_fic" }
             };
 
-            var content = new FormUrlEncodedContent(parameters);
-
-            var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
+            using var content = new FormUrlEncodedContent(parameters);
+            using var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken).ConfigureAwait(false);
 
 #if !NETSTANDARD
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -295,13 +294,6 @@ namespace Microsoft.Agents.Authentication.Msal
                 });
 
             return acccessTokenResult.AccessToken;
-
-            //var tokenResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent);
-            //if (tokenResponse != null && tokenResponse.TryGetValue("access_token", out var accessToken))
-            //{
-            //    return accessToken?.ToString() ?? throw new InvalidOperationException("Access token is null");
-            //}
-            //throw new InvalidOperationException("Failed to parse access token from response");
         }
 
         /// <summary>
@@ -451,7 +443,6 @@ namespace Microsoft.Agents.Authentication.Msal
             {
                 if (!forceRefresh)
                 {
-                    var accessToken = authResultFromCache.MsalAuthResult.AccessToken;
                     var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
                     if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
                     {
