@@ -301,7 +301,6 @@ namespace Microsoft.Agents.Authentication.Msal
         /// </summary>
         /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
         /// <param name="tenantId">Tenant Id to use in place of Common</param>
-        /// <returns></returns>
         private static string ResolveAuthority(ConnectionSettings connectionSettings, string tenantId)
         {
             if (string.IsNullOrEmpty(tenantId))
@@ -313,6 +312,21 @@ namespace Microsoft.Agents.Authentication.Msal
             return !string.IsNullOrEmpty(connectionSettings.Authority)
                 ? connectionSettings.Authority.Replace("/common", $"/{tenantId}")  // update to use tenantId if "common" but retain original host for regionalization purposes
                 : $"https://login.microsoftonline.com/{tenantId}";
+        }
+
+        /// <summary>
+        /// This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings TenantId is "common".
+        /// </summary>
+        /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
+        /// <param name="tenantId">Tenant Id to use in place of Common</param>
+        private static string ResolveTenantId(ConnectionSettings connectionSettings, string tenantId)
+        {
+            if (!string.IsNullOrEmpty(tenantId) && connectionSettings.TenantId.Equals("common", StringComparison.OrdinalIgnoreCase))
+            {
+                return tenantId;
+            }
+
+            return connectionSettings.TenantId;
         }
         #endregion
 
@@ -358,8 +372,9 @@ namespace Microsoft.Agents.Authentication.Msal
                 }
                 else
                 {
-                    cAppBuilder.WithTenantId(ResolveAuthority(_connectionSettings, tenantId ?? _connectionSettings.TenantId));
+                    cAppBuilder.WithTenantId(ResolveTenantId(_connectionSettings, tenantId));
                 }
+
                 // If Client secret was passed in , get the secret and create it that way 
                 // if Client CertThumbprint was passed in, get the cert and create it that way.
                 // if neither was passed in, throw an exception.
