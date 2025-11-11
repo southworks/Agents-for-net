@@ -13,6 +13,13 @@ namespace Microsoft.Agents.Builder
                 || string.Equals(activity?.Recipient?.Role, RoleTypes.AgenticIdentity, System.StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Retrieves the tenant ID associated with the agentic recipient of the activity, if available; otherwise, returns the tenant ID from the conversation.
+        /// </summary>
+        /// <param name="activity">The activity from which to extract the tenant ID.</param>
+        /// <returns>
+        /// The tenant ID of the agentic recipient if present; otherwise, the tenant ID from the conversation. Returns <c>null</c> if neither is available.
+        /// </returns>
         public static string GetAgenticTenantId(this IActivity activity)
         {
             if (!string.IsNullOrEmpty(activity?.Recipient?.TenantId))
