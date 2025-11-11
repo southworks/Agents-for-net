@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
         /// <summary>
-        /// This method can optional accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
+        /// This method can optionally accept a tenant ID that overrides the tenant ID in the connection settings, if the connection settings authority contains "common".
         /// </summary>
         /// <param name="connectionSettings">Connection Settings object for the active connection.</param>
         /// <param name="tenantId">Tenant Id to use in place of Common</param>
