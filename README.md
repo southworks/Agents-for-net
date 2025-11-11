@@ -26,7 +26,7 @@ Please read [this](GettingStarted.md) for directions on what is needed and how t
 
 ## Contributing
 
-#### Note for Microsoft intenral developers: 
+#### Note for Microsoft internal developers: 
 - Internal Microsoft Developers should join the Core identity group [Agents SDK Contrib](https://coreidentity.microsoft.com/manage/Entitlement/entitlement/agentssdkint-upyj)
 
 #### Non-Microsoft internal developers:
