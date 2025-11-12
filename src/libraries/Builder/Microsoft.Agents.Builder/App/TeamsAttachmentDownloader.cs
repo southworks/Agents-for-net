@@ -95,8 +95,6 @@ namespace Microsoft.Agents.Builder.App
         {
             string? name = attachment.Name;
 
-            using var httpClient = _httpClientFactory.CreateClient(nameof(TeamsAttachmentDownloader));
-
             if (attachment.ContentUrl != null && (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
             {
                 // Get downloadable content link
@@ -111,10 +109,12 @@ namespace Microsoft.Agents.Builder.App
                     downloadUrl = value.ToString();
                 }
 
+                using var httpClient = _httpClientFactory.CreateClient(nameof(TeamsAttachmentDownloader));
+                
                 using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
                 request.Headers.Add("Authorization", $"Bearer {accessToken}");
 
-                HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
+                using HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
 
                 // Failed to download file
                 if (!response.IsSuccessStatusCode)
