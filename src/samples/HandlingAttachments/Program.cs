@@ -25,7 +25,7 @@ builder.AddAgentApplicationOptions();
 // Register FileDownloaders
 builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp => [
     new AttachmentDownloader(sp.GetService<IHttpClientFactory>()!),
-    new TeamsAttachmentDownloader(sp.GetService<IConnections>()!, sp.GetService<IHttpClientFactory>()!, new TeamsAttachmentDownloaderOptions() { TokenProviderName = "ServiceConnection" })
+    new TeamsAttachmentDownloader(sp.GetService<IConnections>()!, sp.GetService<IHttpClientFactory>()!)
 ]);
 
 // Add the AgentApplication, which contains the logic for responding to
