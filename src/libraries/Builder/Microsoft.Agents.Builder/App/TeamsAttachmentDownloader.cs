@@ -2,8 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -18,13 +16,13 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Downloads attachments from Teams using the configure Token Provider (from IConnections).
+    /// Downloads attachments from Teams using the configured Token Provider (from IConnections).
     /// </summary>
     public class TeamsAttachmentDownloader : IInputFileDownloader
     {
         private readonly TeamsAttachmentDownloaderOptions _options;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IAccessTokenProvider _accessTokenProvider;
+        private readonly IConnections _connections;
 
 
         /// <summary>
@@ -40,16 +38,7 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
             _options = options ?? new();
-
-            if (!connections.TryGetConnection(_options.TokenProviderName, out _accessTokenProvider))
-            {
-                _accessTokenProvider = connections.GetDefaultConnection();
-                if (_accessTokenProvider == null)
-                {
-                    throw new ArgumentException("TeamsAttachmentDownloader.TokenProviderName not found.");
-                }
-            }
-
+            _connections = connections;
             _httpClientFactory = httpClientFactory;
         }
 
@@ -73,7 +62,20 @@ namespace Microsoft.Agents.Builder.App
             // If authentication is enabled, get access token
             if (!_options.UseAnonymous)
             {
-                accessToken = await _accessTokenProvider.GetAccessTokenAsync(AgentClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
+                IAccessTokenProvider accessTokenProvider = null;
+                if (string.IsNullOrEmpty(_options.TokenProviderName))
+                {
+                    accessTokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                }
+                else
+                {
+                    if (!_connections.TryGetConnection(_options.TokenProviderName, out accessTokenProvider))
+                    {
+                        accessTokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+                    }
+                }
+
+                accessToken = await accessTokenProvider.GetAccessTokenAsync(AgentClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
             }
 
             List<InputFile> files = [];
