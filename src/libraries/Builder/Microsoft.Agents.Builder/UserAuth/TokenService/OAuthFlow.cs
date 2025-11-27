@@ -150,21 +150,66 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 prompt.Attachments = [];
             }
 
-            // Ensure prompt initialized
-
-            // Append appropriate card if missing
-            if (!ChannelSupportsOAuthCard(turnContext.Activity.ChannelId))
+            // Set input hint
+            if (string.IsNullOrEmpty(prompt.InputHint))
             {
-                if (!prompt.Attachments.Any(a => a.Content is SigninCard))
+                prompt.InputHint = InputHints.AcceptingInput;
+            }
+
+            prompt.ChannelData = turnContext.Activity.ChannelData;
+
+            var adaptiveCardContentType = "application/vnd.microsoft.card.adaptive";
+            var supportedContentTypes = new List<string> { OAuthCard.ContentType, SigninCard.ContentType, adaptiveCardContentType };
+            if (prompt.Attachments.Any(e => supportedContentTypes.Contains(e.ContentType)))
+            {
+                await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
+
+            string value;
+            if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||
+                _settings.ShowSignInLink == null && !ChannelRequiresSignInLink(turnContext.Activity.ChannelId))
+            {
+                value = null;
+            }
+            else
+            {
+                value = signInResource.SignInLink;
+            }
+
+            TokenExchangeResource? tokenExchangeResource = null;
+            if (_settings.EnableSso == true)
+            {
+                tokenExchangeResource = signInResource.TokenExchangeResource;
+            }
+
+            if (turnContext.Activity.ChannelId.ToString() == Channels.M365Copilot)
+            {
+                System.Diagnostics.Trace.WriteLine("Using Adaptive Card for M365 Copilot Chat as OAuthCard is not yet supported. Note: Token exchange won\'t be available.");
+            }
+
+            var oCard = turnContext.Activity.ChannelId.ToString() switch
+            {
+                Channels.M365Copilot => new Attachment
                 {
-                    signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
-                    prompt.Attachments.Add(new Attachment
+                    ContentType = adaptiveCardContentType,
+                    Content = new
                     {
-                        ContentType = SigninCard.ContentType,
-                        Content = new SigninCard
-                        {
-                            Text = _settings.Text,
-                            Buttons =
+                        type = "AdaptiveCard",
+                        version = "1.4",
+                        body = new object[] { new { type = "TextBlock", text = _settings.Text } },
+                        actions = new object[] { new { type = "Action.OpenUrl", title = _settings.Title, url = signInResource.SignInLink } }
+                    }
+                },
+                Channels.Cortana or Channels.Skype or Channels.Skypeforbusiness => new Attachment
+                {
+                    ContentType = SigninCard.ContentType,
+                    Content = new SigninCard
+                    {
+                        Text = _settings.Text,
+                        Buttons =
                             [
                                 new CardAction
                                 {
@@ -173,33 +218,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                     Type = ActionTypes.Signin,
                                 },
                             ],
-                        },
-                    });
-                }
-            }
-            else if (!prompt.Attachments.Any(a => a.Content is OAuthCard))
-            {
-                var cardActionType = ActionTypes.Signin;
-                signInResource ??= await UserTokenClientWrapper.GetSignInResourceAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
-
-                string value;
-                if (_settings.ShowSignInLink != null && _settings.ShowSignInLink == false ||
-                    _settings.ShowSignInLink == null && !ChannelRequiresSignInLink(turnContext.Activity.ChannelId))
-                {
-                    value = null;
-                }
-                else
-                {
-                    value = signInResource.SignInLink;
-                }
-
-                TokenExchangeResource? tokenExchangeResource = null;
-                if (_settings.EnableSso == true)
-                {
-                    tokenExchangeResource = signInResource.TokenExchangeResource;
-                }
-
-                prompt.Attachments.Add(new Attachment
+                    },
+                },
+                _ => new Attachment
                 {
                     ContentType = OAuthCard.ContentType,
                     Content = new OAuthCard
@@ -212,23 +233,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             {
                                 Title = _settings.Title,
                                 Text = _settings.Text,
-                                Type = cardActionType,
+                                Type = ActionTypes.Signin,
                                 Value = value
                             },
                         ],
                         TokenExchangeResource = tokenExchangeResource,
                         TokenPostResource = signInResource.TokenPostResource
                     },
-                });
-            }
+                }
+            };
 
-            // Set input hint
-            if (string.IsNullOrEmpty(prompt.InputHint))
-            {
-                prompt.InputHint = InputHints.AcceptingInput;
-            }
+            prompt.Attachments.Add(oCard);
 
-            prompt.ChannelData = turnContext.Activity.ChannelData;
             await turnContext.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
         }
 
@@ -434,15 +450,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             var activity = turnContext.Activity;
             return activity.Type == ActivityTypes.Invoke && activity.Name == SignInConstants.SignInFailure;
-        }
-
-        private static bool ChannelSupportsOAuthCard(ChannelId channelId)
-        {
-            return channelId.ToString() switch
-            {
-                Channels.Cortana or Channels.Skype or Channels.Skypeforbusiness => false,
-                _ => true,
-            };
         }
 
         public static bool ChannelRequiresSignInLink(ChannelId channelId)

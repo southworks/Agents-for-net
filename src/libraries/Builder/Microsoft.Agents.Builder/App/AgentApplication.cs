@@ -777,6 +777,13 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            // Ignore incoming typing activities as it causes duplication in the authorization process.
+            // Note: while testing, WebChat was the only one at the moment that sent typing activities.
+            if (turnContext.Activity.Type == ActivityTypes.Typing)
+            {
+                return;
+            }
+
             try
             {
                 // Start typing timer if configured
