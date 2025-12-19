@@ -16,13 +16,24 @@
     <Microsoft_AspNetCore_PkgVer>8.0.11</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.8.0</Microsoft_IdentityModel_PkgVer>
 	<Microsoft_IdentityClient_PkgVer>4.70.2</Microsoft_IdentityClient_PkgVer>
+    <Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
+    <Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />  
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp"             Version="4.5.0" />  
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"  Version="4.5.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common"             Version="4.5.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"  Version="4.5.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.5.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting"   Version="4.5.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.2" />  
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeRefactoring.Testing" Version="1.1.2" />  
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />  
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />  
     <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.1.0-preview.1.25064.3" />
@@ -62,15 +73,27 @@
     <PackageVersion Include="Microsoft.AspNetCore.SpaServices" Version="3.1.32" />
 	<PackageVersion Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.36" />
     <!-- Test nuget packages -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
-    <PackageVersion Include="xunit" Version="2.9.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="Jint" Version="4.0.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.10.0" />
-    <PackageVersion Include="xunit.extensibility.core" Version="2.9.0" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
+
+    <PackageVersion Include="xunit"                                                                        Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.abstractions"                                                           Version="2.0.3" />
+    <PackageVersion Include="xunit.assert"                                                                 Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.assert.source"                                                          Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.core"                                                                   Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.extensibility.core"                                                     Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.extensibility.execution"                                                Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.runner.utility"                                                         Version="$(Xunit_PackageVersion)" />
+    <PackageVersion Include="xunit.runner.visualstudio"                                                    Version="2.8.2" />
+
+    <PackageVersion Include="xunit.v3"                                                                     Version="$(Xunit_v3_PackageVersion)" />
+    <PackageVersion Include="xunit.v3.assert"                                                              Version="$(Xunit_v3_PackageVersion)" />  
+    <PackageVersion Include="xunit.v3.core"                                                                Version="$(Xunit_v3_PackageVersion)" />
+    <PackageVersion Include="xunit.v3.extensibility.core"                                                  Version="$(Xunit_v3_PackageVersion)" />      
+
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.4" />
     <PackageVersion Include="Azure.Identity" Version="1.13.2" />
