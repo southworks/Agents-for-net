@@ -10,6 +10,9 @@ using System.Linq;
 
 namespace Microsoft.Agents.Core.Analyzers
 {
+    /// <summary>
+    /// Generates a ModuleInitializer to force loading of assemblies that contain Microsoft.Agents.Core subtypes.
+    /// </summary>
     [Generator]
     [ExcludeFromCodeCoverage]
     public class PreloadAssembliesSourceGenerator : IIncrementalGenerator
