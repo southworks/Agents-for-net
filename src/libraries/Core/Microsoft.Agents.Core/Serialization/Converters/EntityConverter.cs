@@ -12,51 +12,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
     {
         public override Entity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var entity = base.Read(ref reader, typeToConvert, options);
-
-            if (string.Equals(EntityTypes.Mention, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<Mention>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.Place, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<Place>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.Thing, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<Thing>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.GeoCoordinates, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<GeoCoordinates>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.StreamInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<StreamInfo>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.ActivityTreatment, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<ActivityTreatment>(JsonSerializer.Serialize(entity, options), options);
-            }
-			else if (string.Equals(EntityTypes.ProductInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<ProductInfo>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else if (string.Equals(EntityTypes.AICitation, entity.Type, StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonSerializer.Deserialize<AIEntity>(JsonSerializer.Serialize(entity, options), options);
-            }
-            else
-            {
-                bool bFound = ProtocolJsonSerializer.EntityTypes.Where(w=>w.Key.Equals(entity.Type, StringComparison.OrdinalIgnoreCase)).Any();
-                if (bFound)
-                {
-                    Type type = ProtocolJsonSerializer.EntityTypes.Where(w => w.Key.Equals(entity.Type, StringComparison.OrdinalIgnoreCase)).First().Value;
-                    return (Entity)JsonSerializer.Deserialize(JsonSerializer.Serialize(entity, options), type, options);
-                }
-            }
-                
-                return entity;
+            var localReader = reader;
+            using var doc = JsonDocument.ParseValue(ref localReader);
+            var typeDiscriminator = doc.RootElement.GetProperty("type").GetString() ?? throw new JsonException("Type discriminator not found.");
+            var toType = ProtocolJsonSerializer.EntityTypes.Where(w => w.Key.Equals(typeDiscriminator, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().Value ?? typeToConvert;
+            return base.Read(ref reader, toType, options);
         }
 
         protected override void ReadExtensionData(ref Utf8JsonReader reader, Entity value, string propertyName, JsonSerializerOptions options)

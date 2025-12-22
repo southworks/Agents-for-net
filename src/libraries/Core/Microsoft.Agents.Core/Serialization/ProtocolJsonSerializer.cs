@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization.Converters;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -17,7 +18,7 @@ namespace Microsoft.Agents.Core.Serialization
     public static class ProtocolJsonSerializer
     {
         public const string ApplicationJson = "application/json";
-        public static JsonSerializerOptions SerializationOptions { get; private set; } = CreateConnectorOptions();
+        public static JsonSerializerOptions SerializationOptions { get; private set; } = InitSerializerOptions();
         public static bool UnpackObjectStrings { get; set; } = true;
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace Microsoft.Agents.Core.Serialization
         /// <summary>
         /// Maintains a mapping of entity type names to their corresponding Type objects.
         /// </summary>
-        public static ConcurrentDictionary<string,Type> EntityTypes { get; private set; } = new();
+        public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; }
 
         private static readonly object _optionsLock = new object();
 
@@ -42,8 +43,18 @@ namespace Microsoft.Agents.Core.Serialization
             EntityInitAssemblyAttribute.InitSerialization();
         }
 
-        private static JsonSerializerOptions CreateConnectorOptions()
+        private static JsonSerializerOptions InitSerializerOptions()
         {
+            EntityTypes = new();
+            EntityTypes[Models.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
+            EntityTypes[Models.EntityTypes.AICitation] = typeof(AIEntity);
+            EntityTypes[Models.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
+            EntityTypes[Models.EntityTypes.Mention] = typeof(Mention);
+            EntityTypes[Models.EntityTypes.Place] = typeof(Place);
+            EntityTypes[Models.EntityTypes.ProductInfo] = typeof(ProductInfo);
+            EntityTypes[Models.EntityTypes.StreamInfo] = typeof(StreamInfo);
+            EntityTypes[Models.EntityTypes.Thing] = typeof(Thing);
+
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
