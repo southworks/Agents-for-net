@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -163,7 +164,7 @@ namespace Microsoft.Agents.Core.Models
             }
             Appearance = new ClientCitationAppearance()
             {
-                EncodingFormat = useDefaultAdaptiveCard ? "application/vnd.microsoft.card.adaptive" : null,
+                EncodingFormat = useDefaultAdaptiveCard ? ContentTypes.AdaptiveCard : null,
                 Name = title,
                 Url = citationLink,
                 Abstract = abstractText,
@@ -214,7 +215,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// Optional. Encoding format of the `citation.appearance.text` field. 
-        /// It should be one of "text/html" or "application/vnd.microsoft.card.adaptive".
+        /// It should be one of <see cref="ContentTypes.Message"/> or <see cref="ContentTypes.AdaptiveCard"/>.
         /// </summary>
         public string? EncodingFormat { get; set; } 
 

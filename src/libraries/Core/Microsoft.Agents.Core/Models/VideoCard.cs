@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The content type value of a <see cref="VideoCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.video";
+        public const string ContentType = ContentTypes.VideoCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="VideoCard"/>.

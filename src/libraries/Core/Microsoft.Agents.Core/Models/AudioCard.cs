@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The content type value of a <see cref="AudioCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.audio";
+        public const string ContentType = ContentTypes.AudioCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="AudioCard"/>.

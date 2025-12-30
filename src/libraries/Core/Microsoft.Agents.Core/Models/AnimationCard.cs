@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The content type value of a <see cref="AnimationCard"/>.
         /// </summary>
-        public const string ContentType = "application/vnd.microsoft.card.animation";
+        public const string ContentType = ContentTypes.AnimationCard;
 
         /// <summary>
         /// Creates a new attachment from <see cref="AnimationCard"/>.
