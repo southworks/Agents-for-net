@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnFileConsentAccept(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-            => OnFileConsent(handler, "accept");
+            => OnFileConsent(handler, "accept", rank, autoSignInHandlers, isAgenticOnly);
 
         /// <summary>
         /// Handles when a file consent card is declined by the user.
@@ -322,7 +322,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The AgentExtension instance for chaining purposes.</returns>
         public TeamsAgentExtension OnFileConsentDecline(FileConsentHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
-            => OnFileConsent(handler, "decline", rank, autoSignInHandlers);
+            => OnFileConsent(handler, "decline", rank, autoSignInHandlers, isAgenticOnly);
 
         private TeamsAgentExtension OnFileConsent(FileConsentHandler handler, string fileConsentAction, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
