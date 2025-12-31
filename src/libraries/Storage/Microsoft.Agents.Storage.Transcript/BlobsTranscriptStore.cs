@@ -146,6 +146,8 @@ namespace Microsoft.Agents.Storage.Transcript
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(BlobContainerClient containerClient, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializer = null)
         {
+            AssertionHelpers.ThrowIfNull(containerClient, nameof(containerClient));
+
             _containerClient = new Lazy<BlobContainerClient>(() => containerClient);
             _serializerOptions = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
             _storageTransferOptions = storageTransferOptions;
