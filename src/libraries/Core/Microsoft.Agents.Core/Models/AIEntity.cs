@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -215,7 +214,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// Optional. Encoding format of the `citation.appearance.text` field. 
-        /// It should be one of <see cref="ContentTypes.Message"/> or <see cref="ContentTypes.AdaptiveCard"/>.
+        /// It should be one of <see cref="ContentTypes.Html"/> or <see cref="ContentTypes.AdaptiveCard"/>.
         /// </summary>
         public string? EncodingFormat { get; set; } 
 

@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// <param name="details">The meeting's detailed information.</param>
         /// <param name="conversation">Conversation Account for the meeting.</param>
         /// <param name="organizer">Information specific to this organizer of the specific meeting.</param>
-        /// <param name="id"></param>
+        /// <param name="id">Unique identifier representing the meeting.</param>
         public MeetingInfo(MeetingDetails details, ConversationAccount conversation = null, TeamsChannelAccount organizer = null, string id = null)
         {
             Id = id;

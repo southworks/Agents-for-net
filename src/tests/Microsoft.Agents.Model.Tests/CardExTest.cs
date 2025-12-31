@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Model.Tests
             attachments.Add(oauthCard.ToAttachment());
 
             Assert.NotEmpty(attachments);
-            Assert.Equal(ContentTypes.HeroCard, attachments[0].ContentType);
+            Assert.Equal(ContentTypes.OAuthCard, attachments[0].ContentType);
         }
     }
 }
