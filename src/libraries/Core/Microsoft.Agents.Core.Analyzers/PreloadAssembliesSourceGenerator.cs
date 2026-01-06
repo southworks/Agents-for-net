@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Analyzers.Extensions;
+using Microsoft.Agents.Core.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
@@ -88,7 +90,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 }
                 else if (member is INamedTypeSymbol type)
                 {
-                    if (InheritsFrom(type, baseType))
+                    if (type.InheritsFrom(baseType))
                     {
                         var name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                         if (!name.StartsWith("global::Microsoft.Agents.Core.Models"))
@@ -98,20 +100,6 @@ namespace Microsoft.Agents.Core.Analyzers
                     }
                 }
             }
-        }
-
-        private static bool InheritsFrom(INamedTypeSymbol type, INamedTypeSymbol baseType)
-        {
-            var current = type.BaseType;
-            while (current != null)
-            {
-                if (SymbolEqualityComparer.Default.Equals(current, baseType))
-                {
-                    return true;
-                }
-                current = current.BaseType;
-            }
-            return false;
         }
 
         private static string GenerateSource(ImmutableArray<string> types)

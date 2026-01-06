@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Microsoft.Agents.Core.Analyzers
+namespace Microsoft.Agents.Core.Analyzers.Helpers
 {
     internal class ObjectImmutableArraySequenceEqualityComparer<T> : IEqualityComparer<ImmutableArray<T?>>
         where T : class

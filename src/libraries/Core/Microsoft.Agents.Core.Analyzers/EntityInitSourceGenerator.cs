@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Analyzers.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -22,11 +22,6 @@ namespace Microsoft.Agents.Core.Analyzers
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            if (!Debugger.IsAttached)
-            {
-                //Debugger.Launch();
-            }
-
             // Step 1: Get all class declarations in the compilation
             var classDeclarations = context.SyntaxProvider
                 .CreateSyntaxProvider(
@@ -56,7 +51,7 @@ namespace Microsoft.Agents.Core.Analyzers
                         continue;
 
                     // Check if it inherits from the base type
-                    if (InheritsFrom(symbol, baseTypeSymbol))
+                    if (symbol.InheritsFrom(symbol))
                     {
                         subclasses.Add(symbol);
                     }
@@ -68,21 +63,6 @@ namespace Microsoft.Agents.Core.Analyzers
                     spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
                 }
             });
-        }
-
-
-        private static bool InheritsFrom(INamedTypeSymbol type, INamedTypeSymbol baseType)
-        {
-            var current = type.BaseType;
-            while (current != null)
-            {
-                if (SymbolEqualityComparer.Default.Equals(current, baseType))
-                {
-                    return true;
-                }
-                current = current.BaseType;
-            }
-            return false;
         }
     }
 }
