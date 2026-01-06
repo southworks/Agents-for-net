@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Builder
                 var responses = await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
                 var sentNonTraceActivity = false;
 
-                for (var index = 0; index < responses.Length; index++)
+                for (var index = 0; index < responses?.Length; index++)
                 {
                     var activity = bufferedActivities[index];
 
