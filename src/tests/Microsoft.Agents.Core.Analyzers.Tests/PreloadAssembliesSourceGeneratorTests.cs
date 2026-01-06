@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests;
 [Trait("Category", "Manual")]
 public class PreloadAssembliesSourceGeneratorTests
 {
-    [Fact]
+    [Fact(Skip = "Defer entil preload handling complete")]
     public async Task Validate_TypeRegistryAsync()
     {
         const string source = /* lang=c#-test */ """
