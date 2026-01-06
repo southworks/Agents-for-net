@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
 {
     return 
     [
-        new Microsoft.Agents.Builder.App.TeamsAttachmentDownloader(
+        new Microsoft.Agents.Builder.App.M365AttachmentDownloader(
             sp.GetService<IConnections>()!,
             sp.GetService<IHttpClientFactory>()!),
         // new AttachmentDownloader(sp.GetService<IHttpClientFactory>()!)

@@ -10,19 +10,19 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// <summary>
     /// Downloads attachments from Teams using the configure Token Provider (from IConnections).
     /// </summary>
-    [Obsolete("Use Microsoft.Agents.Builder.App.TeamsAttachmentDownloader instead.")]
+    [Obsolete("Use Microsoft.Agents.Builder.App.M365AttachmentDownloader instead.")]
     public class TeamsAttachmentDownloader(
-        Builder.App.TeamsAttachmentDownloaderOptions options, 
+        Builder.App.M365AttachmentDownloaderOptions options, 
         IConnections connections, 
-        IHttpClientFactory httpClientFactory) : Microsoft.Agents.Builder.App.TeamsAttachmentDownloader(connections, httpClientFactory, options)
+        IHttpClientFactory httpClientFactory) : Microsoft.Agents.Builder.App.M365AttachmentDownloader(connections, httpClientFactory, options)
     {
     }
 
     /// <summary>
     /// The TeamsAttachmentDownloader options
     /// </summary>
-    [Obsolete("Use Microsoft.Agents.Builder.App.TeamsAttachmentDownloaderOptions instead.")]
-    public class TeamsAttachmentDownloaderOptions : Microsoft.Agents.Builder.App.TeamsAttachmentDownloaderOptions
+    [Obsolete("Use Microsoft.Agents.Builder.App.M365AttachmentDownloaderOptions instead.")]
+    public class TeamsAttachmentDownloaderOptions : Microsoft.Agents.Builder.App.M365AttachmentDownloaderOptions
     {
     }
 }

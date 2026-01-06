@@ -16,11 +16,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Downloads attachments from Teams using the configured Token Provider (from IConnections).
+    /// Downloads attachments from M365/Teams using the configured Token Provider (from IConnections).
     /// </summary>
-    public class TeamsAttachmentDownloader : IInputFileDownloader
+    public class M365AttachmentDownloader : IInputFileDownloader
     {
-        private readonly TeamsAttachmentDownloaderOptions _options;
+        private readonly M365AttachmentDownloaderOptions _options;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
 
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
         /// <exception cref="System.ArgumentException"></exception>
-        public TeamsAttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, TeamsAttachmentDownloaderOptions options = null)
+        public M365AttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, M365AttachmentDownloaderOptions options = null)
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Builder.App
                     downloadUrl = value.ToString();
                 }
 
-                using var httpClient = _httpClientFactory.CreateClient(nameof(TeamsAttachmentDownloader));
+                using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));
                 
                 using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
                 request.Headers.Add("Authorization", $"Bearer {accessToken}");
@@ -152,9 +152,9 @@ namespace Microsoft.Agents.Builder.App
     }
 
     /// <summary>
-    /// The TeamsAttachmentDownloader options
+    /// The M365AttachmentDownloader options
     /// </summary>
-    public class TeamsAttachmentDownloaderOptions
+    public class M365AttachmentDownloaderOptions
     {
         public string TokenProviderName { get; set; }
         public bool UseAnonymous { get; set; } = false;
