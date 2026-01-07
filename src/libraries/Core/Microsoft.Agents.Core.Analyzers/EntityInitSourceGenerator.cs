@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Analyzers.Extensions;
+using Microsoft.Agents.Core.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
@@ -38,7 +39,11 @@ namespace Microsoft.Agents.Core.Analyzers
             var derivedTypesProvider =
                 compilationProvider
                     .Combine(myTypeProvider)
-                    .Select(static (pair, ct) => FindDerivedTypes(pair.Left, pair.Right));
+                    .Select(static (pair, ct) => FindDerivedTypes(pair.Left, pair.Right))
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+                    // Custom comparer expects string?, but we guarantee non-null strings in FindDerivedTypes.
+                    .WithComparer(new ObjectImmutableArraySequenceEqualityComparer<string>());
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             // Step 4: generate EntityInitAssemblyAttributes for found derived types
             context.RegisterSourceOutput(
@@ -50,19 +55,19 @@ namespace Microsoft.Agents.Core.Analyzers
                         return;
                     }
 
-                    var entityAttributes = string.Join("\r\n", derivedTypes.Select(x => $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))]"));
+                    var entityAttributes = string.Join("\r\n", derivedTypes.Distinct().Select(x => $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x}))]"));
                     spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
                 });
         }
 
-        private static ImmutableArray<INamedTypeSymbol> FindDerivedTypes(
+        private static ImmutableArray<string> FindDerivedTypes(
             Compilation compilation,
             INamedTypeSymbol? myType)
         {
             if (myType is null)
-                return ImmutableArray<INamedTypeSymbol>.Empty;
+                return ImmutableArray<string>.Empty;
 
-            var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+            var builder = ImmutableArray.CreateBuilder<string>();
 
             CollectAnyDerivedType(compilation.Assembly.GlobalNamespace, myType, builder);
 
@@ -72,7 +77,7 @@ namespace Microsoft.Agents.Core.Analyzers
         private static void CollectAnyDerivedType(
             INamespaceSymbol ns,
             INamedTypeSymbol baseType,
-            ImmutableArray<INamedTypeSymbol>.Builder builder)
+            ImmutableArray<string>.Builder builder)
         {
             foreach (var member in ns.GetMembers())
             {
@@ -84,7 +89,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 {
                     if (type.InheritsFrom(baseType))
                     {
-                        builder.Add(type);
+                        builder.Add(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                     }
                 }
             }
