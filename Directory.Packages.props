@@ -15,7 +15,8 @@
     <Microsoft_Extentions_PkgVer>10.0.1</Microsoft_Extentions_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.22</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.15.0</Microsoft_IdentityModel_PkgVer>
-	<Microsoft_IdentityClient_PkgVer>4.79.2</Microsoft_IdentityClient_PkgVer>
+	<Microsoft_IdentityClient_PkgVer>4.80.0</Microsoft_IdentityClient_PkgVer>
+	<OpenTelemetry_PkgVer>1.14.0</OpenTelemetry_PkgVer>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
@@ -113,19 +114,17 @@
 	<PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
 
 	  <!-- OpenTelemetry packages -->
-	  <PackageVersion Include="OpenTelemetry" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="0.5.0-beta.5" />
-
-	  <!-- OpenTelemetry Exporters -->
-	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
-	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+	  <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.14.0-beta.2" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetry_PkgVer)" />
 
 	  <!-- Azure Monitor (Application Insights) Exporter -->
-	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
+	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
   
   </ItemGroup>
 </Project>
