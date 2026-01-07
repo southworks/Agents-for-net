@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Core.Serialization
         /// <summary>
         /// Maintains a mapping of entity type names to their corresponding Type objects.
         /// </summary>
-        public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; }
+        public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
         private static readonly object _optionsLock = new object();
 
@@ -45,20 +45,24 @@ namespace Microsoft.Agents.Core.Serialization
 
         private static JsonSerializerOptions InitSerializerOptions()
         {
-            EntityTypes = new();
-            EntityTypes[Models.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
-            EntityTypes[Models.EntityTypes.AICitation] = typeof(AIEntity);
-            EntityTypes[Models.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
-            EntityTypes[Models.EntityTypes.Mention] = typeof(Mention);
-            EntityTypes[Models.EntityTypes.Place] = typeof(Place);
-            EntityTypes[Models.EntityTypes.ProductInfo] = typeof(ProductInfo);
-            EntityTypes[Models.EntityTypes.StreamInfo] = typeof(StreamInfo);
-            EntityTypes[Models.EntityTypes.Thing] = typeof(Thing);
-
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
             return options;
+        }
+
+        private static ConcurrentDictionary<string, Type> CoreEntities()
+        {
+            var entities = new ConcurrentDictionary<string, Type>();
+            entities[Models.EntityTypes.ActivityTreatment] = typeof(ActivityTreatment);
+            entities[Models.EntityTypes.AICitation] = typeof(AIEntity);
+            entities[Models.EntityTypes.GeoCoordinates] = typeof(GeoCoordinates);
+            entities[Models.EntityTypes.Mention] = typeof(Mention);
+            entities[Models.EntityTypes.Place] = typeof(Place);
+            entities[Models.EntityTypes.ProductInfo] = typeof(ProductInfo);
+            entities[Models.EntityTypes.StreamInfo] = typeof(StreamInfo);
+            entities[Models.EntityTypes.Thing] = typeof(Thing);
+            return entities;
         }
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
