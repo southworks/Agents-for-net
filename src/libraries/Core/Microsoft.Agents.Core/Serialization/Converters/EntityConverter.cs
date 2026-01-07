@@ -14,7 +14,19 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             var localReader = reader;
             using var doc = JsonDocument.ParseValue(ref localReader);
-            var typeDiscriminator = doc.RootElement.GetProperty("type").GetString() ?? throw new JsonException("Type discriminator not found.");
+
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("type", out var typeProperty) || typeProperty.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("Type discriminator not found.");
+            }
+
+            var typeDiscriminator = typeProperty.GetString();
+            if (string.IsNullOrEmpty(typeDiscriminator))
+            {
+                throw new JsonException("Type discriminator not found.");
+            }
+
             var toType = ProtocolJsonSerializer.EntityTypes.Where(w => w.Key.Equals(typeDiscriminator, StringComparison.OrdinalIgnoreCase)).FirstOrDefault().Value ?? typeToConvert;
             return base.Read(ref reader, toType, options);
         }

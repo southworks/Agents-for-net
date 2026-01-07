@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Microsoft.Agents.Core.Analyzers
 {
     /// <summary>
-    /// Creates assembly SerializationInitAssemblyAttribute to register all SerializationInitAttributes for serialization configuraiton.
+    /// Creates assembly SerializationInitAssemblyAttribute to register all SerializationInitAttributes for serialization configuration.
     /// </summary>
     [Generator]
     public class SerializationInitSourceGenerator : IIncrementalGenerator
