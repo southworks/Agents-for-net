@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Core.Analyzers
                         continue;
 
                     // Check if it inherits from the base type
-                    if (symbol.InheritsFrom(symbol))
+                    if (symbol.InheritsFrom(baseTypeSymbol))
                     {
                         subclasses.Add(symbol);
                     }
