@@ -3,9 +3,9 @@
 
 using Microsoft.Agents.Core.Analyzers.Extensions;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -22,47 +22,72 @@ namespace Microsoft.Agents.Core.Analyzers
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            // Step 1: Get all class declarations in the compilation
-            var classDeclarations = context.SyntaxProvider
-                .CreateSyntaxProvider(
-                    predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: static (ctx, _) => (ClassDeclarationSyntax)ctx.Node
-                )
-                .Where(static cls => cls != null);
-
-            // Step 2: Combine with Compilation to resolve symbols
-            var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
-
-            // Step 3: Process and generate code
-            context.RegisterSourceOutput(compilationAndClasses, static (spc, source) =>
+            if (!Debugger.IsAttached)
             {
-                var (compilation, classes) = source;
+                //Debugger.Launch();
+            }
 
-                var baseTypeSymbol = compilation.GetTypeByMetadataName(EntityTypeFullName);
-                if (baseTypeSymbol == null)
-                    return; // Base class not found
+            // Step 1: get the Compilation
+            var compilationProvider = context.CompilationProvider;
 
-                var subclasses = new List<INamedTypeSymbol>();
-                foreach (var classDecl in classes)
+            // Step 2: resolve Entity type
+            var myTypeProvider = compilationProvider
+                .Select(static (compilation, _) => compilation.GetTypeByMetadataName(EntityTypeFullName));
+
+            // Step 3: find derived types
+            var derivedTypesProvider =
+                compilationProvider
+                    .Combine(myTypeProvider)
+                    .Select(static (pair, ct) => FindDerivedTypes(pair.Left, pair.Right));
+
+            // Step 4: generate EntityInitAssemblyAttributes for found derived types
+            context.RegisterSourceOutput(
+                derivedTypesProvider,
+                static (spc, derivedTypes) =>
                 {
-                    var model = compilation.GetSemanticModel(classDecl.SyntaxTree);
-                    var symbol = model.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
-                    if (symbol == null)
-                        continue;
-
-                    // Check if it inherits from the base type
-                    if (symbol.InheritsFrom(baseTypeSymbol))
+                    if (derivedTypes.IsDefaultOrEmpty)
                     {
-                        subclasses.Add(symbol);
+                        return;
+                    }
+
+                    var entityAttributes = string.Join("\r\n", derivedTypes.Select(x => $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))]"));
+                    spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
+                });
+        }
+
+        private static ImmutableArray<INamedTypeSymbol> FindDerivedTypes(
+            Compilation compilation,
+            INamedTypeSymbol? myType)
+        {
+            if (myType is null)
+                return ImmutableArray<INamedTypeSymbol>.Empty;
+
+            var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+
+            CollectAnyDerivedType(compilation.Assembly.GlobalNamespace, myType, builder);
+
+            return builder.ToImmutable();
+        }
+
+        private static void CollectAnyDerivedType(
+            INamespaceSymbol ns,
+            INamedTypeSymbol baseType,
+            ImmutableArray<INamedTypeSymbol>.Builder builder)
+        {
+            foreach (var member in ns.GetMembers())
+            {
+                if (member is INamespaceSymbol childNs)
+                {
+                    CollectAnyDerivedType(childNs, baseType, builder);
+                }
+                else if (member is INamedTypeSymbol type)
+                {
+                    if (type.InheritsFrom(baseType))
+                    {
+                        builder.Add(type);
                     }
                 }
-
-                if (subclasses.Count > 0)
-                {
-                    var entityAttributes = string.Join("\r\n", subclasses.Select(x => $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))]"));
-                    spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
-                }
-            });
+            }
         }
     }
 }
