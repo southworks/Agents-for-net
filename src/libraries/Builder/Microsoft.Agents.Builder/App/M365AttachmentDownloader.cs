@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
 
 
         /// <summary>
-        /// Creates the TeamsAttachmentDownloader
+        /// Creates the M365AttachmentDownloader
         /// </summary>
         /// <param name="options">The options</param>
         /// <param name="connections"></param>
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.App
             }
 
             // Filter out HTML attachments
-            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith("text/html"));
+            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith(ContentTypes.Html));
             if (attachments == null || !attachments.Any())
             {
                 return [];
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Builder.App
 
                 // Fixup content type
                 string contentType = response.Content.Headers.ContentType.MediaType;
-                if (contentType.StartsWith("image/"))
+                if ((bool)(contentType?.StartsWith("image/")))
                 {
                     contentType = "image/png";
                 }
