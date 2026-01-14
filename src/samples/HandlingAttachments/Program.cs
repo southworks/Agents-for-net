@@ -3,17 +3,14 @@
 
 using HandlingAttachments;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,19 +48,11 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => "Microsoft Agents SDK Sample");
+// Add endpoints for the AgentApplication registered above.
+app.MapAgentDefaultRootEndpoint();
+app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-// This receives incoming messages from Azure Bot Service or other SDK Agents
-var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-{
-    await adapter.ProcessAsync(request, response, agent, cancellationToken);
-});
-
-if (!app.Environment.IsDevelopment())
-{
-    incomingRoute.RequireAuthorization();
-}
-else
+if (app.Environment.IsDevelopment())
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.
