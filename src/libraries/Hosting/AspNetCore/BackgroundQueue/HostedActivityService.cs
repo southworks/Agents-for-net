@@ -141,6 +141,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
+                    activityWithClaims.DiagnosticsActivity?.Start();
 
                     if (activityWithClaims.IsProactive)
                     {
@@ -180,6 +181,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     {
                         await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
                     }
+                }
+                finally
+                {
+                    activityWithClaims.DiagnosticsActivity?.Stop();
                 }
             }, stoppingToken);
         }

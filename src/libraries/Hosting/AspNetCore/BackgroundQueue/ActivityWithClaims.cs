@@ -44,5 +44,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Headers used for the current <see cref="Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
+
+        public System.Diagnostics.Activity DiagnosticsActivity { get; set; }
     }
 }
