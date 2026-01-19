@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Authentication.Msal
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
                 .WithClientAssertion((AssertionRequestOptions options) => Task.FromResult(agentToken))
-                .WithAuthority(new Uri(_connectionSettings.Authority ?? $"https://login.microsoftonline.com/{_connectionSettings.TenantId}"))
+                .WithAuthority(ResolveAuthority(_connectionSettings, tenantId))
                 .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
                 .WithLegacyCacheCompatibility(false)
                 .WithCacheOptions(new CacheOptions(true))
@@ -222,11 +222,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
             var aauToken = await instanceApp
                 .AcquireTokenForClient(scopes)
-                .OnBeforeTokenRequest(async request =>
+                .OnBeforeTokenRequest(request =>
                 {
+                    request.BodyParameters["user_id"] = agenticUserId;
                     request.BodyParameters["user_federated_identity_credential"] = instanceToken;
                     request.BodyParameters["grant_type"] = "user_fic";
-                    request.BodyParameters["user_id"] = agenticUserId;
+                    return Task.CompletedTask;
                 })
                 .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
@@ -264,16 +265,6 @@ namespace Microsoft.Agents.Authentication.Msal
             }
 
             return connectionSettings.TenantId;
-        }
-
-        private static string DelimitedScopes(IList<string> scopes, string separator)
-        {
-            var scp = "";
-            if (scopes != null)
-            {
-                scp = string.Join(separator, scopes);
-            }
-            return scp;
         }
         #endregion
 
