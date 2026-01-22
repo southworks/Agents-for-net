@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Builder
         /// Gets the stream ID of the current response.
         /// Assigned after the initial update is sent.
         /// </summary>
-        public string StreamId { get; private set; }
+        string StreamId { get; private set; }
 
         /// <summary>
         /// The buffered message.
