@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Core.Telemetry
 
             if (source.ParentId != null)
             {
-                clone.SetParentId(source.ParentId);
+                clone.SetParentId(source.TraceId, source.SpanId);
             }
 
             foreach (var tag in source.Tags)
@@ -54,8 +54,6 @@ namespace Microsoft.Agents.Core.Telemetry
             {
                 clone.AddEvent(eventItem);
             }
-
-            clone.SetStartTime(source.StartTimeUtc);
 
             if (start)
             {
