@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     }
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-                    activityWithClaims.DiagnosticsActivity?.Start();
+                    activityWithClaims.TelemetryActivity?.Start();
 
                     if (activityWithClaims.IsProactive)
                     {
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 finally
                 {
-                    activityWithClaims.DiagnosticsActivity?.Stop();
+                    activityWithClaims.TelemetryActivity?.Stop();
                 }
             }, stoppingToken);
         }

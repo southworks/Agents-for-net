@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             ArgumentNullException.ThrowIfNull(work);
 
-            _workItems.Enqueue(new WorkItem() { Process = work, DiagnosticsActivity = System.Diagnostics.Activity.Current?.CloneActivity() });
+            _workItems.Enqueue(new WorkItem() { Process = work, TelemetryActivity = System.Diagnostics.Activity.Current?.CloneActivity() });
             _signal.Release();
         }
 
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 // In case of a race where the queue is empty, return a no-op work item.
                 return _ => Task.CompletedTask;
             }
-            dequeued.DiagnosticsActivity?.Start();
+            dequeued.TelemetryActivity?.Start();
             return dequeued.Process;
         }
     }
@@ -58,6 +58,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and
         /// telemetry correlation, cloned from the original request context.
         /// </summary>
-        public System.Diagnostics.Activity DiagnosticsActivity { get; set; }
+        public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }
