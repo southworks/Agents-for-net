@@ -45,6 +45,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
 
-        public System.Diagnostics.Activity DiagnosticsActivity { get; set; }
+        /// <summary>
+        /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and telemetry
+        /// correlation, cloned from the original request context to enable trace continuity across the
+        /// background queue boundary.
+        /// </summary>
+        /// <summary>
+        /// Telemetry <see cref="System.Diagnostics.Activity"/> associated with this request.
+        /// </summary>
+        public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }

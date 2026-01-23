@@ -40,15 +40,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             await _signal.WaitAsync(cancellationToken);
 
-            _workItems.TryDequeue(out WorkItem dequeued);
+            if (!_workItems.TryDequeue(out WorkItem dequeued) || dequeued is null)
+            {
+                // In case of a race where the queue is empty, return a no-op work item.
+                return _ => Task.CompletedTask;
+            }
             dequeued.DiagnosticsActivity?.Start();
             return dequeued.Process;
         }
     }
 
-    class WorkItem
+    internal class WorkItem
     {
         public Func<CancellationToken, Task> Process { get; set; }
+
+        /// <summary>
+        /// Holds the <see cref="System.Diagnostics.Activity"/> used for distributed tracing and
+        /// telemetry correlation, cloned from the original request context.
+        /// </summary>
         public System.Diagnostics.Activity DiagnosticsActivity { get; set; }
     }
 }
