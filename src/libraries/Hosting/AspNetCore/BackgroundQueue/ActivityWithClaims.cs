@@ -50,9 +50,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// correlation, cloned from the original request context to enable trace continuity across the
         /// background queue boundary.
         /// </summary>
-        /// <summary>
-        /// Telemetry <see cref="System.Diagnostics.Activity"/> associated with this request.
-        /// </summary>
         public System.Diagnostics.Activity TelemetryActivity { get; set; }
     }
 }
