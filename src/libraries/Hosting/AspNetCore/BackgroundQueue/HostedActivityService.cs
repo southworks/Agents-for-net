@@ -190,10 +190,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
                     }
                 }
-                finally
-                {
-                    activityWithClaims.TelemetryActivity?.Stop();
-                }
             }, stoppingToken);
         }
     }
