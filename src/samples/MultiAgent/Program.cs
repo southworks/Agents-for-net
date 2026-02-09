@@ -30,8 +30,12 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 WebApplication app = builder.Build();
 
-app.MapAgentDefaultRootEndpoint();
-app.MapAgentApplicationEndpoints(requireAuth: false);
+// Map GET "/"
+app.MapAgentRootEndpoint();
+
+// Map the endpoints for all agents using the [AgentInterface] attribute.
+// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
+app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
 {

@@ -149,9 +149,11 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Add endpoints for the AgentApplication registered above.
-app.MapAgentDefaultRootEndpoint();
-app.MapAgentEndpoint<MyAgent>(
+// Map GET "/"
+app.MapAgentRootEndpoint();
+
+// Map the /api/message endpoint for MyAgent with custom processing logic to include telemetry
+app.MapAgentEndpoints<MyAgent>(
     requireAuth: !app.Environment.IsDevelopment(), 
     process: async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, MyAgent agent, CancellationToken cancellationToken) =>
     {

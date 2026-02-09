@@ -45,7 +45,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Add endpoints for the AgentApplication registered above.
-app.MapAgentDefaultRootEndpoint();
+app.MapAgentRootEndpoint();
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 // Add A2A endpoints.  By default A2A will respond on '/a2a'.

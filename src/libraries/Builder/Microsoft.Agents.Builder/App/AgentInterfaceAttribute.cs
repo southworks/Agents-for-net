@@ -9,16 +9,20 @@ namespace Microsoft.Agents.Builder.App
     /// Declares a transport protocol for interacting with the agent.
     /// This allows agents to expose the same functionality over multiple transport mechanisms.
     /// </summary>
+    /// <remarks>
+    /// This is optional if there is a single AgentApplication in the project.  If there are multiple 
+    /// AgentApplications, this attribute must be used to specify the transport protocol and path for each AgentApplication.<br/><br/>
+    /// The <c>protocol</c> argument is host and protocol specific.  In Agents SDK, see <see cref="AgentTransportProtocol"/>.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
-    public class AgentInterfaceAttribute(AgentTransportProtocol protocol, string path, string? processDelegate = null) : Attribute
+    public class AgentInterfaceAttribute(string protocol, string path, string? processDelegate = null) : Attribute
     {
         /// <summary>
         /// The transport protocol supported at this URL.
         /// <para>
-        /// See <see cref="AgentTransportProtocol"/> for the defined types.
         /// </para>
         /// </summary>
-        public AgentTransportProtocol Protocol { get; } = protocol;
+        public string Protocol { get; } = protocol;
 
         /// <summary>
         /// The path where this interface is available. Must be a valid absolute HTTPS URL in production.
@@ -40,10 +44,10 @@ namespace Microsoft.Agents.Builder.App
         /// <para>
         /// Example for AspNet:
         /// <code>
-        /// [AgentInterface(protocol: AgentTransportProtocol.ActivityProtocol, path: "/api/messages"), processDelegate: MyProcessDelete]
+        /// [AgentInterface(protocol: AgentTransportProtocol.ActivityProtocol, path: "/api/messages"), processDelegate: MyProcessDelegate]
         /// class MyAgent : AgentApplication
         /// {
-        ///    private async Task MyProcessDelete(HttpRequest httpRequest, HttpResponse httpResponse, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken)
+        ///    private async Task MyProcessDelegate(HttpRequest httpRequest, HttpResponse httpResponse, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken)
         ///    {
         ///        // Custom processing logic here
         ///        
