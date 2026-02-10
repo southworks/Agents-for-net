@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TAdapter : IAgentHttpAdapter;
 
         /// <summary>
-        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>."/>
+        /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>
@@ -98,16 +98,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     agentGroup.MapMethods(agentInterface.Path, ["POST"],
                         async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IServiceProvider services, CancellationToken cancellationToken) =>
                         {
-                            IAgent agentInstance = null;
-                            try
-                            {
-                                agentInstance = (IAgent)services.GetRequiredService(agent);
-                            }
-                            catch (Exception)
-                            {
-                                // This is to handle declaring an AgentApplication in an AddTransient lambda.
-                                agentInstance = (IAgent)services.GetRequiredService(typeof(IAgent));
-                            }
+                            IAgent agentInstance = (IAgent)services.GetService(agent);
+                            // This is to handle declaring an AgentApplication in an AddTransient lambda.
+                            agentInstance ??= (IAgent)services.GetRequiredService(typeof(IAgent));
 
                             if (!string.IsNullOrEmpty(agentInterface.ProcessDelegate))
                             {

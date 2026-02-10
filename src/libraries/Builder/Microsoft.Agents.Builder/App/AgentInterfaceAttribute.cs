@@ -25,9 +25,8 @@ namespace Microsoft.Agents.Builder.App
         public string Protocol { get; } = protocol;
 
         /// <summary>
-        /// The path where this interface is available. Must be a valid absolute HTTPS URL in production.
+        /// The relative path where this interface is available.
         /// <para>
-        /// Example for HTTP:
         /// <code>
         /// "/api/messages",
         /// </code>
@@ -59,7 +58,7 @@ namespace Microsoft.Agents.Builder.App
         /// </code>
         /// </para>
         /// </remarks>
-        public string ProcessDelegate { get; } = processDelegate;
+        public string? ProcessDelegate { get; } = processDelegate;
 
     }
 }
