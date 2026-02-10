@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Core.Serialization
             var type = GetType(jsonObject);
             return new Dictionary<string, string>
             {
-                { "$type", type?.Name },
+                { "$type", type?.FullName },
                 { "$typeAssembly", type.Assembly.FullName }
             };
         }
