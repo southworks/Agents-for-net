@@ -8,7 +8,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Agents.Hosting.A2A.Protocol;
-using Microsoft.Agents.Hosting.AspNetCore.A2A;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -21,10 +20,9 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         OnMessage("-stream", OnStreamAsync);
-        OnMessage("-multi".ForA2A(), OnMultiTurnAsync);
+        OnMessage("-multi", OnMultiTurnAsync);
         OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
-        OnActivity(ActivityTypes.Message.ForA2A(), OnA2AMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
     private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -49,18 +47,8 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        var activity = new Activity()
-        {
-            Text = $"You said: {turnContext.Activity.Text}",
-            Type = ActivityTypes.Message,
-        };
-        await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
-    }
-
     // Received an A2A Message
-    private async Task OnA2AMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // ConversationState is associated with the A2A Task.
         var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
