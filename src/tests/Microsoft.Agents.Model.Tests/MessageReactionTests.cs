@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void ConversationAccount_RoundTrip()
+        public void MessageReaction_RoundTrip()
         {
             var jsonIn = "{\"type\":\"like\"}";
 
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void ConversationAccount_RoundTrip_WithExtendedProperties()
+        public void MessageReaction_RoundTrip_WithExtendedProperties()
         {
             var jsonIn = "{\"type\":\"like\",\"prop1\":\"value1\",\"prop2\":\"value2\"}";
 
