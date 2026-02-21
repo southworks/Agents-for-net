@@ -214,6 +214,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                     throw new ArgumentException("cloudBaseAddress must be provided when PowerPlatformCloudCategory is Other", nameof(cloudBaseAddress));
                 }
 
+#pragma warning disable CA2208 // Instantiate argument exceptions correctly
                 if (string.IsNullOrEmpty(settings.EnvironmentId))
                 {
                     throw new ArgumentException("EnvironmentId must be provided", nameof(settings.EnvironmentId));
@@ -222,6 +223,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 {
                     throw new ArgumentException("CdsBotId must be provided for orchestrated connections", nameof(settings.CdsBotId));
                 }
+#pragma warning restore CA2208 // Instantiate argument exceptions correctly
 
                 if (settings.Cloud != null && settings.Cloud != PowerPlatformCloud.Unknown)
                 {
@@ -257,11 +259,11 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 directConnectUrl ??= settings.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    return CreateOrchestratedUri(directConnectUrl, conversationId);
+                    return CreateOrchestratedUri(directConnectUrl!, conversationId);
                 }
                 else
                 {
-                    throw new ArgumentException("DirectConnectUrl is invalid");
+                    throw new ArgumentException("DirectConnectUrl is invalid", nameof(directConnectUrl));
                 }
             }
         }

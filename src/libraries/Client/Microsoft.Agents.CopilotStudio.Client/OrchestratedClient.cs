@@ -28,34 +28,12 @@ namespace Microsoft.Agents.CopilotStudio.Client
     /// </summary>
     public class OrchestratedClient : IOrchestratedClient
     {
-        /// <summary>
-        /// The content type for event stream.
-        /// </summary>
         private static readonly MediaTypeWithQualityHeaderValue s_EventStream = new("text/event-stream");
-
-        /// <summary>
-        /// The content type for JSON.
-        /// </summary>
         private static readonly MediaTypeWithQualityHeaderValue s_ApplicationJson = new("application/json");
 
-        /// <summary>
-        /// The HTTP client factory to use for connecting to Copilot Studio.
-        /// </summary>
         private readonly IHttpClientFactory _httpClientFactory;
-
-        /// <summary>
-        /// The HTTP client name to use from the factory.
-        /// </summary>
         private readonly string _httpClientName = string.Empty;
-
-        /// <summary>
-        /// The logger for ExternalOrchestration operations.
-        /// </summary>
         private readonly ILogger _logger;
-
-        /// <summary>
-        /// The token provider function to get the access token for the request.
-        /// </summary>
         private readonly Func<string, Task<string>>? _tokenProviderFunction = null;
 
         /// <summary>
@@ -66,17 +44,15 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// <summary>
         /// Returns the scope URL needed to connect to Copilot Studio from the connection settings.
         /// </summary>
-        /// <param name="settings">The Copilot Studio connection settings.</param>
-        /// <returns>The token audience scope URL as a string.</returns>
         public static string ScopeFromSettings(ConnectionSettings settings) => PowerPlatformEnvironment.GetTokenAudience(settings);
 
         /// <summary>
         /// Creates an ExternalOrchestration client for Microsoft Copilot Studio hosted agents.
         /// </summary>
-        /// <param name="settings">The configuration settings for connecting to Copilot Studio.</param>
-        /// <param name="httpClientFactory">The HTTP client factory to use when connecting to Copilot Studio.</param>
-        /// <param name="logger">The logger for ExternalOrchestration operations.</param>
-        /// <param name="httpClientName">The name of the HTTP client to use from the factory.</param>
+        /// <param name="settings">Configuration settings for connecting to Copilot Studio.</param>
+        /// <param name="httpClientFactory">HTTP client factory to use when connecting.</param>
+        /// <param name="logger">Logger for ExternalOrchestration operations.</param>
+        /// <param name="httpClientName">Named HTTP client to use from the factory.</param>
         public OrchestratedClient(ConnectionSettings settings, IHttpClientFactory httpClientFactory, ILogger logger, string httpClientName = "orchestrated")
         {
             Settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -86,13 +62,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Creates an ExternalOrchestration client for Microsoft Copilot Studio hosted agents.
+        /// Creates an ExternalOrchestration client with an external token provider.
         /// </summary>
-        /// <param name="settings">The configuration settings for connecting to Copilot Studio.</param>
-        /// <param name="httpClientFactory">The HTTP client factory to use when connecting to Copilot Studio.</param>
-        /// <param name="tokenProviderFunction">The function pointer for an async function that will accept a URL and return an access token.</param>
-        /// <param name="logger">The logger for ExternalOrchestration operations.</param>
-        /// <param name="httpClientName">The name of the HTTP client to use from the factory.</param>
+        /// <param name="settings">Configuration settings for connecting to Copilot Studio.</param>
+        /// <param name="httpClientFactory">HTTP client factory to use when connecting.</param>
+        /// <param name="tokenProviderFunction">Async function that accepts a scope URL and returns an access token.</param>
+        /// <param name="logger">Logger for ExternalOrchestration operations.</param>
+        /// <param name="httpClientName">Named HTTP client to use from the factory.</param>
         public OrchestratedClient(ConnectionSettings settings, IHttpClientFactory httpClientFactory, Func<string, Task<string>> tokenProviderFunction, ILogger logger, string httpClientName)
         {
             Settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -140,7 +116,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         Operation = OrchestrationOperation.InvokeTool,
                         ToolInputs = toolInputs
                     },
-                    Activity = activity as Activity
+                    Activity = (Activity?)activity
                 };
 
                 await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
@@ -163,7 +139,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 var request = new OrchestratedTurnRequest
                 {
                     Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.HandleUserResponse },
-                    Activity = activity as Activity
+                    Activity = (Activity)activity
                 };
 
                 await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
@@ -230,7 +206,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 using Stream stream = await resp.Content.ReadAsStreamAsync();
 #endif
 
-                if (resp.Content?.Headers != null && resp.Content.Headers.ContentType!.Equals(s_EventStream))
+                if (resp.Content?.Headers != null && 
+                    string.Equals(resp.Content.Headers.ContentType?.MediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
                 {
                     // SSE stream response — the expected path
                     var parser = SseParser.Create(stream);
@@ -276,7 +253,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Sets up authentication and executes the HTTP POST request.
+        /// Applies authentication (if configured) and sends the HTTP request, throwing on non-success status codes.
         /// </summary>
         private async Task<HttpResponseMessage> SetupAndExecutePostRequest(HttpRequestMessage req, CancellationToken ct)
         {
@@ -297,7 +274,11 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 string accessToken = string.Empty;
                 if (req?.RequestUri != null)
                 {
-                    accessToken = await _tokenProviderFunction(ScopeFromSettings(Settings));
+                    accessToken = await _tokenProviderFunction(req.RequestUri.ToString());
+                }
+                else
+                {
+                    accessToken = await _tokenProviderFunction(string.Empty);
                 }
                 if (!string.IsNullOrEmpty(accessToken))
                 {

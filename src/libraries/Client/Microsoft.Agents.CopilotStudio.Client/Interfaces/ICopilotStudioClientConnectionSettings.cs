@@ -47,11 +47,5 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// When enabled, writes out diagnostic information to the logsink.
         /// </summary>
         bool EnableDiagnostics { get; set; }
-
-        /// <summary>
-        /// CDS Bot ID (GUID) used for externally orchestrated connections.
-        /// Required when using the ExternalOrchestration API.
-        /// </summary>
-        string? CdsBotId { get; set; }
     }
 }

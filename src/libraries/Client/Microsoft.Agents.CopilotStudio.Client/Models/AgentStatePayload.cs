@@ -41,7 +41,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
 #if !NETSTANDARD
         public string[] EnabledToolSchemaNames { get; init; } = [];
 #else
-        public string[] EnabledToolSchemaNames { get; set; } = new string[0];
+        public string[] EnabledToolSchemaNames { get; set; } = [];
 #endif
     }
 }
