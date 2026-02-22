@@ -354,8 +354,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         #region URL Generation Tests
 
         [Theory]
-        [InlineData(PowerPlatformCloud.Prod, "A47151CF-4F34-488F-B377-EBE84E17B478", "bot-guid-123", "conv-1", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/copilotstudio/orchestrated/bot-guid-123/conversations/conv-1?api-version=2022-03-01-preview")]
-        [InlineData(PowerPlatformCloud.Preprod, "A47151CF-4F34-488F-B377-EBE84E17B478", "bot-guid-456", "conv-2", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.api.preprod.powerplatform.com/copilotstudio/orchestrated/bot-guid-456/conversations/conv-2?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Prod, "A47151CF-4F34-488F-B377-EBE84E17B478", "bot-guid-123", "conv-1", "https://a47151cf4f34488fb377ebe84e17b4.78.environment.api.powerplatform.com/powervirtualagents/orchestrated/bot-guid-123/conversations/conv-1?api-version=2022-03-01-preview")]
+        [InlineData(PowerPlatformCloud.Preprod, "A47151CF-4F34-488F-B377-EBE84E17B478", "bot-guid-456", "conv-2", "https://a47151cf4f34488fb377ebe84e17b47.8.environment.api.preprod.powerplatform.com/powervirtualagents/orchestrated/bot-guid-456/conversations/conv-2?api-version=2022-03-01-preview")]
         public void VerifyOrchestratedConnectionUrl(PowerPlatformCloud cloud, string envId, string cdsBotId, string conversationId, string expectedResult)
         {
             var settings = new ConnectionSettings(null)

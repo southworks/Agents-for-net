@@ -197,7 +197,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         internal static Uri GetOrchestratedConnectionUrl(
                 ConnectionSettings settings,
                 string conversationId,
-                PowerPlatformCloud cloud = PowerPlatformCloud.Unknown,
+                PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
