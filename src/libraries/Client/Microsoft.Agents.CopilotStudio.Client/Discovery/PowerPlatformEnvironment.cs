@@ -197,7 +197,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         internal static Uri GetOrchestratedConnectionUrl(
                 ConnectionSettings settings,
                 string conversationId,
-                PowerPlatformCloud cloud = PowerPlatformCloud.Prod,
+                PowerPlatformCloud cloud = PowerPlatformCloud.Unknown,
                 string? cloudBaseAddress = default,
                 string? directConnectUrl = default
             )
@@ -439,7 +439,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             builder.Scheme = "https";
             builder.Host = host;
             builder.Query = $"api-version={ApiVersion}";
-            builder.Path = $"/copilotstudio/orchestrated/{cdsBotId}/conversations/{conversationId}";
+            builder.Path = $"/powervirtualagents/orchestrated/{cdsBotId}/conversations/{conversationId}";
             return builder.Uri;
         }
 
