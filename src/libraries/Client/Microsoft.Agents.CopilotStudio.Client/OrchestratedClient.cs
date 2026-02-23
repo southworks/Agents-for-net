@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.CopilotStudio.Client
 {
     /// <summary>
-    /// Client for externally orchestrated Copilot Studio conversations.
+    /// Client for externally orchestrated Copilot Studio conversations. This is intended for internal use only.
     /// Uses the ExternalOrchestration API to start conversations, invoke tools,
     /// handle user responses, and send conversation updates.
     /// </summary>
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <summary>
-        /// Creates an ExternalOrchestration client with an external token provider.
+        /// Creates an ExternalOrchestration client with an external token provider. This is intended for internal use.
         /// </summary>
         /// <param name="settings">Configuration settings for connecting to Copilot Studio.</param>
         /// <param name="httpClientFactory">HTTP client factory to use when connecting.</param>
