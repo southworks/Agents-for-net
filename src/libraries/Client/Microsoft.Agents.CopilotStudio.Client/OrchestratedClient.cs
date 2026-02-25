@@ -228,6 +228,10 @@ namespace Microsoft.Agents.CopilotStudio.Client
                             OrchestratedErrorEnvelope envelope = ProtocolJsonSerializer.ToObject<OrchestratedErrorEnvelope>(item.Data);
                             yield return new OrchestratedErrorResponse(envelope?.Error ?? new OrchestratedErrorPayload());
                         }
+                        else if (item.EventType == "end")
+                        {
+                            yield return new OrchestratedEndResponse(item.Data.ToString());
+                        }
                     }
                 }
                 else
