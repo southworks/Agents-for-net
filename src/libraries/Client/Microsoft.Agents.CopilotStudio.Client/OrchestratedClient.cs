@@ -231,6 +231,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         else if (item.EventType == "end")
                         {
                             yield return new OrchestratedEndResponse(item.Data.ToString());
+                            yield break; // End of stream reached, exit the loop
                         }
                     }
                 }

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
     /// Base type for responses from an externally orchestrated conversation turn.
     /// Use pattern matching to handle the specific response types:
     /// <see cref="OrchestratedActivityResponse"/>, <see cref="OrchestratedStateResponse"/>,
-    /// and <see cref="OrchestratedErrorResponse"/>.
+    /// <see cref="OrchestratedErrorResponse"/>, and <see cref="OrchestratedEndResponse"/>.
     /// </summary>
 #if !NETSTANDARD
     public abstract record OrchestratedResponse;
