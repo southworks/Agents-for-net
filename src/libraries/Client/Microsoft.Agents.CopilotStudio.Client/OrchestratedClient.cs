@@ -197,6 +197,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }
                 };
                 httpRequest.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
+                httpRequest.Headers.Add(CopilotStudioHeaderNames.ConversationId, conversationId);
+                httpRequest.Headers.Add(CopilotStudioHeaderNames.ClientRequestId, Guid.NewGuid().ToString());
 
                 using HttpResponseMessage resp = await SetupAndExecutePostRequest(httpRequest, cancellationToken).ConfigureAwait(false);
 
