@@ -49,8 +49,9 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         bool EnableDiagnostics { get; set; }
 
         /// <summary>
-        /// Optional API version to use when connecting to the Power Platform API.
-        /// When not set, the default API version is used.
+        /// Optional API version override for ExternalOrchestration (orchestrated) requests.
+        /// When null or empty, the default API version is used.
+        /// This does not affect Direct-to-Engine (CopilotClient) requests.
         /// </summary>
         string? ApiVersion { get; set; }
     }
