@@ -9,15 +9,15 @@ namespace Microsoft.Agents.CopilotStudio.Client
     public static class CopilotStudioHeaderNames
     {
         /// <summary>
-        /// Header that maps to the BotFramework conversation ID.
-        /// Used to pass the conversation ID in outgoing requests.
+        /// Header for the conversation ID.
+        /// Maps the BotFramework conversation ID to outgoing requests.
         /// </summary>
-        public const string BotFrameworkConversationIdRequestHeader = "x-ms-conversation-id";
+        public const string ConversationId = "x-ms-conversation-id";
 
         /// <summary>
         /// Header for client request correlation ID.
         /// Used for request tracing and diagnostics.
         /// </summary>
-        public const string XMsClientRequestId = "x-ms-client-request-id";
+        public const string ClientRequestId = "x-ms-client-request-id";
     }
 }
