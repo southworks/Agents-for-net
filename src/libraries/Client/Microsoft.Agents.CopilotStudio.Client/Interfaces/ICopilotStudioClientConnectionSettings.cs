@@ -47,5 +47,11 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         /// When enabled, writes out diagnostic information to the logsink.
         /// </summary>
         bool EnableDiagnostics { get; set; }
+
+        /// <summary>
+        /// Optional API version to use when connecting to the Power Platform API.
+        /// When not set, the default API version is used.
+        /// </summary>
+        string? ApiVersion { get; set; }
     }
 }

@@ -252,14 +252,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
                 cloudBaseAddress ??= "api.unknown.powerplatform.com";
 
                 var host = GetEnvironmentEndpoint(cloud, settings.EnvironmentId!, cloudBaseAddress);
-                return CreateOrchestratedUri(settings.CdsBotId!, host, conversationId);
+                return CreateOrchestratedUri(settings.CdsBotId!, host, conversationId, settings.ApiVersion);
             }
             else
             {
                 directConnectUrl ??= settings.DirectConnectUrl;
                 if (!string.IsNullOrEmpty(directConnectUrl) && Uri.IsWellFormedUriString(directConnectUrl, UriKind.Absolute))
                 {
-                    return CreateOrchestratedUri(directConnectUrl!, conversationId);
+                    return CreateOrchestratedUri(directConnectUrl!, conversationId, settings.ApiVersion);
                 }
                 else
                 {
@@ -433,12 +433,12 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <summary>
         /// Creates the ExternalOrchestration API URL using environment-based host resolution.
         /// </summary>
-        private static Uri CreateOrchestratedUri(string cdsBotId, string host, string conversationId)
+        private static Uri CreateOrchestratedUri(string cdsBotId, string host, string conversationId, string? apiVersion = null)
         {
             var builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = host;
-            builder.Query = $"api-version={ApiVersion}";
+            builder.Query = $"api-version={apiVersion ?? ApiVersion}";
             builder.Path = $"/powervirtualagents/orchestrated/{cdsBotId}/conversations/{conversationId}";
             return builder.Uri;
         }
@@ -446,10 +446,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// <summary>
         /// Creates the ExternalOrchestration API URL using a DirectConnect URL.
         /// </summary>
-        private static Uri CreateOrchestratedUri(string directConnectUrl, string conversationId)
+        private static Uri CreateOrchestratedUri(string directConnectUrl, string conversationId, string? apiVersion = null)
         {
             var builder = new UriBuilder(directConnectUrl);
-            builder.Query = $"api-version={ApiVersion}";
+            builder.Query = $"api-version={apiVersion ?? ApiVersion}";
 
             // if builder.path ends with /, remove it
 #if !NETSTANDARD

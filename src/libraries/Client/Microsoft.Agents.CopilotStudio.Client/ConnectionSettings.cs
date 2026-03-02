@@ -31,6 +31,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         public bool EnableDiagnostics { get; set; } = false;
         //<inheritdoc/>
         public string? CdsBotId { get; set; }
+        //<inheritdoc/>
+        public string? ApiVersion { get; set; }
 
 
         /// <summary>
@@ -55,6 +57,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 UseExperimentalEndpoint = config.GetValue<bool>(nameof(UseExperimentalEndpoint), false);
                 EnableDiagnostics = config.GetValue<bool>(nameof(EnableDiagnostics), false);
                 CdsBotId = config[nameof(CdsBotId)];
+                ApiVersion = config[nameof(ApiVersion)];
                 if (string.IsNullOrEmpty(DirectConnectUrl))
                 {
                     EnvironmentId = config[nameof(EnvironmentId)] ?? throw new ArgumentException($"{nameof(EnvironmentId)} not found in config");
