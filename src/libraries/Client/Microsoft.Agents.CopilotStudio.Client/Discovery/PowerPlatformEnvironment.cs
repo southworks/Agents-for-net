@@ -438,7 +438,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             var builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = host;
-            builder.Query = $"api-version={apiVersion ?? ApiVersion}";
+            builder.Query = $"api-version={(string.IsNullOrWhiteSpace(apiVersion) ? ApiVersion : apiVersion)}";
             builder.Path = $"/powervirtualagents/orchestrated/{cdsBotId}/conversations/{conversationId}";
             return builder.Uri;
         }
@@ -449,7 +449,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         private static Uri CreateOrchestratedUri(string directConnectUrl, string conversationId, string? apiVersion = null)
         {
             var builder = new UriBuilder(directConnectUrl);
-            builder.Query = $"api-version={apiVersion ?? ApiVersion}";
+            builder.Query = $"api-version={(string.IsNullOrWhiteSpace(apiVersion) ? ApiVersion : apiVersion)}";
 
             // if builder.path ends with /, remove it
 #if !NETSTANDARD
