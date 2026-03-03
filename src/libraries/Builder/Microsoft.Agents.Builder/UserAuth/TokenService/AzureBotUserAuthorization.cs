@@ -211,10 +211,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
             }
-            catch (ConsentRequiredException)
-            {
-                return null;
-            }
 
             if (tokenResponse == null)
             {

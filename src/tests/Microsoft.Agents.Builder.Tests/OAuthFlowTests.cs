@@ -165,9 +165,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set(mockTokenClient.Object);
 
             //Act
-            await Assert.ThrowsAsync<ConsentRequiredException>(() => _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None));
-
-            // Assert
+            await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
             Assert.True(responsesSent);
         }
     }

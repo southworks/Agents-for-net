@@ -355,6 +355,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
                     if (tokenExchangeResponse == null || string.IsNullOrEmpty(tokenExchangeResponse.Token))
                     {
+                        // This triggers the "consent required" flow in Teams.  Teams will prompt the user to consent to SSO and
+                        // then resend the InvokeActivity with the token for exchange.  If we return a 400, Teams will not retry
+                        // and the user is not given the chance to consent.
                         await SendInvokeResponseAsync(
                             turnContext,
                             HttpStatusCode.PreconditionFailed,
@@ -364,8 +367,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                                 ConnectionName = _settings.AzureBotOAuthConnectionName,
                                 FailureDetail = "The Agent is unable to exchange token. Proceed with regular login.",
                             }, cancellationToken).ConfigureAwait(false);
-
-                        throw new ConsentRequiredException();
                     }
                     else
                     {
