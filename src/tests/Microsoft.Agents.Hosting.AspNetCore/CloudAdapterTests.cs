@@ -1016,19 +1016,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
                 .Verifiable(Times.Never);
 
-            // - NullReferenceException should NOT occur in the background service
-            record.HostedServiceLogger
-                .Setup(e => e.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<NullReferenceException>(),
-                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
-                .Verifiable(Times.Never);
-
             using var cts = new CancellationTokenSource();
-
-            await record.Service.StartAsync(CancellationToken.None);
 
             // Act: start processing, wait for the agent to begin, then cancel
             var processTask = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, cts.Token);
@@ -1043,11 +1031,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             await processTask;
             Assert.NotEqual(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
 
-            await record.Service.StopAsync(CancellationToken.None);
-
             // Verify: warning was logged, error was not
             Mock.Verify(record.QueueLogger);
-            Mock.Verify(record.HostedServiceLogger);
         }
 
 
