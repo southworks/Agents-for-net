@@ -507,6 +507,42 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
 
         #endregion
 
+        #region Header Tests
+
+        [Fact]
+        public async Task ExecuteTurnAsync_SendsConversationIdAndClientRequestIdHeaders()
+        {
+            // Arrange
+            var handler = new CapturingHttpMessageHandler("event: end\ndata: done\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+
+            // Act
+            await foreach (var _ in client.ExecuteTurnAsync("conv-header-test", request)) { }
+
+            // Assert
+            Assert.NotNull(handler.CapturedRequest);
+
+            // Verify x-ms-conversation-id header is present and matches the conversation ID
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.ConversationId));
+            var conversationIdValues = handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.ConversationId).ToList();
+            Assert.Single(conversationIdValues);
+            Assert.Equal("conv-header-test", conversationIdValues[0]);
+
+            // Verify x-ms-client-request-id header is present and is a valid GUID
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.ClientRequestId));
+            var clientRequestIdValues = handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.ClientRequestId).ToList();
+            Assert.Single(clientRequestIdValues);
+            Assert.True(Guid.TryParse(clientRequestIdValues[0], out _), $"Expected a valid GUID but got: {clientRequestIdValues[0]}");
+        }
+
+        #endregion
+
         #region Constructor Tests
 
         [Fact]
@@ -581,6 +617,23 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             {
                 var content = new StringContent(errorContent, Encoding.UTF8, "application/json");
                 var response = new HttpResponseMessage(statusCode) { Content = content };
+                return Task.FromResult(response);
+            }
+        }
+
+        /// <summary>
+        /// Returns SSE responses and captures the outgoing HttpRequestMessage for assertion.
+        /// </summary>
+        private class CapturingHttpMessageHandler(string sseContent) : HttpMessageHandler
+        {
+            public HttpRequestMessage CapturedRequest { get; private set; }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                CapturedRequest = request;
+                var content = new StringContent(sseContent, Encoding.UTF8);
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream");
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
                 return Task.FromResult(response);
             }
         }
