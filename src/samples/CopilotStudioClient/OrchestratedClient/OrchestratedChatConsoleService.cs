@@ -33,7 +33,7 @@ internal class OrchestratedChatConsoleService(OrchestratedClient orchestratedCli
             PrintRequest("StartConversation", startRequest);
 
             AgentStatePayload? lastState = null;
-            await foreach (var response in orchestratedClient.StartConversationAsync(_conversationId, cancellationToken))
+            await foreach (var response in orchestratedClient.ExecuteTurnAsync(_conversationId, startRequest, cancellationToken))
             {
                 System.Diagnostics.Trace.WriteLine($">>>>Duration: {sw.Elapsed.ToDurationString()}");
                 sw.Restart();
@@ -78,8 +78,16 @@ internal class OrchestratedChatConsoleService(OrchestratedClient orchestratedCli
                     continue;
                 }
 
-                var operation = request.Orchestration?.Operation ?? default;
-                PrintRequest(operation.Value, request);
+                if (request.Orchestration is null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Request orchestration is missing.");
+                    Console.ResetColor();
+                    continue;
+                }
+
+                var operation = request.Orchestration.Operation.ToString();
+                PrintRequest(operation, request);
                 Console.Write("\nagent> ");
                 sw.Restart();
 
