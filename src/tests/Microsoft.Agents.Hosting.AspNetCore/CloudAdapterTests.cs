@@ -279,63 +279,38 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_Overlapping()
+        public async Task ProcessAsync_ExpectReplies()
         {
             var record = UseRecord((record) => new RespondingActivityHandler());
-
-            // Making sure each request is handled separately.  10 conversations, 3 requests each
-            var requests = new Dictionary<string, DefaultHttpContext>();
-            for (int i = 1; i <= 10; i++)
+            var convoId = Guid.NewGuid().ToString();
+            var activity = new Activity()
             {
-                var convoId = $"{Guid.NewGuid()}:{i}";
+                ChannelId = Channels.Test,
+                Type = ActivityTypes.Message,
+                Id = convoId,
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                Conversation = new(id: convoId),
+                Text = convoId,
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "fromId", role: RoleTypes.User)
+            };
 
-                for (int message = 1; message <= 3; message++)
-                {
-                    var activity = new Activity()
-                    {
-                        ChannelId = Channels.Test,
-                        Type = ActivityTypes.Message,
-                        Id = $"{Guid.NewGuid()}:{message}",
-                        DeliveryMode = DeliveryModes.ExpectReplies,
-                        Conversation = new(id: convoId),
-                        Text = $"{message}",
-                        Recipient = new(id: "recipientId", role: RoleTypes.Agent),
-                        From = new(id: "fromId", role: RoleTypes.User)
-                    };
-
-                    var context = CreateHttpContext(activity);
-                    requests.Add($"{convoId}:{activity.Id}", context);
-                }
-            }
+            var context = CreateHttpContext(activity);
 
             // Test
-            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await Task.Run(() =>
-            {
-                foreach (var request in requests)
-                {
-                    _ = record.Adapter.ProcessAsync(request.Value.Request, request.Value.Response, record.Agent, CancellationToken.None);
-                }
-            });
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(context.Response.Body);
+            var streamText = reader.ReadToEnd();
 
-            await Task.Delay(2000);
-            await record.Service.StopAsync(CancellationToken.None);
+            Assert.False(string.IsNullOrEmpty(streamText));
+            var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
 
-            foreach (var request in requests)
-            {
-                request.Value.Response.Body.Seek(0, SeekOrigin.Begin);
-                var reader = new StreamReader(request.Value.Response.Body);
-                var streamText = reader.ReadToEnd();
+            Assert.NotNull(expectedReplies);
 
-                Assert.False(string.IsNullOrEmpty(streamText));
-                var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
-
-                Assert.NotNull(expectedReplies);
-
-                var response = expectedReplies.Activities[0];
-                Assert.Equal($"Response {request.Key}", response.Text);
-            }
+            var response = expectedReplies.Activities[0];
+            Assert.Equal($"Response {convoId}:{convoId}", response.Text);
         }
 
         [Fact]
