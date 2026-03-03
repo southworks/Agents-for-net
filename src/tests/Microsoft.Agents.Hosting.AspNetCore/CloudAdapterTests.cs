@@ -266,9 +266,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Test
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
-            await record.Service.StopAsync(CancellationToken.None);
-
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
             // This is testing what was actually written to the HttpResponse
