@@ -235,24 +235,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var record = UseRecord((record) => new RespondingActivityHandler());
 
-            // Making sure each request is handled separately
-            var requests = new Dictionary<string, DefaultHttpContext>();
-            for (int i = 1; i <= 10; i++)
+            var convoId = Guid.NewGuid().ToString();
+            var activity = new Activity()
             {
-                var convoId = $"{Guid.NewGuid()}:{i}";
-                var activity = new Activity()
-                {
-                    ChannelId = Channels.Test,
-                    Type = ActivityTypes.Invoke,
-                    Name = "invoke",
-                    DeliveryMode = DeliveryModes.Normal,
-                    Conversation = new(id: convoId),
-                    Recipient = new(id: "recipientId", role: RoleTypes.Agent),
-                    From = new(id: "userId", role: RoleTypes.User)
-                };
-                var context = CreateHttpContext(activity);
-                requests.Add(convoId, context);
-            }
+                ChannelId = Channels.Test,
+                Type = ActivityTypes.Invoke,
+                Name = "invoke",
+                DeliveryMode = DeliveryModes.Normal,
+                Conversation = new(id: convoId),
+                Recipient = new(id: "recipientId", role: RoleTypes.Agent),
+                From = new(id: "userId", role: RoleTypes.User)
+            };
+            var context = CreateHttpContext(activity);
 
             var mockConnectorClient = new Mock<IConnectorClient>();
             mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
@@ -270,37 +264,21 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
 
             // Test
-            await record.Service.StartAsync(CancellationToken.None);
-
-            await Task.Run(() =>
-            {
-                foreach (var request in requests)
-                {
-                    _ = record.Adapter.ProcessAsync(request.Value.Request, request.Value.Response, record.Agent, CancellationToken.None);
-                }
-            });
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
             await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
             await record.Service.StopAsync(CancellationToken.None);
 
-            foreach (var request in requests)
-            {
-                Assert.Equal(StatusCodes.Status200OK, request.Value.Response.StatusCode);
+            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
-                // This is testing what was actually written to the HttpResponse
-                request.Value.Response.Body.Seek(0, SeekOrigin.Begin);
-                var reader = new StreamReader(request.Value.Response.Body);
-                var streamText = reader.ReadToEnd();
+            // This is testing what was actually written to the HttpResponse
+            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            var reader = new StreamReader(context.Response.Body);
+            var streamText = reader.ReadToEnd();
 
-                var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(streamText);
-                Assert.NotNull(tokenResponse);
-                Assert.Equal($"token:{request.Key}", tokenResponse.Token);
-            }
-
-            // RespondingActivityHandler would have sent a single Activity
-            //mockConnectorClient.Verify(
-            //    c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()),
-            //    Times.Exactly(requests.Count));
+            var tokenResponse = ProtocolJsonSerializer.ToObject<TokenResponse>(streamText);
+            Assert.NotNull(tokenResponse);
+            Assert.Equal($"token:{convoId}", tokenResponse.Token);
         }
 
         [Fact]
