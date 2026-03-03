@@ -432,6 +432,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                         context.Activity.GetConversationReference(),
                         async (innerContext, innerCt) =>
                         {
+                            await Task.Delay(1000);
                             await innerContext.SendActivityAsync($"Inner: {context.Activity.Text}", cancellationToken: innerCt);
                         },
                         ct);
@@ -454,12 +455,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(activity);
 
             // Test
-            await record.Service.StartAsync(CancellationToken.None);
-
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-
-            await Task.Delay(2000);
-            await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
