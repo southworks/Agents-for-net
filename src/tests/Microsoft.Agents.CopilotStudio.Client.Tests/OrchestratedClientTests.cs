@@ -102,6 +102,47 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             var errorResponse = Assert.IsType<OrchestratedErrorResponse>(responses[0]);
             Assert.Equal("BadRequest", errorResponse.Error.Code);
             Assert.Equal("Something went wrong", errorResponse.Error.Message);
+            Assert.Equal(OrchestratedErrorCode.Unknown, errorResponse.Error.ErrorCode);
+        }
+
+        [Fact]
+        public async Task StartConversationAsync_WithKnownErrorCode_MapsToEnum()
+        {
+            // Arrange
+            var handler = new FakeSseHttpMessageHandler("event: error\ndata: {\"error\": {\"code\": \"ConversationNotFound\", \"message\": \"Conversation not found\"}}\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            // Act
+            var responses = new List<OrchestratedResponse>();
+            await foreach (var response in client.StartConversationAsync("conv-1"))
+            {
+                responses.Add(response);
+            }
+
+            // Assert
+            Assert.Single(responses);
+            var errorResponse = Assert.IsType<OrchestratedErrorResponse>(responses[0]);
+            Assert.Equal("ConversationNotFound", errorResponse.Error.Code);
+            Assert.Equal(OrchestratedErrorCode.ConversationNotFound, errorResponse.Error.ErrorCode);
+        }
+
+        [Theory]
+        [InlineData("InvalidOperation", OrchestratedErrorCode.InvalidOperation)]
+        [InlineData("MissingRequiredField", OrchestratedErrorCode.MissingRequiredField)]
+        [InlineData("InvalidOperationForState", OrchestratedErrorCode.InvalidOperationForState)]
+        [InlineData("Unauthorized", OrchestratedErrorCode.Unauthorized)]
+        [InlineData("Throttled", OrchestratedErrorCode.Throttled)]
+        [InlineData("BotContentNotFound", OrchestratedErrorCode.BotContentNotFound)]
+        [InlineData("TopicNotFound", OrchestratedErrorCode.TopicNotFound)]
+        [InlineData("InternalServerError", OrchestratedErrorCode.InternalServerError)]
+        [InlineData("ConversationNotFound", OrchestratedErrorCode.ConversationNotFound)]
+        [InlineData("SomeFutureError", OrchestratedErrorCode.Unknown)]
+        [InlineData("", OrchestratedErrorCode.Unknown)]
+        [InlineData(null, OrchestratedErrorCode.Unknown)]
+        public void ErrorCode_ParsesCorrectly(string code, OrchestratedErrorCode expected)
+        {
+            Assert.Equal(expected, code.ToOrchestratedErrorCode());
         }
 
         [Fact]

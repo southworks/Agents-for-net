@@ -226,7 +226,9 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         else if (item.EventType == "error")
                         {
                             OrchestratedErrorEnvelope envelope = ProtocolJsonSerializer.ToObject<OrchestratedErrorEnvelope>(item.Data);
-                            yield return new OrchestratedErrorResponse(envelope?.Error ?? new OrchestratedErrorPayload());
+                            var errorPayload = envelope?.Error ?? new OrchestratedErrorPayload();
+                            _logger.LogError("Orchestrated error received: {ErrorCode} ({Code}) - {Message}", errorPayload.ErrorCode, errorPayload.Code, errorPayload.Message);
+                            yield return new OrchestratedErrorResponse(errorPayload);
                         }
                         else if (item.EventType == "end")
                         {
