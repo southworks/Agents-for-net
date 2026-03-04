@@ -229,7 +229,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
                         {
                             OrchestratedErrorEnvelope envelope = ProtocolJsonSerializer.ToObject<OrchestratedErrorEnvelope>(item.Data);
                             var errorPayload = envelope?.Error ?? new OrchestratedErrorPayload();
-                            _logger.LogError("Orchestrated error received: {ErrorCode} ({Code}) - {Message}", errorPayload.ErrorCode, errorPayload.Code, errorPayload.Message);
+                            _logger.LogError(
+                                "Orchestrated error received for ConversationId {ConversationId}, RequestUri {RequestUri}: {ErrorCode} ({Code}) - {Message}",
+                                conversationId,
+                                uriExecute,
+                                errorPayload.ErrorCode,
+                                errorPayload.Code,
+                                errorPayload.Message);
                             yield return new OrchestratedErrorResponse(errorPayload);
                         }
                         else if (item.EventType == "end")

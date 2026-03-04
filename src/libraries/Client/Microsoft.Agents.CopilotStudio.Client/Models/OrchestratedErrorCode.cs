@@ -74,12 +74,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
         /// <returns>The corresponding <see cref="OrchestratedErrorCode"/> value.</returns>
         public static OrchestratedErrorCode ToOrchestratedErrorCode(this string? code)
         {
-            if (string.IsNullOrEmpty(code))
-            {
-                return OrchestratedErrorCode.Unknown;
-            }
-
-            if (Enum.TryParse<OrchestratedErrorCode>(code, ignoreCase: true, out var result))
+            if (!string.IsNullOrEmpty(code)
+                && Enum.TryParse<OrchestratedErrorCode>(code, ignoreCase: true, out var result))
             {
                 return result;
             }
