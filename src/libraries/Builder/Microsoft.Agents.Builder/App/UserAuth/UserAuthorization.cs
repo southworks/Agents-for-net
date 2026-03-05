@@ -310,7 +310,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             else if (!flowContinuation)
             {
                 if (turnContext.Activity.IsType(ActivityTypes.Invoke)
-                    && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName))
+                    && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.VerifyStateOperationName))
                 {
                     _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active for user '{User.Id}' using handler '{Handler.Name}'", 
                         turnContext.Activity.Name, turnContext.Activity.From.Id, handlerName ?? DefaultHandlerName);
@@ -393,7 +393,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             // This key is used since per conversation, a user can only have one active flow at a time.
             var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
-            var userId = turnContext.Activity.Recipient?.Id ?? throw new InvalidOperationException("invalid activity-missing Recipient.Id");
+            var userId = turnContext.Activity.From?.Id ?? throw new InvalidOperationException("invalid activity-missing From.Id");
             return $"oauth/{conversationId}/{userId}/userAuthorizationState";
         }
     }
