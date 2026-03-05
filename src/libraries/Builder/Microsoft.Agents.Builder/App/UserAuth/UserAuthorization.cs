@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             var flow = flowName ?? DefaultHandlerName;
             DeleteCachedToken(flow);
-            await DeleteSignInState(turnContext, cancellationToken).ConfigureAwait(false);
+            await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             await _dispatcher.SignOutUserAsync(turnContext, flow, cancellationToken).ConfigureAwait(false);
         }
 
@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         internal async Task<bool> StartOrContinueSignInUserAsync(ITurnContext turnContext, ITurnState turnState, string handlerName = null, bool forceAuto = false, CancellationToken cancellationToken = default)
         {
             // If a flow is active, continue that.
-            var signInState = await GetSignInState(turnContext, cancellationToken).ConfigureAwait(false);
+            var signInState = await GetSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             string? activeFlowName = signInState.ActiveHandler;
             bool flowContinuation = activeFlowName != null;
             bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         signInState.ContinuationActivity = turnContext.Activity;
                         signInState.ActiveHandler = activeFlowName;
 
-                        await SetSignInState(turnContext, signInState, cancellationToken).ConfigureAwait(false);
+                        await SetSignInStateAsync(turnContext, signInState, cancellationToken).ConfigureAwait(false);
                     }
 
                     // Flow started, pending user input
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 {
                     // Clear user auth state
                     await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
-                    await DeleteSignInState(turnContext, cancellationToken).ConfigureAwait(false);
+                    await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     if (turnContext.Activity.IsType(ActivityTypes.Invoke))
@@ -284,7 +284,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
                 if (response.Status == SignInStatus.Complete)
                 {
-                    await DeleteSignInState(turnContext, cancellationToken).ConfigureAwait(false);
+                    await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     CacheToken(activeFlowName, response);
 
                     if (signInState.ContinuationActivity != null)
@@ -369,7 +369,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             _authTokens.RemoveAll(ht => ht.Handler.Equals(name));
         }
 
-        private async Task<SignInState> GetSignInState(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        private async Task<SignInState> GetSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             var items = await _options.Storage.ReadAsync([GetStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
             if (items.TryGetValue(GetStorageKey(turnContext), out var state) && state is SignInState signInState)
@@ -379,12 +379,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return new();
         }
 
-        private Task SetSignInState(ITurnContext turnContext, SignInState state, CancellationToken cancellationToken)
+        private Task SetSignInStateAsync(ITurnContext turnContext, SignInState state, CancellationToken cancellationToken)
         {
             return _options.Storage.WriteAsync(new Dictionary<string, object> { { GetStorageKey(turnContext), state } }, cancellationToken);
         }
 
-        private Task DeleteSignInState(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        private Task DeleteSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             return _options.Storage.DeleteAsync(new[] { GetStorageKey(turnContext) }, cancellationToken);
         }
