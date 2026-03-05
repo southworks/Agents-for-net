@@ -126,12 +126,6 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 token = await auth.SignInUserAsync(turnContext, forceSignIn, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             }
-#if TEAMS_DEDUPE
-            catch(DuplicateExchangeException)
-            {
-                return new SignInResponse(SignInStatus.Duplicate);
-            }
-#endif
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine($"SignUserInAsync exception: {ex}");
