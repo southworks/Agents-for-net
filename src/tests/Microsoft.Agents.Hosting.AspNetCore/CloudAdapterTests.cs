@@ -210,9 +210,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
             var context = CreateHttpContext(activity);
 
-            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-            await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
