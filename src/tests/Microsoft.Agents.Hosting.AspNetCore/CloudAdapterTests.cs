@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -394,7 +395,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Arrange
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(new MemoryStorage());
+                var options = new TestApplicationOptions(record.Storage);
                 var agent = new TestApplication(options);
 
                 // This is the scenario where a new "inner" turn is needed, using the ConversationReference of the 
@@ -471,7 +472,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(new MemoryStorage());
+                var options = new TestApplicationOptions(record.Storage);
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -554,13 +555,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             // Arrange
             var turnDone = new EventWaitHandle(false, EventResetMode.AutoReset);
-            var memoryStorage = new MemoryStorage();
             var origConversationId = Guid.NewGuid().ToString();
             var newConversationId = Guid.NewGuid().ToString();
             var serviceUrl = "https://service.com";
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(memoryStorage);
+                var options = new TestApplicationOptions(record.Storage);
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -654,7 +654,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Null(responses[1].ReplyToId);
 
             // Just read directly from conversation state
-            var items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
+            var items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
 
@@ -666,7 +666,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             // Arrange
             var turnDone = new EventWaitHandle(false, EventResetMode.AutoReset);
-            var memoryStorage = new MemoryStorage();
             var initialConversationId = Guid.NewGuid().ToString();
             var proactiveConversationId = Guid.NewGuid().ToString();
             var serviceUrl = "https://service.com";
@@ -684,7 +683,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(memoryStorage);
+                var options = new TestApplicationOptions(record.Storage);
                 var agent = new TestApplication(options);
 
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
@@ -767,7 +766,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(proactiveReference.ActivityId, responses[1].ReplyToId);
 
             // Just read directly from conversation state
-            var items = await memoryStorage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
+            var items = await record.Storage.ReadAsync<IDictionary<string, object>>([$"{responses[1].ChannelId}/conversations/{responses[1].Conversation.Id}"]);
             var newConvoState = items.First().Value;
             Assert.True(newConvoState.ContainsKey("lastConvoMessage"));
 
@@ -799,9 +798,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Setup AgentApplication
             var record = UseRecord((record) =>
             {
-                var options = new TestApplicationOptions(new MemoryStorage())
+                var options = new TestApplicationOptions(record.Storage)
                 {
-                    UserAuthorization = new UserAuthorizationOptions(MockConnections.Object, MockGraph.Object) { AutoSignIn = UserAuthorizationOptions.AutoSignInOff }
+                    UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, record.Storage, MockConnections.Object, MockGraph.Object) { AutoSignIn = UserAuthorizationOptions.AutoSignInOff }
                 };
                 var agent = new TestApplication(options);
                 agent.OnMessage("-signin", async (context, state, ct) =>
@@ -1019,6 +1018,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             {
                 Mock.Verify(Factory, QueueLogger, HostedServiceLogger);
             }
+
+            public IStorage Storage { get; } = new MemoryStorage();
 
             public IAgent Agent { get; set; } = Agent;
         }
