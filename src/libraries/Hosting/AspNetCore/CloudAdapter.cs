@@ -163,11 +163,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         _responseQueue.StartHandlerForRequest(activity.RequestId);
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
-                        _ = Task.Run(async () =>
+                        // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
+                        _ = ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ContinueWith(t =>
                         {
-                            invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+                            invokeResponse = t.Result;
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-                        }, cancellationToken);
+                        }, cancellationToken).ConfigureAwait(false);
 
                         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>

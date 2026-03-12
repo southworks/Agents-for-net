@@ -183,10 +183,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
             var context = CreateHttpContext(activity);
 
-
-            await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-            await record.Service.StopAsync(CancellationToken.None);
 
             // this is because ActivityHandler by default will return 501 for unnamed Invokes
             Assert.Equal(StatusCodes.Status501NotImplemented, context.Response.StatusCode);
@@ -318,6 +315,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
             var context = CreateHttpContext(new Activity()
             {
+                Id = Guid.NewGuid().ToString(),
                 ChannelId = Channels.Test,
                 Type = ActivityTypes.Invoke,
                 Name = "invoke",
@@ -328,15 +326,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             });
 
             // Test
-            await record.Service.StartAsync(CancellationToken.None);
-
-            await Task.Run(() =>
-            {
-                _ = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-            });
-
-            await Task.Delay(2000);
-            await record.Service.StopAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
