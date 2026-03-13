@@ -72,24 +72,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
-            await base.StopAsync(stoppingToken);
+            await base.StopAsync(stoppingToken).ConfigureAwait(false);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.");
 
-            await BackgroundProcessing(stoppingToken);
+            await BackgroundProcessing(stoppingToken).ConfigureAwait(false);
         }
 
         private async Task BackgroundProcessing(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken);
+                var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken).ConfigureAwait(false);
                 if (activityWithClaims != null)
                 {
                     try
@@ -136,10 +136,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                     // and disposed before this gets called.
                     var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                    if (agent == null)
-                    {
-                        agent = _serviceProvider.GetService(typeof(IAgent));
-                    }
+                    agent ??= _serviceProvider.GetService(typeof(IAgent));
 
                     HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                     activityWithClaims.TelemetryActivity?.Start();
@@ -164,7 +161,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
                             if (activityWithClaims.OnComplete != null)
                             {
-                                await activityWithClaims.OnComplete.Invoke(response);
+                                await activityWithClaims.OnComplete.Invoke(response).ConfigureAwait(false);
                             }
                         }
                     }

@@ -55,24 +55,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken));
+                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
-            await base.StopAsync(stoppingToken);
+            await base.StopAsync(stoppingToken).ConfigureAwait(false);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Queued Hosted Service is running.{Environment.NewLine}", Environment.NewLine);
             
-            await BackgroundProcessing(stoppingToken);
+            await BackgroundProcessing(stoppingToken).ConfigureAwait(false);
         }
 
         private async Task BackgroundProcessing(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var workItem = await _taskQueue.DequeueAsync(stoppingToken);
+                var workItem = await _taskQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
                 if (workItem != null)
                 {
                     try
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 {
                     try
                     {
-                        await workItem(stoppingToken);
+                        await workItem(stoppingToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
