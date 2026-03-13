@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public async Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivitiesAsync));
             AssertionHelpers.ThrowIfNull(activities, nameof(activities));
@@ -221,21 +221,21 @@ namespace Microsoft.Agents.Builder
             // If there are no callbacks registered, bypass the overhead of invoking them and send directly to the adapter
             if (_onSendActivities.Count == 0)
             {
-                return await SendActivitiesThroughAdapter().ConfigureAwait(false);
+                return SendActivitiesThroughAdapter();
             }
 
             // Send through the full callback pipeline
-            return await SendActivitiesThroughCallbackPipeline().ConfigureAwait(false);
+            return SendActivitiesThroughCallbackPipeline();
 
-            async Task<ResourceResponse[]> SendActivitiesThroughCallbackPipeline(int nextCallbackIndex = 0)
+            Task<ResourceResponse[]> SendActivitiesThroughCallbackPipeline(int nextCallbackIndex = 0)
             {
                 // If we've executed the last callback, we now send straight to the adapter
                 if (nextCallbackIndex == _onSendActivities.Count)
                 {
-                    return await SendActivitiesThroughAdapter().ConfigureAwait(false);
+                    return SendActivitiesThroughAdapter();
                 }
 
-                return await _onSendActivities[nextCallbackIndex].Invoke(this, bufferedActivities, () => SendActivitiesThroughCallbackPipeline(nextCallbackIndex + 1)).ConfigureAwait(false);
+                return _onSendActivities[nextCallbackIndex].Invoke(this, bufferedActivities, () => SendActivitiesThroughCallbackPipeline(nextCallbackIndex + 1));
             }
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()

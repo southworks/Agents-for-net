@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ShouldSetExpectedReplies()
+        public async Task ProcessAsync_InvokeShouldSetExpectedReplies()
         {
             // Returns an ExpectedReplies with one Activity, and Body of "TokenResponse"
             var record = UseRecord((record) => new RespondingActivityHandler());
@@ -312,6 +312,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var expectedReplies = ProtocolJsonSerializer.ToObject<ExpectedReplies>(streamText);
 
             Assert.NotNull(expectedReplies);
+            Assert.Equal(3, expectedReplies.Activities.Count);
 
             var response = expectedReplies.Activities[0];
             Assert.Equal($"Response {convoId}:{convoId}", response.Text);
@@ -1061,9 +1062,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var delay = 200 + random.Next(-101, 401);
                 var message = $"Response {turnContext.Activity.Conversation.Id}:{turnContext.Activity.Id}";
 
-                await Task.Delay(delay);
+                for (var i = 0; i < 3; i++)
+                {
+                    await Task.Delay(delay);
 
-                await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                    await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                }
             }
 
             protected override async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
