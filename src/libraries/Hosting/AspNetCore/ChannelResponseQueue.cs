@@ -37,9 +37,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
+                channelInfo.readStarted.Set();
                 try
                 {
-                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken))
+                    while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
                     {
                         var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
                         action(activity);
@@ -93,9 +94,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
+                // need to wait for HandleResponsesAsync to start
+                channelInfo.readStarted.WaitOne();
+
                 if (channelInfo.channel.Writer.TryComplete())
                 {
                     _conversations.Remove(requestId, out _);
+
+                    channelInfo.readStarted.Dispose();
 
                     // wait for reads to be done
                     channelInfo.readDone.WaitOne();
@@ -145,6 +151,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         public EventWaitHandle readDone = new(false, EventResetMode.ManualReset);
+        public EventWaitHandle readStarted = new(false, EventResetMode.ManualReset);
         public Channel<IActivity> channel = Channel.CreateUnbounded<IActivity>();
     }
 }
