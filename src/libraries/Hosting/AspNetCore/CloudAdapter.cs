@@ -177,7 +177,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             catch (Exception ex)
                             {
                                 Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
-                                InvokeResponse invokeResponse = null;
                                 if (activity.IsType(ActivityTypes.Invoke))
                                 {
                                     invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError, Body = new Error() { Code = nameof(HttpStatusCode.InternalServerError), Message = ex.Message }  };
