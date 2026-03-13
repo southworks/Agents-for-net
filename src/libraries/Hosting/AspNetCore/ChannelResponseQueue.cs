@@ -55,6 +55,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     channelInfo.readDone.Set();
                 }
             }
+            else
+            {
+                logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' in HandleResponsesAsync.", requestId);
+            }
         }
 
         public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)

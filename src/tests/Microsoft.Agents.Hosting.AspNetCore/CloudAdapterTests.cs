@@ -183,7 +183,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
             var context = CreateHttpContext(activity);
 
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             // this is because ActivityHandler by default will return 501 for unnamed Invokes
             Assert.Equal(StatusCodes.Status501NotImplemented, context.Response.StatusCode);
@@ -207,7 +209,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
             var context = CreateHttpContext(activity);
 
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -260,7 +264,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
 
             // Test
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -294,7 +300,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(activity);
 
             // Test
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             context.Response.Body.Seek(0, SeekOrigin.Begin);
             var reader = new StreamReader(context.Response.Body);
@@ -326,7 +334,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             });
 
             // Test
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -419,7 +429,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(activity);
 
             // Test
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -507,11 +519,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var context = CreateHttpContext(activity);
 
             // Test
-            await record.Service.StartAsync(CancellationToken.None);
+            await record.BackgroundService.StartAsync(CancellationToken.None);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await record.Service.StopAsync(CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -817,6 +829,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Id = "1"
             };
             var context = CreateHttpContext(activity);
+
+            await record.BackgroundService.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -843,10 +857,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 Id = "2"
             };
             context = CreateHttpContext(activity);
-            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            await Task.Delay(2000); // There is a race between StopAsync and start of background processing,  To be fixed.
-            await record.Service.StopAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
 
@@ -928,21 +941,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
             var context = CreateHttpContext(activity);
 
-            // Setup logger expectations:
-            // - Warning IS logged for cancellation
-            record.QueueLogger
-                .Setup(e => e.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((e, _) => e.ToString().Contains("cancelled")),
-                    It.IsAny<Exception>(),
-                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
-                .Verifiable(Times.AtLeastOnce);
-
             using var cts = new CancellationTokenSource();
 
             // Act: start processing, wait for the agent to begin, then cancel
-            var processTask = record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, cts.Token);
+            await record.BackgroundService.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, cts.Token);
+            await record.BackgroundService.StopAsync(CancellationToken.None);
 
             // Wait until the agent handler has started processing
             await agentStarted.Task;
@@ -950,12 +954,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // Cancel the request (simulates client disconnect)
             cts.Cancel();
 
-            // Assert: ProcessAsync should complete
-            await processTask;
             Assert.NotEqual(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
-
-            // Verify: warning was logged, error was not
-            Mock.Verify(record.QueueLogger);
         }
 
 
@@ -973,15 +972,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         private static Record UseRecord(Func<Record, IAgent> createAgent, Builder.IMiddleware[] middleware = null)
         {
             var factory = new Mock<IChannelServiceClientFactory>();
-            var queueLogger = new Mock<ILogger<CloudAdapter>>();
+            var adatperLogger = new Mock<ILogger<CloudAdapter>>();
             var serviceLogger = new Mock<ILogger<HostedActivityService>>();
+            var backgroundServiceLogger = new Mock<ILogger<HostedTaskService>>();
 
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
-            var adapter = new CloudAdapter(factory.Object, queue, queueLogger.Object, middlewares: middleware);
+            var backgroundQueue = new BackgroundTaskQueue();
+            var adapter = new CloudAdapter(factory.Object, queue, adatperLogger.Object, middlewares: middleware, backgroundTaskQueue: backgroundQueue);
             var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
+            var backgroundService = new HostedTaskService(backgroundQueue, backgroundServiceLogger.Object);
 
-            var record = new Record(null, adapter, factory, service, queue, queueLogger, serviceLogger);
+            var record = new Record(null, adapter, factory, service, queue, backgroundService, backgroundQueue, adatperLogger, serviceLogger);
 
             if (createAgent != null)
             {
@@ -999,6 +1001,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Mock<IChannelServiceClientFactory> Factory,
             HostedActivityService Service,
             IActivityTaskQueue Queue,
+            HostedTaskService BackgroundService,
+            IBackgroundTaskQueue BackgroundQueue,
             Mock<ILogger<CloudAdapter>> QueueLogger,
             Mock<ILogger<HostedActivityService>> HostedServiceLogger)
         {

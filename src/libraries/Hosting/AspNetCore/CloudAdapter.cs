@@ -30,6 +30,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         : ChannelServiceAdapterBase, IAgentHttpAdapter
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
+        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
         private readonly AdapterOptions _adapterOptions;
         private readonly ChannelResponseQueue _responseQueue;
 
@@ -42,6 +43,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
+        /// <param name="backgroundTaskQueue"></param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -49,10 +51,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null)
+            IConfiguration config = null,
+            IBackgroundTaskQueue backgroundTaskQueue = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
+            _backgroundTaskQueue = backgroundTaskQueue ?? throw new ArgumentNullException(nameof(backgroundTaskQueue));
             _adapterOptions = options ?? new AdapterOptions();
             _responseQueue = new ChannelResponseQueue(Logger);
 
@@ -140,7 +144,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
-                activity.RequestId ??= Guid.NewGuid().ToString();
+                activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
@@ -164,11 +168,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
                         // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
-                        _ = ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ContinueWith(t =>
+                        _backgroundTaskQueue.QueueBackgroundWorkItem(async (ct) =>
                         {
-                            invokeResponse = t.Result;
+                            invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, ct).ConfigureAwait(false);
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-                        }, cancellationToken).ConfigureAwait(false);
+                        });
 
                         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.
                         await _responseQueue.HandleResponsesAsync(activity.RequestId, async (response) =>
