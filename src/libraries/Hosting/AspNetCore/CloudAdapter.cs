@@ -170,7 +170,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
                         _backgroundTaskQueue.QueueBackgroundWorkItem(async (ct) =>
                         {
-                            invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, ct).ConfigureAwait(false);
+                            try
+                            {
+                                invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, ct).ConfigureAwait(false);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
+                                InvokeResponse invokeResponse = null;
+                                if (activity.IsType(ActivityTypes.Invoke))
+                                {
+                                    invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError, Body = new Error() { Code = nameof(HttpStatusCode.InternalServerError), Message = ex.Message }  };
+                                }
+                            }
+
                             _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                         });
 
