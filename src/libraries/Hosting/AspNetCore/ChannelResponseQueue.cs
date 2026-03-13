@@ -25,6 +25,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public class ChannelResponseQueue(ILogger logger)
     {
         private readonly ConcurrentDictionary<string, ChannelInfo> _conversations = new();
+        private static readonly TimeSpan HandlerWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Processes queued responses.  This blocks until CompleteHandlerForRequest is called.
@@ -95,7 +96,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
                 // need to wait for HandleResponsesAsync to start
-                channelInfo.readStarted.WaitOne();
+                channelInfo.readStarted.WaitOne(HandlerWaitTimeout);
 
                 if (channelInfo.channel.Writer.TryComplete())
                 {

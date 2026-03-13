@@ -169,11 +169,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             try
                             {
                                 invokeResponse = t.Result;
-                                _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                             }
                             catch (Exception ex)
                             {
                                 Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
+                            }
+                            finally
+                            {
+                                // Ensure the handler is always completed so HandleResponsesAsync can finish.
+                                _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                             }
                         }, cancellationToken).ConfigureAwait(false);
 
