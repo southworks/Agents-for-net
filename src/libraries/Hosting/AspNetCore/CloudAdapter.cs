@@ -30,7 +30,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         : ChannelServiceAdapterBase, IAgentHttpAdapter
     {
         private readonly IActivityTaskQueue _activityTaskQueue;
-        private readonly IBackgroundTaskQueue _backgroundTaskQueue;
         private readonly AdapterOptions _adapterOptions;
         private readonly ChannelResponseQueue _responseQueue;
 
@@ -43,7 +42,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
-        /// <param name="backgroundTaskQueue"></param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -51,12 +49,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null,
-            IBackgroundTaskQueue backgroundTaskQueue = null)
+            IConfiguration config = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
-            _backgroundTaskQueue = backgroundTaskQueue ?? throw new ArgumentNullException(nameof(backgroundTaskQueue));
             _adapterOptions = options ?? new AdapterOptions();
             _responseQueue = new ChannelResponseQueue(Logger);
 
@@ -168,27 +164,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         await writer.ResponseBegin(httpResponse, cancellationToken).ConfigureAwait(false);
 
                         // Start the processing without waiting for it to complete. The HandleResponsesAsync will block until the CompleteHandlerForRequest is called.
-
-                        /*
-                        _backgroundTaskQueue.QueueBackgroundWorkItem(async (ct) =>
-                        {
-                            try
-                            {
-                                invokeResponse = await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, ct).ConfigureAwait(false);
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
-                                if (activity.IsType(ActivityTypes.Invoke))
-                                {
-                                    invokeResponse = new InvokeResponse() { Status = (int)HttpStatusCode.InternalServerError, Body = new Error() { Code = nameof(HttpStatusCode.InternalServerError), Message = ex.Message }  };
-                                }
-                            }
-
-                            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-                        });
-                        */
-
                         _ = ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ContinueWith(t =>
                         {
                             try
