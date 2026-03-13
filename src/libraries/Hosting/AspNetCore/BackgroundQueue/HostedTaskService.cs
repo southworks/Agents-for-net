@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         // New tasks should not be starting during shutdown.
                         if (_lock.TryEnterReadLock(500))
                         {
-                            var task = GetTaskFromWorkItem(workItem, stoppingToken)
+                            var task = workItem(stoppingToken) //GetTaskFromWorkItem(workItem, stoppingToken)
                                 .ContinueWith(t =>
                                 {
                                     // After the work item completes, clear the running tasks of all completed tasks.
@@ -98,30 +98,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                             _logger.LogError("Work item not processed.  Server is shutting down.");
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred executing WorkItem.");
+                    }
                     finally
                     {
                         _lock.ExitReadLock();
                     }
                 }
             }
-        }
-
-        private Task GetTaskFromWorkItem(Func<CancellationToken, Task> workItem, CancellationToken stoppingToken)
-        {
-            // Start the work item, and return the task
-            return Task.Run(
-                async () =>
-                {
-                    try
-                    {
-                        await workItem(stoppingToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Agent Errors should be processed in the Adapter.OnTurnError.
-                        _logger.LogError(ex, "Error occurred executing WorkItem.");
-                    }
-                }, stoppingToken);
         }
     }
 }
