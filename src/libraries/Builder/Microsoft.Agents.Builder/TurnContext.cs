@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivitiesAsync));
             AssertionHelpers.ThrowIfNull(activities, nameof(activities));
@@ -221,21 +221,21 @@ namespace Microsoft.Agents.Builder
             // If there are no callbacks registered, bypass the overhead of invoking them and send directly to the adapter
             if (_onSendActivities.Count == 0)
             {
-                return SendActivitiesThroughAdapter();
+                return await SendActivitiesThroughAdapter().ConfigureAwait(false);
             }
 
             // Send through the full callback pipeline
-            return SendActivitiesThroughCallbackPipeline();
+            return await SendActivitiesThroughCallbackPipeline().ConfigureAwait(false);
 
-            Task<ResourceResponse[]> SendActivitiesThroughCallbackPipeline(int nextCallbackIndex = 0)
+            async Task<ResourceResponse[]> SendActivitiesThroughCallbackPipeline(int nextCallbackIndex = 0)
             {
                 // If we've executed the last callback, we now send straight to the adapter
                 if (nextCallbackIndex == _onSendActivities.Count)
                 {
-                    return SendActivitiesThroughAdapter();
+                    return await SendActivitiesThroughAdapter().ConfigureAwait(false);
                 }
 
-                return _onSendActivities[nextCallbackIndex].Invoke(this, bufferedActivities, () => SendActivitiesThroughCallbackPipeline(nextCallbackIndex + 1));
+                return await _onSendActivities[nextCallbackIndex].Invoke(this, bufferedActivities, () => SendActivitiesThroughCallbackPipeline(nextCallbackIndex + 1)).ConfigureAwait(false);
             }
 
             async Task<ResourceResponse[]> SendActivitiesThroughAdapter()
