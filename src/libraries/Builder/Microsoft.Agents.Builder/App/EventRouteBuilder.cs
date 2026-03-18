@@ -48,6 +48,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
+            if (_eventName != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name}) with Name already set");
+            }
+
             if (_eventRegex != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName({name})) with Name Regex already set");
@@ -68,6 +73,11 @@ namespace Microsoft.Agents.Builder.App
         public EventRouteBuilder WithName(Regex namePattern)
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
+
+            if (_eventRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"EventRouteBuilder.WithName(Regex({namePattern})) with Name Regex already set");
+            }
 
             if (_eventName != null)
             {
@@ -140,7 +150,7 @@ namespace Microsoft.Agents.Builder.App
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Event)
-                        && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                        && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                         && await existingSelector(context, ct);
                 }
                 return;
@@ -157,7 +167,7 @@ namespace Microsoft.Agents.Builder.App
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Event)
                     && context.Activity.Name != null
-                    && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _eventRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                    && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                 );
         }
     }

@@ -41,6 +41,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
+            if (_invokeName != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name already set");
+            }
+
             if (_invokeRegex != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name Regex already set");
@@ -62,6 +67,11 @@ namespace Microsoft.Agents.Builder.App
         public InvokeRouteBuilder WithName(Regex namePattern)
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
+
+            if (_invokeRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name Regex already set");
+            }
 
             if (_invokeName != null)
             {
@@ -133,7 +143,7 @@ namespace Microsoft.Agents.Builder.App
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Invoke)
-                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
                         && await existingSelector(context, ct);
                 }
                 return;
@@ -149,7 +159,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Invoke)
-                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : _invokeRegex.IsMatch(context.Activity.Name ?? string.Empty))
+                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
                 );
         }
     }

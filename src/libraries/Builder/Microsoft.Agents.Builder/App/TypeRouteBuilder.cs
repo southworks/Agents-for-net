@@ -47,6 +47,11 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
 
+            if (_type != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type already set");
+            }
+
             if (_typePattern != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type Regex already set");
@@ -68,6 +73,11 @@ namespace Microsoft.Agents.Builder.App
         public TypeRouteBuilder WithType(Regex typePattern)
         {
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));
+
+            if (_typePattern != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern})) with Type Regex already set");
+            }
 
             if (_type != null)
             {
@@ -127,7 +137,7 @@ namespace Microsoft.Agents.Builder.App
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && (_type != null ? context.Activity.IsType(_type) : _typePattern.IsMatch(context.Activity.Type ?? string.Empty))
+                        && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
                         && await existingSelector(context, ct);
                 }
                 return;
@@ -142,7 +152,7 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && (_type != null ? context.Activity.IsType(_type) : _typePattern.IsMatch(context.Activity.Type ?? string.Empty))
+                    && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
                 );
         }
     }
