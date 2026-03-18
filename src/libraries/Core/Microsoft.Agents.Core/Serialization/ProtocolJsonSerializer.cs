@@ -136,10 +136,10 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Object to JsonElement conversation.
+        /// Object to JsonElement conversion.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">The object to convert to a <see cref="JsonElement"/>.</param>
+        /// <returns>A <see cref="JsonElement"/> representing the specified object.</returns>
         public static JsonElement ToJsonElement(this object value)
         {
             return ToObject<JsonElement>(value);
