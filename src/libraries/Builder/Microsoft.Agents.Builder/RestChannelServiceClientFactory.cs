@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Builder
                 _logger));
         }
 
-        private Task<IConnectorClient> CreateLegacyClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
+        private Task<IConnectorClient> CreateLegacyClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(serviceUrl, nameof(serviceUrl));
