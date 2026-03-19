@@ -180,7 +180,6 @@ namespace Microsoft.Agents.Builder
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
-            audience ??= AuthenticationConstants.BotFrameworkAudience;
             var reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl)
                 .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(AgentClaims.GetAppId(identity), role: RoleTypes.User))
                 .Build();
@@ -285,7 +284,6 @@ namespace Microsoft.Agents.Builder
                 ResolveIfConnectorClientIsNeeded(activity)  // if Delivery Mode == ExpectReplies, we don't need a connector client.
                     ? await ChannelServiceFactory.CreateConnectorClientAsync(
                         context,
-                        scopes: AgentClaims.GetTokenScopes(claimsIdentity),
                         useAnonymous: useAnonymousAuthCallback,
                         cancellationToken: cancellationToken).ConfigureAwait(false)
                     : null;
