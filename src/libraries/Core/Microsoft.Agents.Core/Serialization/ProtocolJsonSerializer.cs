@@ -109,16 +109,18 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         /// <remarks>
         /// Each call prepends the new resolver at the front of the chain.
-        /// <c>JsonTypeInfoResolver.Combine</c> returns the first non-null result in order,
+        /// <see cref="JsonTypeInfoResolver.Combine(IJsonTypeInfoResolver[])"/> returns the first non-null result in order,
         /// so the most-recently-added resolver wins for any given type.
         /// </remarks>
         public static void AddTypeInfoResolver(IJsonTypeInfoResolver resolver)
         {
             lock (_optionsLock)
             {
-                var newOptions = SerializationOptions.IsReadOnly
-                    ? new JsonSerializerOptions(SerializationOptions)
-                    : SerializationOptions;
+                var newOptions = SerializationOptions;
+                if (newOptions.IsReadOnly)
+                {
+                    newOptions = new JsonSerializerOptions(SerializationOptions);
+                }
 
                 newOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
                     resolver,

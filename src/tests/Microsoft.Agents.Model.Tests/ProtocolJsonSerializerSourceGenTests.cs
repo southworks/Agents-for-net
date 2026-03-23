@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using Microsoft.Agents.Core.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -69,7 +71,7 @@ namespace Microsoft.Agents.Model.Tests
                 _onResolved = onResolved;
             }
 
-            public JsonTypeInfo GetTypeInfo(System.Type type, JsonSerializerOptions options)
+            public JsonTypeInfo? GetTypeInfo(System.Type type, JsonSerializerOptions options)
             {
                 if (type == _targetType)
                     _onResolved();
