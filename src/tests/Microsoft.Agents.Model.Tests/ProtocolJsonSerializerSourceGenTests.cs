@@ -58,6 +58,65 @@ namespace Microsoft.Agents.Model.Tests
             await Task.WhenAll(tasks);
         }
 
+        [Fact]
+        public void CoreJsonContext_IncludesFields()
+        {
+            // CoreJsonContext.Default.Options.IncludeFields must be true to match ApplyCoreOptions()
+            Assert.NotNull(ProtocolJsonSerializer.SerializationOptions.TypeInfoResolver);
+        }
+
+        [Fact]
+        public void HeroCard_SerializesAndDeserializes_ViaSourceGen()
+        {
+            // HeroCard has no custom converter — uses CoreJsonContext path
+            var card = new Microsoft.Agents.Core.Models.HeroCard
+            {
+                Title = "Test Title",
+                Subtitle = "Test Subtitle",
+                Text = "Some text"
+            };
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.HeroCard>(json);
+
+            Assert.Equal("Test Title", result.Title);
+            Assert.Equal("Test Subtitle", result.Subtitle);
+            Assert.Equal("Some text", result.Text);
+        }
+
+        [Fact]
+        public void TokenExchangeResource_RoundTrips()
+        {
+            // Another non-converter type
+            var resource = new Microsoft.Agents.Core.Models.TokenExchangeResource
+            {
+                Id = "resource-id",
+                Uri = "https://example.com/token",
+                ProviderId = "provider-1"
+            };
+
+            var json = ProtocolJsonSerializer.ToJson(resource);
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.TokenExchangeResource>(json);
+
+            Assert.Equal("resource-id", result.Id);
+            Assert.Equal("https://example.com/token", result.Uri);
+            Assert.Equal("provider-1", result.ProviderId);
+        }
+
+        [Fact]
+        public void ConversationParameters_Members_IReadOnlyList_Deserializes()
+        {
+            // ConversationParameters.Members is IReadOnlyList<ChannelAccount>
+            var json = """{"members":[{"id":"user1","name":"User One"},{"id":"user2","name":"User Two"}]}""";
+
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.ConversationParameters>(json);
+
+            Assert.NotNull(result.Members);
+            Assert.Equal(2, result.Members.Count);
+            Assert.Equal("user1", result.Members[0].Id);
+            Assert.Equal("User Two", result.Members[1].Name);
+        }
+
         // Helper: a resolver that calls an action when it handles the target type
         private sealed class TrackingTypeInfoResolver : IJsonTypeInfoResolver
         {
