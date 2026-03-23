@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
             // with the correct context and then make the create conversation call.
-            var createActivity = reference.GetCreateContinuationActivity();
+            var createActivity = reference.GetCreateContinuationActivity(channelData: parameters.ChannelData);
             using var context = new TurnContext(this, createActivity, identity);
 
             // Create the connector client to use for outbound requests.
