@@ -21,14 +21,12 @@ namespace Microsoft.Agents.Builder
         /// Creates a <see cref="IConnectorClient"/> that can be used to create <see cref="IConnectorClient"/>.
         /// </summary>
         /// <param name="claimsIdentity">The inbound <see cref="Activity"/>'s <see cref="ClaimsIdentity"/>.</param>
-        /// <param name="audience"></param>
+        /// <param name="serviceUrl">The service URL.</param>
+        /// <param name="audience">An optional audience identifier for which the connector client is created. If null, the default audience is
+        /// used.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="scopes">The scopes to request.</param>
-        /// <param name="serviceUrl">The service URL.</param>
         /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
-        /// <remarks>
-        /// This is called at the beginning of each turn.
-        /// </remarks>
         /// <returns>A <see cref="IConnectorClient"/>.</returns>
         [Obsolete("This method is deprecated. Please use CreateConnectorClientAsync(ITurnContext, string, IList<string>, bool, CancellationToken) instead.")]
         Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false);

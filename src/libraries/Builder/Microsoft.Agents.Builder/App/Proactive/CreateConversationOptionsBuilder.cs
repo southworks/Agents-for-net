@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Adds an Activity to the conversation being creatged.  This does not apply to all Channel types, but can be used to specify the initial message 
+        /// Adds an Activity to the conversation being created.  This does not apply to all Channel types, but can be used to specify the initial message 
         /// for those that do.  Teams supports this, and will use the Activity as the initial message in the conversation.  For channels that do not support 
         /// this, the Activity will be ignored.
         /// </summary>
