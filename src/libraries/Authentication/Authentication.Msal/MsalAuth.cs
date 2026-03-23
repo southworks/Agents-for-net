@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Authentication.Msal
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
-        private readonly ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList = new();
+        private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList = new();
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
