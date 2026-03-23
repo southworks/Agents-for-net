@@ -1,10 +1,9 @@
-﻿using Microsoft.Agents.Core.Serialization;
-using System;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
@@ -25,7 +24,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         [Fact]
-        public void PersistedState_ArayRoundTrip()
+        public void PersistedState_ArrayRoundTrip()
         {
             var state = new TestState();
             state.State["block"] = new BaseBlock[] { new SubBlock { Id = "1", Data = "Test" } };
