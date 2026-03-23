@@ -61,8 +61,21 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void SerializationOptions_TypeInfoResolver_IsNonNull()
         {
-            // CoreJsonContext.Default.Options.IncludeFields must be true to match ApplyCoreOptions()
+            // After initialization, TypeInfoResolver must be set (not null)
+            // so that CoreJsonContext metadata is used instead of reflection for covered types.
             Assert.NotNull(ProtocolJsonSerializer.SerializationOptions.TypeInfoResolver);
+        }
+
+        [Fact]
+        public void SerializationOptions_TypeInfoResolver_CanResolveHeroCard()
+        {
+            // HeroCard is in CoreJsonContext — the resolver chain must return type info for it
+            var typeInfo = ProtocolJsonSerializer.SerializationOptions
+                .TypeInfoResolver?
+                .GetTypeInfo(typeof(Microsoft.Agents.Core.Models.HeroCard),
+                             ProtocolJsonSerializer.SerializationOptions);
+
+            Assert.NotNull(typeInfo);
         }
 
         [Fact]

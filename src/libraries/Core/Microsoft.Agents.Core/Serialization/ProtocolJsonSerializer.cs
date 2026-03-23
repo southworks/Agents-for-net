@@ -50,6 +50,10 @@ namespace Microsoft.Agents.Core.Serialization
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
+            options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                CoreJsonContext.Default,
+                new DefaultJsonTypeInfoResolver());
+
             return options;
         }
 
@@ -86,6 +90,27 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
+        /// <summary>
+        /// Applies a transformation function to <see cref="SerializationOptions"/>, replacing it with
+        /// the result. This is an advanced escape hatch — prefer <see cref="ApplyExtensionConverters"/>
+        /// or <see cref="AddTypeInfoResolver"/> for typical extensions.
+        /// </summary>
+        /// <param name="applyFunc">
+        /// A function that receives the current options and returns the new options.
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// <b>Important:</b> If your function replaces <see cref="JsonSerializerOptions.TypeInfoResolver"/>,
+        /// you must include <c>CoreJsonContext.Default</c> in the new resolver chain.
+        /// Omitting it silently removes source-generated metadata for all core model types.
+        /// Use <see cref="JsonTypeInfoResolver.Combine(IJsonTypeInfoResolver[])"/> to chain resolvers:
+        /// <code>
+        /// options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+        ///     YourContext.Default,
+        ///     new DefaultJsonTypeInfoResolver());
+        /// </code>
+        /// </para>
+        /// </remarks>
         public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
         {
             lock (_optionsLock)
