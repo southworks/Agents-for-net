@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Authentication
         /// Retrieves the token scopes from the given claims identity.
         /// </summary>
         /// <param name="identity">The claims identity containing the token information.</param>
-        /// <returns>A list of token scopes, or null if no scopes are found.</returns>
+        /// <returns>A list of token scopes.</returns>
         public static IList<string> GetTokenScopes(ClaimsIdentity identity)
         {
             return AgentClaims.IsAgentClaim(identity)

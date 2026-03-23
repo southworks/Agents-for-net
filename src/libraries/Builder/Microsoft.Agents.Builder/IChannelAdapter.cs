@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="channelId">The ID for the channel. See <see cref="Channels"/></param>
         /// <param name="serviceUrl">The channel's service URL endpoint.</param>
         /// <param name="audience">The audience for the connector. For example, <c>AgentClaims.GetTokenAudience(ITurnContext.Identity)</c></param>
-        /// <param name="conversationParameters">The conversation information to used to create the conversation.</param>
+        /// <param name="conversationParameters">The conversation information used to create the conversation.</param>
         /// <param name="callback">The method to call for the resulting Agent turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
