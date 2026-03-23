@@ -130,6 +130,73 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal("User Two", result.Members[1].Name);
         }
 
+        [Fact]
+        public void Activity_CustomConverter_StillTakesPriority()
+        {
+            // Activity is handled by ActivityConverter — it must take priority over CoreJsonContext.
+            // We verify Activity still round-trips correctly via the converter path.
+            var json = """{"type":"message","text":"hello world","id":"act-123"}""";
+
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.Activity>(json);
+
+            Assert.Equal("message", result.Type);
+            Assert.Equal("hello world", result.Text);
+            Assert.Equal("act-123", result.Id);
+        }
+
+        [Fact]
+        public void ChannelAccount_CustomConverter_StillTakesPriority()
+        {
+            // ChannelAccount is handled by ChannelAccountConverter.
+            var json = """{"id":"user-1","name":"Alice","role":"user"}""";
+
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.ChannelAccount>(json);
+
+            Assert.Equal("user-1", result.Id);
+            Assert.Equal("Alice", result.Name);
+        }
+
+        [Fact]
+        public void HeroCard_NullProperties_OmittedInJson()
+        {
+            // Verify DefaultIgnoreCondition = WhenWritingNull is respected via CoreJsonContext
+            var card = new Microsoft.Agents.Core.Models.HeroCard
+            {
+                Title = "My Card"
+                // Subtitle, Text, etc. are null — should be omitted
+            };
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+
+            Assert.Contains("\"title\"", json);
+            Assert.DoesNotContain("subtitle", json);
+            Assert.DoesNotContain("text", json);
+        }
+
+        [Fact]
+        public void HeroCard_PropertyNameCamelCase_IsRespected()
+        {
+            // Verify PropertyNamingPolicy = CamelCase
+            var card = new Microsoft.Agents.Core.Models.HeroCard { Title = "CamelTest" };
+
+            var json = ProtocolJsonSerializer.ToJson(card);
+
+            Assert.Contains("\"title\"", json);          // camelCase
+            Assert.DoesNotContain("\"Title\"", json);    // not PascalCase
+        }
+
+        [Fact]
+        public void ResourceResponse_RoundTrips()
+        {
+            // ResourceResponse is in CoreJsonContext (no custom converter)
+            var original = new Microsoft.Agents.Core.Models.ResourceResponse { Id = "resp-42" };
+
+            var json = ProtocolJsonSerializer.ToJson(original);
+            var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.ResourceResponse>(json);
+
+            Assert.Equal("resp-42", result.Id);
+        }
+
         // Helper: a resolver that calls an action when it handles the target type
         private sealed class TrackingTypeInfoResolver : IJsonTypeInfoResolver
         {
