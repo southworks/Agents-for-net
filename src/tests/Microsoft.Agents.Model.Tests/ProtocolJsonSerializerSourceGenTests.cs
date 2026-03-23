@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void CoreJsonContext_IncludesFields()
+        public void SerializationOptions_TypeInfoResolver_IsNonNull()
         {
             // CoreJsonContext.Default.Options.IncludeFields must be true to match ApplyCoreOptions()
             Assert.NotNull(ProtocolJsonSerializer.SerializationOptions.TypeInfoResolver);
