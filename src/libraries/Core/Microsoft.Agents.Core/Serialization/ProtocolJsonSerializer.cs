@@ -8,6 +8,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization.Converters;
 
@@ -96,6 +97,34 @@ namespace Microsoft.Agents.Core.Serialization
                 }
 
                 SerializationOptions = applyFunc(newOptions);
+            }
+        }
+
+        /// <summary>
+        /// Prepends a <see cref="IJsonTypeInfoResolver"/> (e.g., a source-generated
+        /// <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>) to the resolver chain
+        /// used by <see cref="SerializationOptions"/>. The resolver is consulted before any previously
+        /// registered resolvers and before the reflection fallback.
+        /// Call from a <see cref="SerializationInitAttribute"/>-decorated <c>Init()</c> method.
+        /// </summary>
+        /// <remarks>
+        /// Each call prepends the new resolver at the front of the chain.
+        /// <c>JsonTypeInfoResolver.Combine</c> returns the first non-null result in order,
+        /// so the most-recently-added resolver wins for any given type.
+        /// </remarks>
+        public static void AddTypeInfoResolver(IJsonTypeInfoResolver resolver)
+        {
+            lock (_optionsLock)
+            {
+                var newOptions = SerializationOptions.IsReadOnly
+                    ? new JsonSerializerOptions(SerializationOptions)
+                    : SerializationOptions;
+
+                newOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                    resolver,
+                    newOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver());
+
+                SerializationOptions = newOptions;
             }
         }
 
