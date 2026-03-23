@@ -49,13 +49,23 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public async Task AddTypeInfoResolver_ConcurrentCalls_DoNotThrow()
         {
-            // Act: 20 concurrent calls with harmless resolvers
-            var tasks = Enumerable.Range(0, 20).Select(_ =>
-                Task.Run(() =>
-                    ProtocolJsonSerializer.AddTypeInfoResolver(new DefaultJsonTypeInfoResolver())));
+            // Snapshot options so we can restore after the concurrent calls
+            var savedOptions = ProtocolJsonSerializer.SerializationOptions;
+            try
+            {
+                // Act: 20 concurrent calls with harmless resolvers
+                var tasks = Enumerable.Range(0, 20).Select(_ =>
+                    Task.Run(() =>
+                        ProtocolJsonSerializer.AddTypeInfoResolver(new DefaultJsonTypeInfoResolver())));
 
-            // Assert: no exceptions
-            await Task.WhenAll(tasks);
+                // Assert: no exceptions
+                await Task.WhenAll(tasks);
+            }
+            finally
+            {
+                // Restore global state to avoid contaminating other tests
+                ProtocolJsonSerializer.ApplyExtensionOptions(_ => savedOptions);
+            }
         }
 
         [Fact]
