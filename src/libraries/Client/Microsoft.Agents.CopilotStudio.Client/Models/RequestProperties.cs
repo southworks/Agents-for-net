@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.CopilotStudio.Client
+namespace Microsoft.Agents.CopilotStudio.Client.Models
 {
     /// <summary>
-    /// Optional properties that are mapped to HTTP headers on each orchestrated request.
+    /// Optional properties that are mapped to HTTP headers on each request.
     /// </summary>
-    public class OrchestratedRequestProperties
+    public class RequestProperties
     {
         /// <summary>
         /// Correlation ID for end-to-end request tracing.

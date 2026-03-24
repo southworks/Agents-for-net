@@ -79,7 +79,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, OrchestratedRequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
 
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, OrchestratedRequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
             _ = toolInputs ?? throw new ArgumentNullException(nameof(toolInputs), "ToolInvocationInput is required.");
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, OrchestratedRequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
             _ = activity ?? throw new ArgumentNullException(nameof(activity), "An Activity is required.");
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, OrchestratedRequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
 
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, OrchestratedRequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId));
             _ = request ?? throw new ArgumentNullException(nameof(request));

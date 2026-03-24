@@ -553,7 +553,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             {
                 Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
             };
-            var properties = new OrchestratedRequestProperties
+            var properties = new RequestProperties
             {
                 CorrelationId = "test-correlation-id",
                 AgentVersion = "1.0.0",
@@ -611,7 +611,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             {
                 Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
             };
-            var properties = new OrchestratedRequestProperties
+            var properties = new RequestProperties
             {
                 CorrelationId = "partial-correlation-id"
                 // AgentVersion and AcceptLanguage intentionally omitted
