@@ -171,24 +171,26 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
             options.Converters.Add(new ObjectTypeConverter());
+            options.Converters.Add(new EntityConverter());
+
+            // Dialogs
+            options.Converters.Add(new Array2DConverter());
+            options.Converters.Add(new DictionaryOfObjectConverter());
 
             //options.Converters.Add(new AnimationCardConverter());
             //options.Converters.Add(new AttachmentConverter());
-            options.Converters.Add(new AudioCardConverter());
+            //options.Converters.Add(new AudioCardConverter());
             //options.Converters.Add(new CardActionConverter());
-            options.Converters.Add(new ChannelAccountConverter());
-            options.Converters.Add(new ConversationAccountConverter());
-            options.Converters.Add(new EntityConverter());
-            options.Converters.Add(new AIEntityConverter());
+            //options.Converters.Add(new ChannelAccountConverter());
+            //options.Converters.Add(new ConversationAccountConverter());
+            //options.Converters.Add(new AIEntityConverter());
             options.Converters.Add(new TokenExchangeInvokeResponseConverter());
             options.Converters.Add(new TokenExchangeInvokeRequestConverter());
             options.Converters.Add(new TokenResponseConverter());
             options.Converters.Add(new VideoCardConverter());
-            options.Converters.Add(new Array2DConverter());
-            options.Converters.Add(new DictionaryOfObjectConverter());
             options.Converters.Add(new SuggestedActionsConverter());
             options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
-            options.Converters.Add(new MessageReactionConverter());
+            //options.Converters.Add(new MessageReactionConverter());
 
             return options;
         }
