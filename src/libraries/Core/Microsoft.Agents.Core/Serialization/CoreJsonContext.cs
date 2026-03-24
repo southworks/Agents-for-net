@@ -30,6 +30,7 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(AdaptiveCardInvokeAction))]
     [JsonSerializable(typeof(AdaptiveCardInvokeValue))]
     [JsonSerializable(typeof(AadResourceUrls))]
+    [JsonSerializable(typeof(Attachment))]
     [JsonSerializable(typeof(BasicCard))]
     [JsonSerializable(typeof(CardImage))]
     [JsonSerializable(typeof(Citation))]

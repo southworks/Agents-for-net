@@ -170,10 +170,12 @@ namespace Microsoft.Agents.Core.Serialization
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
-            options.Converters.Add(new AnimationCardConverter());
-            options.Converters.Add(new AttachmentConverter());
+            options.Converters.Add(new ObjectTypeConverter());
+
+            //options.Converters.Add(new AnimationCardConverter());
+            //options.Converters.Add(new AttachmentConverter());
             options.Converters.Add(new AudioCardConverter());
-            options.Converters.Add(new CardActionConverter());
+            //options.Converters.Add(new CardActionConverter());
             options.Converters.Add(new ChannelAccountConverter());
             options.Converters.Add(new ConversationAccountConverter());
             options.Converters.Add(new EntityConverter());
