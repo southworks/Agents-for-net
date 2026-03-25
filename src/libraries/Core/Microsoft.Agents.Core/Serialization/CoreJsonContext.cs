@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(List<MessageReaction>))]
     [JsonSerializable(typeof(Dictionary<string, string>))]
     [JsonSerializable(typeof(Dictionary<string, JsonElement>))]
-    internal sealed partial class CoreJsonContext : JsonSerializerContext
+    public sealed partial class CoreJsonContext : JsonSerializerContext
     {
     }
 }

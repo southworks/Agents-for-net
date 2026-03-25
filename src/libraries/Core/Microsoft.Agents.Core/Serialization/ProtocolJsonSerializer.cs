@@ -107,6 +107,7 @@ namespace Microsoft.Agents.Core.Serialization
         /// <code>
         /// options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
         ///     YourContext.Default,
+        ///     CoreJsonContext.Default,
         ///     new DefaultJsonTypeInfoResolver());
         /// </code>
         /// </para>

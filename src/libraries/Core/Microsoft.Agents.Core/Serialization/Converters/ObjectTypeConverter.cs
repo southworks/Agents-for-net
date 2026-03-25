@@ -57,7 +57,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         /// A simple type (string, int, etc...) is set as the value.  Complex objects are of type 'JsonElement'.
         /// </summary>
         /// <param name="reader"></param>
-        /// <param name="setter"></param>
         /// <param name="options"></param>
         protected static object SetGenericProperty(ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
