@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder
     /// lot of functionality for free, including handling incoming activities, sending outgoing activities, and creating conversations.
     /// Otherwise, subclass the ChannelAdapter for more control over how activities are sent and received.
     /// </remarks>
-    /// <param name="channelServiceClientFactory">The IConnectorFactory to use.</param>
+    /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,

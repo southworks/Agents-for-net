@@ -75,6 +75,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken)")]
         public virtual Task ContinueConversationAsync(string agentAppId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
@@ -93,6 +94,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
+        [Obsolete("Use ContinueConversationAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)")]
         public virtual Task ContinueConversationAsync(string agentAppId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
@@ -121,6 +123,10 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public virtual async Task<InvokeResponse> ProcessActivityAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, CancellationToken cancellationToken)
         {
+            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
+            AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+            AssertionHelpers.ThrowIfNull(callback, nameof(callback));
+
             // Create a turn context
             using var context = new TurnContext(this, activity, claimsIdentity);
 
@@ -137,7 +143,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(continuationActivity, nameof(continuationActivity));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
 
-            // Create a turn context and clients
+            // Create a turn context
             using var context = new TurnContext(this, continuationActivity, claimsIdentity);
 
             // Run the pipeline.
