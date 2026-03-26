@@ -24,11 +24,23 @@ namespace Microsoft.Agents.Connector.RestClients
             RestRequest request,
             CancellationToken cancellationToken)
         {
-            var httpClient = await transport.GetHttpClientAsync().ConfigureAwait(false);
-            var httpRequest = request.Build(transport.Endpoint);
+            using var httpClient = await transport.GetHttpClientAsync().ConfigureAwait(false);
+            using var httpRequest = request.Build(transport.Endpoint);
             return await httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
         }
 
+#if !NETSTANDARD
+        /// <summary>
+        /// Deserializes JSON from the response content.
+        /// This is the SINGLE location for the #if !NETSTANDARD deserialization pattern.
+        /// </summary>
+        internal static Task<T> ReadContentAsync<T>(
+            HttpResponseMessage response,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(ProtocolJsonSerializer.ToObject<T>(response.Content.ReadAsStream(cancellationToken)));
+        }
+#else
         /// <summary>
         /// Deserializes JSON from the response content.
         /// This is the SINGLE location for the #if !NETSTANDARD deserialization pattern.
@@ -37,12 +49,9 @@ namespace Microsoft.Agents.Connector.RestClients
             HttpResponseMessage response,
             CancellationToken cancellationToken)
         {
-#if !NETSTANDARD
-            return ProtocolJsonSerializer.ToObject<T>(response.Content.ReadAsStream(cancellationToken));
-#else
             return ProtocolJsonSerializer.ToObject<T>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-#endif
         }
+#endif
 
         /// <summary>
         /// Reads response content as a string.

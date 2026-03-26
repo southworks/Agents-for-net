@@ -148,6 +148,10 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="activity">The activity to be marked as targeted. Cannot be null.</param>
         public static void MakeTargetedActivity(this IActivity activity)
         {
+            if (activity.IsTargetedActivity())
+            {
+                return;
+            }
             activity.Entities ??= [];
             activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
         }
