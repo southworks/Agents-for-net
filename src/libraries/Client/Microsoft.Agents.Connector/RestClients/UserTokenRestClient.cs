@@ -274,6 +274,8 @@ namespace Microsoft.Agents.Connector.RestClients
                     var jwtToken = new JwtSecurityToken(tokenResponse.Token);
                     if (tokenResponse.Expiration == null)
                     {
+                        // It's usually the case that the TokenResponse will NOT include an expiration value,
+                        // in which case we will use the JWT token expiration value.
                         tokenResponse.Expiration = jwtToken.ValidTo;
                     }
                     tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
@@ -284,6 +286,9 @@ namespace Microsoft.Agents.Connector.RestClients
                     tokenResponse.IsExchangeable = false;
                 }
 
+                // If the TokenResponse doesn't contain an expiration value then expiration calcs
+                // won't be available to callers.  But the token can otherwise be used.  However,
+                // we'll skip caching for now.
                 if (tokenResponse.Expiration != null)
                 {
                     _cache.Add(

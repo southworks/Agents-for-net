@@ -130,12 +130,18 @@ namespace Microsoft.Agents.Core.Models
         public static bool IsTargetedActivity(this IActivity activity)
         {
             if (activity.Entities == null || activity.Entities.Count == 0)
+            {
                 return false;
+            }
+
             foreach (var entity in activity.Entities)
             {
                 if (entity.Type == EntityTypes.ActivityTreatment && entity is ActivityTreatment treatment && treatment.Treatment == ActivityTreatmentTypes.Targeted)
+                {
                     return true;
+                }
             }
+
             return false;
         }
 

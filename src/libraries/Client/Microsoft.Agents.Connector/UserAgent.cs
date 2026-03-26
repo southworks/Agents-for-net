@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Connector
 {
-    public static class HttpClientExtensions
+    internal static class HttpClientExtensions
     {
         private static ProductInfoHeaderValue _frameworkProductInfo = null;
         private static ProductInfoHeaderValue _versionString = null;

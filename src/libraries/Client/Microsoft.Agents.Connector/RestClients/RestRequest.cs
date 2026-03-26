@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Connector.RestClients
             return this;
         }
 
-        /// <summary>Appends a query parameter. Null or empty values are omitted.</summary>
+        /// <summary>Appends a query parameter. Null values are omitted.</summary>
         public RestRequest WithQuery(string name, string value, bool escape = true)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));

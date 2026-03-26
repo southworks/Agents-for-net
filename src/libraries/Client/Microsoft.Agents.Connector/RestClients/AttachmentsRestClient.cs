@@ -11,6 +11,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Microsoft.Agents.Connector.RestClients
 {
@@ -44,7 +45,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(attachmentId, nameof(attachmentId));
 
-            var request = RestRequest.Get(string.Format(RestApiPaths.AttachmentInfo, attachmentId));
+            var request = RestRequest.Get(string.Format(RestApiPaths.AttachmentInfo, HttpUtility.UrlEncode(attachmentId)));
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
             {
@@ -74,7 +75,7 @@ namespace Microsoft.Agents.Connector.RestClients
 
             // Special case: requires Accept: application/octet-stream (not the default application/json)
             // and returns binary content, not a JSON-deserializable object.
-            var requestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), string.Format(RestApiPaths.AttachmentView, attachmentId, viewId));
+            var requestUri = new Uri(_transport.Endpoint.EnsureTrailingSlash(), string.Format(RestApiPaths.AttachmentView, HttpUtility.UrlEncode(attachmentId), HttpUtility.UrlEncode(viewId)));
             using var message = new HttpRequestMessage(HttpMethod.Get, requestUri);
             message.Headers.Add("Accept", "application/octet-stream, application/json");
 
