@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationHistory, conversationId))
+            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationHistory, HttpUtility.UrlEncode(conversationId)))
                 .WithBody(body);
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            var request = RestRequest.Put(string.Format(RestApiPaths.ConversationActivity, conversationId, activityId))
+            var request = RestRequest.Put(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)))
                 .WithBody(body);
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationActivity, conversationId, activityId));
+            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMembers, conversationId));
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMembers, HttpUtility.UrlEncode(conversationId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
 
-            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMember, conversationId, userId));
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationMember, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(userId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(memberId, nameof(memberId));
 
-            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationMember, conversationId, memberId));
+            var request = RestRequest.Delete(string.Format(RestApiPaths.ConversationMember, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(memberId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationPagedMembers, conversationId))
+            var request = RestRequest.Get(string.Format(RestApiPaths.ConversationPagedMembers, HttpUtility.UrlEncode(conversationId)))
                 .WithQuery("pageSize", pageSize.HasValue ? pageSize.Value.ToString() : null)
                 .WithQuery("continuationToken", continuationToken);
 
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Connector.RestClients
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             AssertionHelpers.ThrowIfNullOrEmpty(activityId, nameof(activityId));
 
-            var request = RestRequest.Get(string.Format(RestApiPaths.ActivityMembers, conversationId, activityId));
+            var request = RestRequest.Get(string.Format(RestApiPaths.ActivityMembers, HttpUtility.UrlEncode(conversationId), HttpUtility.UrlEncode(activityId)));
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
             switch ((int)httpResponse.StatusCode)
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
 
-            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationAttachments, conversationId))
+            var request = RestRequest.Post(string.Format(RestApiPaths.ConversationAttachments, HttpUtility.UrlEncode(conversationId)))
                 .WithBody(body);
 
             using var httpResponse = await RestPipeline.SendRawAsync(_transport, request, cancellationToken).ConfigureAwait(false);
