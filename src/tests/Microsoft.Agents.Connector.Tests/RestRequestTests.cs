@@ -42,27 +42,27 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public void Get_NullPath_ThrowsArgumentException()
+        public void Get_NullPath_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentException>(() => RestRequest.Get(null));
+            Assert.Throws<ArgumentNullException>(() => RestRequest.Get(null));
         }
 
         [Fact]
-        public void Post_NullPath_ThrowsArgumentException()
+        public void Post_NullPath_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentException>(() => RestRequest.Post(null));
+            Assert.Throws<ArgumentNullException>(() => RestRequest.Post(null));
         }
 
         [Fact]
-        public void Put_NullPath_ThrowsArgumentException()
+        public void Put_NullPath_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentException>(() => RestRequest.Put(null));
+            Assert.Throws<ArgumentNullException>(() => RestRequest.Put(null));
         }
 
         [Fact]
-        public void Delete_NullPath_ThrowsArgumentException()
+        public void Delete_NullPath_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentException>(() => RestRequest.Delete(null));
+            Assert.Throws<ArgumentNullException>(() => RestRequest.Delete(null));
         }
 
         [Fact]
@@ -78,9 +78,9 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public void WithQuery_NullName_ThrowsArgumentException()
+        public void WithQuery_NullName_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentException>(() => RestRequest.Get("v3/conversations").WithQuery(null, "value"));
+            Assert.Throws<ArgumentNullException>(() => RestRequest.Get("v3/conversations").WithQuery(null, "value"));
         }
 
         [Fact]
