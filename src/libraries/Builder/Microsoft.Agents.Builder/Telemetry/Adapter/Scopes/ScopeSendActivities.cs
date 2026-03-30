@@ -36,16 +36,14 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
         {
+            if (_activities == null || _activities.Length == 0)
+            {
+                return;
+            }
+
             int count = _activities.Length;
             telemetryActivity.SetTag(TagNames.ActivityCount, count);
-            if (count > 0)
-            {
-                telemetryActivity.SetTag(TagNames.ConversationId, _activities.First().Conversation.Id);
-            }
-            else
-            {
-                telemetryActivity.SetTag(TagNames.ConversationId, TelemetryUtils.Unknown);
-            }
+            telemetryActivity.SetTag(TagNames.ConversationId, _activities.First().Conversation?.Id);
 
             foreach (var activity in _activities)
             {

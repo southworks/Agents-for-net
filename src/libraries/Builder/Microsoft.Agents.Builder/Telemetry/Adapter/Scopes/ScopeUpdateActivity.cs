@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
         {
             telemetryActivity.SetTag(TagNames.ActivityId, _activity.Id);
-            telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation.Id);
+            telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation?.Id);
 
             Metrics.ActivitiesUpdated.Add(
                 1,

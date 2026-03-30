@@ -179,10 +179,10 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
 
             var stopped = Assert.Single(_stoppedActivities);
             var conversationId = stopped.GetTagItem(TagNames.ConversationId);
-            Assert.Equal(TelemetryUtils.Unknown, conversationId);
+            Assert.Null(conversationId);
 
             var count = stopped.GetTagItem(TagNames.ActivityCount);
-            Assert.Equal(0, count);
+            Assert.Null(count);
         }
 
         #endregion

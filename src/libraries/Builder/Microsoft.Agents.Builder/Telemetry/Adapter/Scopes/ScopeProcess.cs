@@ -39,13 +39,13 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
             if (_activity != null)
             {
                 telemetryActivity.SetTag(TagNames.ActivityType, _activity.Type);
-                telemetryActivity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId.ToString());
+                telemetryActivity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId?.ToString());
                 telemetryActivity.SetTag(TagNames.ActivityDeliveryMode, _activity.DeliveryMode);
-                telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation.Id);
+                telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation?.Id);
                 telemetryActivity.SetTag(TagNames.IsAgentic, _activity.IsAgenticRequest());
 
                 metricTagList.Add(TagNames.ActivityType, _activity.Type);
-                metricTagList.Add(TagNames.ActivityChannelId, _activity.ChannelId);
+                metricTagList.Add(TagNames.ActivityChannelId, _activity.ChannelId?.ToString());
             }
 
             Metrics.AdapterProcessDuration.Record(duration, metricTagList);
