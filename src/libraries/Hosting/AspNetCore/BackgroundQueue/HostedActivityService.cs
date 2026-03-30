@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 finally
                 {
-                    activityWithClaims?.TelemetryActivity?.Stop();
+                    activityWithClaims.TelemetryActivity?.Stop();
                 }
             }
             catch (Exception ex)
