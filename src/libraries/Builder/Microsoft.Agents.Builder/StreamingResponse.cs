@@ -473,9 +473,9 @@ namespace Microsoft.Agents.Builder
                 Entities = []
             };
 
-            // Queue a chunk of text to be sent. Is done via a Func to create
-            // the Activity so that member variables are evaluated at time of 
-            // interval send.
+            // Queue a chunk of text to be sent. The Activity (including Text = Message)
+            // is created here to snapshot the current state. The factory below runs later
+            // to attach streaming metadata (sequence, entities) to this snapshot at send time.
             QueueActivity(() =>
             {
                 var sequence = _nextSequence++;
