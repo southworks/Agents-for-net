@@ -157,6 +157,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proactive", "samples\Proact
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Core.Telemetry.Tests", "tests\Microsoft.Agents.Core.Telemetry.Tests\Microsoft.Agents.Core.Telemetry.Tests.csproj", "{18B1159E-1369-4558-80E2-2080CB22CCA7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TelemetryAgent", "samples\TelemetryAgent\TelemetryAgent.csproj", "{3866F306-9059-4527-BE9F-3650CCE20B98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -899,6 +901,18 @@ Global
 		{18B1159E-1369-4558-80E2-2080CB22CCA7}.Release|x64.Build.0 = Release|Any CPU
 		{18B1159E-1369-4558-80E2-2080CB22CCA7}.Release|x86.ActiveCfg = Release|Any CPU
 		{18B1159E-1369-4558-80E2-2080CB22CCA7}.Release|x86.Build.0 = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|x64.Build.0 = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Debug|x86.Build.0 = Debug|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|x64.ActiveCfg = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|x64.Build.0 = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|x86.ActiveCfg = Release|Any CPU
+		{3866F306-9059-4527-BE9F-3650CCE20B98}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -978,6 +992,7 @@ Global
 		{2CC950A2-57B5-45E1-B415-033538A6215B} = {295CD61D-DB20-4DF5-A917-2665DB79A6E4}
 		{2D349B41-1C06-E483-EA8F-9BAAA25358AC} = {674A812C-7287-4883-97F9-697D83750648}
 		{18B1159E-1369-4558-80E2-2080CB22CCA7} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+		{3866F306-9059-4527-BE9F-3650CCE20B98} = {674A812C-7287-4883-97F9-697D83750648}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
