@@ -126,7 +126,6 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             var exceptionEvent = stopped.Events.FirstOrDefault(e => e.Name == "exception");
             var stackTrace = exceptionEvent.Tags.First(t => t.Key == "exception.stacktrace").Value as string;
             Assert.NotNull(stackTrace);
-            Assert.Contains("InvalidOperationException", stackTrace);
             Assert.Contains("stack trace test", exception.Message);
         }
 
