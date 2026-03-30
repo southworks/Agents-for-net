@@ -29,7 +29,6 @@ public static class AspNetExtensions
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     /// <param name="tokenValidationSectionName">Name of the config section to read.</param>
-    /// <param name="logger">Optional logger to use for authentication event logging.</param>
     /// <remarks>
     /// <para>This extension reads <see cref="TokenValidationOptions"/> settings from configuration.  If configuration is missing JWT token
     /// is not enabled.</para>

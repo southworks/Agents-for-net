@@ -1,5 +1,4 @@
-﻿// Licensed under the MIT License.
-
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -196,7 +195,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             using var scope = new ScopeUpdateActivity(activity);
 
             var started = Assert.Single(_startedActivities);
-            Assert.Equal("agents.adpater.update_activity", started.OperationName);
+            Assert.Equal("agents.adapter.update_activity", started.OperationName);
         }
 
         [Fact]
@@ -265,7 +264,6 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             scope.Dispose();
 
             var stopped = Assert.Single(_stoppedActivities);
-            var tags = stopped.Tags.ToDictionary(t => t.Key, t => t.Value);
             Assert.Equal("app-123", stopped.GetTagItem(TagNames.AppId));
             Assert.Equal("conv-456", stopped.GetTagItem(TagNames.ConversationId));
             Assert.Equal(false, stopped.GetTagItem(TagNames.IsAgentic));

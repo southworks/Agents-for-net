@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -7,8 +6,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Agents.Core.Telemetry;
 using Xunit;
+
+#nullable enable
 
 namespace Microsoft.Agents.Core.Telemetry.Tests
 {
@@ -126,6 +126,7 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             var exceptionEvent = stopped.Events.FirstOrDefault(e => e.Name == "exception");
             var stackTrace = exceptionEvent.Tags.First(t => t.Key == "exception.stacktrace").Value as string;
             Assert.NotNull(stackTrace);
+            Assert.Contains("InvalidOperationException", stackTrace);
             Assert.Contains("stack trace test", exception.Message);
         }
 
@@ -399,15 +400,15 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
         {
             public bool CallbackInvoked { get; private set; }
             public int CallbackInvokedCount { get; private set; }
-            public Activity CapturedActivity { get; private set; }
+            public Activity? CapturedActivity { get; private set; }
             public double CapturedDuration { get; private set; }
-            public Exception CapturedException { get; private set; }
+            public Exception? CapturedException { get; private set; }
 
             public TestTelemetryScope(string activityName) : base(activityName)
             {
             }
 
-            protected override void Callback(Activity activity, double duration, Exception exception)
+            protected override void Callback(Activity activity, double duration, Exception? exception)
             {
                 CallbackInvoked = true;
                 CallbackInvokedCount++;
@@ -419,13 +420,13 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
         private class TaggingTelemetryScope : TelemetryScope
         {
-            public Activity CapturedActivity { get; private set; }
+            public Activity? CapturedActivity { get; private set; }
 
             public TaggingTelemetryScope(string activityName) : base(activityName)
             {
             }
 
-            protected override void Callback(Activity activity, double duration, Exception exception)
+            protected override void Callback(Activity activity, double duration, Exception? exception)
             {
                 CapturedActivity = activity;
                 activity.SetTag("custom.tag", "tag_value");

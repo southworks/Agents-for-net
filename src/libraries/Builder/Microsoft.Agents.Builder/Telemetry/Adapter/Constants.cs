@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter
         internal static readonly string ScopeSendActivities = "agents.adapter.send_activities";
 
         /// <summary>Span name for updating an existing activity.</summary>
-        internal static readonly string ScopeUpdateActivity = "agents.adpater.update_activity";
+        internal static readonly string ScopeUpdateActivity = "agents.adapter.update_activity";
 
         /// <summary>Span name for deleting an activity.</summary>
         internal static readonly string ScopeDeleteActivity = "agents.adapter.delete_activity";

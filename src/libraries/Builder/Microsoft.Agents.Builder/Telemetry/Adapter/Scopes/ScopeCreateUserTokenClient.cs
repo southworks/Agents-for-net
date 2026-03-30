@@ -21,13 +21,13 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// Initializes a new instance of the <see cref="ScopeCreateUserTokenClient"/> class.
         /// </summary>
         /// <param name="tokenServiceEndpoint">The endpoint of the token service.</param>
-        public ScopeCreateUserTokenClient(string tokenServiceEndpoint) : base(Constants.ScopeContinueConversation)
+        public ScopeCreateUserTokenClient(string tokenServiceEndpoint) : base(Constants.ScopeCreateUserTokenClient)
         {
             _tokenServiceEndpoint = tokenServiceEndpoint;
         }
 
         /// <inheritdoc />
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             telemetryActivity.SetTag(TagNames.TokenServiceEndpoint, _tokenServiceEndpoint);
         }

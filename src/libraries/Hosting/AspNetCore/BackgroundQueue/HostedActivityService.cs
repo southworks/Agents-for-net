@@ -5,6 +5,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -136,9 +137,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 System.Diagnostics.Activity newTelemetryActivity = null;
-                if (activityWithClaims.TelemetryActivity != null)
+                if (activityWithClaims.TelemetryActivity?.Context != null)
                 {
-                    newTelemetryActivity = activityWithClaims.TelemetryActivity?.Source.StartActivity(
+                    newTelemetryActivity = AgentsTelemetry.ActivitySource.StartActivity(
                         "agents.hosted_activity_service.get_task_from_work_item",
                         ActivityKind.Internal,
                         activityWithClaims.TelemetryActivity.Context
@@ -175,6 +176,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                     {
                         // make sure to close down any current activity once the turn is complete. 
                         newTelemetryActivity.Stop();
+                        newTelemetryActivity.Dispose();
                     }
                 }
             }

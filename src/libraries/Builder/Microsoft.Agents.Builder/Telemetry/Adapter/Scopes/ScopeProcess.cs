@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// Enriches the span with activity metadata tags and records
         /// <see cref="Metrics.AdapterProcessDuration"/> and <see cref="Metrics.ActivitiesReceived"/>.
         /// </remarks>
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             TagList metricTagList = new();
             if (_activity != null)

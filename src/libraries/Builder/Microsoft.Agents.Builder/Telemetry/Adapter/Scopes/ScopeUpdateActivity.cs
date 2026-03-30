@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         }
 
         /// <inheritdoc />
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             telemetryActivity.SetTag(TagNames.ActivityId, _activity.Id);
             telemetryActivity.SetTag(TagNames.ConversationId, _activity.Conversation?.Id);

@@ -144,6 +144,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     return;
                 }
                 activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
+                telemetryScope.Share(activity);
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 

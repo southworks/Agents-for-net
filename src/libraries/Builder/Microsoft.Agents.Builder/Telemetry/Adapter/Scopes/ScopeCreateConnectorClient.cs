@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// <param name="serviceUrl">The channel service URL the client will connect to.</param>
         /// <param name="scopes">The auth scopes requested for the client, or <c>null</c>.</param>
         /// <param name="isAgenticRequest">Whether the request originates from an agentic scenario.</param>
-        public ScopeCreateConnectorClient(string serviceUrl, IEnumerable<string>? scopes, bool isAgenticRequest) : base(Constants.ScopeContinueConversation)
+        public ScopeCreateConnectorClient(string serviceUrl, IEnumerable<string>? scopes, bool isAgenticRequest) : base(Constants.ScopeCreateConnectorClient)
         {
             _serviceUrl = serviceUrl;
             _scopes = scopes;
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         }
 
         /// <inheritdoc />
-        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception error)
+        protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             telemetryActivity.SetTag(TagNames.ServiceUrl, _serviceUrl);
             telemetryActivity.SetTag(TagNames.AuthScopes, TelemetryUtils.FormatScopes(_scopes));
