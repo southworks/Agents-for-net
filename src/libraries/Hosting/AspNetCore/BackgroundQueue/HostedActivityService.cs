@@ -136,15 +136,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 agent ??= _serviceProvider.GetService(typeof(IAgent));
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-                System.Diagnostics.Activity newTelemetryActivity = null;
-                if (activityWithClaims.TelemetryActivity?.Context != null)
-                {
-                    newTelemetryActivity = AgentsTelemetry.ActivitySource.StartActivity(
-                        "agents.hosted_activity_service.get_task_from_work_item",
-                        ActivityKind.Internal,
-                        activityWithClaims.TelemetryActivity.Context
-                    );
-                }
+                activityWithClaims.TelemetryActivity?.Start();
                 try
                 {
                     if (activityWithClaims.IsProactive)
@@ -172,12 +164,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 finally
                 {
-                    if (newTelemetryActivity != null)
-                    {
-                        // make sure to close down any current activity once the turn is complete. 
-                        newTelemetryActivity.Stop();
-                        newTelemetryActivity.Dispose();
-                    }
+                    activityWithClaims?.TelemetryActivity?.Stop();
                 }
             }
             catch (Exception ex)
