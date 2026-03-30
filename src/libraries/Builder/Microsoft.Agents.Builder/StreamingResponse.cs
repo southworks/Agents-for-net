@@ -434,6 +434,10 @@ namespace Microsoft.Agents.Builder
                 StreamId = null;
                 _canceled = false;
                 _userCanceled = false;
+                Message = "";
+                Citations = [];
+                SensitivityLabel = null;
+                EnableGeneratedByAILabel = false;
             }
         }
 
@@ -459,20 +463,21 @@ namespace Microsoft.Agents.Builder
             {
                 return;
             }
+            _messageUpdated = false;
+
+            // Send typing activity
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Typing,
+                Text = Message,
+                Entities = []
+            };
 
             // Queue a chunk of text to be sent. Is done via a Func to create
             // the Activity so that member variables are evaluated at time of 
             // interval send.
             QueueActivity(() =>
             {
-                // Send typing activity
-                var activity = new Activity
-                {
-                    Type = ActivityTypes.Typing,
-                    Text = Message,
-                    Entities = []
-                };
-
                 var sequence = _nextSequence++;
 
                 activity.Entities.Add(new StreamInfo()
@@ -493,8 +498,6 @@ namespace Microsoft.Agents.Builder
 
                     activity.Entities.Add(entity);
                 }
-
-                _messageUpdated = false;
 
                 return activity;
             });
