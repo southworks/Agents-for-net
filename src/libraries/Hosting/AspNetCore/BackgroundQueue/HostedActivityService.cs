@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -134,7 +135,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 agent ??= _serviceProvider.GetService(typeof(IAgent));
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
-                activityWithClaims.TelemetryActivity?.Start();
+                System.Diagnostics.Activity newTelemetryActivity = null;
+                if (activityWithClaims.TelemetryActivity != null)
+                {
+                    newTelemetryActivity = activityWithClaims.TelemetryActivity?.Source.StartActivity(
+                        "agents.hosted_activity_service.get_task_from_work_item",
+                        ActivityKind.Internal,
+                        activityWithClaims.TelemetryActivity.Context
+                    );
+                }
                 try
                 {
                     if (activityWithClaims.IsProactive)
@@ -162,8 +171,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 }
                 finally
                 {
-                    // make sure to close down any current activity once the turn is complete. 
-                    activityWithClaims.TelemetryActivity?.Stop();
+                    if (newTelemetryActivity != null)
+                    {
+                        // make sure to close down any current activity once the turn is complete. 
+                        newTelemetryActivity.Stop();
+                    }
                 }
             }
             catch (Exception ex)
