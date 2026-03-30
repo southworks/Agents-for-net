@@ -507,7 +507,7 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public async Task QueueTextChunk_AccumulatesMessageText()
+        public void QueueTextChunk_AccumulatesMessageText()
         {
             var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
 
