@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
             scope.Dispose();
 
-            Assert.Equal("tag_value", scope.CapturedActivity.Tags.FirstOrDefault(t => t.Key == "custom.tag").Value);
+            Assert.Equal("tag_value", scope.CapturedActivity?.Tags.FirstOrDefault(t => t.Key == "custom.tag").Value);
         }
 
         [Fact]
