@@ -23,8 +23,8 @@ namespace Microsoft.Agents.Builder.App
         private readonly ITurnContext _turnContext;
         private readonly ITypingChannelStrategy _strategy;
 
-        private readonly CancellationTokenSource _stopCts = new CancellationTokenSource();
-        private CancellationTokenSource _intervalResetCts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _stopCts = new();
+        private CancellationTokenSource _intervalResetCts = new();
 
         private Task _workerTask;
         private bool _started;
@@ -163,13 +163,8 @@ namespace Microsoft.Agents.Builder.App
         {
             // Send directly on the adapter to bypass OnSendActivities middleware (matching
             // ShowTypingMiddleware's approach) so our own handler doesn't reset the interval.
-            var typingActivity = new Activity
-            {
-                Type = ActivityTypes.Typing,
-                RelatesTo = _turnContext.Activity.RelatesTo,
-            };
-
             var conversationReference = _turnContext.Activity.GetConversationReference();
+            var typingActivity = _strategy.TypingFactory(_turnContext, conversationReference);
             typingActivity.ApplyConversationReference(conversationReference);
 
             await _turnContext.Adapter.SendActivitiesAsync(
