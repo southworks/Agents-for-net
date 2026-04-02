@@ -143,9 +143,11 @@ namespace Microsoft.Agents.Authentication
             }
 
             var audience = claimsList.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
-            if (string.IsNullOrWhiteSpace(audience) || AuthenticationConstants.BotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(audience) 
+                || AuthenticationConstants.BotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase)
+                || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase))
             {
-                // The audience is https://api.botframework.com and not an appId.
+                // The audience is https://api.botframework.com or https://api.botframework.us and not an appId.
                 return false;
             }
 
@@ -172,6 +174,36 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
+        /// Determines whether the specified claims identity represents a government Bot Framework claim.
+        /// </summary>
+        /// <remarks>This method checks the audience claim within the provided claims identity and
+        /// compares it against the expected government Bot Framework token issuer. Use this method to distinguish
+        /// government Bot Framework tokens from standard tokens when handling authentication.</remarks>
+        /// <param name="claims">The claims identity to evaluate. Cannot be null.</param>
+        /// <returns>true if the claims identity corresponds to a government Bot Framework claim; otherwise, false.</returns>
+        public static bool IsGovBotFrameworkClaim(ClaimsIdentity claims)
+        {
+            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
+            var audience = claims.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
+            return AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Determines whether the specified claims identity represents a Bot Framework claim.
+        /// </summary>
+        /// <remarks>This method checks the audience claim within the provided claims identity and
+        /// compares it against the expected government Bot Framework token issuer. Use this method to distinguish
+        /// Bot Framework tokens from standard tokens when handling authentication.</remarks>
+        /// <param name="claims">The claims identity to evaluate. Cannot be null.</param>
+        /// <returns>true if the claims identity corresponds to a Bot Framework claim; otherwise, false.</returns>
+        public static bool IsBotFrameworkClaim(ClaimsIdentity claims)
+        {
+            AssertionHelpers.ThrowIfNull(claims, nameof(claims));
+            var audience = claims.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
+            return AuthenticationConstants.BotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Retrieves the token scopes from the given claims identity.
         /// </summary>
         /// <param name="identity">The claims identity containing the token information.</param>
@@ -180,7 +212,7 @@ namespace Microsoft.Agents.Authentication
         {
             return AgentClaims.IsAgentClaim(identity)
                 ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
-                : [AuthenticationConstants.BotFrameworkDefaultScope];
+                : (IsGovBotFrameworkClaim(identity) ? [AuthenticationConstants.GovBotFrameworkDefaultScope] : [AuthenticationConstants.BotFrameworkDefaultScope]);
         }
 
         /// <summary>
