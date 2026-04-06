@@ -89,12 +89,23 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
                     ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
             }
 
-            var token = await agenticTokenProvider.GetAgenticUserTokenAsync(
-                turnContext.Activity.GetAgenticTenantId(),
-                turnContext.Activity.GetAgenticInstanceId(),
-                App.AgenticAuthorization.GetAgenticUser(turnContext),
-                exchangeScopes ?? _a365AuthSettings.Scopes,
-                cancellationToken).ConfigureAwait(false);
+            string token;
+            if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+            {
+                token = await agenticTokenProvider.GetAgenticInstanceTokenAsync(
+                    turnContext.Activity.GetAgenticTenantId(),
+                    turnContext.Activity.GetAgenticInstanceId(),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                token = await agenticTokenProvider.GetAgenticUserTokenAsync(
+                    turnContext.Activity.GetAgenticTenantId(),
+                    turnContext.Activity.GetAgenticInstanceId(),
+                    turnContext.Activity.GetAgenticUser(),
+                    exchangeScopes ?? _a365AuthSettings.Scopes,
+                    cancellationToken).ConfigureAwait(false);
+            }
 
             return new TokenResponse(token: token);
         }
