@@ -14,11 +14,15 @@ using Xunit;
 
 namespace Microsoft.Agents.SampleTest
 {
+    /// <summary>
+    /// This is a demonstration of how to use Microsoft.Agents.Builder.Testing on a simple agent.
+    /// </summary>
     public class EmptyAgentTest
     {
         [Fact]
         public async Task Test_EmptyAgentEcho()
         {
+            // Arrange
             var transcript = new MemoryTranscriptStore();
             var adapter = new TestAdapter
             {
@@ -34,11 +38,12 @@ namespace Microsoft.Agents.SampleTest
 
             var agent = new MyAgent(new AgentApplicationOptions(new MemoryStorage()));
 
+            // Act
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
                 await agent.OnTurnAsync(turnContext, cancellationToken);
             })
-                .Send(new Activity { Type = ActivityTypes.ConversationUpdate, MembersAdded = new[] { new ChannelAccount { Id = "User1" } } })
+                .Send(new Activity { Type = ActivityTypes.ConversationUpdate, MembersAdded = new[] { new ChannelAccount { Id = $"{adapter.Conversation.User.Id}" } } })
                 .AssertReply("Hello and Welcome!")
                 .Send("hello")
                 .AssertReply(
@@ -66,6 +71,9 @@ namespace Microsoft.Agents.SampleTest
         }
     }
 
+    /// <summary>
+    /// This is to demonstrate how to do more checks on a TestFlow.AssertReply.
+    /// </summary>
     class ExpectedEgress : IEqualityComparer<IActivity>
     {
         public bool Equals(IActivity expected, IActivity outgoing)
