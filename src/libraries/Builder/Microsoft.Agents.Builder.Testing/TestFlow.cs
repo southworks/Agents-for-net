@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -386,10 +387,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, string expected, string description = null, uint timeout = 3000)
         {
-            if (expected == null)
-            {
-                throw new ArgumentNullException(nameof(expected));
-            }
+            AssertionHelpers.ThrowIfNull(expected, nameof(expected));
 
             return Send(userSays)
                 .AssertReply(expected, description, timeout);
@@ -407,10 +405,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Activity expected, string description = null, uint timeout = 3000)
         {
-            if (expected == null)
-            {
-                throw new ArgumentNullException(nameof(expected));
-            }
+            AssertionHelpers.ThrowIfNull(expected, nameof(expected));
 
             return Send(userSays)
                 .AssertReply(expected, description, timeout);
@@ -429,10 +424,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Action<IActivity> validateActivity, string description = null, uint timeout = 3000)
         {
-            if (validateActivity == null)
-            {
-                throw new ArgumentNullException(nameof(validateActivity));
-            }
+            AssertionHelpers.ThrowIfNull(validateActivity, nameof(validateActivity));
 
             return Send(userSays)
                 .AssertReply(validateActivity, description, timeout);
@@ -452,10 +444,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, [CallerMemberName] string description = null, uint timeout = 3000)
         {
-            if (activities == null)
-            {
-                throw new ArgumentNullException(nameof(activities));
-            }
+            AssertionHelpers.ThrowIfNull(activities, nameof(activities));
 
             // Chain all activities in a TestFlow, check if its a user message (send) or a bot reply (assert)
             return activities.Aggregate(this, (flow, activity) =>
@@ -481,10 +470,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, ValidateReply validateReply, [CallerMemberName] string description = null, uint timeout = 3000)
         {
-            if (activities == null)
-            {
-                throw new ArgumentNullException(nameof(activities));
-            }
+            AssertionHelpers.ThrowIfNull(activities, nameof(activities));
+            AssertionHelpers.ThrowIfNull(validateReply, nameof(validateReply));
 
             // Chain all activities in a TestFlow, check if its a user message (send) or a bot reply (assert)
             return activities.Aggregate(this, (flow, activity) =>
@@ -511,10 +498,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyOneOf(string[] candidates, string description = null, uint timeout = 3000)
         {
-            if (candidates == null)
-            {
-                throw new ArgumentNullException(nameof(candidates));
-            }
+            AssertionHelpers.ThrowIfNull(candidates, nameof(candidates));
 
             return AssertReply(
                 (reply) =>

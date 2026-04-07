@@ -2,15 +2,16 @@
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
-    <ComponentAreaName>CplTests.BuilderTesting</ComponentAreaName>
+    <ComponentAreaName>CplBuilderTesting</ComponentAreaName>
     <SignAssembly>true</SignAssembly>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-  <Import Project="..\..\Build.Common.core.props" />
+  <Import Project="..\..\..\Build.Common.core.props" />
 
   <PropertyGroup>
     <PackageId>Microsoft.Agents.Builder.Testing</PackageId>
-    <Description>Library for building bot tests using Microsoft Bot Framework Connector</Description>
-    <Summary>Library for building bot tests using Microsoft Bot Framework Connector</Summary>
+    <Description>Library for building agent tests using Microsoft Agents SDK</Description>
+    <Summary>Library for building agent tests using Microsoft Agents SDK</Summary>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,10 +22,11 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
-	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+	  <!--<PackageReference Include="Microsoft.NET.Test.Sdk" />-->
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Dialogs\Microsoft.Agents.Builder.Dialogs.csproj" />
+    <ProjectReference Include="..\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
   </ItemGroup>
+
 </Project>
