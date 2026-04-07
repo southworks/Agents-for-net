@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
 {
+    [CollectionDefinition("TelemetryTests", DisableParallelization = true)]
     public class ScopeTests : IDisposable
     {
         private readonly System.Diagnostics.ActivityListener _listener;
