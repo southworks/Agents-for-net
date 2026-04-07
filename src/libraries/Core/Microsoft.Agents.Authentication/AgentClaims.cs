@@ -55,14 +55,27 @@ namespace Microsoft.Agents.Authentication
         /// <param name="claimsIdentity">The claims identity containing the token information.</param>
         /// <returns>The AppId as a string, or null if not found.</returns>
         /// <remarks>
-        /// For requests from the channel, the AppId is in the Audience claim of the JWT token.
-        /// For the emulator, it is in the AppId claim. For unauthenticated requests, anonymous claimsIdentity is provided if auth is disabled.
+        /// For requests the AppId is in the Audience claim of the JWT token.
         /// </remarks>
+        [Obsolete("GetAppId is deprecated, please use GetIncomingAudienceClaim instead.")]
         public static string GetAppId(ClaimsIdentity claimsIdentity)
+        {
+            return GetIncomingAudienceClaim(claimsIdentity);
+        }
+
+        /// <summary>
+        /// Retrieves the AppId from the given claims identity.
+        /// </summary>
+        /// <param name="claimsIdentity">The claims identity containing the token information.</param>
+        /// <returns>The AppId as a string, or null if not found.</returns>
+        /// <remarks>
+        /// For requests the AppId is in the Audience claim of the JWT token.
+        /// </remarks>
+        public static string GetIncomingAudienceClaim(ClaimsIdentity claimsIdentity)
         {
             // Verify we have a sensible Claims Identity
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
-            
+
             // For requests from channel App Id is in Audience claim of JWT token. For emulator it is in AppId claim. For
             // unauthenticated requests we have anonymous claimsIdentity provided auth is disabled.
             // For Activities coming from Emulator AppId claim contains the Agent's AAD AppId.
@@ -70,6 +83,19 @@ namespace Microsoft.Agents.Authentication
             appIdClaim ??= claimsIdentity.Claims?.SingleOrDefault(claim => claim.Type == AuthenticationConstants.AppIdClaim);
 
             return appIdClaim?.Value;
+        }
+
+        /// <summary>
+        /// Retrieves the audience from the given claims identity.
+        /// </summary>
+        /// <param name="claimsIdentity">The claims identity containing the token information.</param>
+        /// <returns>The audience as a string, or null if not found.</returns>
+        /// <remarks>
+        /// For requests the audience is in the Audience claim of the JWT token.
+        /// </remarks>
+        public static string GetIncomingAudience(this ClaimsIdentity claimsIdentity)
+        {
+            return GetIncomingAudienceClaim(claimsIdentity);
         }
 
         /// <summary>
@@ -83,7 +109,7 @@ namespace Microsoft.Agents.Authentication
         /// </remarks>
         /// <param name="identity">The Agent identity</param>
         /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
-        public static string GetOutgoingAppId(ClaimsIdentity identity)
+        public static string GetOutgoingAppIdClaim(ClaimsIdentity identity)
         {
             // Verify we have a sensible Claims Identity
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
@@ -109,6 +135,22 @@ namespace Microsoft.Agents.Authentication
             }
 
             return appId;
+        }
+
+        /// <summary>
+        /// Gets the outgoing AppId from a claims list.
+        /// </summary>
+        /// <remarks>
+        /// In v1 tokens the AppId is in the the <see cref="AuthenticationConstants.AppIdClaim"/> claim.
+        /// In v2 tokens the AppId is in the azp <see cref="AuthenticationConstants.AuthorizedParty"/> claim.
+        /// If the <see cref="AuthenticationConstants.VersionClaim"/> is not present, this method will attempt to
+        /// obtain the attribute from the <see cref="AuthenticationConstants.AppIdClaim"/> or if present.
+        /// </remarks>
+        /// <param name="identity">The Agent identity</param>
+        /// <returns>The value of the appId claim if found (null if it can't find a suitable claim).</returns>
+        public static string GetOutgoingAppId(this ClaimsIdentity identity)
+        {
+            return GetOutgoingAppIdClaim(identity);
         }
 
         /// <summary>
@@ -151,7 +193,7 @@ namespace Microsoft.Agents.Authentication
                 return false;
             }
 
-            var appId = GetOutgoingAppId(claims);
+            var appId = GetOutgoingAppIdClaim(claims);
             if (string.IsNullOrWhiteSpace(appId))
             {
                 return false;
@@ -162,15 +204,48 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
-        /// Retrieves the audience of the token from the given claims identity.
+        /// Determines whether the specified identity contains claims that identify the user as an agent.
+        /// </summary>
+        /// <remarks>This method checks for the presence of claims that designate the user as an agent.
+        /// Ensure that the ClaimsIdentity is populated with the relevant claims before calling this method.</remarks>
+        /// <param name="claims">The identity to evaluate for agent claims. This parameter cannot be null.</param>
+        /// <returns>true if the identity contains an agent claim; otherwise, false.</returns>
+        public static bool IsAgent(this ClaimsIdentity claims)
+        {
+            return IsAgentClaim(claims);
+        }
+
+        /// <summary>
+        /// Retrieves the audience for an outgoing token from the given the incoming identity.
         /// </summary>
         /// <param name="identity">The claims identity containing the token information.</param>
         /// <returns>The token audience as a string.</returns>
+        [Obsolete("GetTokenAudience is deprecated, please use GetOutgoingAudienceClaim instead.")]
         public static string GetTokenAudience(ClaimsIdentity identity)
         {
+            return GetOutgoingAudienceClaim(identity);
+        }
+
+        /// <summary>
+        /// Retrieves the audience for an outgoing token from the given the incoming identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <returns>The token audience as a string.</returns>
+        public static string GetOutgoingAudienceClaim(ClaimsIdentity identity)
+        {
             return AgentClaims.IsAgentClaim(identity)
-                ? $"api://{AgentClaims.GetOutgoingAppId(identity)}"
+                ? $"api://{AgentClaims.GetOutgoingAppIdClaim(identity)}"
                 : AuthenticationConstants.BotFrameworkAudience;
+        }
+
+        /// <summary>
+        /// Retrieves the audience for an outgoing token from the given the incoming identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <returns>The token audience as a string.</returns>
+        public static string GetOutgoingAudience(this ClaimsIdentity identity)
+        {
+            return GetOutgoingAudienceClaim(identity);
         }
 
         /// <summary>
@@ -196,11 +271,37 @@ namespace Microsoft.Agents.Authentication
         /// Bot Framework tokens from standard tokens when handling authentication.</remarks>
         /// <param name="claims">The claims identity to evaluate. Cannot be null.</param>
         /// <returns>true if the claims identity corresponds to a Bot Framework claim; otherwise, false.</returns>
-        public static bool IsBotFrameworkClaim(ClaimsIdentity claims)
+        public static bool IsPublicBotFrameworkClaim(ClaimsIdentity claims)
         {
             AssertionHelpers.ThrowIfNull(claims, nameof(claims));
             var audience = claims.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.AudienceClaim)?.Value;
             return AuthenticationConstants.BotFrameworkTokenIssuer.Equals(audience, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Determines whether the specified claims identity contains a valid Bot Framework claim.
+        /// </summary>
+        /// <remarks>This method checks for both public and government Bot Framework claims to ascertain
+        /// the validity of the claims identity.</remarks>
+        /// <param name="claims">The claims identity to evaluate for Bot Framework claims. This should represent the user's claims in the
+        /// context of the Bot Framework.</param>
+        /// <returns>true if the claims identity contains a valid Bot Framework claim; otherwise, false.</returns>
+        public static bool IsBotFrameworkClaim(ClaimsIdentity claims)
+        {
+            return IsPublicBotFrameworkClaim(claims) || IsGovBotFrameworkClaim(claims);
+        }
+
+        /// <summary>
+        /// Determines whether the specified claims identity represents a Bot Framework user.   
+        /// </summary>
+        /// <remarks>This method checks for specific claims that indicate the identity belongs to a Bot
+        /// Framework user. Use this method to distinguish Bot Framework identities from other types of claims
+        /// identities.</remarks>
+        /// <param name="claims">The claims identity to evaluate for Bot Framework claims. This parameter cannot be null.</param>
+        /// <returns>true if the claims identity contains Bot Framework claims; otherwise, false.</returns>
+        public static bool IsBotFramework(this ClaimsIdentity claims)
+        {
+            return IsBotFrameworkClaim(claims);
         }
 
         /// <summary>
@@ -211,11 +312,38 @@ namespace Microsoft.Agents.Authentication
         /// Azure Bot Service since that can change for Public vs Gov, etc...  For agent scenarios though, it's always defaulted
         /// to "{{appid}}/.default".</param>
         /// <returns>A list of token scopes.</returns>
+        [Obsolete("GetTokenScopes is deprecated, please use GetOutgoingTokenScopes instead.")]
         public static IList<string> GetTokenScopes(ClaimsIdentity identity, bool defaultABSScopes = false)
         {
+            return GetOutgoingTokenScopes(identity, defaultABSScopes);
+        }
+
+        /// <summary>
+        /// Retrieves the token scopes from the given claims identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <param name="defaultABSScopes">Normally the IAccessTokenProvider will use what's in settings.  This is what we want for 
+        /// Azure Bot Service since that can change for Public vs Gov, etc...  For agent scenarios though, it's always defaulted
+        /// to "{{appid}}/.default".</param>
+        /// <returns>A list of token scopes.</returns>
+        public static IList<string> GetOutgoingTokenScopes(this ClaimsIdentity identity, bool defaultABSScopes = false)
+        {
             return AgentClaims.IsAgentClaim(identity)
-                ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
+                ? [$"{AgentClaims.GetOutgoingAppIdClaim(identity)}/.default"]
                 : defaultABSScopes ? DefaultAzureBotServiceScopes(identity) : null;
+        }
+
+        /// <summary>
+        /// Retrieves the token scopes from the given claims identity.
+        /// </summary>
+        /// <param name="identity">The claims identity containing the token information.</param>
+        /// <param name="defaultABSScopes">Normally the IAccessTokenProvider will use what's in settings.  This is what we want for 
+        /// Azure Bot Service since that can change for Public vs Gov, etc...  For agent scenarios though, it's always defaulted
+        /// to "{{appid}}/.default".</param>
+        /// <returns>A list of token scopes.</returns>
+        public static IList<string> GetOutgoingScopes(this ClaimsIdentity identity, bool defaultABSScopes = false)
+        {
+            return GetOutgoingTokenScopes(identity, false);
         }
 
         /// <summary>
