@@ -207,13 +207,27 @@ namespace Microsoft.Agents.Authentication
         /// Retrieves the token scopes from the given claims identity.
         /// </summary>
         /// <param name="identity">The claims identity containing the token information.</param>
+        /// <param name="defaultABSScopes">Normally the IAccessTokenProvider will use what's in settings.  This is what we want for 
+        /// Azure Bot Service since that can change for Public vs Gov, etc...  For agent scenarios though, it's always defaulted
+        /// to "{{appid}}/.default".</param>
         /// <returns>A list of token scopes.</returns>
-        public static IList<string> GetTokenScopes(ClaimsIdentity identity)
+        public static IList<string> GetTokenScopes(ClaimsIdentity identity, bool defaultABSScopes = false)
         {
             return AgentClaims.IsAgentClaim(identity)
                 ? [$"{AgentClaims.GetOutgoingAppId(identity)}/.default"]
-                : (IsGovBotFrameworkClaim(identity) ? [AuthenticationConstants.GovBotFrameworkDefaultScope] : [AuthenticationConstants.BotFrameworkDefaultScope]);
+                : defaultABSScopes ? DefaultAzureBotServiceScopes(identity) : null;
         }
+
+        /// <summary>
+        /// Returns the default Azure Bot Service scopes based on the claims identity. If the claims identity corresponds to a government Bot Framework 
+        /// claim, it returns the government-specific default scope; otherwise, it returns the standard default scope.
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <returns></returns>
+        public static IList<string> DefaultAzureBotServiceScopes(ClaimsIdentity identity)
+        {
+            return IsGovBotFrameworkClaim(identity) ? [AuthenticationConstants.GovBotFrameworkDefaultScope] : [AuthenticationConstants.BotFrameworkDefaultScope];
+        }   
 
         /// <summary>
         /// Determines whether anonymous access is allowed based on the given claims identity.

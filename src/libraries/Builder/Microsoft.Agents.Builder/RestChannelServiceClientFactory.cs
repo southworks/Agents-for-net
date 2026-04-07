@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Builder
                     try
                     {
                         audience ??= AgentClaims.GetTokenAudience(claimsIdentity);
-                        scopes ??= AgentClaims.GetTokenScopes(claimsIdentity);
+                        scopes ??= AgentClaims.GetTokenScopes(claimsIdentity, defaultABSScopes: false); // Do not default ABS scopes because we want to use the value from config
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl);
                         return tokenAccess.GetAccessTokenAsync(audience, scopes);
                     }
