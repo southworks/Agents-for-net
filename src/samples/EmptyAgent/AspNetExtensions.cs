@@ -86,7 +86,7 @@ public static class AspNetExtensions
             {
                 validationOptions.ValidIssuers =
                 [
-                    AuthenticationConstants.BotFrameworkTokenIssuer,
+                    AuthenticationConstants.GovBotFrameworkTokenIssuer,
                 ];
 
                 if (!string.IsNullOrEmpty(validationOptions.TenantId) && Guid.TryParse(validationOptions.TenantId, out _))

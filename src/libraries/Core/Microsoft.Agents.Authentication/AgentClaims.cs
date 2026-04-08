@@ -248,7 +248,9 @@ namespace Microsoft.Agents.Authentication
         {
             return AgentClaims.IsAgentClaim(identity)
                 ? $"api://{AgentClaims.GetOutgoingAppIdClaim(identity)}"
-                : AuthenticationConstants.BotFrameworkAudience;
+                : AgentClaims.IsGovBotFrameworkClaim(identity)
+                    ? AuthenticationConstants.GovBotFrameworkAudience
+                    : AuthenticationConstants.BotFrameworkAudience;
         }
 
         /// <summary>
@@ -280,10 +282,10 @@ namespace Microsoft.Agents.Authentication
         /// Determines whether the specified incoming identity represents a Bot Framework claim.
         /// </summary>
         /// <remarks>This method checks the audience claim within the provided incoming identity and
-        /// compares it against the expected government Bot Framework token issuer. Use this method to distinguish
-        /// Bot Framework tokens from standard tokens when handling authentication.</remarks>
+        /// compares it against the expected public Bot Framework token issuer. Use this method to distinguish
+        /// public Bot Framework tokens from government tokens when handling authentication.</remarks>
         /// <param name="identity">The incoming identity to evaluate. Cannot be null.</param>
-        /// <returns>true if the claims identity corresponds to a Bot Framework claim; otherwise, false.</returns>
+        /// <returns>true if the claims identity corresponds to a public Bot Framework claim; otherwise, false.</returns>
         public static bool IsPublicBotFrameworkClaim(ClaimsIdentity identity)
         {
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
@@ -318,9 +320,9 @@ namespace Microsoft.Agents.Authentication
         }
 
         [Obsolete("GetTokenScopes is deprecated, please use GetOutgoingTokenScopes instead.")]
-        public static IList<string> GetTokenScopes(ClaimsIdentity identity, bool defaultABSScopes = false)
+        public static IList<string> GetTokenScopes(ClaimsIdentity identity)
         {
-            return GetOutgoingTokenScopes(identity, defaultABSScopes);
+            return GetOutgoingTokenScopes(identity, false);
         }
 
         /// <summary>
@@ -348,7 +350,7 @@ namespace Microsoft.Agents.Authentication
         /// <returns>A list of token scopes.</returns>
         public static IList<string> GetOutgoingScopes(this ClaimsIdentity identity, bool defaultABSScopes = false)
         {
-            return GetOutgoingTokenScopes(identity, false);
+            return GetOutgoingTokenScopes(identity, defaultABSScopes);
         }
 
         /// <summary>
