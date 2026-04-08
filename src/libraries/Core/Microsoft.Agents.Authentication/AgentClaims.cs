@@ -254,7 +254,7 @@ namespace Microsoft.Agents.Authentication
         }
 
         /// <summary>
-        /// Retrieves the audience for an outgoing token from the given the incoming identity.
+        /// Retrieves the audience for an outgoing token from the given incoming identity.
         /// </summary>
         /// <param name="identity">The incoming identity containing the token information.</param>
         /// <returns>The token audience as a string.</returns>
