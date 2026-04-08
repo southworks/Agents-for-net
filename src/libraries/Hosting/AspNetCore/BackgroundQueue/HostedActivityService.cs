@@ -97,11 +97,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         try
                         {
                             // Create the task which will execute the work item.
+                            // CancellationToken.None: cleanup must always run regardless of shutdown state.
                             var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
                                 .ContinueWith(t =>
                                 {
                                     _activitiesProcessing.TryRemove(activityWithClaims, out _);
-                                }, stoppingToken);
+                                }, CancellationToken.None);
 
                             _activitiesProcessing.TryAdd(activityWithClaims, task);
                         }
