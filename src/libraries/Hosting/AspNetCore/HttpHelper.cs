@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 if (invokeResponse.Body != null)
                 {
-                    response.ContentType = "application/json";
+                    response.ContentType = "application/json; charset=utf-8";
 
                     var json = ProtocolJsonSerializer.ToJson(invokeResponse.Body);
                     await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json)).ConfigureAwait(false);
