@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Authentication
         public const string BotFrameworkAudience = "https://api.botframework.com";
 
         /// <summary>
-        /// Bot Framework audience to request.
+        /// Bot Framework Gov audience to request.
         /// </summary>
         public const string GovBotFrameworkAudience = "https://api.botframework.us";
 
