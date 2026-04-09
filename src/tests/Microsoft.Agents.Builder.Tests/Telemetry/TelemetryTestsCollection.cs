@@ -10,6 +10,6 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
     /// so that the global <see cref="System.Diagnostics.ActivitySource"/> listener registered
     /// by each class does not capture activities emitted by another class running concurrently.
     /// </summary>
-    [CollectionDefinition("TelemetryScopeTests", DisableParallelization = true)]
+    [CollectionDefinition("TelemetryTests", DisableParallelization = true)]
     public class TelemetryTestsCollection { }
 }

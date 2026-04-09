@@ -31,6 +31,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
                 ActivityStopped = activity => StoppedActivities.Add(activity)
             };
             System.Diagnostics.ActivitySource.AddActivityListener(_listener);
+            StartedActivities.Clear();
+            StoppedActivities.Clear();
         }
 
         public void Dispose()
@@ -43,6 +45,8 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         {
             if (disposing)
             {
+                _listener.ActivityStarted = null;
+                _listener.ActivityStopped = null;
                 _listener.Dispose();
             }
         }

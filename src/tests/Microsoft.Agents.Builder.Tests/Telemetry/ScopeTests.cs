@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry
 {
-    [Collection("TelemetryTests")]
+    [Collection("TelemetryScopeTests")]
     public class ScopeTests : TelemetryScopeTestBase
     {
 
