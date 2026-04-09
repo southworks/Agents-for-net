@@ -81,8 +81,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 if (channelInfo.channel.Writer.TryComplete())
                 {
-                    _conversations.Remove(requestId, out _);
+                    // Wait for HandleResponsesAsync to finish BEFORE removing the entry.
+                    // Removing first would cause HandleResponsesAsync to find no entry and skip reading.
                     channelInfo.readDone.Wait();
+                    _conversations.Remove(requestId, out _);
                     channelInfo.readDone.Dispose();
                 }
             }
@@ -98,8 +100,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 if (channelInfo.channel.Writer.TryComplete())
                 {
-                    _conversations.Remove(requestId, out _);
+                    // Wait for HandleResponsesAsync to finish BEFORE removing the entry.
+                    // Removing first would cause HandleResponsesAsync to find no entry and skip reading.
                     await channelInfo.readDone.WaitAsync().ConfigureAwait(false);
+                    _conversations.Remove(requestId, out _);
                     channelInfo.readDone.Dispose();
                 }
             }
