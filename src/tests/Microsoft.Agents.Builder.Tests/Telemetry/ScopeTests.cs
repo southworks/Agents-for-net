@@ -9,7 +9,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using Xunit;
 
-namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
+namespace Microsoft.Agents.Builder.Tests.Telemetry
 {
 
     [Collection("TelemetryTests")]
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             _listener = new System.Diagnostics.ActivityListener
             {
                 ShouldListenTo = source => source.Name == AgentsTelemetry.SourceName,
-                Sample = (ref System.Diagnostics.ActivityCreationOptions<System.Diagnostics.ActivityContext> options) => System.Diagnostics.ActivitySamplingResult.AllDataAndRecorded,
+                Sample = (ref options) => System.Diagnostics.ActivitySamplingResult.AllDataAndRecorded,
                 ActivityStarted = activity => _startedActivities.Add(activity),
                 ActivityStopped = activity => _stoppedActivities.Add(activity)
             };
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry.Adapter.Scopes
             string recipientId = "bot-1",
             string recipientRole = null)
         {
-            return new Core.Models.Activity
+            return new Activity
             {
                 Type = type,
                 ChannelId = channelId,

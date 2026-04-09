@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace Microsoft.Agents.Builder.Telemetry.Tests
+namespace Microsoft.Agents.Builder.Tests.Telemetry
 {
     /// <summary>
     /// Disables parallel execution across all telemetry-scope test classes in this assembly
