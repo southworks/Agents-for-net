@@ -18,6 +18,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -26,6 +27,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -38,6 +40,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
     [Collection("CloudAdapter Collection")]
     public class CloudAdapterTests
     {
+        private const string TestServiceUrl = "https://test.serviceurl.com/";
 
         [Fact]
         public void Constructor_ShouldThrowWithNullActivityTaskQueue()
@@ -185,24 +188,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
             var activity = CreateMessageActivity(DeliveryModes.Normal, activityId: Guid.NewGuid().ToString());
             var context = CreateHttpContext(activity);
-            EventWaitHandle turnStarted = new(false, EventResetMode.ManualReset);
-
+            var turnStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var sentActivities = new List<IActivity>();
-            var mockConnectorClient = new Mock<IConnectorClient>();
-            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, _) => { turnStarted.Set(); sentActivities.Add(response); })
-                .Returns(Task.FromResult(new ResourceResponse("replyResourceId")));
-            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, _) => { turnStarted.Set(); sentActivities.Add(response); })
-                .Returns(Task.FromResult(new ResourceResponse("sendResourceId")));
-            record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(mockConnectorClient.Object));
+            SetupConnectorClient(record, sentActivities, firstActivitySent: turnStarted);
 
             await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            Assert.True(turnStarted.WaitOne(TimeSpan.FromSeconds(10)), "Background turn did not complete within timeout");
+            var timedOut = await Task.WhenAny(turnStarted.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.True(timedOut == turnStarted.Task, "Background turn did not complete within timeout");
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
@@ -218,24 +212,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) => new RespondingActivityHandler());
             var activity = CreateMessageActivity(DeliveryModes.Normal, text: "throw");
             var context = CreateHttpContext(activity);
-            EventWaitHandle turnStarted = new(false, EventResetMode.ManualReset);
 
+            var turnStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var sentActivities = new List<IActivity>();
-            var mockConnectorClient = new Mock<IConnectorClient>();
-            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, _) => { turnStarted.Set(); sentActivities.Add(response); })
-                .Returns(Task.FromResult(new ResourceResponse("replyResourceId")));
-            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, _) => { turnStarted.Set(); sentActivities.Add(response); })
-                .Returns(Task.FromResult(new ResourceResponse("sendResourceId")));
-            record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(mockConnectorClient.Object));
+            SetupConnectorClient(record, sentActivities, firstActivitySent: turnStarted);
 
             await record.Service.StartAsync(CancellationToken.None);
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            Assert.True(turnStarted.WaitOne(TimeSpan.FromSeconds(10)), "Background turn did not complete within timeout");
+            var timedOut = await Task.WhenAny(turnStarted.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.True(timedOut == turnStarted.Task, "Background turn did not complete within timeout");
             await record.Service.StopAsync(CancellationToken.None);
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
@@ -538,16 +524,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // Proactive replies use ReplyToActivity (has replyToId); SendToConversation should never be called
             var responses = new List<IActivity>();
-            var mockConnectorClient = new Mock<IConnectorClient>();
-            mockConnectorClient.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((response, _) => responses.Add(response))
-                .Returns(Task.FromResult(new ResourceResponse("replyResourceId")));
-            mockConnectorClient.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((_, _) => Assert.Fail("SendToConversation should not be called; all replies have a replyToId"))
-                .Returns(Task.FromResult(new ResourceResponse("sendResourceId")));
-            record.Factory
-                .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(mockConnectorClient.Object));
+            var handler = SetupConnectorClient(record, responses);
 
             var activity = CreateMessageActivity(DeliveryModes.Normal, conversationId: initialConversationId, text: "user message", activityId: "1", serviceUrl: serviceUrl);
             var context = CreateHttpContext(activity);
@@ -562,6 +539,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             Assert.True(turnDone.WaitOne(TimeSpan.FromSeconds(10)), "Turn did not complete within timeout");
 
+            Assert.False(handler.SendToConversationCalled, "SendToConversation should not be called; all replies have a replyToId");
             Assert.Equal(2, responses.Count);
             Assert.Equal("Original Conversation: user message", responses[0].Text);
             Assert.Equal(initialConversationId, responses[0].Conversation.Id);
@@ -712,6 +690,108 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
         }
 
+        [Fact]
+        public async Task ProcessAsync_NormalMessage_ConnectorNetworkError_ShouldReturn202()
+        {
+            var record = UseRecord((record) => new RespondingActivityHandler());
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+            var context = CreateHttpContext(activity);
+            var handler = SetupConnectorClient(record);
+            handler.Override = _ => throw new HttpRequestException("Simulated network error");
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.Service.StopAsync(CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_NormalMessage_ConnectorHttpError_ShouldReturn202()
+        {
+            var record = UseRecord((record) => new RespondingActivityHandler());
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+            var context = CreateHttpContext(activity);
+            var handler = SetupConnectorClient(record);
+            handler.Override = _ => new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+            await record.Service.StopAsync(CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_NormalMessage_ConnectorNetworkError_ShouldCallOnTurnError()
+        {
+            // OnTurnError is called with the raw HttpRequestException from the broken connector
+            var errorCaptured = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var record = UseRecord((record) => new RespondingActivityHandler());
+            record.Adapter.OnTurnError = (_, ex) => { errorCaptured.TrySetResult(ex); return Task.CompletedTask; };
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+            var context = CreateHttpContext(activity);
+            var handler = SetupConnectorClient(record);
+            handler.Override = _ => throw new HttpRequestException("Simulated network error");
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            var timedOut = await Task.WhenAny(errorCaptured.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.True(timedOut == errorCaptured.Task, "OnTurnError was not called within timeout");
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var captured = await errorCaptured.Task;
+            Assert.IsType<HttpRequestException>(captured);
+            Assert.Equal("Simulated network error", captured.Message);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_NormalMessage_ConnectorHttpError_ShouldCallOnTurnError()
+        {
+            // A non-2xx HTTP response from the connector produces an ErrorResponseException in OnTurnError
+            var errorCaptured = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var record = UseRecord((record) => new RespondingActivityHandler());
+            record.Adapter.OnTurnError = (_, ex) => { errorCaptured.TrySetResult(ex); return Task.CompletedTask; };
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+            var context = CreateHttpContext(activity);
+            var handler = SetupConnectorClient(record);
+            handler.Override = _ => new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            var timedOut = await Task.WhenAny(errorCaptured.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.True(timedOut == errorCaptured.Task, "OnTurnError was not called within timeout");
+            await record.Service.StopAsync(CancellationToken.None);
+
+            Assert.IsType<ErrorResponseException>(await errorCaptured.Task);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_NormalMessage_ConnectorUnauthorized_ShouldCallOnTurnError()
+        {
+            // A 401 response is special-cased by the connector: it produces OperationCanceledException (invalid token)
+            var errorCaptured = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var record = UseRecord((record) => new RespondingActivityHandler());
+            record.Adapter.OnTurnError = (_, ex) => { errorCaptured.TrySetResult(ex); return Task.CompletedTask; };
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+            var context = CreateHttpContext(activity);
+            var handler = SetupConnectorClient(record);
+            handler.Override = _ => new HttpResponseMessage(HttpStatusCode.Unauthorized);
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            var timedOut = await Task.WhenAny(errorCaptured.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            Assert.True(timedOut == errorCaptured.Task, "OnTurnError was not called within timeout");
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var captured = await errorCaptured.Task;
+            Assert.IsType<OperationCanceledException>(captured);
+            Assert.IsType<ErrorResponseException>(captured.InnerException);
+        }
+
         private static Activity CreateMessageActivity(
             string deliveryMode = DeliveryModes.Normal,
             string conversationId = null,
@@ -761,34 +841,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         /// <summary>
-        /// Sets up a mock IConnectorClient on the factory that optionally captures sent activities.
+        /// Sets up the connector client factory to return a real RestConnectorClient backed by a TestHttpHandler,
+        /// covering the full HTTP stack including serialization/deserialization.
         /// </summary>
-        private static Mock<IConnectorClient> SetupConnectorClient(
+        private static TestHttpHandler SetupConnectorClient(
             Record record,
             List<IActivity> captured = null,
-            string newConversationId = null)
+            string newConversationId = null,
+            TaskCompletionSource<bool> firstActivitySent = null)
         {
-            var mock = new Mock<IConnectorClient>();
-
-            mock.Setup(c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((a, _) => captured?.Add(a))
-                .Returns(Task.FromResult(new ResourceResponse("replyResourceId")));
-
-            mock.Setup(c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
-                .Callback<IActivity, CancellationToken>((a, _) => captured?.Add(a))
-                .Returns(Task.FromResult(new ResourceResponse("sendResourceId")));
-
-            if (newConversationId != null)
-            {
-                mock.Setup(c => c.Conversations.CreateConversationAsync(It.IsAny<ConversationParameters>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(new ConversationResourceResponse { Id = newConversationId }));
-            }
+            var handler = new TestHttpHandler(captured, newConversationId, firstActivitySent);
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory.Setup(f => f.CreateClient(It.IsAny<string>()))
+                .Returns(() => new HttpClient(handler, disposeHandler: false));
 
             record.Factory
                 .Setup(c => c.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(mock.Object));
+                .Returns<ITurnContext, string, IList<string>, bool, CancellationToken>((ctx, _, _, _, _) =>
+                {
+                    var serviceUrl = string.IsNullOrEmpty(ctx.Activity.ServiceUrl) ? TestServiceUrl : ctx.Activity.ServiceUrl;
+                    return Task.FromResult<IConnectorClient>(
+                        new RestConnectorClient(new Uri(serviceUrl), httpFactory.Object, () => Task.FromResult("test-token")));
+                });
 
-            return mock;
+            return handler;
         }
 
         private static DefaultHttpContext CreateHttpContext(Activity activity = null)
@@ -907,6 +983,60 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     Body = new TokenResponse() { Token = $"token:{turnContext.Activity.Conversation.Id}" }
                 };
             }
+        }
+
+        /// <summary>
+        /// An <see cref="HttpMessageHandler"/> that intercepts connector HTTP calls, enabling tests to cover
+        /// the full <see cref="RestConnectorClient"/> stack without real network I/O.
+        /// </summary>
+        private class TestHttpHandler : HttpMessageHandler
+        {
+            private readonly List<IActivity> _captured;
+            private readonly string _newConversationId;
+            private readonly TaskCompletionSource<bool> _firstActivitySent;
+
+            /// <summary>Gets whether <c>SendToConversation</c> was called (path ends with <c>/activities</c>).</summary>
+            public bool SendToConversationCalled { get; private set; }
+
+            /// <summary>When set, called instead of the default routing logic — use to inject network errors or HTTP error codes.</summary>
+            public Func<HttpRequestMessage, HttpResponseMessage> Override { get; set; }
+
+            public TestHttpHandler(List<IActivity> captured = null, string newConversationId = null, TaskCompletionSource<bool> firstActivitySent = null)
+            {
+                _captured = captured;
+                _newConversationId = newConversationId;
+                _firstActivitySent = firstActivitySent;
+            }
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                if (Override != null)
+                    return Override(request);
+
+                var path = request.RequestUri.AbsolutePath;
+                var body = request.Content != null ? await request.Content.ReadAsStringAsync(cancellationToken) : string.Empty;
+
+                // ReplyToActivity: /v3/conversations/{convId}/activities/{actId}
+                // SendToConversation: /v3/conversations/{convId}/activities
+                if (path.Contains("/activities"))
+                {
+                    if (path.EndsWith("/activities"))
+                        SendToConversationCalled = true;
+                    if (_captured != null && !string.IsNullOrEmpty(body))
+                        _captured.Add(ProtocolJsonSerializer.ToObject<Activity>(body));
+                    _firstActivitySent?.TrySetResult(true);
+                    return OkJson(ProtocolJsonSerializer.ToJson(new ResourceResponse("replyResourceId")));
+                }
+
+                // CreateConversation: /v3/conversations
+                if (path == "/v3/conversations")
+                    return OkJson(ProtocolJsonSerializer.ToJson(new ConversationResourceResponse { Id = _newConversationId ?? "new-convo-id" }));
+
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            private static HttpResponseMessage OkJson(string json) =>
+                new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
         }
     }
 }
