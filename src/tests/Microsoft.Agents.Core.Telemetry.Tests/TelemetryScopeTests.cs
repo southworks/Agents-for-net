@@ -31,10 +31,14 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
                 ActivityStopped = activity => _stoppedActivities.Add(activity)
             };
             ActivitySource.AddActivityListener(_listener);
+            _startedActivities.Clear();
+            _stoppedActivities.Clear();
         }
 
         public void Dispose()
         {
+            _listener.ActivityStarted = null;
+            _listener.ActivityStopped = null;
             _listener.Dispose();
         }
 
