@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public async Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = null, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfObjectDisposed(_disposed, nameof(SendActivityAsync));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(textReplyToSend, nameof(textReplyToSend));
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder
                 activityToSend.InputHint = inputHint;
             }
 
-            return await SendActivityAsync(activityToSend, cancellationToken).ConfigureAwait(false);
+            return SendActivityAsync(activityToSend, cancellationToken);
         }
 
         /// <inheritdoc/>
