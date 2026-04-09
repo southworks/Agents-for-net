@@ -202,6 +202,7 @@ namespace Microsoft.Agents.Builder
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
+                audience,
                 useAnonymous: useAnonymousAuthCallback,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -268,15 +269,13 @@ namespace Microsoft.Agents.Builder
             return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
-        private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
+        private void SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
         {
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
             if (userTokenClient != null)
                 turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
-
-            return turnContext;
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)
