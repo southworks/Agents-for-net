@@ -64,6 +64,7 @@ namespace TelemetryAgent
                             //activity.SetTag("http.response.headers", response.Content.Headers);
                             // Convert response.Content.Headers to a string array: "HeaderName=val1,val2"
                             var headerList = response.Content?.Headers?
+                                .Where(h => h.Key != "Authorization")
                                 .Select(h => $"{h.Key}={string.Join(",", h.Value)}")
                                 .ToArray();
 
