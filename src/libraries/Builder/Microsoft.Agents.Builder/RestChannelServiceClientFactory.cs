@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Builder
     {
         private readonly string _tokenServiceEndpoint;
         private readonly string _tokenServiceAudience;
+        private readonly string _botServiceAudience;
         private readonly int? _iMaxApxConversationIdLength;
         private readonly ILogger _logger;
         private readonly IConnections _connections;
@@ -41,6 +42,7 @@ namespace Microsoft.Agents.Builder
         /// <param name="connections"></param>
         /// <param name="tokenServiceEndpoint"></param>
         /// <param name="tokenServiceAudience"></param>
+        /// <param name="botServiceAudience"></param>
         /// <param name="logger"></param>
         /// <param name="customClient">For testing purposes only.</param>
         public RestChannelServiceClientFactory(
@@ -49,6 +51,7 @@ namespace Microsoft.Agents.Builder
             IConnections connections,
             string tokenServiceEndpoint = AuthenticationConstants.BotFrameworkOAuthUrl,
             string tokenServiceAudience = AuthenticationConstants.BotFrameworkAudience,
+            string botServiceAudience = AuthenticationConstants.BotFrameworkAudience,
             ILogger logger = null)
         {
             AssertionHelpers.ThrowIfNull(configuration, nameof(configuration));
@@ -66,6 +69,11 @@ namespace Microsoft.Agents.Builder
             _tokenServiceAudience = string.IsNullOrWhiteSpace(tokenAudience)
                 ? tokenServiceAudience ?? throw new ArgumentNullException(nameof(tokenServiceAudience))
                 : tokenAudience;
+
+            var botAudience = configuration?.GetValue<string>($"{nameof(RestChannelServiceClientFactory)}:BotServiceAudience");
+            _botServiceAudience = string.IsNullOrWhiteSpace(botAudience)
+                ? botServiceAudience ?? throw new ArgumentNullException(nameof(botServiceAudience))
+                : botAudience;
 
             _iMaxApxConversationIdLength = configuration?.GetValue<int?>($"{nameof(RestChannelServiceClientFactory)}:MaxApxConversationIdLength");
         }
@@ -99,7 +107,7 @@ namespace Microsoft.Agents.Builder
         {
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
 
-            var appId = AgentClaims.GetAppId(claimsIdentity) ?? Guid.Empty.ToString();
+            var appId = claimsIdentity.GetIncomingAudience() ?? Guid.Empty.ToString();
 
             var anon = useAnonymous.HasValue ? (bool)useAnonymous : AgentClaims.AllowAnonymous(claimsIdentity);
 
@@ -118,7 +126,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{_tokenServiceEndpoint}");
+                                ErrorHelper.NullUserTokenProviderIAccessTokenProvider, ex, $"{claimsIdentity.GetIncomingAudience()}:{_tokenServiceEndpoint}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,
@@ -137,8 +145,8 @@ namespace Microsoft.Agents.Builder
                 {
                     try
                     {
-                        audience ??= AgentClaims.GetTokenAudience(claimsIdentity);
-                        scopes ??= AgentClaims.GetTokenScopes(claimsIdentity);
+                        audience ??= claimsIdentity.IsAgent() ? claimsIdentity.GetOutgoingAudience() : _botServiceAudience;
+                        scopes ??= claimsIdentity.GetOutgoingScopes(defaultABSScopes: false); // Do not default ABS scopes because we want to use the value from config
                         var tokenAccess = _connections.GetTokenProvider(claimsIdentity, serviceUrl);
                         return tokenAccess.GetAccessTokenAsync(audience, scopes);
                     }
@@ -146,7 +154,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.NullIAccessTokenProvider, ex, $"{AgentClaims.GetAppId(claimsIdentity)}:{serviceUrl}");
+                                ErrorHelper.NullIAccessTokenProvider, ex, $"{claimsIdentity.GetIncomingAudience()}:{serviceUrl}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,
@@ -196,7 +204,7 @@ namespace Microsoft.Agents.Builder
                     {
                         // have to do it this way b/c of the lambda expression. 
                         throw Microsoft.Agents.Core.Errors.ExceptionHelper.GenerateException<OperationCanceledException>(
-                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity) ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
+                                ErrorHelper.AgenticTokenProviderNotFound, null, $"{turnContext.Identity.GetIncomingAudience() ?? "<<NO_AUDIENCE>>"}:{turnContext.Activity.ServiceUrl ?? "<<NO_SERVICEURL>>"}");
                     }
                 },
                 typeof(RestChannelServiceClientFactory).FullName,
