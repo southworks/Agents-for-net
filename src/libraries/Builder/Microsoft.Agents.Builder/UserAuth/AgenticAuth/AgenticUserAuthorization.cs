@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
             }
 
             string token;
-            if (turnContext.Activity.Recipient.Role.Equals(RoleTypes.AgenticIdentity))
+            if (string.Equals(turnContext.Activity?.Recipient?.Role, RoleTypes.AgenticIdentity, StringComparison.OrdinalIgnoreCase))
             {
                 token = await agenticTokenProvider.GetAgenticInstanceTokenAsync(
                     turnContext.Activity.GetAgenticTenantId(),
