@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override async Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
+        public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
@@ -111,11 +111,11 @@ namespace Microsoft.Agents.Builder
             using var telemetryScope = new ScopeUpdateActivity(activity);
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
-            return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            return connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override async Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
+        public override Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Builder
             using var telemetryScope = new ScopeDeleteActivity(reference.GetContinuationActivity());
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
-            await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
+            return connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -209,6 +209,7 @@ namespace Microsoft.Agents.Builder
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
+                audience,
                 useAnonymous: useAnonymousAuthCallback,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -275,15 +276,13 @@ namespace Microsoft.Agents.Builder
             return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
-        private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
+        private void SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
         {
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
             if (userTokenClient != null)
                 turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
-
-            return turnContext;
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)
