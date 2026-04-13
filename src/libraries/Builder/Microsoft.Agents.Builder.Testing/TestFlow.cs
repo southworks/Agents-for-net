@@ -386,6 +386,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="timeout">The amount of time in milliseconds within which no response is expected.</param>
         /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
         /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        [Obsolete("Use AssertNoMoreReplies instead. AssertNoMoreReplies has a cleaner parameter order and a shorter default timeout appropriate for 'done' assertions.")]
         public TestFlow AssertNoReply([CallerMemberName] string description = null, uint timeout = 3000)
         {
             return new TestFlow(
@@ -407,6 +408,38 @@ namespace Microsoft.Agents.Builder.Testing
                     }
                     catch (TaskCanceledException)
                     {
+                    }
+                },
+                this);
+        }
+
+        /// <summary>
+        /// Asserts that no further reply arrives within <paramref name="timeout"/> milliseconds.
+        /// If a reply does arrive, throws <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="description">Optional label included in the error message when a reply unexpectedly arrives.</param>
+        /// <param name="timeout">Milliseconds to wait. Defaults to 1000ms — sufficient for agents that have already finished replying.</param>
+        public TestFlow AssertNoMoreReplies(string description = null, uint timeout = 1000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    try
+                    {
+                        CancellationTokenSource cts = new CancellationTokenSource();
+                        cts.CancelAfter((int)timeout);
+                        IActivity reply = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+                        if (reply != null)
+                        {
+                            throw new InvalidOperationException(
+                                $"Unexpected reply received{(description != null ? $" [{description}]" : "")}: {reply}");
+                        }
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // timeout = no reply = pass
                     }
                 },
                 this);

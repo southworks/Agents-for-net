@@ -60,6 +60,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         [Fact]
+#pragma warning disable CS0618 // Type or member is obsolete
         public async Task ValidateNoReply()
         {
             const string message = "Just a sample string";
@@ -74,8 +75,10 @@ namespace Microsoft.Agents.Builder.Testing
                 .AssertNoReply()
                 .StartTestAsync();
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         [Fact]
+#pragma warning disable CS0618 // Type or member is obsolete
         public async Task ValidateNoReply_ExceptionWithDescription()
         {
             const string exceptionDescription = "Description message";
@@ -97,6 +100,7 @@ namespace Microsoft.Agents.Builder.Testing
                     .StartTestAsync();
             });
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         [Fact]
         public async Task SendConversationUpdate_WithExplicitMembers_AddsThem()
@@ -145,6 +149,58 @@ namespace Microsoft.Agents.Builder.Testing
                     .SendConversationUpdate(Array.Empty<ChannelAccount>())
                     .StartTestAsync();
             });
+        }
+
+        [Fact]
+        public async Task AssertNoMoreReplies_WhenNoReply_Passes()
+        {
+            const string message = "Just a sample string";
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                {
+                    await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                })
+                .Send("hello")
+                .AssertReply(message)
+                .AssertNoMoreReplies()
+                .StartTestAsync();
+        }
+
+        [Fact]
+        public async Task AssertNoMoreReplies_WhenReplyArrives_Throws()
+        {
+            const string message = "Just a sample string";
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                    {
+                        await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                        await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                    })
+                    .Send("hello")
+                    .AssertReply(message)
+                    .AssertNoMoreReplies("no second reply expected")
+                    .StartTestAsync();
+            });
+        }
+
+        [Fact]
+        public async Task AssertNoMoreReplies_ErrorMessageContainsDescription()
+        {
+            const string description = "my description";
+            const string message = "a reply";
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                    {
+                        await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                        await turnContext.SendActivityAsync(message, cancellationToken: cancellationToken);
+                    })
+                    .Send("hello")
+                    .AssertReply(message)
+                    .AssertNoMoreReplies(description)
+                    .StartTestAsync();
+            });
+            Assert.Contains(description, ex.Message);
         }
     }
 }
