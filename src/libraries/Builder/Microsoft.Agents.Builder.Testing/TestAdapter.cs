@@ -157,6 +157,7 @@ namespace Microsoft.Agents.Builder.Testing
                 User = new ChannelAccount(userId, userName),
                 Agent = new ChannelAccount(botId, botName),
                 Conversation = new ConversationAccount(isGroup: false, id: conversationId, name: conversationName),
+                Locale = "en-us",
             };
             return new TestAdapter(conversation, sendTraceActivity, logger, tokenClient);
         }

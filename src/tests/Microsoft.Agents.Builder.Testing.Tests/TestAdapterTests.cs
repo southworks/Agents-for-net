@@ -230,6 +230,7 @@ namespace Microsoft.Agents.Builder.Testing
             Assert.Equal("convo1", adapter.Conversation.Conversation.Id);
             Assert.Equal("Conversation1", adapter.Conversation.Conversation.Name);
             Assert.Equal("https://test.com", adapter.Conversation.ServiceUrl);
+            Assert.Equal("en-us", adapter.Conversation.Locale);
         }
 
         [Fact]
