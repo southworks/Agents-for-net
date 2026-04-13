@@ -1,35 +1,32 @@
-﻿namespace Microsoft.Agents.Authentication.Telemetry
+﻿using Microsoft.Agents.Core.Telemetry;
+using System.Diagnostics.Metrics;
+
+namespace Microsoft.Agents.Authentication.Telemetry
 {
     /// <summary>
-    /// Defines the <see cref="System.Diagnostics.Activity"/> and metric names used by the authentication telemetry scopes.
+    /// Exposes the metric instruments used by the authentication telemetry
+    /// scopes to record token-request statistics.
     /// </summary>
-    internal static class Constants
+    /// <remarks>
+    /// All instruments are created from <see cref="AgentsTelemetry.Meter"/> so they share
+    /// the same source name and version as the rest of the Agents SDK telemetry.
+    /// </remarks>
+    internal static class Metrics
     {
-        /// <summary>Activity name for a generic access-token acquisition.</summary>
-        internal static readonly string ScopeGetAccessToken = "agents.auth.get_access_token";
+        /// <summary>
+        /// Counts the total number of token requests made to the authentication service.
+        /// </summary>
+        internal static Counter<long> TokenRequestCount = AgentsTelemetry.Meter.CreateCounter<long>(
+            Constants.MetricTokenRequestCount,
+            unit: "request",
+            description: "Number of token requests made to the authentication service");
 
-        /// <summary>Activity name for an On-Behalf-Of token acquisition.</summary>
-        internal static readonly string ScopeAcquireTokenOnBehalfOf = "agents.auth.acquire_token_on_behalf_of";
-
-        /// <summary>Activity name for acquiring an agentic instance token.</summary>
-        internal static readonly string ScopeGetAgenticInstanceToken = "agents.auth.get_agentic_instance_token";
-
-        /// <summary>Activity name for acquiring an agentic user token.</summary>
-        internal static readonly string ScopeGetAgenticUserToken = "agents.auth.get_agentic_user_token";
-
-        /// <summary>Metric name for the histogram that records token-request duration in milliseconds.</summary>
-        internal static readonly string MetricTokenRequestDuration = "agents.auth.token.request.duration";
-
-        /// <summary>Metric name for the counter of token requests made to the authentication service.</summary>
-        internal static readonly string MetricTokenRequestCount = "agents.auth.token.request.count";
-
-        /// <summary>Auth-method label used when acquiring a token via On-Behalf-Of flow.</summary>
-        internal static readonly string AuthMethodOBO = "obo";
-
-        /// <summary>Auth-method label used when acquiring an agentic instance token.</summary>
-        internal static readonly string AuthMethodAgenticInstance = "agentic_instance";
-
-        /// <summary>Auth-method label used when acquiring an agentic user token.</summary>
-        internal static readonly string AuthMethodAgenticUser = "agentic_user";
+        /// <summary>
+        /// Records the duration, in milliseconds, of each token request to the authentication service.
+        /// </summary>
+        internal static Histogram<double> TokenRequestDuration = AgentsTelemetry.Meter.CreateHistogram<double>(
+            Constants.MetricTokenRequestDuration,
+            unit: "ms",
+            description: "Duration of token requests to the authentication service in milliseconds");
     }
 }

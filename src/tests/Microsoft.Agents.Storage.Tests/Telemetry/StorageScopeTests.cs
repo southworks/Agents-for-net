@@ -5,6 +5,7 @@
 using System;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Telemetry;
+using Microsoft.Agents.Storage.Telemetry.Scopes;
 using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests.Telemetry

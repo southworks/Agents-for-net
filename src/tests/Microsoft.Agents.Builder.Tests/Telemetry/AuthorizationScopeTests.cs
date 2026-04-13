@@ -4,6 +4,7 @@
 using System;
 using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
 using Microsoft.Agents.Core.Telemetry;
+using Microsoft.Agents.Builder.Testing;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry

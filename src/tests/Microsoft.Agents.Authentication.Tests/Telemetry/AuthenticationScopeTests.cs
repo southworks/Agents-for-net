@@ -5,7 +5,7 @@
 using System;
 using System.Diagnostics;
 using Microsoft.Agents.Authentication.Telemetry.Scopes;
-using Microsoft.Agents.Builder.Tests.Telemetry;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Telemetry;
 using Xunit;
 
