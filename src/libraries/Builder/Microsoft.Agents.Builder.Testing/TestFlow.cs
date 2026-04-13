@@ -141,6 +141,43 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
+        /// Creates a conversation update activity with explicit members added and processes it.
+        /// </summary>
+        /// <param name="membersAdded">
+        /// Members to add. Pass <c>null</c> to use the default user (<see cref="TestAdapter.Conversation"/>.User).
+        /// Must not be empty — an empty list silently prevents OnMembersAdded from firing.
+        /// </param>
+        /// <returns>A new <see cref="TestFlow"/> object.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="membersAdded"/> is an empty collection.</exception>
+        public TestFlow SendConversationUpdate(IEnumerable<ChannelAccount> membersAdded)
+        {
+            if (membersAdded != null)
+            {
+                var memberList = new List<ChannelAccount>(membersAdded);
+                if (memberList.Count == 0)
+                {
+                    throw new ArgumentException(
+                        "membersAdded must contain at least one member, or pass null to use the default user.",
+                        nameof(membersAdded));
+                }
+
+                return new TestFlow(
+                    async () =>
+                    {
+                        await _testTask.ConfigureAwait(false);
+                        var cu = Activity.CreateConversationUpdateActivity();
+                        foreach (var member in memberList)
+                            cu.MembersAdded.Add(member);
+                        await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
+                    },
+                    this);
+            }
+
+            // null → same as no-arg overload
+            return SendConversationUpdate();
+        }
+
+        /// <summary>
         /// Adds an activity from the user to the bot.
         /// </summary>
         /// <param name="userActivity">The activity to send.</param>

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Models;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Testing
@@ -92,6 +94,55 @@ namespace Microsoft.Agents.Builder.Testing
                     .Send("hello")
                     .AssertReply(message)
                     .AssertNoReply(exceptionDescription)
+                    .StartTestAsync();
+            });
+        }
+
+        [Fact]
+        public async Task SendConversationUpdate_WithExplicitMembers_AddsThem()
+        {
+            var addedIds = new List<string>();
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                {
+                    if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
+                    {
+                        foreach (var member in turnContext.Activity.MembersAdded)
+                            addedIds.Add(member.Id);
+                    }
+                })
+                .SendConversationUpdate(new[] { new ChannelAccount("alice", "Alice"), new ChannelAccount("bob", "Bob") })
+                .StartTestAsync();
+
+            Assert.Contains("alice", addedIds);
+            Assert.Contains("bob", addedIds);
+        }
+
+        [Fact]
+        public async Task SendConversationUpdate_NullMembers_UsesDefaultUser()
+        {
+            string addedId = null;
+            var adapter = new TestAdapter();
+            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+                {
+                    if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate
+                        && turnContext.Activity.MembersAdded?.Count > 0)
+                    {
+                        addedId = turnContext.Activity.MembersAdded[0].Id;
+                    }
+                })
+                .SendConversationUpdate((IEnumerable<ChannelAccount>)null)
+                .StartTestAsync();
+
+            Assert.Equal(adapter.Conversation.User.Id, addedId);
+        }
+
+        [Fact]
+        public async Task SendConversationUpdate_EmptyMembers_ThrowsArgumentException()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            {
+                await new TestFlow(new TestAdapter())
+                    .SendConversationUpdate(Array.Empty<ChannelAccount>())
                     .StartTestAsync();
             });
         }
