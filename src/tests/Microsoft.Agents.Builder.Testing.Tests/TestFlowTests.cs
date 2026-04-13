@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
+using Moq;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Testing
@@ -234,6 +236,86 @@ namespace Microsoft.Agents.Builder.Testing
             });
             Assert.Contains("Expected typing indicator", ex.Message);
             Assert.Contains("should be typing", ex.Message);
+        }
+
+        [Fact]
+        public async Task AssertReplySatisfies_AsyncDelegate_Passes()
+        {
+            bool called = false;
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                {
+                    await turnContext.SendActivityAsync("hello reply", cancellationToken: cancellationToken);
+                })
+                .Send("hello")
+                .AssertReplySatisfies(async activity =>
+                {
+                    called = true;
+                    await Task.CompletedTask;
+                    if (activity.Text != "hello reply")
+                        throw new InvalidOperationException("wrong text");
+                })
+                .StartTestAsync();
+
+            Assert.True(called);
+        }
+
+        [Fact]
+        public async Task AssertReplySatisfies_AsyncDelegate_ExceptionPropagates()
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                    {
+                        await turnContext.SendActivityAsync("wrong", cancellationToken: cancellationToken);
+                    })
+                    .Send("hello")
+                    .AssertReplySatisfies(activity =>
+                    {
+                        if (activity.Text == "wrong")
+                            throw new InvalidOperationException("Validation failed as expected");
+                        return Task.CompletedTask;
+                    })
+                    .StartTestAsync();
+            });
+        }
+
+        [Fact]
+        public async Task AssertReplySatisfies_Validator_CallsValidateAsync()
+        {
+            bool validatorCalled = false;
+            var mockValidator = new Mock<IResponseValidator>();
+            mockValidator
+                .Setup(v => v.ValidateAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Returns(() => { validatorCalled = true; return Task.CompletedTask; });
+
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                {
+                    await turnContext.SendActivityAsync("any reply", cancellationToken: cancellationToken);
+                })
+                .Send("hello")
+                .AssertReplySatisfies(mockValidator.Object)
+                .StartTestAsync();
+
+            Assert.True(validatorCalled);
+        }
+
+        [Fact]
+        public async Task AssertReplySatisfies_NoReply_ThrowsBeforeCallingValidator()
+        {
+            var mockValidator = new Mock<IResponseValidator>();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await new TestFlow(new TestAdapter())
+                    .Send("hello")
+                    .AssertReplySatisfies(mockValidator.Object, timeout: 100)
+                    .StartTestAsync();
+            });
+
+            // Validator should NOT have been called because there was no reply
+            mockValidator.Verify(
+                v => v.ValidateAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
     }
 }

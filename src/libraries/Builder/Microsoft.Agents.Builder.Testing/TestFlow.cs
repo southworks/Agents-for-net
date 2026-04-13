@@ -477,6 +477,63 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
+        /// Asserts the next reply satisfies an async validation delegate.
+        /// Exceptions from the delegate propagate as-is (no wrapping).
+        /// </summary>
+        /// <param name="validateAsync">Async validation delegate. Throw to signal failure.</param>
+        /// <param name="description">Optional description (currently informational).</param>
+        /// <param name="timeout">Milliseconds to wait for a reply.</param>
+        public TestFlow AssertReplySatisfies(Func<IActivity, Task> validateAsync, string description = null, uint timeout = 3000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    if (System.Diagnostics.Debugger.IsAttached)
+                    {
+                        timeout = uint.MaxValue;
+                    }
+
+                    CancellationTokenSource cts = new CancellationTokenSource();
+                    cts.CancelAfter((int)timeout);
+
+                    IActivity reply;
+                    try
+                    {
+                        reply = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new InvalidOperationException($"No reply received within {timeout}ms");
+                    }
+
+                    if (reply == null)
+                    {
+                        throw new InvalidOperationException($"No reply received within {timeout}ms");
+                    }
+
+                    await validateAsync(reply).ConfigureAwait(false);
+                },
+                this);
+        }
+
+        /// <summary>
+        /// Asserts the next reply satisfies an <see cref="IResponseValidator"/>.
+        /// Exceptions from the validator propagate as-is (no wrapping).
+        /// </summary>
+        /// <param name="validator">The validator to run against the reply.</param>
+        /// <param name="description">Optional description (currently informational).</param>
+        /// <param name="timeout">Milliseconds to wait for a reply.</param>
+        public TestFlow AssertReplySatisfies(IResponseValidator validator, string description = null, uint timeout = 3000)
+        {
+            return AssertReplySatisfies(
+                reply => validator.ValidateAsync(reply),
+                description,
+                timeout);
+        }
+
+        /// <summary>
         /// Shortcut for calling <see cref="Send(string)"/> followed by <see cref="AssertReply(string, string, uint)"/>.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
