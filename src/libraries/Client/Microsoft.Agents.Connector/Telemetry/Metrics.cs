@@ -1,8 +1,14 @@
-﻿using System.Diagnostics.Metrics;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using System.Diagnostics.Metrics;
 using Microsoft.Agents.Core.Telemetry;
 
 namespace Microsoft.Agents.Connector.Telemetry
 {
+    /// <summary>
+    /// OpenTelemetry metric instruments for the connector and user-token REST clients.
+    /// </summary>
     internal static class Metrics
     {
         internal static Counter<long> ConnectorRequestCount = AgentsTelemetry.Meter.CreateCounter<long>(

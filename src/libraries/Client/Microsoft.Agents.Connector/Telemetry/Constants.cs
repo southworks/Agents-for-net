@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Microsoft.Agents.Connector.Telemetry
 {
+    /// <summary>
+    /// Telemetry constant names for spans and metrics used by the connector and user-token REST clients.
+    /// </summary>
     internal static class Constants
     {
         internal static readonly string ScopeReplyToActivity = "agents.connector.reply_to_activity";

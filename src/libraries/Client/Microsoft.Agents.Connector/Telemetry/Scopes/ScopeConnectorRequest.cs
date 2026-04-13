@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Telemetry;
 using System;
 using System.Diagnostics;
 
@@ -6,11 +9,21 @@ using System.Diagnostics;
 
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
+    /// <summary>
+    /// A <see cref="TelemetryScope"/> that traces a connector REST client request and records
+    /// conversation and activity identifiers as span tags together with request count and duration metrics.
+    /// </summary>
     internal class ScopeConnectorRequest : TelemetryScope
     {
         private readonly string? _conversationId;
         private readonly string? _activityId;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeConnectorRequest"/> class.
+        /// </summary>
+        /// <param name="scopeName">The name of the telemetry span.</param>
+        /// <param name="conversationId">The conversation ID to associate with the span, or <see langword="null"/>.</param>
+        /// <param name="activityId">The activity ID to associate with the span, or <see langword="null"/>.</param>
         public ScopeConnectorRequest(string scopeName, string? conversationId = null, string? activityId = null) : base(scopeName)
         {
             _conversationId = conversationId;

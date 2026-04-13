@@ -2,8 +2,18 @@
 
 namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
+    /// <summary>
+    /// A <see cref="ScopeUserTokenRestClientRequest"/> that traces a token-exchange request,
+    /// recording the connection name, user ID, and optional channel ID as span tags.
+    /// </summary>
     internal class ScopeExchangeToken : ScopeUserTokenRestClientRequest
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeExchangeToken"/> class.
+        /// </summary>
+        /// <param name="connectionName">The OAuth connection name used for the token exchange.</param>
+        /// <param name="userId">The ID of the user performing the token exchange.</param>
+        /// <param name="channelId">The channel ID, or <see langword="null"/>.</param>
         public ScopeExchangeToken(string connectionName, string userId, string? channelId = null)
             : base(Constants.ScopeExchangeToken, connectionName, userId, channelId)
         { }
