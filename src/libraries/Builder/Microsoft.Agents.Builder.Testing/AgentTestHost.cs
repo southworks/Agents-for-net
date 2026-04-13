@@ -43,10 +43,15 @@ namespace Microsoft.Agents.Builder.Testing
         /// Callback to configure services and options — same style as production <c>Program.cs</c>.
         /// At minimum, register <c>IAgent</c> as transient:
         /// <code>builder.Services.AddTransient&lt;IAgent, MyAgent&gt;();</code>
+        /// Do not use <c>AddScoped</c> for <c>IAgent</c> or its dependencies; the host resolves
+        /// agents from the root scope, and scoped services captured there will not be disposed
+        /// between test turns.
         /// </param>
         /// <returns>A started <see cref="AgentTestHost"/>. Dispose when the test is done.</returns>
         public static AgentTestHost Create(Action<IHostApplicationBuilder> configure)
         {
+            AssertionHelpers.ThrowIfNull(configure, nameof(configure));
+
             var builder = Host.CreateApplicationBuilder();
 
             // Pre-register TestAdapter as IChannelAdapter singleton
@@ -57,6 +62,9 @@ namespace Microsoft.Agents.Builder.Testing
             configure(builder);
 
             var host = builder.Build();
+            // Blocking call is intentional: Create() is a synchronous factory used in both sync
+            // and async test contexts. IHost.StartAsync uses ConfigureAwait(false) internally,
+            // so this does not deadlock on the xUnit test thread. Prefer DisposeAsync for teardown.
             host.StartAsync().GetAwaiter().GetResult();
 
             return new AgentTestHost(host, adapter);
@@ -67,6 +75,11 @@ namespace Microsoft.Agents.Builder.Testing
         /// Because <see cref="IAgent"/> is registered as transient, each call produces a new agent instance.
         /// All flows share the same <see cref="Adapter"/> and its <see cref="TestAdapter.ActiveQueue"/>.
         /// </summary>
+        /// <remarks>
+        /// <para>The agent is resolved from the root DI scope. Register <see cref="IAgent"/> and its
+        /// dependencies as transient or singleton — scoped registrations will behave as singletons
+        /// for the lifetime of the host.</para>
+        /// </remarks>
         public TestFlow CreateTestFlow()
         {
             var agent = _host.Services.GetRequiredService<IAgent>();
@@ -76,6 +89,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <inheritdoc/>
         public void Dispose()
         {
+            // Blocking stop is intentional for sync using-statement disposal in tests.
             _host.StopAsync().GetAwaiter().GetResult();
             _host.Dispose();
         }

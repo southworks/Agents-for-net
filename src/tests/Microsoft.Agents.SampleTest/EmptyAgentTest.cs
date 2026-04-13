@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using EmptyAgent;
@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
@@ -15,80 +16,127 @@ using Xunit;
 namespace Microsoft.Agents.SampleTest
 {
     /// <summary>
-    /// This is a demonstration of how to use Microsoft.Agents.Builder.Testing on a simple agent.
+    /// Demonstrates how to test a simple agent using <see cref="AgentTestHost"/> and
+    /// <see cref="TestFlow"/> from <c>Microsoft.Agents.Builder.Testing</c>.
+    ///
+    /// <para>
+    /// <see cref="AgentTestHost"/> spins up a lightweight DI host that pre-wires a
+    /// <see cref="TestAdapter"/> as the channel adapter, so tests exercise real agent
+    /// routing logic without an HTTP server or Azure Bot Service connection.
+    /// </para>
     /// </summary>
     public class EmptyAgentTest
     {
+        /// <summary>
+        /// Verifies the full greeting + echo conversation for <c>MyAgent</c>:
+        /// <list type="number">
+        ///   <item>A ConversationUpdate with the user as a member-added triggers "Hello and Welcome!"</item>
+        ///   <item>A plain text message is echoed back as "You said: {text}"</item>
+        ///   <item>No further replies are sent after the echo.</item>
+        /// </list>
+        ///
+        /// <para>
+        /// The test also attaches <see cref="TranscriptLoggerMiddleware"/> to the adapter before
+        /// creating the flow, demonstrating how to capture a full conversation transcript for
+        /// post-hoc assertions.
+        /// </para>
+        /// </summary>
         [Fact]
         public async Task Test_EmptyAgentEcho()
         {
-            // Arrange
+            // --- Arrange -----------------------------------------------------------------
+
+            // AgentTestHost.Create wires up a real DI container with TestAdapter pre-registered
+            // as IChannelAdapter. Register IAgent directly — do NOT use AddAgent<T>() here
+            // because that also registers CloudAdapter, which conflicts with TestAdapter.
+            await using var host = AgentTestHost.Create(builder =>
+            {
+                builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+                // Factory registration is used instead of AddTransient<IAgent, MyAgent>() because
+                // AgentApplicationOptions must be constructed with an IStorage instance resolved
+                // from DI. If your agent has a fully DI-injected constructor, you can use
+                // builder.Services.AddTransient<IAgent, MyAgent>() instead.
+                builder.Services.AddTransient<IAgent>(sp =>
+                    new MyAgent(new AgentApplicationOptions(sp.GetRequiredService<IStorage>())));
+            });
+
+            // Attach transcript middleware to the shared adapter before creating any TestFlow.
+            // This records every inbound and outbound activity for inspection after the flow runs.
             var transcript = new MemoryTranscriptStore();
-            var adapter = new TestAdapter
-            {
-                Conversation = new ConversationReference
-                {
-                    ChannelId = Channels.Test,
-                    Conversation = new ConversationAccount { Id = "conversation-1" },
-                    User = new ChannelAccount { Id = "user-1", Role = "user" },
-                    Agent = new ChannelAccount { Id = "bot-1", Role = "bot" }
-                }
-            };
-            adapter.Use(new TranscriptLoggerMiddleware(transcript));
+            host.Adapter.Use(new TranscriptLoggerMiddleware(transcript));
 
-            var agent = new MyAgent(new AgentApplicationOptions(new MemoryStorage()));
+            // --- Act ---------------------------------------------------------------------
 
-            // Act
-            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
-            {
-                await agent.OnTurnAsync(turnContext, cancellationToken);
-            })
-                .Send(new Activity { Type = ActivityTypes.ConversationUpdate, MembersAdded = new[] { new ChannelAccount { Id = $"{adapter.Conversation.User.Id}" } } })
+            await host.CreateTestFlow()
+                // SendConversationUpdate creates a ConversationUpdate activity with the
+                // specified members added. MyAgent greets every member whose Id differs
+                // from the Recipient (the agent itself).
+                .SendConversationUpdate(new[] { new ChannelAccount { Id = host.Adapter.Conversation.User.Id } })
                 .AssertReply("Hello and Welcome!")
+
+                // Send a plain message and assert the echo reply using AssertReplySatisfies,
+                // which accepts an async delegate so you can run any xUnit assertions on the
+                // full IActivity — not just the text.
                 .Send("hello")
-                .AssertReply(
-                    (new Activity { Type = ActivityTypes.Message, Text = "You said: hello" }).ApplyConversationReference(adapter.Conversation), 
-                    equalityComparer: new ExpectedEgress())
+                .AssertReplySatisfies(reply =>
+                {
+                    Assert.Equal("You said: hello", reply.Text);
+                    Assert.Equal(ActivityTypes.Message, reply.Type);
+                    return Task.CompletedTask;
+                })
+
+                // Assert that the agent sends no further replies within the default 1-second
+                // window. This guards against accidental extra sends in future refactors.
+                .AssertNoMoreReplies()
+
                 .StartTestAsync();
 
-            var transcriptActivities = await GetTranscript(Channels.Test, "conversation-1", transcript);
+            // --- Assert (transcript) -----------------------------------------------------
+
+            // Verify the transcript captured the expected number of activities:
+            //   1. Inbound ConversationUpdate
+            //   2. Outbound "Hello and Welcome!"
+            //   3. Inbound "hello" message
+            //   4. Outbound "You said: hello"
+            //
+            // NOTE: TranscriptLoggerMiddleware flushes activities fire-and-forget. This
+            // assertion is reliable here because MemoryTranscriptStore.LogActivityAsync is
+            // synchronous, so the flush completes before the thread pool is rescheduled.
+            // If you swap in an async store (BlobsTranscriptStore, etc.) you would need a
+            // small delay or poll-with-timeout before reading the transcript.
+            var transcriptActivities = await GetTranscriptAsync(
+                host.Adapter.Conversation.ChannelId,
+                host.Adapter.Conversation.Conversation.Id,
+                transcript);
+
             Assert.Equal(4, transcriptActivities.Count);
         }
 
-        private static async Task<IList<IActivity>> GetTranscript(string channelId, string conversationId, ITranscriptStore transcript)
+        // ---------------------------------------------------------------------------------
+        // Helpers
+        // ---------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Reads all activities from a <see cref="ITranscriptStore"/>, following
+        /// continuation tokens until the full page set is exhausted.
+        /// </summary>
+        private static async Task<IList<IActivity>> GetTranscriptAsync(
+            string channelId,
+            string conversationId,
+            ITranscriptStore store)
         {
             var activities = new List<IActivity>();
 
             string continuationToken = null;
             do
             {
-                var pagedResult = await transcript.GetTranscriptActivitiesAsync(channelId, conversationId, continuationToken);
+                var pagedResult = await store.GetTranscriptActivitiesAsync(channelId, conversationId, continuationToken);
                 continuationToken = pagedResult.ContinuationToken;
                 activities.AddRange(pagedResult.Items);
-            } while(continuationToken != null);
+            } while (continuationToken != null);
 
             return activities;
-        }
-    }
-
-    /// <summary>
-    /// This is to demonstrate how to do more checks on a TestFlow.AssertReply.
-    /// </summary>
-    class ExpectedEgress : IEqualityComparer<IActivity>
-    {
-        public bool Equals(IActivity expected, IActivity outgoing)
-        {
-            return 
-                expected?.Text == outgoing?.Text 
-                && expected?.Type == outgoing?.Type
-                && expected?.Conversation?.Id == outgoing?.Conversation?.Id
-                && expected?.From?.Id == outgoing?.From?.Id
-                && expected?.Recipient?.Id == outgoing?.Recipient?.Id
-                && !string.IsNullOrEmpty(outgoing.ReplyToId);
-        }
-        public int GetHashCode(IActivity obj)
-        {
-            return obj.Text?.GetHashCode() ?? 0;
         }
     }
 }

@@ -37,6 +37,9 @@ namespace Microsoft.Agents.Builder.Testing
             Assert.Equal(Channels.Test, host.Adapter.Conversation.ChannelId);
             Assert.Equal("user1", host.Adapter.Conversation.User.Id);
             Assert.Equal("bot", host.Adapter.Conversation.Agent.Id);
+            // ConversationAccount(bool isGroup, string conversationType, string id, ...)
+            // — second positional arg is conversationType, third is id.
+            Assert.Equal("convo1", host.Adapter.Conversation.Conversation.ConversationType);
             Assert.Equal("Conversation1", host.Adapter.Conversation.Conversation.Id);
         }
 
@@ -98,6 +101,19 @@ namespace Microsoft.Agents.Builder.Testing
                 .StartTestAsync();
 
             Assert.Equal("msteams", host.Adapter.Conversation.ChannelId);
+        }
+
+        [Fact]
+        public void Create_NullConfigure_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => AgentTestHost.Create(null));
+        }
+
+        [Fact]
+        public void CreateTestFlow_NoAgentRegistered_Throws()
+        {
+            using var host = AgentTestHost.Create(_ => { /* IAgent not registered */ });
+            Assert.Throws<InvalidOperationException>(() => host.CreateTestFlow());
         }
 
         // ─── Helper agent ───────────────────────────────────────────────────
