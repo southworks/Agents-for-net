@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Testing
         public ConversationReference Conversation { get; set; }
 
         /// <summary>
-        /// Create a ConversationReference. 
+        /// Create a ConversationReference.
         /// </summary>
         /// <param name="name">name of the conversation (also ID).</param>
         /// <param name="user">name of the user (also ID) default:User1.</param>
@@ -132,6 +132,33 @@ namespace Microsoft.Agents.Builder.Testing
                 Agent = new ChannelAccount(id: bot.ToLowerInvariant(), name: bot),
                 Locale = "en-us"
             };
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="TestAdapter"/> with a pre-configured <see cref="ConversationReference"/>.
+        /// All parameters use the same defaults as <see cref="TestAdapter(ConversationReference, bool, ILogger, IUserTokenClient)"/>.
+        /// </summary>
+        public static TestAdapter Create(
+            string channelId = Channels.Test,
+            string userId = "user1",
+            string userName = "User1",
+            string botId = "bot",
+            string botName = "Bot",
+            string conversationId = "convo1",
+            string conversationName = "Conversation1",
+            bool sendTraceActivity = false,
+            ILogger logger = null,
+            IUserTokenClient tokenClient = null)
+        {
+            var conversation = new ConversationReference
+            {
+                ChannelId = channelId,
+                ServiceUrl = "https://test.com",
+                User = new ChannelAccount(userId, userName),
+                Agent = new ChannelAccount(botId, botName),
+                Conversation = new ConversationAccount(isGroup: false, id: conversationId, name: conversationName),
+            };
+            return new TestAdapter(conversation, sendTraceActivity, logger, tokenClient);
         }
 
         /// <summary>
