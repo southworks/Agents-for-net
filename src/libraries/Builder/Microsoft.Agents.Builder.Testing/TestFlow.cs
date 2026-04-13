@@ -446,6 +446,37 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
+        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="ActivityTypes.Typing"/>).
+        /// Chain this before the reply assertions to match the agent's send order.
+        /// </summary>
+        /// <param name="description">Optional label included in the error message on failure.</param>
+        /// <param name="timeout">Milliseconds to wait for the activity.</param>
+        public TestFlow AssertTypingIndicator(string description = null, uint timeout = 3000)
+        {
+            return new TestFlow(
+                async () =>
+                {
+                    await _testTask.ConfigureAwait(false);
+
+                    if (System.Diagnostics.Debugger.IsAttached)
+                    {
+                        timeout = uint.MaxValue;
+                    }
+
+                    CancellationTokenSource cts = new CancellationTokenSource();
+                    cts.CancelAfter((int)timeout);
+                    IActivity activity = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
+
+                    if (activity?.Type != ActivityTypes.Typing)
+                    {
+                        throw new InvalidOperationException(
+                            $"Expected typing indicator{(description != null ? $" [{description}]" : "")}, but got activity of type '{activity?.Type}'.");
+                    }
+                },
+                this);
+        }
+
+        /// <summary>
         /// Shortcut for calling <see cref="Send(string)"/> followed by <see cref="AssertReply(string, string, uint)"/>.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>

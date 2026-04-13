@@ -202,5 +202,38 @@ namespace Microsoft.Agents.Builder.Testing
             });
             Assert.Contains(description, ex.Message);
         }
+
+        [Fact]
+        public async Task AssertTypingIndicator_WhenTypingActivity_Passes()
+        {
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                {
+                    await turnContext.SendActivityAsync(
+                        new Microsoft.Agents.Core.Models.Activity { Type = ActivityTypes.Typing },
+                        cancellationToken: cancellationToken);
+                    await turnContext.SendActivityAsync("done", cancellationToken: cancellationToken);
+                })
+                .Send("hello")
+                .AssertTypingIndicator()
+                .AssertReply("done")
+                .StartTestAsync();
+        }
+
+        [Fact]
+        public async Task AssertTypingIndicator_WhenWrongType_Throws()
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+                    {
+                        await turnContext.SendActivityAsync("not a typing indicator", cancellationToken: cancellationToken);
+                    })
+                    .Send("hello")
+                    .AssertTypingIndicator("should be typing")
+                    .StartTestAsync();
+            });
+            Assert.Contains("Expected typing indicator", ex.Message);
+            Assert.Contains("should be typing", ex.Message);
+        }
     }
 }
