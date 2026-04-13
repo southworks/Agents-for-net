@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -719,6 +720,8 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
+
             if (_userAuth != null)
             {
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
@@ -767,6 +770,7 @@ namespace Microsoft.Agents.Builder.App
                     IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
                     if (fileDownloaders != null && fileDownloaders.Count > 0)
                     {
+                        using var telemetryScope = new ScopeDownloadFiles(turnContext);
                         foreach (IInputFileDownloader downloader in fileDownloaders)
                         {
                             var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
@@ -775,27 +779,38 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call before turn handler
-                    foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    using (var telemetryScope = new ScopeBeforeTurn())
                     {
-                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                         {
-                            // Save turn state
-                            // - This lets the Agent keep track of why it ended the previous turn. It also
-                            //   allows the dialog system to be used before the AI system is called.
-                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                            if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                // Save turn state
+                                // - This lets the Agent keep track of why it ended the previous turn. It also
+                                //   allows the dialog system to be used before the AI system is called.
+                                await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                            return;
+                                return;
+                            }
                         }
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
+                    bool routeMatched = false;
+                    bool routeAuthorized = false;
                     foreach (Route route in _routes.Enumerate())
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
+                            routeMatched = true;
                             var handlers = route.OAuthHandlers(turnContext);
                             if (_userAuth == null || handlers?.Length == 0)
                             {
+                                routeAuthorized = true;
+                                using var routeTelemetryScope = new ScopeRouteHandler(
+                                        isAgentic: route.Flags.HasFlag(RouteFlags.Agentic),
+                                        isInvoke: route.Flags.HasFlag(RouteFlags.Invoke)
+                                    );
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }
                             else
@@ -813,6 +828,11 @@ namespace Microsoft.Agents.Builder.App
 
                                 if (signInComplete)
                                 {
+                                    routeAuthorized = true;
+                                    using var routeTelemetryScope = new ScopeRouteHandler(
+                                        isAgentic: route.Flags.HasFlag(RouteFlags.Agentic),
+                                        isInvoke: route.Flags.HasFlag(RouteFlags.Invoke)
+                                    );
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
@@ -823,13 +843,17 @@ namespace Microsoft.Agents.Builder.App
                             }
                         }
                     }
+                    onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
 
                     // Call after turn handler
-                    foreach (TurnEventHandler afterTurnHandler in _afterTurn)
+                    using (var telemetryScope = new ScopeAfterTurn())
                     {
-                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                         {
-                            return;
+                            if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                return;
+                            }
                         }
                     }
                 }

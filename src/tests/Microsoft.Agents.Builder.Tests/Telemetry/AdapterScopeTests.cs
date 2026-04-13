@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
+using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using Xunit;
@@ -13,7 +13,7 @@ using Xunit;
 namespace Microsoft.Agents.Builder.Tests.Telemetry
 {
     [Collection("TelemetryTests")]
-    public class ScopeTests : TelemetryScopeTestBase
+    public class AdapterScopeTests : TelemetryScopeTestBase
     {
 
         private static IActivity CreateTestActivity(
