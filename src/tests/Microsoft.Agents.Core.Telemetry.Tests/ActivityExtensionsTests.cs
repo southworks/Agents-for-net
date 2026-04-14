@@ -36,14 +36,19 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
         [Fact]
         public void CloneActivity_ReturnsNull_WhenSourceCreatesNoActivity()
         {
-            // Use an ActivitySource with no registered listener so CreateActivity returns null.
-            var unlistenedSource = new ActivitySource("Unlistened.Source");
-            var source = unlistenedSource.CreateActivity("Op", ActivityKind.Internal);
+            using var source = AgentsTelemetry.ActivitySource.CreateActivity("TestOp", ActivityKind.Internal);
+            Assert.NotNull(source);
+            source!.Start();
 
-            // source itself will be null since nothing is listening, so we simulate the
-            // scenario by using a real activity from the listened source but then cloning
-            // from an unlistened source directly.
-            Assert.Null(source);
+            // Dispose the listener after creating the source activity so that
+            // source.Source.CreateActivity(...) returns null during clone-time.
+            _listener.ActivityStarted = null;
+            _listener.ActivityStopped = null;
+            _listener.Dispose();
+
+            var clone = source.CloneActivity();
+
+            Assert.Null(clone);
         }
 
         [Fact]
