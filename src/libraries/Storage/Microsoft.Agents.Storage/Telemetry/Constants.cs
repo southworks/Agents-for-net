@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Agents.Storage.Telemetry
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Storage.Telemetry
 {
     /// <summary>
     /// Defines the <see cref="System.Diagnostics.Activity"/> and metric names used by the storage telemetry scopes.

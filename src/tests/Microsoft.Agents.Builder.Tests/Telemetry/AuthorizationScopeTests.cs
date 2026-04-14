@@ -3,8 +3,9 @@
 
 using System;
 using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
-using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.Telemetry
@@ -12,6 +13,12 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
     [Collection("TelemetryTests")]
     public class AuthorizationScopeTests : TelemetryScopeTestBase
     {
+        private static ITurnContext CreateTurnContext(string channelId = "test-channel")
+        {
+            var activity = new Core.Models.Activity { Type = "message", ChannelId = channelId };
+            return new TurnContext(new SimpleAdapter(), activity);
+        }
+
         #region ScopeAgenticToken
 
         [Fact]
@@ -128,7 +135,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeAzureBotSignIn_CreatesActivity_WithCorrectName()
         {
-            using var scope = new ScopeAzureBotSignIn("handler-1", null, null);
+            using var scope = new ScopeAzureBotSignIn("handler-1", null, null, CreateTurnContext());
 
             var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.authorization.azure_bot_sign_in", started.OperationName);
@@ -137,18 +144,19 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeAzureBotSignIn_Callback_SetsAuthHandlerIdAndConnectionTags()
         {
-            var scope = new ScopeAzureBotSignIn("handler-sign", "oauth-conn", null);
+            var scope = new ScopeAzureBotSignIn("handler-sign", "oauth-conn", null, CreateTurnContext("msteams"));
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("handler-sign", stopped.GetTagItem(TagNames.AuthHandlerId));
             Assert.Equal("oauth-conn", stopped.GetTagItem(TagNames.ExchangeConnection));
+            Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId)?.ToString());
         }
 
         [Fact]
         public void ScopeAzureBotSignIn_Callback_DoesNotSetScopesOrConnection_WhenNull()
         {
-            var scope = new ScopeAzureBotSignIn("handler-1", null, null);
+            var scope = new ScopeAzureBotSignIn("handler-1", null, null, CreateTurnContext());
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -159,7 +167,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeAzureBotSignIn_SetError_SetsErrorStatus()
         {
-            var scope = new ScopeAzureBotSignIn("handler-1", null, null);
+            var scope = new ScopeAzureBotSignIn("handler-1", null, null, CreateTurnContext());
             scope.SetError(new InvalidOperationException("sign-in error"));
             scope.Dispose();
 
@@ -174,26 +182,28 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeAzureBotSignOut_CreatesActivity_WithCorrectName()
         {
-            using var scope = new ScopeAzureBotSignOut("handler-1");
+            using var scope = new ScopeAzureBotSignOut("handler-1", null, CreateTurnContext());
 
             var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.authorization.azure_bot_sign_out", started.OperationName);
         }
 
         [Fact]
-        public void ScopeAzureBotSignOut_Callback_SetsAuthHandlerIdTag()
+        public void ScopeAzureBotSignOut_Callback_SetsAuthHandlerIdAndChannelIdTags()
         {
-            var scope = new ScopeAzureBotSignOut("handler-out");
+            var scope = new ScopeAzureBotSignOut("handler-out", "oauth-conn", CreateTurnContext("webchat"));
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("handler-out", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("oauth-conn", stopped.GetTagItem(TagNames.ExchangeConnection));
+            Assert.Equal("webchat", stopped.GetTagItem(TagNames.ActivityChannelId)?.ToString());
         }
 
         [Fact]
-        public void ScopeAzureBotSignOut_Callback_DoesNotSetExchangeConnection()
+        public void ScopeAzureBotSignOut_Callback_DoesNotSetExchangeConnection_WhenNull()
         {
-            var scope = new ScopeAzureBotSignOut("handler-1");
+            var scope = new ScopeAzureBotSignOut("handler-1", null, CreateTurnContext());
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -203,7 +213,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeAzureBotSignOut_SetError_SetsErrorStatus()
         {
-            var scope = new ScopeAzureBotSignOut("handler-1");
+            var scope = new ScopeAzureBotSignOut("handler-1", null, CreateTurnContext());
             scope.SetError(new InvalidOperationException("sign-out error"));
             scope.Dispose();
 

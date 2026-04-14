@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Telemetry;
 
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
@@ -8,6 +11,9 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
     /// </summary>
     internal class ScopeAfterTurn : TelemetryScope
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeAfterTurn"/> class.
+        /// </summary>
         public ScopeAfterTurn() : base(Constants.ScopeAfterTurn)
         {
         }

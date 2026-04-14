@@ -1,8 +1,8 @@
-﻿using Micr
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Telemetry;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
@@ -16,10 +16,6 @@ namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 
         private readonly ITurnContext _turnContext;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeAzureBotSignOut"/> class.
-        /// </summary>
-        /// <param name="authHandlerId">The identifier of the authentication handler processing the request.</param>
         public ScopeAzureBotSignOut(string authHandlerId, string exchangeConnection, ITurnContext turnContext) : base(Constants.ScopeAzureBotSignOut, authHandlerId, exchangeConnection)
         {
             _turnContext = turnContext;

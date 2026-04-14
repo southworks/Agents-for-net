@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Core.Telemetry;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Telemetry;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes

@@ -1,4 +1,7 @@
-﻿namespace Microsoft.Agents.Connector.Telemetry.Scopes
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Connector.Telemetry.Scopes
 {
     /// <summary>
     /// A <see cref="ScopeConnectorRequest"/> that traces a create-conversation connector request.

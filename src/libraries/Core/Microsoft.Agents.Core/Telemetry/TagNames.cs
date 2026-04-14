@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Core.Telemetry
         public static readonly string HttpStatusCode = "http.status_code";
 
         /// <summary>Whether the current request is an agentic (agent-to-agent) request.</summary>
-        public static readonly string IsAgentic = "is_agentic_request";
+        public static readonly string IsAgentic = "activity.is_agentic_request";
 
         /// <summary>The number of keys involved in a storage operation.</summary>
         public static readonly string KeyCount = "storage.keys.count";

@@ -727,6 +727,9 @@ namespace Microsoft.Agents.Builder.App
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
             }
 
+            bool routeMatched = false;
+            bool routeAuthorized = false;
+
             try
             {
                 // Start typing timer if configured
@@ -796,8 +799,6 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
-                    bool routeMatched = false;
-                    bool routeAuthorized = false;
                     foreach (Route route in _routes.Enumerate())
                     {
                         if (await route.Selector(turnContext, cancellationToken))
@@ -859,6 +860,7 @@ namespace Microsoft.Agents.Builder.App
                 }
                 catch (Exception ex)
                 {
+                    onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
                     foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
                     {
                         await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);

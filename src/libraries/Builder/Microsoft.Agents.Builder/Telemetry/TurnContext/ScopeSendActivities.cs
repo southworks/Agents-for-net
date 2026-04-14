@@ -1,5 +1,7 @@
-﻿using Microsoft.Agents.Core.Telemetry;
-using System.Collections;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Core.Telemetry;
 
 namespace Microsoft.Agents.Builder.Telemetry.TurnContext
 {
@@ -14,10 +16,17 @@ namespace Microsoft.Agents.Builder.Telemetry.TurnContext
     internal class ScopeSendActivities : TelemetryScope
     {
         private readonly ITurnContext _turnContext;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScopeSendActivities"/> class.
+        /// </summary>
+        /// <param name="turnContext">The current turn context whose activity supplies the conversation identifier.</param>
         public ScopeSendActivities(ITurnContext turnContext) : base(Constants.ScopeSendActivities)
         {
             _turnContext = turnContext;
         }
+
+        /// <inheritdoc />
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, System.Exception? error)
         {
             telemetryActivity.SetTag(TagNames.ConversationId, _turnContext.Activity.Conversation?.Id);

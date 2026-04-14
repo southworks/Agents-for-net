@@ -276,7 +276,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("myConnection", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("myConnection", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-123", stopped.GetTagItem(TagNames.UserId));
         }
 
@@ -310,7 +310,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("aadConnection", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("aadConnection", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-456", stopped.GetTagItem(TagNames.UserId));
         }
 
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("exchangeConn", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("exchangeConn", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-789", stopped.GetTagItem(TagNames.UserId));
         }
 
@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("signInConn", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("signInConn", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-321", stopped.GetTagItem(TagNames.UserId));
         }
 
@@ -392,7 +392,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("tokenOrSignInConn", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("tokenOrSignInConn", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-654", stopped.GetTagItem(TagNames.UserId));
         }
 
@@ -449,7 +449,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("signOutConn", stopped.GetTagItem(TagNames.AuthHandlerId));
+            Assert.Equal("signOutConn", stopped.GetTagItem(TagNames.ExchangeConnection));
             Assert.Equal("user-111", stopped.GetTagItem(TagNames.UserId));
         }
 

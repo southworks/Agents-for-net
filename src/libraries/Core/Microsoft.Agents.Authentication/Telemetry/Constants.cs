@@ -6,16 +6,16 @@
     internal static class Constants
     {
         /// <summary>Activity name for a generic access-token acquisition.</summary>
-        internal static readonly string ScopeGetAccessToken = "agents.auth.get_access_token";
+        internal static readonly string ScopeGetAccessToken = "agents.authentication.get_access_token";
 
         /// <summary>Activity name for an On-Behalf-Of token acquisition.</summary>
-        internal static readonly string ScopeAcquireTokenOnBehalfOf = "agents.auth.acquire_token_on_behalf_of";
+        internal static readonly string ScopeAcquireTokenOnBehalfOf = "agents.authentication.acquire_token_on_behalf_of";
 
         /// <summary>Activity name for acquiring an agentic instance token.</summary>
-        internal static readonly string ScopeGetAgenticInstanceToken = "agents.auth.get_agentic_instance_token";
+        internal static readonly string ScopeGetAgenticInstanceToken = "agents.authentication.get_agentic_instance_token";
 
         /// <summary>Activity name for acquiring an agentic user token.</summary>
-        internal static readonly string ScopeGetAgenticUserToken = "agents.auth.get_agentic_user_token";
+        internal static readonly string ScopeGetAgenticUserToken = "agents.authentication.get_agentic_user_token";
 
         /// <summary>Metric name for the histogram that records token-request duration in milliseconds.</summary>
         internal static readonly string MetricTokenRequestDuration = "agents.auth.token.request.duration";

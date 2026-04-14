@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
         {
             if (_connectionName != null)
             {
-                activity.SetTag(TagNames.AuthHandlerId, _connectionName);
+                activity.SetTag(TagNames.ExchangeConnection, _connectionName);
             }
             if (_userId != null)
             {
