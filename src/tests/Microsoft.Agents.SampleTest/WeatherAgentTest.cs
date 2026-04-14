@@ -40,7 +40,7 @@ namespace Microsoft.Agents.SampleTest
     {
         /// <summary>
         /// An <see cref="IResponseValidator"/> that handles both plain-text and Adaptive Card
-        /// replies from <c>MyAgent</c>. It extracts a string representation of the reply content,
+        /// replies from the WeatherAgent sample. It extracts a string representation of the reply content,
         /// then asks an Azure OpenAI chat model a yes/no question to semantically validate it.
         /// </summary>
         /// <remarks>
@@ -90,8 +90,11 @@ namespace Microsoft.Agents.SampleTest
 
                     if (adaptiveCardAttachment?.Content != null)
                     {
-                        // Attachment.Content is the raw JSON string set by WeatherForecastAgent.
-                        // Use ToString() — do NOT call JsonSerializer.Serialize() or it double-encodes.
+                        // After round-tripping through TestAdapter's System.Text.Json deserialisation,
+                        // Attachment.Content is a JsonElement (not a string), even though WeatherForecastAgent
+                        // originally set it to a string. JsonElement.ToString() returns the raw JSON text of
+                        // the element without additional encoding — do NOT call JsonSerializer.Serialize()
+                        // on it, which would wrap the JSON in an extra layer of string quotes.
                         content = adaptiveCardAttachment.Content.ToString()!;
                     }
                     else
@@ -123,19 +126,18 @@ namespace Microsoft.Agents.SampleTest
                 {
                     return; // Validation passed.
                 }
-                else if (response.StartsWith("no", StringComparison.Ordinal))
+
+                if (response.StartsWith("no", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
                         $"Semantic validation failed.\n" +
                         $"Prompt: {assertionPrompt}\n" +
                         $"Agent replied: {content}");
                 }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"WeatherResponseValidator received unexpected evaluator response: '{response}'. " +
-                        $"Expected 'yes' or 'no'.");
-                }
+
+                throw new InvalidOperationException(
+                    $"WeatherResponseValidator received unexpected evaluator response: '{response}'. " +
+                    $"Expected 'yes' or 'no'.");
             }
         }
 
@@ -211,6 +213,8 @@ namespace Microsoft.Agents.SampleTest
             await host.CreateTestFlow()
 
                 // Trigger the welcome message.
+                // The no-arg overload automatically adds Conversation.User to MembersAdded,
+                // which is equivalent to the explicit-member overload for single-user tests.
                 .SendConversationUpdate()
                 .AssertReplyContains("Hello and Welcome!")
 
