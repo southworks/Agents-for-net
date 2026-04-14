@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
         /// <param name="userId">The ID of the user whose token status is being checked.</param>
         /// <param name="channelId">The channel ID, or <see langword="null"/>.</param>
         public ScopeGetTokenStatus(string userId, string? channelId = null)
-            : base(Constants.ScopeGetTokenStatus, userId, channelId)
+            : base(Constants.ScopeGetTokenStatus, null, userId, channelId)
         { }
     }
 }

@@ -32,20 +32,18 @@ namespace Microsoft.Agents.Connector.Telemetry.Scopes
 
         protected override void Callback(Activity activity, double duration, Exception? exception)
         {
-            TagList metricTags = new();
-
             if (_conversationId != null)
             {
-                metricTags.Add(TagNames.ConversationId, _conversationId ?? TelemetryUtils.Unknown);
+                activity.SetTag(TagNames.ConversationId, _conversationId);
             }
 
             if (_activityId != null)
             {
-                metricTags.Add(TagNames.ActivityId, _activityId ?? TelemetryUtils.Unknown);
+                activity.SetTag(TagNames.ActivityId, _activityId);
             }
 
-            Metrics.ConnectorRequestCount.Add(1, metricTags);
-            Metrics.ConnectorRequestDuration.Record(duration, metricTags);
+            Metrics.ConnectorRequestCount.Add(1);
+            Metrics.ConnectorRequestDuration.Record(duration);
         }
     }
 }
