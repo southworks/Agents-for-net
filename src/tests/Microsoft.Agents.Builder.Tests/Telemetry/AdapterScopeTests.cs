@@ -348,6 +348,97 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
         #endregion
 
+        #region ScopeWriteResponse
+
+        [Fact]
+        public void ScopeWriteResponse_CreatesActivity_WithCorrectName_FromList()
+        {
+            var activities = new List<IActivity> { CreateTestActivity() };
+            using var scope = new ScopeWriteResponse(activities);
+
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.adapter.write_response", started.OperationName);
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_CreatesActivity_WithCorrectName_FromSingle()
+        {
+            using var scope = new ScopeWriteResponse(CreateTestActivity());
+
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.adapter.write_response", started.OperationName);
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_Callback_SetsCountAndConversationIdTags()
+        {
+            var activities = new List<IActivity>
+            {
+                CreateTestActivity(conversationId: "conv-wr"),
+                CreateTestActivity(conversationId: "conv-wr"),
+                CreateTestActivity(conversationId: "conv-wr")
+            };
+
+            var scope = new ScopeWriteResponse(activities);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(3, stopped.GetTagItem(TagNames.ActivityCount));
+            Assert.Equal("conv-wr", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_Callback_SetsConversationId_FromFirstActivity()
+        {
+            var activities = new List<IActivity>
+            {
+                CreateTestActivity(conversationId: "first-conv"),
+                CreateTestActivity(conversationId: "second-conv")
+            };
+
+            var scope = new ScopeWriteResponse(activities);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("first-conv", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_Callback_DoesNotSetTags_WhenListIsEmpty()
+        {
+            var scope = new ScopeWriteResponse(new List<IActivity>());
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityCount));
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_Callback_DoesNotSetTags_WhenListIsNull()
+        {
+            var scope = new ScopeWriteResponse((IList<IActivity>)null);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityCount));
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeWriteResponse_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeWriteResponse(CreateTestActivity());
+            scope.SetError(new InvalidOperationException("write error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+            Assert.Equal("write error", stopped.StatusDescription);
+        }
+
+        #endregion
+
         #region Error handling across scopes
 
         [Fact]

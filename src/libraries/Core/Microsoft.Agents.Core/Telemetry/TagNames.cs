@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Core.Telemetry
         public static readonly string AuthHandlerId = "auth.handler.id";
 
         /// <summary>The authentication method used (e.g., "token", "certificate").</summary>
-        public static readonly string AuthMethod = "auth.method";
+        public static readonly string AuthMethod = "auth.flow";
 
         /// <summary>The OAuth/OIDC scopes requested or granted.</summary>
         public static readonly string AuthScopes = "auth.scopes";

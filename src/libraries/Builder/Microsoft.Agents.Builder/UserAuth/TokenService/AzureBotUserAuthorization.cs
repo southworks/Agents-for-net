@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
-            using var telemetryScope = new ScopeAzureBotSignIn(Name, exchangeConnection, exchangeScopes);
+            using var telemetryScope = new ScopeAzureBotSignIn(Name, exchangeConnection, exchangeScopes, turnContext);
 
             if (forceSignIn || await IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false))
             {
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            using var telemetryScope = new ScopeAzureBotSignOut(Name);
+            using var telemetryScope = new ScopeAzureBotSignOut(Name, _settings.AzureBotOAuthConnectionName, turnContext);
             await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }

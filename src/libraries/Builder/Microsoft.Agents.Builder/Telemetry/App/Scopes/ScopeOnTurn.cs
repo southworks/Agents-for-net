@@ -27,12 +27,6 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
         }
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
-            TagList tags = new();
-            tags.Add(TagNames.ActivityType, _turnContext.Activity.Type);
-            tags.Add(TagNames.ActivityChannelId, _turnContext.Activity.ChannelId?.ToString());
-            tags.Add(TagNames.ConversationId, _turnContext.Activity.Conversation?.Id);
-            tags.Add(TagNames.ActivityId, _turnContext.Activity.Id);
-
             telemetryActivity.SetTag(TagNames.ActivityType, _turnContext.Activity.Type);
             telemetryActivity.SetTag(TagNames.ActivityChannelId, _turnContext.Activity.ChannelId?.ToString());
             telemetryActivity.SetTag(TagNames.ConversationId, _turnContext.Activity.Conversation?.Id);
