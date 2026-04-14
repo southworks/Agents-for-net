@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
             Assert.NotNull(clone);
             Assert.Equal(ActivityStatusCode.Unset, clone!.Status);
-            Assert.False(clone.Duration != TimeSpan.Zero, "Clone should not be stopped/running if never started");
+            Assert.Equal(TimeSpan.Zero, clone.Duration);
             clone.Dispose();
         }
 
