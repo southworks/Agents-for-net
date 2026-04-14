@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             using var scope = new ScopeGetAccessToken(new[] { "scope1" }, "obo");
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.auth.get_access_token", started.OperationName);
+            Assert.Equal("agents.authentication.get_access_token", started.OperationName);
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             using var scope = new ScopeAcquireTokenOnBehalfOf(new[] { "scope1" });
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.auth.acquire_token_on_behalf_of", started.OperationName);
+            Assert.Equal("agents.authentication.acquire_token_on_behalf_of", started.OperationName);
         }
 
         [Fact]
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             using var scope = new ScopeGetAgenticInstanceToken("instance-123");
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.auth.get_agentic_instance_token", started.OperationName);
+            Assert.Equal("agents.authentication.get_agentic_instance_token", started.OperationName);
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
             using var scope = new ScopeGetAgenticUserToken("instance-1", "user-1", null);
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.auth.get_agentic_user_token", started.OperationName);
+            Assert.Equal("agents.authentication.get_agentic_user_token", started.OperationName);
         }
 
         [Fact]

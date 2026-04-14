@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             using var scope = new ScopeAzureBotSignIn("handler-1", null, null, CreateTurnContext());
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.authorization.azure_bot_sign_in", started.OperationName);
+            Assert.Equal("agents.authorization.azure_bot_signin", started.OperationName);
         }
 
         [Fact]
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             using var scope = new ScopeAzureBotSignOut("handler-1", null, CreateTurnContext());
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.authorization.azure_bot_sign_out", started.OperationName);
+            Assert.Equal("agents.authorization.azure_bot_signout", started.OperationName);
         }
 
         [Fact]
