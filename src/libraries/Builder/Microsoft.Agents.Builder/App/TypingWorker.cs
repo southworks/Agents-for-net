@@ -24,10 +24,11 @@ namespace Microsoft.Agents.Builder.App
         private readonly ITypingChannelStrategy _strategy;
 
         private readonly CancellationTokenSource _stopCts = new();
-        private CancellationTokenSource _intervalResetCts = new();
+        private TaskCompletionSource<bool> _resetTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private Task _workerTask;
-        private bool _started;
+        private int _started;   // 0 = not started, 1 = started (Interlocked)
+        private int _disposed;  // 0 = not disposed, 1 = disposed (Interlocked)
 
         private TypingWorker(ITurnContext turnContext, ITypingChannelStrategy strategy)
         {
@@ -67,12 +68,10 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         public void Start()
         {
-            if (_started)
+            if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
             {
                 return;
             }
-
-            _started = true;
 
             _turnContext.OnSendActivities(OnSendActivitiesAsync);
 
@@ -101,27 +100,24 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Waits for <paramref name="ms"/> milliseconds, restarting the countdown each time
         /// <see cref="ResetInterval"/> is called (i.e., on each non-typing agent send).
+        /// Uses <see cref="TaskCompletionSource{T}"/> for reset signalling to avoid
+        /// <see cref="CancellationTokenSource"/> allocation and disposal races per reset.
         /// </summary>
         private async Task WaitAsync(int ms, CancellationToken stopToken)
         {
             while (true)
             {
-                var resetToken = _intervalResetCts.Token;
-                using var linked = CancellationTokenSource.CreateLinkedTokenSource(stopToken, resetToken);
-                try
-                {
-                    await Task.Delay(ms, linked.Token).ConfigureAwait(false);
-                    return; // Full wait completed — done.
-                }
-                catch (OperationCanceledException)
-                {
-                    if (stopToken.IsCancellationRequested)
-                    {
-                        throw; // Propagate stop.
-                    }
+                var resetTask = _resetTcs.Task;
+                await Task.WhenAny(Task.Delay(ms, stopToken), resetTask).ConfigureAwait(false);
 
-                    // Interval reset — restart the countdown.
+                stopToken.ThrowIfCancellationRequested();
+
+                if (!resetTask.IsCompleted)
+                {
+                    return; // Delay elapsed without reset — done.
                 }
+
+                // Reset fired — restart the countdown.
             }
         }
 
@@ -154,9 +150,8 @@ namespace Microsoft.Agents.Builder.App
 
         private void ResetInterval()
         {
-            var old = Interlocked.Exchange(ref _intervalResetCts, new CancellationTokenSource());
-            old.Cancel();
-            old.Dispose();
+            var old = Interlocked.Exchange(ref _resetTcs, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+            old.TrySetResult(true);
         }
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)
@@ -173,9 +168,15 @@ namespace Microsoft.Agents.Builder.App
 
         /// <summary>
         /// Stops the background task and waits for it to complete.
+        /// Safe to call multiple times; subsequent calls are no-ops.
         /// </summary>
         public async ValueTask DisposeAsync()
         {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
             _stopCts.Cancel();
 
             if (_workerTask != null)
@@ -191,7 +192,6 @@ namespace Microsoft.Agents.Builder.App
             }
 
             _stopCts.Dispose();
-            _intervalResetCts.Dispose();
         }
     }
 }
