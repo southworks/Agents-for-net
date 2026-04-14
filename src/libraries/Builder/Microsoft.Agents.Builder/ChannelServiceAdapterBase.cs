@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -50,6 +51,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryScope = new ScopeSendActivities(activities);
 
             var responses = new ResourceResponse[activities.Length];
 
@@ -105,6 +108,8 @@ namespace Microsoft.Agents.Builder
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
+            using var telemetryScope = new ScopeUpdateActivity(activity);
+
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken);
         }
@@ -114,6 +119,8 @@ namespace Microsoft.Agents.Builder
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
+
+            using var telemetryScope = new ScopeDeleteActivity(reference.GetContinuationActivity());
 
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
             return connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken);
