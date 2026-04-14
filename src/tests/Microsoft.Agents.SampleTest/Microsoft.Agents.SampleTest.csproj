@@ -23,11 +23,15 @@
       </PackageReference>
 	  <PackageReference Include="Moq" />
 	  <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" />
+	  <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+	  <PackageReference Include="Azure.AI.OpenAI" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
       <ProjectReference Include="..\..\samples\EmptyAgent\EmptyAgent.csproj" />
+      <ProjectReference Include="..\..\samples\SemanticKernel\WeatherAgent\WeatherAgent.csproj" />
     </ItemGroup>
 
 	<ItemGroup>
