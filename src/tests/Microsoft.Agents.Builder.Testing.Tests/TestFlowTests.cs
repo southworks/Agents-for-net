@@ -108,13 +108,14 @@ namespace Microsoft.Agents.Builder.Testing
         public async Task SendConversationUpdate_WithExplicitMembers_AddsThem()
         {
             var addedIds = new List<string>();
-            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+            await new TestFlow(new TestAdapter(), (turnContext, cancellationToken) =>
                 {
                     if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
                     {
                         foreach (var member in turnContext.Activity.MembersAdded)
                             addedIds.Add(member.Id);
                     }
+                    return Task.CompletedTask;
                 })
                 .SendConversationUpdate(new[] { new ChannelAccount("alice", "Alice"), new ChannelAccount("bob", "Bob") })
                 .StartTestAsync();
@@ -128,13 +129,14 @@ namespace Microsoft.Agents.Builder.Testing
         {
             string addedId = null;
             var adapter = new TestAdapter();
-            await new TestFlow(adapter, async (turnContext, cancellationToken) =>
+            await new TestFlow(adapter, (turnContext, cancellationToken) =>
                 {
                     if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate
                         && turnContext.Activity.MembersAdded?.Count > 0)
                     {
                         addedId = turnContext.Activity.MembersAdded[0].Id;
                     }
+                    return Task.CompletedTask;
                 })
                 .SendConversationUpdate((IEnumerable<ChannelAccount>)null)
                 .StartTestAsync();
