@@ -4,13 +4,13 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Net;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +20,14 @@ namespace Microsoft.Agents.Builder
     /// <summary>
     /// An adapter that implements the Activity Protocol and can be hosted in different cloud environments both public and private.
     /// </summary>
-    /// <param name="channelServiceClientFactory">The IConnectorFactory to use.</param>
+    /// <remarks>
+    /// ChannelServiceAdapterBase is designed for interacting with a "channel service" that uses an IConnectorClient by way of
+    /// the IChannelServiceClientFactory to send and receive activities.  This is the case for Azure Bot Service, and other SDK Agents.  
+    /// If your adapter needs to interact with a channel service like this, you can inherit from ChannelServiceAdapterBase and get a 
+    /// lot of functionality for free, including handling incoming activities, sending outgoing activities, and creating conversations.
+    /// Otherwise, subclass the ChannelAdapter for more control over how activities are sent and received.
+    /// </remarks>
+    /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
@@ -44,6 +51,8 @@ namespace Microsoft.Agents.Builder
             {
                 throw new ArgumentException("Expecting one or more activities, but the array was empty.", nameof(activities));
             }
+
+            using var telemetryScope = new ScopeSendActivities(activities);
 
             var responses = new ResourceResponse[activities.Length];
 
@@ -94,67 +103,27 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public override async Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
+        public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = activity ?? throw new ArgumentNullException(nameof(activity));
 
+            using var telemetryScope = new ScopeUpdateActivity(activity);
+
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
-            return await connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            return connectorClient.Conversations.UpdateActivityAsync(activity, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public override async Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
+        public override Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
         {
             _ = turnContext ?? throw new ArgumentNullException(nameof(turnContext));
             _ = reference ?? throw new ArgumentNullException(nameof(reference));
 
+            using var telemetryScope = new ScopeDeleteActivity(reference.GetContinuationActivity());
+
             var connectorClient = turnContext.Services.Get<IConnectorClient>();
-            await connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), reference.GetContinuationActivity(), null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
-            AssertionHelpers.ThrowIfNull(reference, nameof(reference));
-
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), AgentClaims.GetTokenAudience(claimsIdentity), callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(string agentAppId, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            AssertionHelpers.ThrowIfNullOrEmpty(agentAppId, nameof(agentAppId));
-
-            return ProcessProactiveAsync(AgentClaims.CreateIdentity(agentAppId), continuationActivity, null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, null, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, ConversationReference reference, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, reference.GetContinuationActivity(), audience, callback, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public override Task ContinueConversationAsync(ClaimsIdentity claimsIdentity, IActivity continuationActivity, string audience, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
-        {
-            return ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken);
+            return connectorClient.Conversations.DeleteActivityAsync(reference.Conversation.Id, reference.ActivityId, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -180,8 +149,8 @@ namespace Microsoft.Agents.Builder
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
-            var reference = ConversationReferenceBuilder.Create(AgentClaims.GetAppId(identity), channelId, serviceUrl)
-                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(AgentClaims.GetAppId(identity), role: RoleTypes.User))
+            var reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl)
+                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(identity.GetIncomingAudience(), role: RoleTypes.User))
                 .Build();
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
@@ -240,6 +209,7 @@ namespace Microsoft.Agents.Builder
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
+                audience,
                 useAnonymous: useAnonymousAuthCallback,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -262,7 +232,7 @@ namespace Microsoft.Agents.Builder
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
             {
-                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppId(claimsIdentity)}";
+                activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppIdClaim(claimsIdentity)}";
             }
             else
             {
@@ -306,39 +276,19 @@ namespace Microsoft.Agents.Builder
             return Task.FromResult(incomingActivity?.DeliveryMode == DeliveryModes.Stream || incomingActivity?.DeliveryMode == DeliveryModes.ExpectReplies);
         }
 
-        private TurnContext SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
+        private void SetTurnContextServices(TurnContext turnContext, IConnectorClient connectorClient, IUserTokenClient userTokenClient)
         {
             if (connectorClient != null)
                 turnContext.Services.Set(connectorClient);
             if (userTokenClient != null)
                 turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
-
-            return turnContext;
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)
         {
             _ = continuationActivity ?? throw new ArgumentNullException(nameof(continuationActivity));
             _ = continuationActivity.Conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidConversationAccount, null);
-        }
-
-        private static InvokeResponse ProcessTurnResults(TurnContext turnContext)
-        {
-            // Handle Invoke scenarios where the Agent will return a specific body and return code.
-            if (turnContext.Activity.Type == ActivityTypes.Invoke)
-            {
-                var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
-                if (activityInvokeResponse == null)
-                {
-                    return new InvokeResponse { Status = (int)HttpStatusCode.NotImplemented };
-                }
-
-                return (InvokeResponse)activityInvokeResponse.Value;
-            }
-
-            // No body to return.
-            return null;
         }
 
         /// <summary>
