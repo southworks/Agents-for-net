@@ -66,9 +66,9 @@ namespace Microsoft.Agents.Connector.Telemetry
         internal static readonly string MetricConnectorRequestDuration = "agents.connector.request.duration";
 
         /// <summary>Metric name for the counter of user-token REST client requests.</summary>
-        internal static readonly string MetricUserTokenRestClientRequestCount = "agents.connector.request.count";
+        internal static readonly string MetricUserTokenRestClientRequestCount = "agents.user_token_client.request.count";
 
         /// <summary>Metric name for the histogram that records user-token REST client request duration in milliseconds.</summary>
-        internal static readonly string MetricUserTokenRestClientRequestDuration = "agents.connector.request.duration";
+        internal static readonly string MetricUserTokenRestClientRequestDuration = "agents.user_token_client.request.duration";
     }
 }
