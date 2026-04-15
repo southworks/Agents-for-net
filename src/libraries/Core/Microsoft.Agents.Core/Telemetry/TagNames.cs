@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Core.Telemetry
         public static readonly string AuthHandlerId = "auth.handler.id";
 
         /// <summary>The authentication method used (e.g., "token", "certificate").</summary>
-        public static readonly string AuthMethod = "auth.flow";
+        public static readonly string AuthMethod = "auth.method";
 
         /// <summary>The OAuth/OIDC scopes requested or granted.</summary>
         public static readonly string AuthScopes = "auth.scopes";
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Core.Telemetry
 
         /// <summary>The HTTP method of an outgoing or incoming request.</summary>
         public static readonly string HttpMethod = "http.method";
-
+        
         /// <summary>The HTTP status code of an outgoing or incoming response.</summary>
         public static readonly string HttpStatusCode = "http.status_code";
 

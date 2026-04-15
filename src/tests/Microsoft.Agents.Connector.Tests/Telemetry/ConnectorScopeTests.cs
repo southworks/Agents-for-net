@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             using var scope = new ScopeUpdateActivity("conv-1", "act-1");
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.telemetry.update_activity", started.OperationName);
+            Assert.Equal("agents.connector.update_activity", started.OperationName);
         }
 
         [Fact]
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             using var scope = new ScopeDeleteActivity("conv-1", "act-1");
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.telemetry.delete_activity", started.OperationName);
+            Assert.Equal("agents.connector.delete_activity", started.OperationName);
         }
 
         [Fact]
@@ -266,7 +266,7 @@ namespace Microsoft.Agents.Connector.Tests.Telemetry
             using var scope = new ScopeGetToken("conn-1", "user-1");
 
             var started = Assert.Single(StartedActivities);
-            Assert.Equal("agents.user.user_token_client.get_user_token", started.OperationName);
+            Assert.Equal("agents.user_token_client.get_user_token", started.OperationName);
         }
 
         [Fact]

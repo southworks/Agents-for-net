@@ -15,10 +15,10 @@ namespace Microsoft.Agents.Connector.Telemetry
         internal static readonly string ScopeSendToConversation = "agents.connector.send_to_conversation";
 
         /// <summary>Activity name for updating an existing activity via the connector.</summary>
-        internal static readonly string ScopeUpdateActivity = "agents.telemetry.update_activity";
+        internal static readonly string ScopeUpdateActivity = "agents.connector.update_activity";
 
         /// <summary>Activity name for deleting an activity via the connector.</summary>
-        internal static readonly string ScopeDeleteActivity = "agents.telemetry.delete_activity";
+        internal static readonly string ScopeDeleteActivity = "agents.connector.delete_activity";
 
         /// <summary>Activity name for creating a new conversation.</summary>
         internal static readonly string ScopeCreateConversation = "agents.connector.create_conversation";
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Connector.Telemetry
         internal static readonly string ScopeGetAttachmentInfo = "agents.connector.get_attachment_info";
 
         /// <summary>Activity name for retrieving a user token via the token service.</summary>
-        internal static readonly string ScopeGetToken = "agents.user.user_token_client.get_user_token";
+        internal static readonly string ScopeGetToken = "agents.user_token_client.get_user_token";
 
         /// <summary>Activity name for signing a user out via the token service.</summary>
         internal static readonly string ScopeSignOut = "agents.user_token_client.sign_out";
@@ -66,9 +66,9 @@ namespace Microsoft.Agents.Connector.Telemetry
         internal static readonly string MetricConnectorRequestDuration = "agents.connector.request.duration";
 
         /// <summary>Metric name for the counter of user-token REST client requests.</summary>
-        internal static readonly string MetricUserTokenRestClientRequestCount = "agents.connector.user_token_client.request.count";
+        internal static readonly string MetricUserTokenRestClientRequestCount = "agents.connector.request.count";
 
         /// <summary>Metric name for the histogram that records user-token REST client request duration in milliseconds.</summary>
-        internal static readonly string MetricUserTokenRestClientRequestDuration = "agents.connector.user_token_client.request.duration";
+        internal static readonly string MetricUserTokenRestClientRequestDuration = "agents.connector.request.duration";
     }
 }

@@ -17,9 +17,9 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// Initializes a new instance of the <see cref="ScopeWriteResponse"/> class.
         /// </summary>
         /// <param name="activities">The outgoing activities being sent.</param>
-        public ScopeWriteResponse(IList<IActivity> activities) : base(Constants.ScopeWriteResponse)
+        public ScopeWriteResponse(IList<IActivity>? activities = null) : base(Constants.ScopeWriteResponse)
         {
-            _activities = activities;
+            _activities = activities ?? new List<IActivity>();
         }
 
         public ScopeWriteResponse(IActivity activity) : base(Constants.ScopeWriteResponse)
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
-            if (_activities == null || _activities.Count == 0)
+            if (_activities.Count == 0)
             {
                 return;
             }

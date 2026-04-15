@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Builder
             {
                 // Send from the list which may have been manipulated via the event handlers.
                 // Note that 'responses' was captured from the root of the call, and will be
-                // returned to the original caller.Fnwe
+                // returned to the original caller.
                 var responses = await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
                 var sentNonTraceActivity = false;
 
