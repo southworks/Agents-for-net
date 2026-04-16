@@ -10,3 +10,4 @@ The main types provided by this library are:
 
 - `TestAdapter`
 - `TestFlow`
+- `IResponseValidator`
