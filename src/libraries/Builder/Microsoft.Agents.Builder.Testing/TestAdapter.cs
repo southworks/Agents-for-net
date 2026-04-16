@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Builder.Testing
                 ServiceUrl = "https://test.com",
                 User = new ChannelAccount("user1", "User1"),
                 Agent = new ChannelAccount("bot", "Bot"),
-                Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
+                Conversation = new ConversationAccount(false, id: "convo1", name: "Conversation1"),
                 Locale = this.Locale,
             };
         }
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Builder.Testing
                     ServiceUrl = "https://test.com",
                     User = new ChannelAccount("user1", "User1"),
                     Agent = new ChannelAccount("bot", "Bot"),
-                    Conversation = new ConversationAccount(false, "convo1", "Conversation1"),
+                    Conversation = new ConversationAccount(false, id: "convo1", name: "Conversation1"),
                     Locale = this.Locale,
                 };
             }

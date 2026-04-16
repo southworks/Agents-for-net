@@ -4,9 +4,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.Testing;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -37,10 +34,8 @@ namespace Microsoft.Agents.Builder.Testing
             Assert.Equal(Channels.Test, host.Adapter.Conversation.ChannelId);
             Assert.Equal("user1", host.Adapter.Conversation.User.Id);
             Assert.Equal("bot", host.Adapter.Conversation.Agent.Id);
-            // ConversationAccount(bool isGroup, string conversationType, string id, ...)
-            // — second positional arg is conversationType, third is id.
-            Assert.Equal("convo1", host.Adapter.Conversation.Conversation.ConversationType);
-            Assert.Equal("Conversation1", host.Adapter.Conversation.Conversation.Id);
+            Assert.Equal("convo1", host.Adapter.Conversation.Conversation.Id);
+            Assert.Equal("Conversation1", host.Adapter.Conversation.Conversation.Name);
         }
 
         [Fact]
