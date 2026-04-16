@@ -383,8 +383,11 @@ namespace Microsoft.Agents.Builder
             var activity = FinalMessage ?? new Activity();
 
             activity.Type = ActivityTypes.Message;
-            activity.Text ??= !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
             activity.Entities ??= [];
+            if (string.IsNullOrWhiteSpace(activity.Text))
+            {
+                activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
+            }
 
             // make sure the supplied Activity doesn't have a streamInfo already.
             var existingStreamInfos = activity.Entities.Where(e => string.Equals(EntityTypes.StreamInfo, e.Type, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -402,7 +405,7 @@ namespace Microsoft.Agents.Builder
                 activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final, StreamResult = (string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success) });
             }
 
-            if (FeedbackLoopEnabled)
+            if (FeedbackLoopEnabled && _isTeamsChannel)
             {
                 activity.ChannelData = ObjectPath.Merge(activity.ChannelData, new
                 {
