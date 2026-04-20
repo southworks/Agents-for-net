@@ -147,8 +147,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgenticAI", "samples\Agenti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioAgentConnector", "samples\CopilotStudioAgentConnector\CopilotStudioAgentConnector.csproj", "{D1BDD897-23C9-CDC4-EDC2-3A254B17B0ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTelAgent", "samples\OTelAgent\OTelAgent.csproj", "{E49D17AD-D0D2-4E27-223A-EAC12AED4653}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioSubscriberClient", "samples\CopilotStudioClient\CopilotStudioSubscriberClient\CopilotStudioSubscriberClient.csproj", "{ABEC9C05-CB7D-74EC-BC04-D4EE6A597AEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratedClient", "samples\CopilotStudioClient\OrchestratedClient\OrchestratedClient.csproj", "{2CC950A2-57B5-45E1-B415-033538A6215B}"
