@@ -63,8 +63,8 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Starts the background typing task and registers an <c>OnSendActivities</c> handler
-        /// to reset the interval countdown on non-typing agent sends.
+        /// Starts the background typing task and registers handlers to reset the interval countdown
+        /// on non-typing agent sends, updates, or deletions.
         /// </summary>
         public void Start()
         {
@@ -74,6 +74,8 @@ namespace Microsoft.Agents.Builder.App
             }
 
             _turnContext.OnSendActivities(OnSendActivitiesAsync);
+            _turnContext.OnDeleteActivity((ctx, reference, next) => { ResetInterval(); return next(); });
+            _turnContext.OnUpdateActivity((ctx, activity, next) => { ResetInterval(); return next(); });
 
             // Fire and forget — RunAsync yields immediately at the first Task.Delay.
             _workerTask = RunAsync(_stopCts.Token);
