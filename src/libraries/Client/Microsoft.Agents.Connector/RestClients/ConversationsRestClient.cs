@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = RestRequest.Post(path).WithBody(body);
             if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
-                if ((bool)!body.Conversation.IsGroup)
+                if (body.Conversation?.IsGroup != true)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequiresGroupChat, null);
                 }
@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Connector.RestClients
             var request = RestRequest.Post(path).WithBody(body);
             if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
-                if ((bool)!body.Conversation.IsGroup)
+                if (body.Conversation?.IsGroup != true)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequiresGroupChat, null);
                 }
