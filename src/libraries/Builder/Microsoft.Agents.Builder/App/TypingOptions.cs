@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <remarks>
         /// M365Copilot requires the first typing activity within a short window, so its
-        /// initial delay defaults to 250.
+        /// initial delay defaults to 250ms.
         /// </remarks>
         public IDictionary<string, ITypingChannelStrategy> ChannelStrategies { get; set; } =
             new Dictionary<string, ITypingChannelStrategy>(System.StringComparer.OrdinalIgnoreCase)

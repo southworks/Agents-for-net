@@ -59,6 +59,22 @@ namespace Microsoft.Agents.Builder.App
                 strategy = new TypingChannelStrategy(options.InitialDelayMs, options.IntervalMs);
             }
 
+            if (strategy.InitialDelayMs < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(options),
+                    strategy.InitialDelayMs,
+                    $"{nameof(ITypingChannelStrategy.InitialDelayMs)} must be >= 0.");
+            }
+
+            if (strategy.IntervalMs < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(options),
+                    strategy.IntervalMs,
+                    $"{nameof(ITypingChannelStrategy.IntervalMs)} must be >= 0.");
+            }
+
             return new TypingWorker(turnContext, strategy);
         }
 
@@ -93,9 +109,11 @@ namespace Microsoft.Agents.Builder.App
                     await WaitAsync(_strategy.IntervalMs, stopToken).ConfigureAwait(false);
                 }
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Normal stop path — swallow.
+                // Typing indicator failures (including transient transport errors) are best-effort
+                // and must not fault the background worker task, because DisposeAsync awaits it
+                // during turn cleanup and a faulted task would mask or replace the turn exception.
             }
         }
 

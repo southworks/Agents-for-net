@@ -704,6 +704,8 @@ namespace Microsoft.Agents.Builder.App
             if (worker != null)
             {
                 await worker.DisposeAsync().ConfigureAwait(false);
+                // Remove the entry so StartTypingTimer can create a new worker if called again.
+                turnContext.Services.TryRemove(typeof(TypingWorker).FullName, out _);
             }
         }
 #pragma warning restore CA1822

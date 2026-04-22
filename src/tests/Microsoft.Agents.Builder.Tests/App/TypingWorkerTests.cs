@@ -3,7 +3,10 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -171,6 +174,105 @@ namespace Microsoft.Agents.Builder.Tests.App
             await worker.DisposeAsync();
 
             Assert.Equal(countAfterStop, countAfterWait);
+        }
+
+        // ── Fix 1: transport errors must not fault the background task ───────────────
+
+        [Fact]
+        public async Task RunAsync_DoesNotFaultTask_WhenAdapterThrows()
+        {
+            // Arrange: adapter that throws on every send (simulates a transient transport error).
+            var (_, context) = CreateMessageTurn();
+            var throwingContext = new TurnContext(new ThrowingTestAdapter(), context.Activity);
+            var worker = TypingWorker.Create(throwingContext, MakeOptions(initialDelayMs: 0, intervalMs: 30_000))!;
+
+            worker.Start();
+
+            // Act: give the background task time to fire and encounter the error.
+            await Task.Delay(150);
+
+            // Assert: DisposeAsync must not re-throw; a faulted _workerTask would propagate here.
+            await worker.DisposeAsync();
+        }
+
+        // ── Fix 2: negative delay values must be rejected early ──────────────────────
+        //
+        // Task.Delay(ms) throws ArgumentOutOfRangeException for ms < 0 (other than -1).
+        // Since TypingOptions/strategies are publicly settable, TypingWorker.Create validates
+        // them and throws immediately so the problem surfaces at configuration time rather
+        // than being silently swallowed inside the background task.
+
+        [Fact]
+        public void Create_WithNegativeInitialDelay_ThrowsArgumentOutOfRange()
+        {
+            var (_, context) = CreateMessageTurn();
+            var options = new TypingOptions
+            {
+                InitialDelayMs = -1,
+                IntervalMs = 2000,
+                ChannelStrategies = new Dictionary<string, ITypingChannelStrategy>(
+                    System.StringComparer.OrdinalIgnoreCase)
+            };
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => TypingWorker.Create(context, options));
+        }
+
+        [Fact]
+        public void Create_WithNegativeIntervalMs_ThrowsArgumentOutOfRange()
+        {
+            var (_, context) = CreateMessageTurn();
+            var options = new TypingOptions
+            {
+                InitialDelayMs = 0,
+                IntervalMs = -1,
+                ChannelStrategies = new Dictionary<string, ITypingChannelStrategy>(
+                    System.StringComparer.OrdinalIgnoreCase)
+            };
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => TypingWorker.Create(context, options));
+        }
+
+        // ── Fix 3: StopTypingTimer must clear the service entry so Start can restart ─
+
+        [Fact]
+        public async Task StopTypingTimer_ClearsServiceEntry_AllowingRestart()
+        {
+            // Arrange
+            var (_, context) = CreateMessageTurn();
+            var app = new TestApplication(new TestApplicationOptions(new MemoryStorage()));
+
+            // First start registers the worker.
+            app.StartTypingTimer(context);
+            Assert.NotNull(context.Services.Get<TypingWorker>());
+
+            // Stop disposes and clears the service entry.
+            await app.StopTypingTimer(context);
+            Assert.Null(context.Services.Get<TypingWorker>());  // cleared by StopTypingTimer
+
+            // Second start must succeed (without Fix 3 it early-returns because
+            // the disposed worker is still registered).
+            app.StartTypingTimer(context);
+            Assert.NotNull(context.Services.Get<TypingWorker>());
+
+            // Clean up.
+            await app.StopTypingTimer(context);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Helpers
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// A <see cref="TestAdapter"/> whose <see cref="SendActivitiesAsync"/> always throws,
+        /// simulating a transient transport failure.
+        /// </summary>
+        private sealed class ThrowingTestAdapter : TestAdapter
+        {
+            public override Task<ResourceResponse[]> SendActivitiesAsync(
+                ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+                => throw new InvalidOperationException("Simulated transport error");
         }
 
         [Fact]
