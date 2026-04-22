@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 if ((bool)!body.Conversation.IsGroup)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequriesGroupChat, null);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequiresGroupChat, null);
                 }
                 request = request.WithQuery("isTargetedActivity", "true");
             }
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Connector.RestClients
             {
                 if ((bool)!body.Conversation.IsGroup)
                 {
-                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequriesGroupChat, null);
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TeamsTargetedRequiresGroupChat, null);
                 }
                 request = request.WithQuery("isTargetedActivity", "true");
             }

@@ -216,9 +216,9 @@ namespace Microsoft.Agents.Connector.Properties {
         /// <summary>
         ///   Looks up a localized string similar to Targeted activities can only be sent in a group chat or channel..
         /// </summary>
-        internal static string TeamsTargetedRequriesGroupChat {
+        internal static string TeamsTargetedRequiresGroupChat {
             get {
-                return ResourceManager.GetString("TeamsTargetedRequriesGroupChat", resourceCulture);
+                return ResourceManager.GetString("TeamsTargetedRequiresGroupChat", resourceCulture);
             }
         }
         
