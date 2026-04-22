@@ -245,7 +245,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             where TAgent : class, IAgent
             where TAdapter : CloudAdapter
         {
-            services.AddAgentApplicationOptions(replaceExisting: false);
+            if (typeof(AgentApplication).IsAssignableFrom(typeof(TAgent)))
+            {
+                services.AddAgentApplicationOptions(replaceExisting: false);
+            }
+
             services.AddAgentCore<TAdapter>();
 
             // Add the IAgent 
