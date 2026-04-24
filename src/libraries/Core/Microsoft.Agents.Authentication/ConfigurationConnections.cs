@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Authentication
             {
                 var def = connection.Value;
                 var type = def.Instance != null ? def.Instance.GetType().Name : def.Type ?? "(unknown)";
-                LogConnectionConfig(_logger, connection.Key, type);
+                LogConnectionConfig(_logger, connection.Key, type, FormatSettings(def.Settings));
             }
         }
 
