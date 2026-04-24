@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
@@ -64,6 +66,126 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("4", values[2]);
             Assert.Equal("1", values[3]);
         }
+
+        [Fact]
+        public void Test_RouteList_Count_Empty()
+        {
+            RouteList routes = new();
+            Assert.Equal(0, routes.Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_Count_WithRoutes()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            Assert.Equal(2, routes.Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_Empty()
+        {
+            RouteList routes = new();
+            string result = routes.FormatRouteList();
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NoFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList();
+
+            Assert.Contains("[0]", result);
+            Assert.Contains("MyNamedHandler", result);
+            Assert.Contains("flags=None", result);
+            Assert.Contains($"rank={RouteRank.Unspecified}", result);
+            Assert.DoesNotContain("channel=", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_InvokeAndAgenticFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .Build());
+
+            string result = routes.FormatRouteList();
+
+            Assert.Contains("flags=Invoke,Agentic", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NonTerminalFlag()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsNonTerminal()
+                .Build());
+
+            string result = routes.FormatRouteList();
+
+            Assert.Contains("flags=NonTerminal", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithChannel()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithChannelId(ChannelId.MsTeams)
+                .Build());
+
+            string result = routes.FormatRouteList();
+
+            Assert.Contains("channel=msteams", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_MultipleRoutes_OrderedByIndex()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList();
+
+            // Invoke route comes first (higher priority)
+            int idx0 = result.IndexOf("[0]");
+            int idx1 = result.IndexOf("[1]");
+            Assert.True(idx0 < idx1);
+            Assert.Contains("flags=Invoke", result);
+        }
+
+        private static Task MyNamedHandler(ITurnContext ctx, ITurnState state, CancellationToken ct)
+            => Task.CompletedTask;
 
         [Fact]
         public async Task Test_RouteList_ByAgenticThenInvokeThenRank()

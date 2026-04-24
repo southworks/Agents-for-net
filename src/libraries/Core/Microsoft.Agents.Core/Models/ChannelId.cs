@@ -108,6 +108,11 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
+        /// Gets a <see cref="Microsoft.Agents.Core.Models.ChannelId"/> for the Microsoft Teams channel ("msteams").
+        /// </summary>
+        public static ChannelId MsTeams => new ChannelId("msteams");
+
+        /// <summary>
         /// Implicitly converts a string to a <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.
         /// </summary>
         /// <param name="value">The channel ID string.</param>
