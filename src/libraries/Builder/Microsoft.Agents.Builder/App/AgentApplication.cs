@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent
+    public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
         private readonly int _typingTimerDelay = 1000;
@@ -796,6 +796,11 @@ namespace Microsoft.Agents.Builder.App
                                 return;
                             }
                         }
+                    }
+
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        LogRouteList(Logger, _routes.Count, _routes.FormatRouteList());
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.

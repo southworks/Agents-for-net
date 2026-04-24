@@ -7,6 +7,9 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -1953,6 +1956,90 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 ChannelId = new ChannelId(channelId);
             }
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_LogsRouteList_WhenDebugEnabled()
+        {
+            // Arrange: create a logger that captures debug messages
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Debug));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert: at least one debug message contains route evaluation order text
+            Assert.Contains(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_DoesNotLogRouteList_WhenDebugDisabled()
+        {
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Information));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            Assert.DoesNotContain(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        private class CaptureLoggerProvider(List<string> messages) : ILoggerProvider
+        {
+            public ILogger CreateLogger(string categoryName) => new CaptureLogger(messages);
+            public void Dispose() { }
+        }
+
+        private class CaptureLogger(List<string> messages) : ILogger
+        {
+#pragma warning disable CS8633 // Nullability in constraints for type parameter doesn't match the constraints for type parameter in implicitly implemented interface method
+            public IDisposable BeginScope<TState>(TState state) => null;
+#pragma warning restore CS8633
+            public bool IsEnabled(LogLevel logLevel) => true;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+                Exception exception, Func<TState, Exception, string> formatter)
+                => messages.Add(formatter(state, exception));
         }
     }
 }
