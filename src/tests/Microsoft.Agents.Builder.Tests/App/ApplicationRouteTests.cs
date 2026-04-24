@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(RouteBuilder.Create()
                 .WithSelector((ctx, ct) => Task.FromResult(true))
                 .WithHandler(MyNamedHandler)
-                .WithChannelId(ChannelId.MsTeams)
+                .WithChannelId(Channels.Msteams)
                 .Build());
 
             string result = routes.FormatRouteList();
