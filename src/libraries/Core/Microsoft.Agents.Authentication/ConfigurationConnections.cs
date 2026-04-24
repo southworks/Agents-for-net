@@ -128,16 +128,6 @@ namespace Microsoft.Agents.Authentication
             }
         }
 
-        private void LogConnections()
-        {
-            foreach (var connection in _connections)
-            {
-                var def = connection.Value;
-                var type = def.Instance != null ? def.Instance.GetType().Name : def.Type ?? "(unknown)";
-                LogConnectionConfig(_logger, connection.Key, type, FormatSettings(def.Settings));
-            }
-        }
-
         /// <inheritdoc/>
         public IAccessTokenProvider GetConnection(string name)
         {
