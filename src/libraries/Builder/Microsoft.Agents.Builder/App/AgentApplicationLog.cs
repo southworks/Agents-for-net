@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Builder.App
     //   Future messages: start from 2
     public partial class AgentApplication
     {
-#if NET6_0_OR_GREATER
+#if !NETSTANDARD
         [LoggerMessage(EventId = 1, Level = LogLevel.Debug,
             Message = "AgentApplication route evaluation order ({RouteCount} routes):\n{RouteList}")]
         private static partial void LogRouteList(ILogger logger, int routeCount, string routeList);
