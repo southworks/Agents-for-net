@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Test_RouteList_Count_Empty()
         {
             RouteList routes = new();
-            Assert.Equal(0, routes.Count);
+            Assert.Equal(0, routes.FormatRouteList().Count);
         }
 
         [Fact]
@@ -89,14 +89,14 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithSelector((ctx, ct) => Task.FromResult(true))
                 .WithHandler((ctx, ts, ct) => Task.CompletedTask)
                 .Build());
-            Assert.Equal(2, routes.Count);
+            Assert.Equal(2, routes.FormatRouteList().Count);
         }
 
         [Fact]
         public void Test_RouteList_FormatRouteList_Empty()
         {
             RouteList routes = new();
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
             Assert.Equal(string.Empty, result);
         }
 
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithHandler(MyNamedHandler)
                 .Build());
 
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
 
             Assert.Contains("[0]", result);
             Assert.Contains("MyNamedHandler", result);
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .AsAgentic(true)
                 .Build());
 
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
 
             Assert.Contains("flags=Invoke,Agentic", result);
         }
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .AsNonTerminal()
                 .Build());
 
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
 
             Assert.Contains("flags=NonTerminal", result);
         }
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithChannelId(Channels.Msteams)
                 .Build());
 
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
 
             Assert.Contains("channel=msteams", result);
         }
@@ -178,11 +178,13 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithHandler(MyNamedHandler)
                 .Build());
 
-            string result = routes.FormatRouteList();
+            string result = routes.FormatRouteList().Formatted;
 
             // Invoke route comes first (higher priority)
             int idx0 = result.IndexOf("[0]");
             int idx1 = result.IndexOf("[1]");
+            Assert.True(idx0 >= 0);
+            Assert.True(idx1 >= 0);
             Assert.True(idx0 < idx1);
             Assert.Contains("flags=Invoke", result);
         }
@@ -2033,13 +2035,13 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         private class CaptureLogger(List<string> messages) : ILogger
         {
-#pragma warning disable CS8633 // Nullability in constraints for type parameter doesn't match the constraints for type parameter in implicitly implemented interface method
-            public IDisposable BeginScope<TState>(TState state) => null;
-#pragma warning restore CS8633
+            private static readonly IDisposable _noopScope = new NoopDisposable();
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => _noopScope;
             public bool IsEnabled(LogLevel logLevel) => true;
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
                 Exception exception, Func<TState, Exception, string> formatter)
                 => messages.Add(formatter(state, exception));
+            private sealed class NoopDisposable : IDisposable { public void Dispose() { } }
         }
     }
 }

@@ -800,7 +800,8 @@ namespace Microsoft.Agents.Builder.App
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        LogRouteList(Logger, _routes.Count, _routes.FormatRouteList());
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.

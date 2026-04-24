@@ -62,41 +62,22 @@ namespace Microsoft.Agents.Builder.App
             }
         }
 
-        internal int Count
-        {
-            get
-            {
-                if (rwl.TryEnterReadLock(1000))
-                {
-                    try
-                    {
-                        return routes.Count;
-                    }
-                    finally
-                    {
-                        rwl.ExitReadLock();
-                    }
-                }
-                else
-                {
-                    throw new TimeoutException("Failed to acquire read lock to count routes.");
-                }
-            }
-        }
-
-        internal string FormatRouteList()
+        // Returns both the count and formatted string from a single lock acquisition,
+        // avoiding a TOCTOU race if routes are modified between separate Count and FormatRouteList calls.
+        internal (int Count, string Formatted) FormatRouteList()
         {
             var orderedRoutes = Enumerate();
             var sb = new StringBuilder();
             int index = 0;
             foreach (var route in orderedRoutes)
             {
-                // Build flags string manually to control separator and "None" fallback
+                // Build flags string manually to control separator and "None" fallback.
+                // Use bitwise & rather than HasFlag to avoid enum boxing.
                 // (RouteFlags uses power-of-two values but is not decorated with [Flags])
                 var parts = new List<string>();
-                if (route.Flags.HasFlag(RouteFlags.Invoke)) parts.Add("Invoke");
-                if (route.Flags.HasFlag(RouteFlags.Agentic)) parts.Add("Agentic");
-                if (route.Flags.HasFlag(RouteFlags.NonTerminal)) parts.Add("NonTerminal");
+                if ((route.Flags & RouteFlags.Invoke) != 0) parts.Add("Invoke");
+                if ((route.Flags & RouteFlags.Agentic) != 0) parts.Add("Agentic");
+                if ((route.Flags & RouteFlags.NonTerminal) != 0) parts.Add("NonTerminal");
                 var flagsStr = parts.Count > 0 ? string.Join(",", parts) : "None";
 
                 sb.Append($"  [{index}] {GetHandlerName(route.Handler)} flags={flagsStr} rank={route.Rank}");
@@ -117,7 +98,7 @@ namespace Microsoft.Agents.Builder.App
                 sb.Length -= sb.Length > 1 && sb[sb.Length - 2] == '\r' ? 2 : 1;
             }
 
-            return sb.ToString();
+            return (index, sb.ToString());
         }
 
         // Produces a human-readable name for a route handler delegate.
