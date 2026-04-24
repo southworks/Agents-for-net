@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Builder.App
                 if (route.Flags.HasFlag(RouteFlags.NonTerminal)) parts.Add("NonTerminal");
                 var flagsStr = parts.Count > 0 ? string.Join(",", parts) : "None";
 
-                sb.Append($"  [{index}] {route.Handler.Method.Name} flags={flagsStr} rank={route.Rank}");
+                sb.Append($"  [{index}] {GetHandlerName(route.Handler)} flags={flagsStr} rank={route.Rank}");
 
                 var channel = route.ChannelId?.Channel;
                 if (!string.IsNullOrEmpty(channel))
@@ -118,6 +118,34 @@ namespace Microsoft.Agents.Builder.App
             }
 
             return sb.ToString();
+        }
+
+        // Produces a human-readable name for a route handler delegate.
+        // For named methods: "MyAgent.OnMessageAsync"
+        // For lambdas/local functions: "MyAgent.OnConfigureApplicationAsync" (enclosing method extracted from compiler-generated name)
+        private static string GetHandlerName(RouteHandler handler)
+        {
+            // Resolve the real declaring type by walking up through compiler-generated nested types.
+            // Lambdas/closures are hosted on types like "MyAgent+<>c__DisplayClass0_0"; DeclaringType gives "MyAgent".
+            var type = handler.Target?.GetType() ?? handler.Method.DeclaringType;
+            while (type != null && type.Name.Contains('<'))
+            {
+                type = type.DeclaringType;
+            }
+            var typeName = type?.Name;
+
+            // Extract the enclosing method name from compiler-generated names like "<OnConfigureApplicationAsync>b__0".
+            var methodName = handler.Method.Name;
+            if (methodName.Length > 1 && methodName[0] == '<')
+            {
+                var end = methodName.IndexOf('>');
+                if (end > 1)
+                {
+                    methodName = methodName.Substring(1, end - 1);
+                }
+            }
+
+            return typeName != null ? $"{typeName}.{methodName}" : methodName;
         }
     }
 
