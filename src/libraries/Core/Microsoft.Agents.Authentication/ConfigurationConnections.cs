@@ -53,7 +53,8 @@ namespace Microsoft.Agents.Authentication
             AssertionHelpers.ThrowIfNullOrEmpty(mapKey, nameof(mapKey));
 
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
-            _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>));
+            _logger = (ILogger<ConfigurationConnections>)systemServiceProvider.GetService(typeof(ILogger<ConfigurationConnections>))
+                ?? NullLogger<ConfigurationConnections>.Instance;
 
             _connections = configuration
                 .GetSection(connectionsKey)
