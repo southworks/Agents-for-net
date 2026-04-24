@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Authentication
                 first = false;
 
                 var def = connection.Value;
-                var type = def.Instance != null ? def.Instance.GetType().Name : def.Type ?? "(unknown)";
+                var type = def.Instance != null ? def.Instance.GetType().Name : def.Type ?? "(default)";
                 sb.AppendLine($"  {connection.Key} ({type}):");
 
                 if (def.Settings != null)
