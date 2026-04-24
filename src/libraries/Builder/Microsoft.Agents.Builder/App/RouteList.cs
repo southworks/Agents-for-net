@@ -91,7 +91,8 @@ namespace Microsoft.Agents.Builder.App
             int index = 0;
             foreach (var route in orderedRoutes)
             {
-                // Build flags string manually — RouteFlags has no [Flags] attribute
+                // Build flags string manually to control separator and "None" fallback
+                // (RouteFlags uses power-of-two values but is not decorated with [Flags])
                 var parts = new List<string>();
                 if (route.Flags.HasFlag(RouteFlags.Invoke)) parts.Add("Invoke");
                 if (route.Flags.HasFlag(RouteFlags.Agentic)) parts.Add("Agentic");
