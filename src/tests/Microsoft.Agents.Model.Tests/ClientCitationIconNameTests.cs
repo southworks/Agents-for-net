@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using Xunit;
 
@@ -208,6 +209,15 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(ClientCitationIconName.Names.MicrosoftWord, (string)ClientCitationIconName.MicrosoftWord);
             Assert.Equal(ClientCitationIconName.Names.MicrosoftExcel, (string)ClientCitationIconName.MicrosoftExcel);
             Assert.Equal(ClientCitationIconName.Names.PDF, (string)ClientCitationIconName.PDF);
+        }
+
+        [Fact]
+        public void ClientCitation_With_ClientCitationsIconNameEnum()
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            var citation = new ClientCitation(0, "title", "abstractText", "text", null, null, ClientCitationsIconNameEnum.MicrosoftPowerPoint);
+#pragma warning restore CS0618 // Type or member is obsolete
+            Assert.Equal(ClientCitationIconName.Names.MicrosoftPowerPoint, (string)citation.Appearance.Image.Name);
         }
 
         // ── Helper wrapper for JSON tests ─────────────────────────────────────

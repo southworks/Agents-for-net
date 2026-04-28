@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Core.Models
         /// </list>
         /// The resulting citation can be referenced in activity text using the format [position] (e.g., [1], [2]).
         /// </remarks>
-        public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationsIconNameEnum? imageName, bool useDefaultAdaptiveCard = true)
+        public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationIconName? imageName, bool useDefaultAdaptiveCard = true)
         {
             Position = position;
             
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Core.Models
             {
                 Appearance.Image = new AppearanceImage
                 {
-                    Name = imageName.Value
+                    Name = imageName
                 };
             }
 
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The image/icon name. It should be one of <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/>
         /// </summary>
-        public ClientCitationIconName Name { get; set; }
+        public ClientCitationIconName? Name { get; set; }
 
     }
 
@@ -331,6 +331,10 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>Implicitly converts an <see cref="ClientCitationIconName"/> to a <see langword="string"/>.</summary>
         public static implicit operator string?(ClientCitationIconName? t) => t?._value;
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        public static implicit operator ClientCitationIconName?(ClientCitationsIconNameEnum? e) => e == null ? null : new ClientCitationIconName(((EnumMemberAttribute)e.GetType().GetMember(e.ToString())[0].GetCustomAttributes(typeof(EnumMemberAttribute), false)[0]).Value);
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <inheritdoc/>
         public bool Equals(ClientCitationIconName? other) =>
@@ -533,121 +537,121 @@ namespace Microsoft.Agents.Core.Models
     /// <summary>
     /// Represents the different possible values for the client citation icon name as an enum.
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumMemberConverter))]
+    [Obsolete("ClientCitationsIconNameEnum is deprecated. Please use ClientCitationIconName with the predefined static instances or create new instances with custom string values as needed.")]
     public enum ClientCitationsIconNameEnum
     {
         /// <summary>
         /// Represents the Microsoft Word icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Word")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftWord)]
         MicrosoftWord,
 
         /// <summary>
         /// Represents the Microsoft Excel icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Excel")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftExcel)]
         MicrosoftExcel,
 
         /// <summary>
         /// Represents the Microsoft PowerPoint icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft PowerPoint")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftPowerPoint)]
         MicrosoftPowerPoint,
 
         /// <summary>
         /// Represents the Microsoft Visio icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Visio")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftVisio)]
         MicrosoftVisio,
 
         /// <summary>
         /// Represents the Microsoft Loop icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Loop")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftLoop)]
         MicrosoftLoop,
 
         /// <summary>
         /// Represents the Microsoft Whiteboard icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Whiteboard")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftWhiteboard)]
         MicrosoftWhiteboard,
 
         /// <summary>
         /// Represents the Adobe Illustrator icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Illustrator")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeIllustrator)]
         AdobeIllustrator,
 
         /// <summary>
         /// Represents the Adobe Photoshop icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Photoshop")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobePhotoshop)]
         AdobePhotoshop,
 
         /// <summary>
         /// Represents the Adobe InDesign icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe InDesign")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeInDesign)]
         AdobeInDesign,
 
         /// <summary>
         /// Represents the Adobe Flash icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Flash")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeFlash)]
         AdobeFlash,
 
         /// <summary>
         /// Represents the Sketch icon name.
         /// </summary>
-        [EnumMember(Value = "Sketch")]
+        [EnumMember(Value = ClientCitationIconName.Names.Sketch)]
         Sketch,
 
         /// <summary>
         /// Represents the Source Code icon name.
         /// </summary>
-        [EnumMember(Value = "Source Code")]
+        [EnumMember(Value = ClientCitationIconName.Names.SourceCode)]
         SourceCode,
 
         /// <summary>
         /// Represents the Image icon name.
         /// </summary>
-        [EnumMember(Value = "Image")]
+        [EnumMember(Value = ClientCitationIconName.Names.Image)]
         Image,
 
         /// <summary>
         /// Represents the GIF icon name.
         /// </summary>
-        [EnumMember(Value = "GIF")]
+        [EnumMember(Value = ClientCitationIconName.Names.GIF)]
         GIF,
 
         /// <summary>
         /// Represents the Video icon name.
         /// </summary>
-        [EnumMember(Value = "Video")]
+        [EnumMember(Value = ClientCitationIconName.Names.Video)]
         Video,
 
         /// <summary>
         /// Represents the Sound icon name.
         /// </summary>
-        [EnumMember(Value = "Sound")]
+        [EnumMember(Value = ClientCitationIconName.Names.Sound)]
         Sound,
 
         /// <summary>
         /// Represents the ZIP icon name.
         /// </summary>
-        [EnumMember(Value = "ZIP")]
+        [EnumMember(Value = ClientCitationIconName.Names.ZIP)]
         ZIP,
 
         /// <summary>
         /// Represents the Text icon name.
         /// </summary>
-        [EnumMember(Value = "Text")]
+        [EnumMember(Value = ClientCitationIconName.Names.Text)]
         Text,
 
         /// <summary>
         /// Represents the PDF icon name.
         /// </summary>
-        [EnumMember(Value = "PDF")]
+        [EnumMember(Value = ClientCitationIconName.Names.PDF)]
         PDF
     }
 }
