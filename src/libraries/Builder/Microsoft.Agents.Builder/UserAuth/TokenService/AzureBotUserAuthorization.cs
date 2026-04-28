@@ -203,41 +203,36 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
-            TokenResponse tokenResponse;
+            var flowResult = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
 
-            try
+            switch (flowResult.Status)
             {
-                tokenResponse = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TimeoutException)
-            {
-                throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
-            }
-            catch (UserCancelledException)
-            {
-                throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
-            }
+                case OAuthFlowStatus.TimedOut:
+                    throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
 
-            if (tokenResponse == null)
-            {
-                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
-                {
-                    state.ContinueCount++;
-                    if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
+                case OAuthFlowStatus.UserCancelled:
+                    throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
+
+                case OAuthFlowStatus.Complete:
+                    state.FlowStarted = false;
+                    return flowResult.TokenResponse;
+
+                default: // Pending
+                    if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
                     {
-                        // The only way this happens is if C2 sent a bogus code
-                        throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
+                        state.ContinueCount++;
+                        if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
+                        {
+                            // The only way this happens is if C2 sent a bogus code
+                            throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
+                        }
+
+                        await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
 
-                    await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
-                }
-
-                // token still pending.
-                return null;
+                    // token still pending.
+                    return null;
             }
-
-            state.FlowStarted = false;
-            return tokenResponse;
         }
 
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
