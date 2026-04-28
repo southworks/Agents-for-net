@@ -57,6 +57,6 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// that exposes Managed Identity through a container-specific IMDS endpoint. This setting is only meaningful when
         /// <see cref="AuthType"/> is <see cref="AuthTypes.UserManagedIdentity"/>.
         /// </remarks>
-        public bool EnabledContainerIMDS { get; set; }
+        public bool EnableContainerIMDS { get; set; }
     }
 }

@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 return tokenResult.AccessToken;
             }
-            else if (_connectionSettings.EnabledContainerIMDS && _connectionSettings.AuthType == AuthTypes.UserManagedIdentity && app is IManagedIdentityApplication msiApp)
+            else if (_connectionSettings.EnableContainerIMDS && _connectionSettings.AuthType == AuthTypes.UserManagedIdentity && app is IManagedIdentityApplication msiApp)
             {
                 var tokenResult = await msiApp
                     .AcquireTokenForManagedIdentity("api://AzureAdTokenExchange/.default")
