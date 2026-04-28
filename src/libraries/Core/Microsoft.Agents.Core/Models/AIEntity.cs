@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The image/icon name. It should be one of <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/>
         /// </summary>
-        public ClientCitationsIconNameEnum Name { get; set; }
+        public ClientCitationIconName Name { get; set; }
 
     }
 
@@ -347,7 +347,7 @@ namespace Microsoft.Agents.Core.Models
         public static bool operator ==(ClientCitationIconName? a, ClientCitationIconName? b) =>
             string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Returns <see langword="true"/> if two <see cref="ActivityType"/> values are not equal (case-insensitive).</summary>
+        /// <summary>Returns <see langword="true"/> if two <see cref="ClientCitationIconName"/> values are not equal (case-insensitive).</summary>
         public static bool operator !=(ClientCitationIconName? a, ClientCitationIconName? b) =>
             !string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
 
