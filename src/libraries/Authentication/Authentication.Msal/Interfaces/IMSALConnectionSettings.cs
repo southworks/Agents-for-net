@@ -48,5 +48,10 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// Token path used for the workload identity, like the MSAL example for AKS, equal to AZURE_FEDERATED_TOKEN_FILE. 
         /// </summary>
         public string FederatedTokenFile { get; set; }
+
+        /// <summary>
+        /// Foundry Container IMDS
+        /// </summary>
+        public bool EnabledContainerIMDS { get; set; }
     }
 }
