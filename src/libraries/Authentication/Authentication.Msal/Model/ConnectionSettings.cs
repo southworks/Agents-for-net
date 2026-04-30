@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
                 FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
                 FederatedTokenFile = msalConfigurationSection.GetValue<string>("FederatedTokenFile", string.Empty);
-                EnableContainerIMDS = msalConfigurationSection.GetValue<bool>("EnabledContainerIMDS", false);
+                EnableContainerIMDS = msalConfigurationSection.GetValue<bool>("EnableContainerIMDS", false);
                 AssertionRequestOptions = msalConfigurationSection.GetSection("AssertionRequestOptions").Get<AssertionRequestOptions>();
             }
 
