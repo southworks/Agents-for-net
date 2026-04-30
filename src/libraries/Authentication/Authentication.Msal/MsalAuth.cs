@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Authentication.Msal
                 return tokenResult.AccessToken;
             }
 
-            throw new InvalidOperationException("Only IConfidentialClientApplication or EnabledContainerIMDS+UserManagedIdentity is supported for Agentic.");
+            throw new InvalidOperationException("Only IConfidentialClientApplication or EnableContainerIMDS+UserManagedIdentity is supported for Agentic.");
         }
 
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
