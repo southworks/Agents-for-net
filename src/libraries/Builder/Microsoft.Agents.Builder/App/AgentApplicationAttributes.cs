@@ -534,18 +534,19 @@ namespace Microsoft.Agents.Builder.App
         {
             if (!string.IsNullOrWhiteSpace(autoSignInHandlers))
             {
-                var delegateMethod = app.GetType().GetMethod(autoSignInHandlers,
-                    BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-                if (delegateMethod != null)
+                try
                 {
-                    try
+                    var delegateMethod = app.GetType().GetMethod(autoSignInHandlers,
+                        BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (delegateMethod != null)
                     {
                         var d = CreateHandlerDelegate<Func<ITurnContext, string[]>>(app, delegateMethod);
                         withDelegate(d);
                         return;
                     }
-                    catch (ArgumentException) { }
                 }
+                catch (AmbiguousMatchException) { }
+                catch (ArgumentException) { }
             }
 
             withDelimited(autoSignInHandlers);
@@ -556,7 +557,13 @@ namespace Microsoft.Agents.Builder.App
 #if !NETSTANDARD
             return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 #else
-            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+            return !string.IsNullOrEmpty(delimitedTokenHandlers)
+                ? delimitedTokenHandlers
+                    .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => s.Length > 0)
+                    .ToArray()
+                : null;
 #endif
         }
     }

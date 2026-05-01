@@ -6,7 +6,7 @@ using System;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Base attribute for automatically generating a lazily-initialized extension property on an
+    /// Base attribute for automatically generating an extension property on an
     /// <see cref="AgentApplication"/> subclass.
     /// </summary>
     /// <typeparam name="TExtension">
@@ -19,7 +19,9 @@ namespace Microsoft.Agents.Builder.App
     /// companion partial class that exposes a <typeparamref name="TExtension"/> property whose
     /// name is derived by stripping the <c>AgentExtension</c> or <c>Extension</c> suffix from the
     /// type name (e.g. <c>TeamsAgentExtension</c> → <c>TeamsExtension</c>).
-    /// The extension is lazily initialized and registered with the application on first access.
+    /// The extension is eagerly initialized and registered during construction via the generated
+    /// <c>ConfigureExtensions</c> override, ensuring extension handlers are active before the
+    /// first turn is processed.
     /// </para>
     /// <para>
     /// Multiple different extension attributes may be applied to the same class.
