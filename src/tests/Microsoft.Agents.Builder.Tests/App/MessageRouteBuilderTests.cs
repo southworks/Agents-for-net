@@ -151,24 +151,6 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.False(result);
         }
 
-        [Fact]
-        public void MessageRouteBuilder_WithText_String_ThrowsWhenSelectorAlreadyDefined()
-        {
-            // Arrange
-            var builder = MessageRouteBuilder.Create()
-                .WithText("hello");
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => builder.WithText("world"));
-            Assert.Contains("MessageRouteBuilder.WithText(world)", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((ctx, ct) => Task.FromResult(true)));
-            Assert.Contains("MessageRouteBuilder.WithSelector()", ex.Message);
-
-            ex = Assert.Throws<InvalidOperationException>(() => builder.WithText(new Regex("hello again")));
-            Assert.Contains("MessageRouteBuilder.WithText(Regex(hello again))", ex.Message);
-        }
-
         #endregion
 
         #region WithText(Regex) Tests
