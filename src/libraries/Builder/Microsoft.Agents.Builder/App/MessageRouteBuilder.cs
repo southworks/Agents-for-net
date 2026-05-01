@@ -147,6 +147,13 @@ namespace Microsoft.Agents.Builder.App
 
         protected override void PreBuild()
         {
+            // When no text filter is specified the route matches any message — default to Last so
+            // specific-text routes take priority without callers having to set the rank explicitly.
+            if (_text == null && _textPattern == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
             if (_route.Selector != null)
             {
                 if (_text != null || _textPattern != null)
