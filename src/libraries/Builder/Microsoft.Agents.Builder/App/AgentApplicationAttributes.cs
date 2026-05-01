@@ -126,25 +126,19 @@ namespace Microsoft.Agents.Builder.App
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
             var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var b = MessageRouteBuilder.Create().WithText(text).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
+
             if (!string.IsNullOrWhiteSpace(text))
             {
-                var b = MessageRouteBuilder.Create().WithText(text).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
+                b = b.WithText(text);
             }
             else if (!string.IsNullOrWhiteSpace(textRegex))
             {
-                var b = MessageRouteBuilder.Create().WithText(new Regex(textRegex)).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
+                b = b.WithText(new Regex(textRegex));
             }
-            else
-            {
-                // match any message activity
-                var b = TypeRouteBuilder.Create().WithType(ActivityTypes.Message).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
-            }
+
+            app.AddRoute(b.Build());
         }
     }
 
@@ -190,25 +184,19 @@ namespace Microsoft.Agents.Builder.App
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
             var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var b = EventRouteBuilder.Create().WithName(name).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
+
             if (!string.IsNullOrWhiteSpace(name))
             {
-                var b = EventRouteBuilder.Create().WithName(name).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
+                b = b.WithName(name);
             }
             else if (!string.IsNullOrWhiteSpace(nameRegex))
             {
-                var b = EventRouteBuilder.Create().WithName(new Regex(nameRegex)).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
+                b = b.WithName(new Regex(nameRegex));
             }
-            else
-            {
-                // match any event activity
-                var b = TypeRouteBuilder.Create().WithType(ActivityTypes.Event).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank);
-                RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-                app.AddRoute(b.Build());
-            }
+
+            app.AddRoute(b.Build());
         }
     }
 
@@ -399,11 +387,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<HandoffHandler>(app);
-#else
-            var handler = (HandoffHandler)method.CreateDelegate(typeof(HandoffHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<HandoffHandler>(app, method);
             var builder = HandoffRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -433,11 +417,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-#if !NETSTANDARD
-            var handler = method.CreateDelegate<FeedbackLoopHandler>(app);
-#else
-            var handler = (FeedbackLoopHandler)method.CreateDelegate(typeof(FeedbackLoopHandler), app);
-#endif
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<FeedbackLoopHandler>(app, method);
             var builder = FeedbackRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
