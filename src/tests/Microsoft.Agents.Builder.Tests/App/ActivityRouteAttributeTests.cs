@@ -438,7 +438,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             return Task.CompletedTask;
         }
 
-        [MessageRoute(textRegex: "test*.")]
+        [MessageRoute(textRegex: "test.*")]
         public Task OnRegExAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnRegExAsync");

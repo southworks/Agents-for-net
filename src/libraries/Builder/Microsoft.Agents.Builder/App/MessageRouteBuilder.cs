@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder.App
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Message)
                         && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
-                        && await existingSelector(context, ct);
+                        && await existingSelector(context, ct).ConfigureAwait(false);
                 }
                 return;
             }
