@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Builder.App
     /// The decorated class must be declared as <c>partial</c>. A source generator creates a
     /// companion partial class that exposes a <typeparamref name="TExtension"/> property whose
     /// name is derived by stripping the <c>AgentExtension</c> or <c>Extension</c> suffix from the
-    /// type name (e.g. <c>TeamsAgentExtension</c> → <c>Teams</c>).
+    /// type name (e.g. <c>TeamsAgentExtension</c> → <c>TeamsExtension</c>).
     /// The extension is lazily initialized and registered with the application on first access.
     /// </para>
     /// <para>

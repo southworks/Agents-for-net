@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 if (_text != null || _textPattern != null)
                 {
-                    // Match on both the existing selector and the Activity.Type
+                    // Match on the existing selector, require a message activity, and apply the configured text/text-pattern filter
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)

@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Builder.App
             {
                 builder.WithType(type);
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(typeRegex))
             {
                 builder.WithType(new Regex(typeRegex));
             }
