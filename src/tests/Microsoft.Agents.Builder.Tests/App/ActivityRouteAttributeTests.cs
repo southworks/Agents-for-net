@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public async Task MessagRouteAttribute_Regex()
+        public async Task MessageRouteAttribute_Regex()
         {
             var app = new TestApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();

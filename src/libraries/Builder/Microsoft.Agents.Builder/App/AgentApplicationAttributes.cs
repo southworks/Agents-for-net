@@ -543,11 +543,7 @@ namespace Microsoft.Agents.Builder.App
                 {
                     try
                     {
-#if !NETSTANDARD
-                        var d = delegateMethod.CreateDelegate<Func<ITurnContext, string[]>>(app);
-#else
-                        var d = (Func<ITurnContext, string[]>)delegateMethod.CreateDelegate(typeof(Func<ITurnContext, string[]>), app);
-#endif
+                        var d = CreateHandlerDelegate<Func<ITurnContext, string[]>>(app, delegateMethod);
                         withDelegate(d);
                         return;
                     }

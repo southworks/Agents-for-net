@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Core.Analyzers
     /// Generates partial class companions for types decorated with attributes that derive from
     /// <c>AgentExtensionAttribute&lt;TExtension&gt;</c>. Each matching attribute produces a
     /// lazily-initialized property of type <c>TExtension</c> named after the extension type
-    /// (e.g. <c>TeamsAgentExtension</c> → <c>Teams</c>).
+    /// (e.g. <c>TeamsAgentExtension</c> → <c>TeamsExtension</c>).
     /// </summary>
     [Generator]
     public class AgentExtensionSourceGenerator : IIncrementalGenerator
@@ -80,7 +80,10 @@ namespace Microsoft.Agents.Core.Analyzers
                 }
 
                 var source = GenerateSource(classSymbol, extensions);
-                spc.AddSource($"{classSymbol.Name}.AgentExtensions.g.cs", SourceText.From(source, Encoding.UTF8));
+                var hintName = classSymbol.ContainingNamespace.IsGlobalNamespace
+                    ? $"{classSymbol.MetadataName}.AgentExtensions.g.cs"
+                    : $"{classSymbol.ContainingNamespace.ToDisplayString()}.{classSymbol.MetadataName}.AgentExtensions.g.cs";
+                spc.AddSource(hintName, SourceText.From(source, Encoding.UTF8));
             });
         }
 
@@ -159,7 +162,7 @@ namespace Microsoft.Agents.Core.Analyzers
             // Emit an auto-property with private set for each extension.
             foreach (var extensionType in extensions)
             {
-                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var fullTypeName = extensionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 var propName = DerivePropertyName(extensionType);
 
                 sb.AppendLine($"{indent}    /// <summary>");
@@ -178,7 +181,7 @@ namespace Microsoft.Agents.Core.Analyzers
             sb.AppendLine($"{indent}        base.ConfigureExtensions();");
             foreach (var extensionType in extensions)
             {
-                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var fullTypeName = extensionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 var propName = DerivePropertyName(extensionType);
 
                 sb.AppendLine($"{indent}        {propName} = new {fullTypeName}(this);");

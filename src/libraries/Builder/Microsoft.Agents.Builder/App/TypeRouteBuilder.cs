@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.App
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = TypeRouteBuilder.Create()
-    ///    .WithType(ActivityTypes.Invoke)
+    ///    .WithName("myInvokeName")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Invoke received!", cancellationToken: ct)))
     ///    .Build();
     ///

@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
     /// <code>
     /// var route = EventRouteBuilder.Create()
     ///    .WithName("myEvent")
-    ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Event received!", cancellationToken: ct)))
+    ///    .WithHandler((context, state, ct) => context.SendActivityAsync("Event received!", cancellationToken: ct))
     ///    .Build();
     ///
     /// app.AddRoute(route);
