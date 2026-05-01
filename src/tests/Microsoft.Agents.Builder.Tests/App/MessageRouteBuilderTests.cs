@@ -630,5 +630,134 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         #endregion
+
+        #region No-Filter (Any Message) Tests
+
+        [Fact]
+        public async Task MessageRouteBuilder_WithoutFilter_MatchesAnyMessage()
+        {
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "anything"
+            });
+
+            var route = MessageRouteBuilder.Create()
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.True(await route.Selector(mockContext.Object, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task MessageRouteBuilder_WithoutFilter_DoesNotMatchNonMessage()
+        {
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event
+            });
+
+            var route = MessageRouteBuilder.Create()
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
+        }
+
+        #endregion
+
+        #region RouteRank.Last Defaulting Tests
+
+        [Fact]
+        public void MessageRouteBuilder_WithoutFilter_DefaultsToRankLast()
+        {
+            var route = MessageRouteBuilder.Create()
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Last, route.Rank);
+        }
+
+        [Fact]
+        public void MessageRouteBuilder_WithText_DoesNotDefaultToRankLast()
+        {
+            var route = MessageRouteBuilder.Create()
+                .WithText("hello")
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void MessageRouteBuilder_WithTextRegex_DoesNotDefaultToRankLast()
+        {
+            var route = MessageRouteBuilder.Create()
+                .WithText(new Regex("hello.*"))
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void MessageRouteBuilder_WithoutFilter_ExplicitRankPreserved()
+        {
+            var route = MessageRouteBuilder.Create()
+                .WithOrderRank(50)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal((ushort)50, route.Rank);
+        }
+
+        #endregion
+
+        #region WithText and WithSelector Combined Tests
+
+        [Fact]
+        public async Task MessageRouteBuilder_WithTextAndSelector_BothMustMatch()
+        {
+            RouteSelector customSelector = (ctx, ct) =>
+                Task.FromResult(ctx.Activity.ChannelId == Channels.Msteams);
+
+            var matchContext = new Mock<ITurnContext>();
+            matchContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = Channels.Msteams
+            });
+
+            var wrongTextContext = new Mock<ITurnContext>();
+            wrongTextContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "goodbye",
+                ChannelId = Channels.Msteams
+            });
+
+            var wrongChannelContext = new Mock<ITurnContext>();
+            wrongChannelContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = Channels.Directline
+            });
+
+            var route = MessageRouteBuilder.Create()
+                .WithText("hello")
+                .WithSelector(customSelector)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.True(await route.Selector(matchContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongTextContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongChannelContext.Object, CancellationToken.None));
+        }
+
+        #endregion
     }
 }
