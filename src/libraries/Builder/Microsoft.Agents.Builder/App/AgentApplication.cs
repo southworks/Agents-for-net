@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
-            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger(typeof(AgentApplication));
+            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
 
             if (Options.TurnStateFactory == null)
             {
