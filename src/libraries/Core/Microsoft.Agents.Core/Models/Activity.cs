@@ -408,7 +408,9 @@ namespace Microsoft.Agents.Core.Models
                 // Targeted activities should have the recipient set to the intended user instead of the
                 // incoming Activity's sender.  This allows for proper routing of the outgoing activity
                 // to the user even if the incoming activity was sent to a different user (e.g. in group chat scenarios).
-                if (!this.IsTargetedActivity())
+                // Preserve an explicitly-set targeted recipient, but fall back to the conversation reference's
+                // user when the recipient has not been populated.
+                if (!this.IsTargetedActivity() || Recipient == null)
                 {
                     Recipient = reference.User;
                 }
