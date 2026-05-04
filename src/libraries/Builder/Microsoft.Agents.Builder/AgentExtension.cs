@@ -33,6 +33,7 @@ namespace Microsoft.Agents.Builder
                 .AsInvoke(isInvokeRoute)
                 .AsAgentic(isAgenticOnly)
                 .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
                 .Build();
 
             agentApplication.AddRoute(route);
