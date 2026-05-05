@@ -148,6 +148,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
+                using var loggerScope = Logger.BeginScope("CloudAdapter.ProcessAsync: Agent={AgentType}, RequestId={RequestId}", agent.GetType().Name, httpRequest.HttpContext.TraceIdentifier);
+
                 try
                 {
                     if (activity.IsType(ActivityTypes.Invoke) || activity.DeliveryMode == DeliveryModes.Stream || activity.DeliveryMode == DeliveryModes.ExpectReplies)

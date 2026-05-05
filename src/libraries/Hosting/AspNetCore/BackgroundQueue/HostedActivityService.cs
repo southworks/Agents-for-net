@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         {
                             // Create the task which will execute the work item.
                             // CancellationToken.None: cleanup must always run regardless of shutdown state.
-                            var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
+                            var task = ProcessAsync(activityWithClaims, stoppingToken)
                                 .ContinueWith(t =>
                                 {
                                     _activitiesProcessing.TryRemove(activityWithClaims, out _);
@@ -120,8 +120,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             }
         }
 
-        private async Task GetTaskFromWorkItem(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
+        private async Task ProcessAsync(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
         {
+            using var loggerScope = _logger.BeginScope("HostedActivityService.ProcessAsync: Agent={AgentType}, RequestId={RequestId}", activityWithClaims.AgentType.GetType().Name, activityWithClaims.Activity.RequestId);
+
             try
             {
                 // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
@@ -132,6 +134,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 activityWithClaims.TelemetryActivity?.Start();
+
                 try
                 {
                     if (activityWithClaims.IsProactive)
