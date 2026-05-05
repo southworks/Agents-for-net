@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Builder.App
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
-            TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>());  // Null storage will just create a TurnState with TempState.
+            TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>() ?? new MemoryStorage());  // Null storage will just create a TurnState with TempState.
             HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
             var section = configuration.GetSection(configKey);
