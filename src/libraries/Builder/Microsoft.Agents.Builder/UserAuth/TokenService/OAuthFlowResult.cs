@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
@@ -29,6 +30,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// The user explicitly cancelled the sign-in.
         /// </summary>
         UserCancelled,
+
+        /// <summary>
+        /// The sign-in flow completed with an error response.
+        /// </summary>
+        SignInFailed,
     }
 
     /// <summary>
@@ -40,10 +46,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private static readonly OAuthFlowResult _timedOut = new(OAuthFlowStatus.TimedOut);
         private static readonly OAuthFlowResult _userCancelled = new(OAuthFlowStatus.UserCancelled);
 
-        private OAuthFlowResult(OAuthFlowStatus status, TokenResponse tokenResponse = null)
+        private OAuthFlowResult(OAuthFlowStatus status, TokenResponse tokenResponse = null, ErrorResponse errorResponse = null)
         {
             Status = status;
             TokenResponse = tokenResponse;
+            ErrorResponse = errorResponse;
         }
 
         /// <summary>
@@ -55,6 +62,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// The token response. Non-null only when <see cref="Status"/> is <see cref="OAuthFlowStatus.Complete"/>.
         /// </summary>
         public TokenResponse TokenResponse { get; }
+
+        /// <summary>
+        /// The sign-in failure payload. Non-null only when <see cref="Status"/> is <see cref="OAuthFlowStatus.SignInFailed"/>.
+        /// </summary>
+        public ErrorResponse ErrorResponse { get; }
 
         /// <summary>Singleton result for a still-pending flow.</summary>
         public static OAuthFlowResult Pending => _pending;
@@ -68,5 +80,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <summary>Creates a completed result carrying the obtained token.</summary>
         public static OAuthFlowResult Complete(TokenResponse tokenResponse)
             => new(OAuthFlowStatus.Complete, tokenResponse);
+
+        /// <summary>Creates a failed result carrying the sign-in failure payload.</summary>
+        public static OAuthFlowResult SignInFailed(ErrorResponse errorResponse)
+            => new(OAuthFlowStatus.SignInFailed, errorResponse: errorResponse);
     }
 }

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -213,7 +214,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 case OAuthFlowStatus.UserCancelled:
                     throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
 
+                case OAuthFlowStatus.SignInFailed:
+                    throw CreateSignInFailureException(flowResult.ErrorResponse);
+
                 case OAuthFlowStatus.Complete:
+                    if (flowResult.TokenResponse == null)
+                    {
+                        throw new InvalidOperationException("OAuth flow completed without a token response.");
+                    }
+
                     state.FlowStarted = false;
                     return flowResult.TokenResponse;
 
@@ -257,6 +266,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
             var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
             return $"oauth/{Name}/{channelId}/{conversationId}/flowState";
+        }
+
+        private static ErrorResponseException CreateSignInFailureException(ErrorResponse errorResponse)
+        {
+            var error = errorResponse?.Error;
+            return new ErrorResponseException($"SignInFailure: ({error?.Code}) {error?.Message}") { Body = errorResponse };
         }
     }
 

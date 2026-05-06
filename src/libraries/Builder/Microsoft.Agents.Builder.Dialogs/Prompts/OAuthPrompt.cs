@@ -10,6 +10,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
@@ -193,6 +194,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 throw new UserCancelledException();
             }
 
+            if (flowResult.Status == OAuthFlowStatus.SignInFailed)
+            {
+                // Preserve pre-existing behavior: surface failure by propagating an exception with the error response details.
+                throw CreateSignInFailureException(flowResult.ErrorResponse);
+            }
+
             var tokenResponse = flowResult.Status == OAuthFlowStatus.Complete ? flowResult.TokenResponse : null;
 
             if (IsTokenResponseEvent(dc.Context))
@@ -291,6 +298,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         {
             var activity = turnContext.Activity;
             return activity.Type == ActivityTypes.Event && activity.Name == SignInConstants.TokenResponseEventName;
+        }
+
+        private static ErrorResponseException CreateSignInFailureException(ErrorResponse errorResponse)
+        {
+            var error = errorResponse?.Error;
+            return new ErrorResponseException($"SignInFailure: ({error?.Code}) {error?.Message}") { Body = errorResponse };
         }
 
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)

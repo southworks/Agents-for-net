@@ -96,6 +96,15 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             FailureDetail = "The Agent received a 'signin/tokenExchange' but had timed out.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
+                else if (turnContext.Activity.Type == ActivityTypes.Invoke)
+                {
+                    // Non-tokenExchange invokes also require an explicit InvokeResponse.
+                    await SendInvokeResponseAsync(
+                        turnContext,
+                        HttpStatusCode.OK,
+                        null,
+                        cancellationToken).ConfigureAwait(false);
+                }
 
                 return OAuthFlowResult.TimedOut;
             }
@@ -253,7 +262,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
                 var errorResponse = new ErrorResponse() { Error = ProtocolJsonSerializer.ToObject<Error>(turnContext.Activity.Value) };
-                throw new ErrorResponseException($"SignInFailure: ({errorResponse.Error.Code}) {errorResponse.Error.Message}") { Body = errorResponse };
+                return OAuthFlowResult.SignInFailed(errorResponse);
             }
             else if (IsVerificationInvoke(turnContext))
             {
