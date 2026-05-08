@@ -50,6 +50,16 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         public string FederatedTokenFile { get; set; }
 
         /// <summary>
+        /// Enables use of a container Instance Metadata Service (IMDS) endpoint for Managed Identity authentication.
+        /// </summary>
+        /// <remarks>
+        /// Set this to <see langword="true"/> when the application is running in an environment, such as a Foundry container,
+        /// that exposes Managed Identity through a container-specific IMDS endpoint. This setting is only meaningful when
+        /// <see cref="AuthType"/> is <see cref="AuthTypes.UserManagedIdentity"/>.
+        /// </remarks>
+        public bool EnableContainerIMDS { get; set; }
+        
+        /// <summary>
         /// Azure regional token service. This feature is currently available to first-party applications only.
         /// </summary>
         public string AzureRegion { get; set; }
