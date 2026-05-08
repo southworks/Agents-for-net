@@ -193,4 +193,4 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 
 ### Terms
 - A2A is not the same as Agent-to-Agent.  A2A is the open spec: https://github.com/a2aproject/A2A, and Agent-to-Agent is communicating with another SDK agent using Activity Protocol: https://github.com/microsoft/Agents/blob/main/specs/activity/protocol-activity.md
-- A2A is also not related to `DeliveryMode.Stream`.  The later is a transport mechanism to stream responses using SSE. 
+- A2A is also not related to `DeliveryModes.Stream`.  The later is a transport mechanism to stream responses using SSE. 
