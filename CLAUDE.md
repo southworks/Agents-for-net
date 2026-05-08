@@ -149,7 +149,7 @@ public class MyAgent : AgentApplication
 ### Authentication (appsettings.json)
 See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
 
-See [Configure AspNet JWT authentication](https://github.com/microsoft/Agents/blob/main/samples/dotnet/quickstart/AspNetExtensions.cs)
+See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
 
 ## Testing Strategy
 
