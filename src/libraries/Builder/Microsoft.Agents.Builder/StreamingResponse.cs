@@ -115,6 +115,12 @@ namespace Microsoft.Agents.Builder
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
 
         /// <summary>
+        /// The initial delay in milliseconds before the first intermediate message is sent.
+        /// Defaults to 250. Set to a small value in tests.
+        /// </summary>
+        public int InitialDelay { get; set; } = 250;
+
+        /// <summary>
         /// Indicate if the current channel supports intermediate messages.
         /// </summary>
         /// <remarks>
@@ -291,9 +297,9 @@ namespace Microsoft.Agents.Builder
 
                 _messageUpdated = true;
 
-                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+                // Start stream if needed.  The InitialDelay allows for a quicker stream (better UX) if Informative hadn't been sent
                 // and we're just now starting the stream.  It uses Interval after the first stream message.
-                StartStream(250);
+                StartStream(InitialDelay);
             }
         }
 
