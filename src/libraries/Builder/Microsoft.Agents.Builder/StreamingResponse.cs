@@ -110,7 +110,19 @@ namespace Microsoft.Agents.Builder
         /// Teams default: 1000
         /// WebChat default: 500
         /// </remarks>
-        public int Interval { get; set; }
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative value.</exception>
+        public int Interval
+        {
+            get => _interval;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Interval must be greater than or equal to 0.");
+                _interval = value;
+            }
+        }
+
+        private int _interval;
 
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
 
@@ -118,7 +130,19 @@ namespace Microsoft.Agents.Builder
         /// The initial delay in milliseconds before the first intermediate message is sent.
         /// Defaults to 250. Set to a small value in tests.
         /// </summary>
-        public int InitialDelay { get; set; } = 250;
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative value.</exception>
+        public int InitialDelay
+        {
+            get => _initialDelay;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "InitialDelay must be greater than or equal to 0.");
+                _initialDelay = value;
+            }
+        }
+
+        private int _initialDelay = 250;
 
         /// <summary>
         /// Indicate if the current channel supports intermediate messages.

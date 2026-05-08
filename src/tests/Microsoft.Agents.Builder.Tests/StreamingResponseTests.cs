@@ -40,9 +40,9 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             context.StreamingResponse.QueueTextChunk("this");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 1);
             context.StreamingResponse.QueueTextChunk(" is a ");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 2);
             context.StreamingResponse.QueueTextChunk("test");
 
             var result = await context.StreamingResponse.EndStreamAsync();
@@ -120,9 +120,9 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             context.StreamingResponse.QueueTextChunk("this");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 1);
             context.StreamingResponse.QueueTextChunk(" is a ");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 2);
             context.StreamingResponse.QueueTextChunk("test");
 
             var result = await context.StreamingResponse.EndStreamAsync();
@@ -165,10 +165,12 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             context.StreamingResponse.QueueTextChunk("this");
-            await Task.Delay(50);
             context.StreamingResponse.QueueTextChunk(" is a ");
-            await Task.Delay(50);
             context.StreamingResponse.QueueTextChunk("test");
+            // Wait for the BadArgument fallback to set IsStreamingChannel=false.
+            // EndStreamAsync must enter via the non-streaming path to avoid a null-deref
+            // when it sends the final message (which has no StreamInfo entity).
+            await WaitForAsync(() => !context.StreamingResponse.IsStreamingChannel);
 
             var result = await context.StreamingResponse.EndStreamAsync();
 
@@ -231,14 +233,14 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
-            await Task.Delay(50);
+            // "Thinking..." is sent synchronously above; no wait needed.
             context.StreamingResponse.QueueTextChunk("this");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 2); // wait for "this" chunk to be flushed
             context.StreamingResponse.QueueTextChunk(" is a ");
             await context.StreamingResponse.QueueInformativeUpdateAsync("Still thinking...");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 3); // wait for "Still thinking..." informative
             context.StreamingResponse.QueueTextChunk("longer ");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 4); // wait for chunk containing "longer"
             context.StreamingResponse.QueueTextChunk("test");
 
             await context.StreamingResponse.EndStreamAsync();
@@ -629,7 +631,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             await context.StreamingResponse.QueueInformativeUpdateAsync("thinking");
             context.StreamingResponse.QueueTextChunk("chunk 1");
-            await Task.Delay(50);
+            await WaitForResponses(responses, 2); // wait for "chunk 1" to be flushed
             context.StreamingResponse.QueueTextChunk(" chunk 2");
 
             await context.StreamingResponse.EndStreamAsync();
@@ -673,13 +675,14 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             context.StreamingResponse.QueueTextChunk("trigger cancel");
-            await Task.Delay(50); // let timer fire and set _canceled
 
-            // Should not throw after cancellation
-            context.StreamingResponse.QueueTextChunk("after cancel");
-
+            // EndStreamAsync blocks on _queueEmpty.Set(), which is called after _canceled is set.
+            // This is the deterministic synchronization point — no fixed delay needed.
             var result = await context.StreamingResponse.EndStreamAsync();
             Assert.Equal(StreamingResponseResult.UserCancelled, result);
+
+            // _canceled=true is now guaranteed. QueueTextChunk must return silently (not throw).
+            context.StreamingResponse.QueueTextChunk("after cancel");
         }
 
         [Fact]
@@ -915,6 +918,20 @@ namespace Microsoft.Agents.Builder.Tests
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        /// <summary>
+        /// Polls until <paramref name="condition"/> returns true or the timeout elapses.
+        /// Avoids fixed <see cref="Task.Delay"/> calls that are unreliable under CI load.
+        /// </summary>
+        private static async Task WaitForAsync(Func<bool> condition, int timeoutMs = 5000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            while (!condition() && DateTime.UtcNow < deadline)
+                await Task.Delay(5);
+        }
+
+        private static Task WaitForResponses(List<IActivity> responses, int minCount, int timeoutMs = 5000)
+            => WaitForAsync(() => responses.Count >= minCount, timeoutMs);
 
         private static Mock<IChannelAdapter> CreateMockAdapter(List<IActivity> responses)
         {
