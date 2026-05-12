@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.App
             Message = "AgentApplication route evaluation order ({RouteCount} routes): {RouteList}")]
         private static partial void LogRouteList(ILogger logger, int routeCount, string routeList);
 
-        [LoggerMessage(EventId = 2, Level = LogLevel.Information,
+        [LoggerMessage(EventId = 2, Level = LogLevel.Debug,
             Message = "No route matched for ActivityType={ActivityType}")]
         private static partial void LogNoRouteMatched(ILogger logger, string activityType);
 #else
@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.App
 
         private static void LogNoRouteMatched(ILogger logger, string activityType)
         {
-            logger.LogInformation("No route matched for ActivityType={ActivityType}", activityType);
+            logger.LogDebug("No route matched for ActivityType={ActivityType}", activityType);
         }
 #endif
     }
