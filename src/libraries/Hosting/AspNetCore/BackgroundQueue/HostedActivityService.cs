@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -122,7 +123,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 
         private async Task ProcessAsync(ActivityWithClaims activityWithClaims, CancellationToken stoppingToken)
         {
-            using var loggerScope = _logger.BeginScope("HostedActivityService.ProcessAsync: Agent={AgentType}, RequestId={RequestId}", activityWithClaims.AgentType.GetType().Name, activityWithClaims.Activity.RequestId);
+            using var loggerScope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentType"] = activityWithClaims.AgentType?.Name,
+                ["RequestId"] = activityWithClaims.Activity.RequestId,
+                ["ConversationId"] = activityWithClaims.Activity.Conversation?.Id
+            });
 
             try
             {

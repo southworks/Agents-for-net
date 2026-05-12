@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -148,7 +149,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
-                using var loggerScope = Logger.BeginScope("CloudAdapter.ProcessAsync: Agent={AgentType}, RequestId={RequestId}", agent.GetType().Name, httpRequest.HttpContext.TraceIdentifier);
+                using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["AgentType"] = agent.GetType().Name,
+                    ["RequestId"] = activity.RequestId,
+                    ["ConversationId"] = activity.Conversation?.Id
+                });
 
                 try
                 {
@@ -163,7 +169,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn Begin
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Begin (blocking): RequestId={RequestId}", activity.RequestId);
+                            CloudAdapterLog.LogTurnBegin(Logger, activity.RequestId);
                         }
 
                         _responseQueue.StartHandlerForRequest(activity.RequestId);
@@ -178,7 +184,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                             }
                             catch (Exception ex)
                             {
-                                Logger.LogError(ex, "Exception processing activity for RequestId={RequestId}", activity.RequestId);
+                                CloudAdapterLog.LogProcessingException(Logger, ex, activity.RequestId);
                             }
                             finally
                             {
@@ -192,7 +198,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         {
                             if (Logger.IsEnabled(LogLevel.Debug))
                             {
-                                Logger.LogDebug("Turn Response (blocking): RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(response));
+                                CloudAdapterLog.LogTurnResponse(Logger, activity.RequestId, ProtocolJsonSerializer.ToJson(response));
                             }
 
                             await writer.OnResponse(httpResponse, response, cancellationToken).ConfigureAwait(false);
@@ -201,7 +207,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         // Turn done
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn End (blocking): RequestId={RequestId}, InvokeResponse='{InvokeResponse}'", activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
+                            CloudAdapterLog.LogTurnEnd(Logger, activity.RequestId, invokeResponse == null ? null : ProtocolJsonSerializer.ToJson(invokeResponse));
                         }
 
                         await writer.ResponseEnd(httpResponse, invokeResponse, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -210,7 +216,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     {
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Activity Accepted: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                            CloudAdapterLog.LogActivityAccepted(Logger, activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
                         }
 
                         // Queue the activity to be processed by the ActivityBackgroundService.  There is no response body in
@@ -224,13 +230,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     // Request was cancelled (e.g. client disconnected). This is expected and not an error.
-                    Logger.LogWarning("CloudAdapter.ProcessAsync cancelled for RequestId={RequestId}", activity.RequestId);
+                    CloudAdapterLog.LogRequestCancelled(Logger, activity.RequestId);
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                 }
                 catch (Exception ex)
                 {
                     // OnTurnError should be catching these.  
-                    Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
+                    CloudAdapterLog.LogUnexpectedException(Logger, ex);
                     httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
                     telemetryScope.SetError(ex);
