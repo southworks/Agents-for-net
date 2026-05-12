@@ -95,9 +95,11 @@ namespace Microsoft.Agents.Builder.App
                             entry["OAuthHandlers"] = oauthHandlers;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // OAuthHandlers delegate may fail; skip for logging.
+                        entry["OAuthHandlersError"] = string.IsNullOrEmpty(ex.Message)
+                            ? ex.GetType().Name
+                            : $"{ex.GetType().Name}: {ex.Message}";
                     }
                 }
 
