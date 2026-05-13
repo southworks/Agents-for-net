@@ -353,7 +353,7 @@ namespace Microsoft.Agents.Core.Models
 
 
         /// <inheritdoc/>
-        public ConversationReference GetConversationReference()
+        public ConversationReference GetConversationReference(bool? forceBaseChannel = null)
         {
             var reference = new ConversationReference
             {
@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Core.Models
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId?.ToString(),
+                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel.ToString() : ChannelId.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 DeliveryMode = DeliveryMode,
