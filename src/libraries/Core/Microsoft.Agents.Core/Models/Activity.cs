@@ -351,6 +351,11 @@ namespace Microsoft.Agents.Core.Models
             return activity;
         }
 
+        /// <inheritdoc/>
+        public ConversationReference GetConversationReference()
+        {
+          return GetConversationReference(forceBaseChannel: null);
+        }
 
         /// <inheritdoc/>
         public ConversationReference GetConversationReference(bool? forceBaseChannel = null)
