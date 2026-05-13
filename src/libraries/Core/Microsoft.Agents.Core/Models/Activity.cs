@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Core.Models
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel.ToString() : ChannelId.ToString(),
+                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel : ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 DeliveryMode = DeliveryMode,
