@@ -76,11 +76,11 @@ public class SlackApi
         try
         {
             data = JsonSerializer.Deserialize<SlackResponse>(text)
-                ?? throw new Exception("Null response from Slack");
+                ?? throw new SlackResponseException($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
         }
-        catch
+        catch (JsonException)
         {
-            throw new Exception($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
+            throw new SlackResponseException($"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
         }
 
         if (!response.IsSuccessStatusCode || !data.ok)
