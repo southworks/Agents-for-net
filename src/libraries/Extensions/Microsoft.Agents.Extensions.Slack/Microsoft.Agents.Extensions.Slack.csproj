@@ -19,6 +19,8 @@
 	
 	<PropertyGroup>
 		<Nullable>annotations</Nullable>
+		<!-- Suppress AD0001: RouteHandlerAnalyzer throws NullReferenceException on this project -->
+		<NoWarn>$(NoWarn);AD0001</NoWarn>
 	</PropertyGroup>
 	
 	<ItemGroup>
