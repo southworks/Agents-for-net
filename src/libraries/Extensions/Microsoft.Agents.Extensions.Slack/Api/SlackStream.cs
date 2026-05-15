@@ -84,6 +84,11 @@ public class SlackStream
     {
         AssertionHelpers.ThrowIfNull(chunks, nameof(chunks));
 
+        if (_messageTs == null)
+        {
+            throw new InvalidOperationException("Cannot append to a Slack stream that has not been started. Call StartAsync() before appending.");
+        }
+
         if (chunks.Count == 0)
         {
             return this;
