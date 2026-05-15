@@ -53,7 +53,6 @@ public class SlackApi
     public async Task<SlackResponse> CallAsync(string method, object? options = null, string token = "", CancellationToken cancellationToken = default)
     {
         AssertionHelpers.ThrowIfNullOrWhiteSpace(method, nameof(method));
-        AssertionHelpers.ThrowIfNull(options, nameof(options));
 
         var json = options is string str ? str : JsonSerializer.Serialize(options ?? new { }, JsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
