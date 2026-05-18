@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
@@ -82,6 +81,68 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         }
 
         [Fact]
+        public void ScopeCreateConversation_Callback_DoesNotThrow_WhenOptionsIsNull()
+        {
+            var scope = new ScopeCreateConversation(null);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal(0, stopped.GetTagItem(TagNames.MembersCount));
+        }
+
+        [Fact]
+        public void ScopeCreateConversation_Callback_DoesNotThrow_WhenParametersIsNull()
+        {
+            var scope = new ScopeCreateConversation(new CreateConversationOptions
+            {
+                ChannelId = "webchat",
+                Parameters = null
+            });
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("webchat", stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal(0, stopped.GetTagItem(TagNames.MembersCount));
+        }
+
+        [Fact]
+        public void ScopeCreateConversation_Callback_DoesNotThrow_WhenMembersIsNull()
+        {
+            var scope = new ScopeCreateConversation(new CreateConversationOptions
+            {
+                ChannelId = "webchat",
+                Parameters = new ConversationParameters
+                {
+                    Members = null
+                }
+            });
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("webchat", stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal(0, stopped.GetTagItem(TagNames.MembersCount));
+        }
+
+        [Fact]
+        public void ScopeCreateConversation_Callback_SetsNullChannelId_WhenChannelIdIsNull()
+        {
+            var scope = new ScopeCreateConversation(new CreateConversationOptions
+            {
+                ChannelId = null,
+                Parameters = new ConversationParameters
+                {
+                    Members = new List<ChannelAccount>()
+                }
+            });
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal(0, stopped.GetTagItem(TagNames.MembersCount));
+        }
+
+        [Fact]
         public void ScopeCreateConversation_SetError_SetsErrorStatus()
         {
             var scope = new ScopeCreateConversation(CreateOptions());
@@ -91,6 +152,50 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             var stopped = Assert.Single(StoppedActivities);
             Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
             Assert.Equal("create conversation error", stopped.StatusDescription);
+        }
+
+        #endregion
+
+        #region ScopeStoreConversation
+
+        [Fact]
+        public void ScopeStoreConversation_CreatesActivity_WithCorrectName()
+        {
+            using var scope = new ScopeStoreConversation("conv-store");
+
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.proactive.store_conversation", started.OperationName);
+        }
+
+        [Fact]
+        public void ScopeStoreConversation_Callback_SetsConversationIdTag()
+        {
+            var scope = new ScopeStoreConversation("conv-store");
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("conv-store", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeStoreConversation_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
+        {
+            var scope = new ScopeStoreConversation(null);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeStoreConversation_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeStoreConversation("conv-store");
+            scope.SetError(new InvalidOperationException("store conversation error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
         }
 
         #endregion
@@ -142,10 +247,66 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         }
 
         [Fact]
+        public void ScopeGetConversation_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
+        {
+            var scope = new ScopeGetConversation(null);
+            scope.Share(true);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Equal(true, stopped.GetTagItem(TagNames.ConversationFound));
+        }
+
+        [Fact]
         public void ScopeGetConversation_SetError_SetsErrorStatus()
         {
             var scope = new ScopeGetConversation("conv-123");
             scope.SetError(new InvalidOperationException("get conversation error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+        }
+
+        #endregion
+
+        #region ScopeDeleteConversation
+
+        [Fact]
+        public void ScopeDeleteConversation_CreatesActivity_WithCorrectName()
+        {
+            using var scope = new ScopeDeleteConversation("conv-delete");
+
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.proactive.delete_conversation", started.OperationName);
+        }
+
+        [Fact]
+        public void ScopeDeleteConversation_Callback_SetsConversationIdTag()
+        {
+            var scope = new ScopeDeleteConversation("conv-delete");
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("conv-delete", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeDeleteConversation_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
+        {
+            var scope = new ScopeDeleteConversation(null);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeDeleteConversation_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeDeleteConversation("conv-delete");
+            scope.SetError(new InvalidOperationException("delete conversation error"));
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -173,6 +334,30 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
             var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("conv-send", stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
+        }
+
+        [Fact]
+        public void ScopeSendActivity_Callback_SetsNullActivityTags_WhenActivityPropertiesAreNull()
+        {
+            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(type: null, channelId: null));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("conv-send", stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityChannelId));
+        }
+
+        [Fact]
+        public void ScopeSendActivity_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
+        {
+            var scope = new ScopeSendActivity(null, CreateTestActivity(type: "event", channelId: "msteams"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
             Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
             Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
         }
@@ -209,6 +394,30 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
             var stopped = Assert.Single(StoppedActivities);
             Assert.Equal("conv-continue", stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("directline", stopped.GetTagItem(TagNames.ActivityChannelId));
+        }
+
+        [Fact]
+        public void ScopeContinueConversation_Callback_SetsNullActivityTags_WhenActivityPropertiesAreNull()
+        {
+            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(type: null, channelId: null));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("conv-continue", stopped.GetTagItem(TagNames.ConversationId));
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityChannelId));
+        }
+
+        [Fact]
+        public void ScopeContinueConversation_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
+        {
+            var scope = new ScopeContinueConversation(null, CreateTestActivity(type: "event", channelId: "directline"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ConversationId));
             Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
             Assert.Equal("directline", stopped.GetTagItem(TagNames.ActivityChannelId));
         }

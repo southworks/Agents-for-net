@@ -33,8 +33,8 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         /// <inheritdoc />
         protected override void Callback(System.Diagnostics.Activity activity, double duration, Exception? exception)
         {
-            activity.SetTag(TagNames.ActivityChannelId, _options.ChannelId);
-            activity.SetTag(TagNames.MembersCount, _options.Parameters.Members.Count);
+            activity.SetTag(TagNames.ActivityChannelId, _options?.ChannelId);
+            activity.SetTag(TagNames.MembersCount, _options?.Parameters?.Members?.Count ?? 0);
         }
     }
 }

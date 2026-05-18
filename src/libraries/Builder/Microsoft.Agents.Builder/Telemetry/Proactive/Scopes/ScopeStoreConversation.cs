@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Telemetry;
@@ -13,8 +12,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
     /// later proactive use.
     /// </summary>
     /// <remarks>
-    /// This scope currently relies on the base <see cref="TelemetryScope"/> behavior and
-    /// does not add additional tags.
+    /// Records the conversation identifier being stored as a span tag.
     /// </remarks>
     internal class ScopeStoreConversation : TelemetryScope
     {
@@ -31,9 +29,9 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         }
 
         /// <inheritdoc />
-        protected override void Callback(Activity activity, double duration, Exception? exception)
+        protected override void Callback(System.Diagnostics.Activity activity, double duration, Exception? exception)
         {
-            base.Callback(activity, duration, exception);
+            activity.SetTag(TagNames.ConversationId, _conversationId);
         }
     }
 }

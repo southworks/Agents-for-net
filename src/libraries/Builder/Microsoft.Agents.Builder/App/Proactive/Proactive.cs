@@ -376,9 +376,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A task that represents the asynchronous operation. The task result contains the conversation if found.</returns>
         public async Task<Conversation?> GetConversationWithThrowAsync(string conversationId, CancellationToken cancellationToken = default)
         {
-            using var telemetryScope = new ScopeGetConversation(conversationId);
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false);
-            telemetryScope.Share(conversation != null);
             return conversation ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
         }
 

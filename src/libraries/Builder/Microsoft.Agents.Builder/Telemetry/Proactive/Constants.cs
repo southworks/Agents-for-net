@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 namespace Microsoft.Agents.Builder.Telemetry.Proactive
@@ -16,7 +15,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive
         internal static readonly string ScopeGetConversation = "agents.proactive.get_conversation";
 
         /// <summary>Span name for deleting a stored conversation reference.</summary>
-        internal static readonly string ScopeDeleteConversation = "agents.proactive.delete_activity";
+        internal static readonly string ScopeDeleteConversation = "agents.proactive.delete_conversation";
 
         /// <summary>Span name for sending an activity proactively to an existing conversation.</summary>
         internal static readonly string ScopeSendActivity = "agents.proactive.send_activity";

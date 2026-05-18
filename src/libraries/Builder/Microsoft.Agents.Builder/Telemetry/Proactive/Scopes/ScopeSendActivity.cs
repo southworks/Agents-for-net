@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
@@ -38,7 +37,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         {
             activity.SetTag(TagNames.ConversationId, _conversationId);
             activity.SetTag(TagNames.ActivityType, _activity.Type);
-            activity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId.ToString());
+            activity.SetTag(TagNames.ActivityChannelId, _activity.ChannelId?.ToString());
         }
     }
 }

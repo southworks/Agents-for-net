@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <summary>The number of keys involved in a storage operation.</summary>
         public static readonly string KeyCount = "storage.keys.count";
 
-        // <summary>The number of members in a proactive conversation scenario.</summary>
+        /// <summary>The number of members in a proactive conversation scenario.</summary>
         public static readonly string MembersCount = "proactive.members.count";
 
         /// <summary>A general-purpose operation name tag.</summary>
