@@ -394,7 +394,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
             using var telemetryScope = new ScopeDeleteConversation(conversationId);
             var key = GetRecordKey(conversationId);
-            return _options.Storage.DeleteAsync([key], cancellationToken);
+            return telemetryScope.WrapAsync(async () =>
+            {
+                await _options.Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
+            });
         }
 
         private async Task OnTurnAsync(ITurnContext turnContext, RouteHandler handler, string[] tokenHandlers = null, CancellationToken cancellationToken = default)
