@@ -165,6 +165,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.SampleTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.SharePoint.Tests", "tests\Microsoft.Agents.Extensions.SharePoint.Tests\Microsoft.Agents.Extensions.SharePoint.Tests.csproj", "{87206D21-3D8D-C0E4-AA51-1149FF7A0C36}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hosting", "Hosting", "{916B61B3-312D-841D-1457-818AC0DB32BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Hosting.NamedPipes", "libraries\Hosting\NamedPipes\Microsoft.Agents.Hosting.NamedPipes.csproj", "{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -955,6 +959,18 @@ Global
 		{87206D21-3D8D-C0E4-AA51-1149FF7A0C36}.Release|x64.Build.0 = Release|Any CPU
 		{87206D21-3D8D-C0E4-AA51-1149FF7A0C36}.Release|x86.ActiveCfg = Release|Any CPU
 		{87206D21-3D8D-C0E4-AA51-1149FF7A0C36}.Release|x86.Build.0 = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|x64.Build.0 = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Debug|x86.Build.0 = Debug|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|x64.ActiveCfg = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|x64.Build.0 = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|x86.ActiveCfg = Release|Any CPU
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1038,6 +1054,7 @@ Global
 		{2CF03902-AA00-0532-F757-7A1A425014A1} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{291CB461-DD70-DBB3-6125-FB0D86BE5512} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{87206D21-3D8D-C0E4-AA51-1149FF7A0C36} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
+		{AEA1DE93-D1E0-4A7E-93A8-18F374C5B2A9} = {916B61B3-312D-841D-1457-818AC0DB32BA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F1E8E538-309A-46F8-9CE7-AEC6589FAE60}
