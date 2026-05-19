@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 {
     /// <summary>
     /// Represents a response to send back over the named pipe transport.
     /// </summary>
-    public sealed class NamedPipeResponse
+    internal sealed class NamedPipeResponse
     {
         /// <summary>
         /// Gets or sets the HTTP status code.

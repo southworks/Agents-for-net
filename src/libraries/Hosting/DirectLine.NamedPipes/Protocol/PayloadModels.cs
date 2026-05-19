@@ -1,15 +1,15 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 {
     /// <summary>
     /// Describes a data stream attached to a request or response payload.
     /// </summary>
-    public sealed class PayloadDescription
+    internal sealed class PayloadDescription
     {
         /// <summary>
         /// Gets or sets the stream identifier.
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
     /// <summary>
     /// JSON payload for a Request frame (Type='A').
     /// </summary>
-    public sealed class RequestPayload
+    internal sealed class RequestPayload
     {
         /// <summary>
         /// Gets or sets the HTTP verb (e.g., POST, GET).
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
     /// <summary>
     /// JSON payload for a Response frame (Type='B').
     /// </summary>
-    public sealed class ResponsePayload
+    internal sealed class ResponsePayload
     {
         /// <summary>
         /// Gets or sets the HTTP status code.

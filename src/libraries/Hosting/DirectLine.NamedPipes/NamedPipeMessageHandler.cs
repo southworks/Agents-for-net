@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -7,10 +7,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Hosting.NamedPipes.Protocol;
+using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.NamedPipes
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
     /// <summary>
     /// Custom <see cref="HttpMessageHandler"/> that intercepts outgoing HTTP requests destined for
@@ -21,10 +21,10 @@ namespace Microsoft.Agents.Hosting.NamedPipes
     /// This enables the Agents SDK's ConversationsRestClient to send reply activities
     /// back to DirectLineFlex through the named pipe, without any HTTP roundtrip.
     /// </remarks>
-    public sealed class NamedPipeMessageHandler : HttpMessageHandler
+    internal sealed class NamedPipeMessageHandler : HttpMessageHandler
     {
         private readonly ILogger _logger;
-        private NamedPipeProtocol _protocol;
+        private volatile NamedPipeProtocol _protocol;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NamedPipeMessageHandler"/> class.
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes
         /// <param name="logger">The logger instance.</param>
         public NamedPipeMessageHandler(ILogger<NamedPipeMessageHandler> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -70,7 +70,9 @@ namespace Microsoft.Agents.Hosting.NamedPipes
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
 
-            if (_protocol == null)
+            // Capture volatile field once to avoid race condition
+            var protocol = _protocol;
+            if (protocol == null)
             {
                 _logger.LogError("NamedPipeMessageHandler: No active pipe connection for outbound request to {Path}.", uri.AbsolutePath);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -93,7 +95,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes
 
             try
             {
-                var response = await _protocol.SendRequestAsync(verb, path, body, cancellationToken).ConfigureAwait(false);
+                var response = await protocol.SendRequestAsync(verb, path, body, cancellationToken).ConfigureAwait(false);
 
                 _logger.LogDebug("NamedPipeMessageHandler: Pipe response {StatusCode} for {Path}.",
                     response.StatusCode, path);

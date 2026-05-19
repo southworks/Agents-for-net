@@ -1,22 +1,22 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Hosting.NamedPipes.Protocol;
-using Microsoft.Agents.Hosting.NamedPipes.Transport;
+using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
+using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.NamedPipes
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
     /// <summary>
     /// Background service that manages the named pipe server lifecycle.
     /// Accepts client connections, wires up the protocol, and handles reconnection.
     /// </summary>
-    public sealed class NamedPipeHostedService : BackgroundService
+    internal sealed class NamedPipeHostedService : BackgroundService
     {
         private readonly NamedPipeActivityHandler _activityHandler;
         private readonly NamedPipeMessageHandler _messageHandler;
@@ -36,10 +36,10 @@ namespace Microsoft.Agents.Hosting.NamedPipes
             ILogger<NamedPipeHostedService> logger,
             IConfiguration configuration)
         {
-            _activityHandler = activityHandler;
-            _messageHandler = messageHandler;
-            _logger = logger;
-            _pipeName = configuration.GetValue("NamedPipe:PipeName", "bfv4.pipes");
+            _activityHandler = activityHandler ?? throw new ArgumentNullException(nameof(activityHandler));
+            _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _pipeName = configuration?.GetValue("NamedPipe:PipeName", "bfv4.pipes") ?? "bfv4.pipes";
         }
 
         /// <inheritdoc/>

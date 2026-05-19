@@ -1,13 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Transport
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 {
     /// <summary>
     /// 48-byte wire frame header for the Bot Framework named pipe protocol.
     /// Format: {Type}.{Length:6}.{Id:36}.{End}\n
     /// </summary>
-    public readonly struct Header
+    internal readonly struct Header
     {
         /// <summary>
         /// Gets the payload type code.
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Transport
     /// <summary>
     /// Payload type codes used in the named pipe protocol header.
     /// </summary>
-    public static class PayloadTypes
+    internal static class PayloadTypes
     {
         /// <summary>Request payload type.</summary>
         public const char Request = 'A';

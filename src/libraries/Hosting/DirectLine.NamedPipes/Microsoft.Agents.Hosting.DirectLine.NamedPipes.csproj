@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
-		<ComponentAreaName>CplHostingNamedPipes</ComponentAreaName>
+		<ComponentAreaName>CplHostingDirectLineNamedPipes</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<TargetFrameworks>net8.0</TargetFrameworks>
@@ -11,7 +11,7 @@
 	<Import Project="..\..\..\Build.Common.core.props" />
 
 	<PropertyGroup>
-		<PackageId>Microsoft.Agents.Hosting.NamedPipes</PackageId>
+		<PackageId>Microsoft.Agents.Hosting.DirectLine.NamedPipes</PackageId>
 		<Description>Named pipe transport for Microsoft Agents SDK enabling communication with DirectLineFlex</Description>
 		<Summary>Named pipe transport for Microsoft Agents SDK</Summary>
 	</PropertyGroup>

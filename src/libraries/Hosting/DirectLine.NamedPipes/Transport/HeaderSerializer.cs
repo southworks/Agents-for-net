@@ -1,16 +1,16 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
 using System.Text;
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Transport
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 {
     /// <summary>
     /// Serializes and deserializes the 48-byte ASCII header used by the
     /// Bot Framework named pipe protocol.
     /// </summary>
-    public static class HeaderSerializer
+    internal static class HeaderSerializer
     {
         /// <summary>
         /// The fixed size (in bytes) of a wire frame header.

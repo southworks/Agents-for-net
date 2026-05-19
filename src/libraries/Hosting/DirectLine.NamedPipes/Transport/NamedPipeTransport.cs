@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -6,12 +6,12 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Transport
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 {
     /// <summary>
     /// Thin async wrapper over a <see cref="PipeStream"/> for reading and writing byte buffers.
     /// </summary>
-    public sealed class NamedPipeTransport : IAsyncDisposable
+    internal sealed class NamedPipeTransport : IAsyncDisposable
     {
         private readonly PipeStream _stream;
 

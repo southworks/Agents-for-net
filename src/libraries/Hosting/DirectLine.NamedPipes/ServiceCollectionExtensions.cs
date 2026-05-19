@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http;
 
-namespace Microsoft.Agents.Hosting.NamedPipes
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
     /// <summary>
     /// Extension methods for registering the named pipe transport
@@ -31,6 +31,8 @@ namespace Microsoft.Agents.Hosting.NamedPipes
             this IHostApplicationBuilder builder,
             string pipeName = "bfv4.pipes")
         {
+            ArgumentNullException.ThrowIfNull(builder);
+
             builder.Configuration[$"NamedPipe:PipeName"] = pipeName;
 
             builder.Services.AddHttpClient();

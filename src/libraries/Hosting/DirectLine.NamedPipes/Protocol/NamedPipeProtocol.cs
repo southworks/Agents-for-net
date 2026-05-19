@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -7,17 +7,29 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Hosting.NamedPipes.Transport;
+using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 {
     /// <summary>
     /// The named pipe protocol engine. Reads/writes framed messages over the transport,
     /// correlates request/response pairs, and dispatches to a handler.
     /// </summary>
-    public sealed class NamedPipeProtocol : IAsyncDisposable
+    internal sealed class NamedPipeProtocol : IAsyncDisposable
     {
+        /// <summary>
+        /// Maximum allowed payload size per frame (4 MB). Prevents memory exhaustion
+        /// from malformed or malicious headers.
+        /// </summary>
+        private const int MaxPayloadSize = 4 * 1024 * 1024;
+
+        /// <summary>
+        /// Maximum number of concurrent stream buffers. Limits memory usage from
+        /// unmatched stream frames.
+        /// </summary>
+        private const int MaxStreamBuffers = 100;
+
         private readonly NamedPipeTransport _reader;
         private readonly NamedPipeTransport _writer;
         private readonly ILogger _logger;
@@ -117,7 +129,8 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
 
             try
             {
-                while (!cancellationToken.IsCancellationRequested && _reader.IsConnected)
+                var connected = true;
+                while (!cancellationToken.IsCancellationRequested && _reader.IsConnected && connected)
                 {
                     if (!await _reader.ReadExactAsync(headerBuffer, HeaderSerializer.HeaderSize, cancellationToken).ConfigureAwait(false))
                     {
@@ -132,6 +145,13 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                     byte[] payload = null;
                     if (header.PayloadLength > 0)
                     {
+                        if (header.PayloadLength > MaxPayloadSize)
+                        {
+                            _logger.LogError("NamedPipeProtocol: Payload size {Size} exceeds maximum {Max}. Disconnecting.",
+                                header.PayloadLength, MaxPayloadSize);
+                            break;
+                        }
+
                         payload = new byte[header.PayloadLength];
                         if (!await _reader.ReadExactAsync(payload, header.PayloadLength, cancellationToken).ConfigureAwait(false))
                         {
@@ -143,7 +163,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                     switch (header.Type)
                     {
                         case PayloadTypes.Request:
-                            HandleRequestFrame(header, payload, streamBuffers, pendingDispatches);
+                            HandleRequestFrame(header, payload, streamBuffers, pendingDispatches, cancellationToken);
                             break;
 
                         case PayloadTypes.Response:
@@ -151,7 +171,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                             break;
 
                         case PayloadTypes.Stream:
-                            HandleStreamFrame(header, payload, streamBuffers);
+                            connected = HandleStreamFrame(header, payload, streamBuffers, _logger);
                             break;
 
                         case PayloadTypes.CancelAll:
@@ -163,7 +183,10 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                             break;
                     }
 
-                    await TryDispatchPendingRequestsAsync(streamBuffers, pendingDispatches, cancellationToken).ConfigureAwait(false);
+                    if (connected)
+                    {
+                        await TryDispatchPendingRequestsAsync(streamBuffers, pendingDispatches, cancellationToken).ConfigureAwait(false);
+                    }
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -174,11 +197,23 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
             {
                 _logger.LogError(ex, "NamedPipeProtocol: Read loop error.");
             }
+            finally
+            {
+                // Dispose any orphaned stream buffers to prevent memory leaks
+                foreach (var ms in streamBuffers.Values)
+                {
+                    ms.Dispose();
+                }
+
+                streamBuffers.Clear();
+                pendingDispatches.Clear();
+            }
         }
 
         private void HandleRequestFrame(Header header, byte[] payload,
             Dictionary<Guid, MemoryStream> streamBuffers,
-            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches)
+            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
+            CancellationToken cancellationToken)
         {
             if (payload == null)
             {
@@ -201,10 +236,10 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                 }
             }
 
-            _ = DispatchRequestAsync(header, requestPayload, streamBuffers, CancellationToken.None);
+            _ = DispatchRequestSafeAsync(header, requestPayload, streamBuffers, cancellationToken);
         }
 
-        private async Task TryDispatchPendingRequestsAsync(
+        private Task TryDispatchPendingRequestsAsync(
             Dictionary<Guid, MemoryStream> streamBuffers,
             Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
             CancellationToken cancellationToken)
@@ -218,7 +253,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                     if (streamBuffers.ContainsKey(streamId))
                     {
                         dispatched.Add(requestId);
-                        _ = DispatchRequestAsync(pending.header, pending.payload, streamBuffers, cancellationToken);
+                        _ = DispatchRequestSafeAsync(pending.header, pending.payload, streamBuffers, cancellationToken);
                     }
                 }
             }
@@ -228,7 +263,24 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
                 pendingDispatches.Remove(id);
             }
 
-            await Task.CompletedTask.ConfigureAwait(false);
+            return Task.CompletedTask;
+        }
+
+        private async Task DispatchRequestSafeAsync(Header header, RequestPayload requestPayload,
+            Dictionary<Guid, MemoryStream> streamBuffers, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await DispatchRequestAsync(header, requestPayload, streamBuffers, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Normal shutdown — suppress
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "NamedPipeProtocol: Unhandled exception dispatching request {Id}.", header.Id);
+            }
         }
 
         private async Task DispatchRequestAsync(Header header, RequestPayload requestPayload,
@@ -311,20 +363,27 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Protocol
             }
         }
 
-        private static void HandleStreamFrame(Header header, byte[] payload, Dictionary<Guid, MemoryStream> streamBuffers)
+        private static bool HandleStreamFrame(Header header, byte[] payload, Dictionary<Guid, MemoryStream> streamBuffers, ILogger logger)
         {
             if (payload == null || payload.Length == 0)
             {
-                return;
+                return true;
             }
 
             if (!streamBuffers.TryGetValue(header.Id, out var ms))
             {
+                if (streamBuffers.Count >= MaxStreamBuffers)
+                {
+                    logger.LogError("NamedPipeProtocol: Maximum stream buffer count ({Max}) exceeded. Disconnecting.", MaxStreamBuffers);
+                    return false;
+                }
+
                 ms = new MemoryStream();
                 streamBuffers[header.Id] = ms;
             }
 
             ms.Write(payload);
+            return true;
         }
 
         private async Task SendResponseAsync(Guid requestId, NamedPipeResponse response, CancellationToken cancellationToken)

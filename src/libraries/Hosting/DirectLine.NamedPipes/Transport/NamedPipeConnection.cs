@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.NamedPipes.Transport
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 {
     /// <summary>
     /// Manages a named pipe server connection using the Bot Framework convention:
@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Hosting.NamedPipes.Transport
     /// <item><description>{pipeName}.outgoing = server writes (client reads)</description></item>
     /// </list>
     /// </summary>
-    public sealed class NamedPipeConnection : IAsyncDisposable
+    internal sealed class NamedPipeConnection : IAsyncDisposable
     {
         private readonly string _pipeName;
         private readonly ILogger _logger;

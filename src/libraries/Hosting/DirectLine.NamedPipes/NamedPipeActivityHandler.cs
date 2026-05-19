@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -9,18 +9,18 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Hosting.NamedPipes.Protocol;
+using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Agents.Hosting.NamedPipes
+namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
     /// <summary>
     /// Handles inbound named pipe requests by invoking the agent's turn pipeline directly,
     /// without any HTTP roundtrip. Activities arrive from the named pipe and are passed
     /// to <see cref="IChannelAdapter.ProcessActivityAsync"/>.
     /// </summary>
-    public sealed class NamedPipeActivityHandler
+    internal sealed class NamedPipeActivityHandler
     {
         private readonly IServiceProvider _services;
         private readonly ILogger _logger;
@@ -32,8 +32,8 @@ namespace Microsoft.Agents.Hosting.NamedPipes
         /// <param name="logger">The logger instance.</param>
         public NamedPipeActivityHandler(IServiceProvider services, ILogger<NamedPipeActivityHandler> logger)
         {
-            _services = services;
-            _logger = logger;
+            _services = services ?? throw new ArgumentNullException(nameof(services));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -79,8 +79,10 @@ namespace Microsoft.Agents.Hosting.NamedPipes
                 var adapter = scope.ServiceProvider.GetRequiredService<IChannelAdapter>();
                 var agent = scope.ServiceProvider.GetRequiredService<IAgent>();
 
-                // DirectLineFlex handles external auth; the pipe is trusted
-                var identity = new ClaimsIdentity("NamedPipe");
+                // DirectLine handles external auth before forwarding over the trusted pipe.
+                // Keep this anonymous so the SDK does not require configured token connections
+                // for connector clients whose outbound calls are routed back through the pipe.
+                var identity = new ClaimsIdentity();
 
                 _logger.LogInformation("NamedPipeActivityHandler: Invoking agent for activity type={Type} id={Id}.",
                     activity.Type, activity.Id);
