@@ -19,10 +19,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
     internal sealed class NamedPipeProtocol : IAsyncDisposable
     {
         /// <summary>
-        /// Maximum allowed payload size per frame (4 MB). Prevents memory exhaustion
-        /// from malformed or malicious headers.
+        /// Maximum allowed payload size per frame. Mirrors
+        /// <c>Microsoft.Bot.Streaming.Transport.TransportConstants.MaxLength</c>:
+        /// the on-wire <c>Header.PayloadLength</c> field is encoded as 6 ASCII digits,
+        /// so 999,999 is the hard ceiling enforced by the protocol itself.
         /// </summary>
-        private const int MaxPayloadSize = 4 * 1024 * 1024;
+        private const int MaxPayloadSize = 999_999;
 
         /// <summary>
         /// Maximum number of concurrent stream buffers. Limits memory usage from
@@ -38,7 +40,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         private readonly object _dispatchedTasksLock = new();
         private readonly List<Task> _dispatchedTasks = [];
         private CancellationTokenSource _cts;
-        private Task _readLoop;
+        private volatile Task _readLoop;
         private int _started;
 
         /// <summary>
@@ -141,7 +143,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         {
             var headerBuffer = new byte[HeaderSerializer.HeaderSize];
             var streamBuffers = new Dictionary<Guid, MemoryStream>();
+            var completedStreams = new HashSet<Guid>();
             var pendingDispatches = new Dictionary<Guid, (Header header, RequestPayload payload)>();
+            var pendingResponses = new Dictionary<Guid, ResponsePayload>();
 
             try
             {
@@ -179,15 +183,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                     switch (header.Type)
                     {
                         case PayloadTypes.Request:
-                            HandleRequestFrame(header, payload, streamBuffers, pendingDispatches, cancellationToken);
+                            HandleRequestFrame(header, payload, streamBuffers, completedStreams, pendingDispatches, cancellationToken);
                             break;
 
                         case PayloadTypes.Response:
-                            HandleResponseFrame(header, payload, streamBuffers);
+                            HandleResponseFrame(header, payload, streamBuffers, completedStreams, pendingResponses);
                             break;
 
                         case PayloadTypes.Stream:
-                            connected = HandleStreamFrame(header, payload, streamBuffers, _logger);
+                            connected = HandleStreamFrame(header, payload, streamBuffers, completedStreams, _logger);
                             break;
 
                         case PayloadTypes.CancelAll:
@@ -201,7 +205,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
                     if (connected)
                     {
-                        await TryDispatchPendingRequestsAsync(streamBuffers, pendingDispatches, cancellationToken).ConfigureAwait(false);
+                        await TryDispatchPendingRequestsAsync(streamBuffers, completedStreams, pendingDispatches, cancellationToken).ConfigureAwait(false);
+                        TryCompletePendingResponses(streamBuffers, completedStreams, pendingResponses);
                     }
                 }
             }
@@ -225,7 +230,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 }
 
                 streamBuffers.Clear();
+                completedStreams.Clear();
                 pendingDispatches.Clear();
+                pendingResponses.Clear();
             }
         }
 
@@ -251,6 +258,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
         private void HandleRequestFrame(Header header, byte[] payload,
             Dictionary<Guid, MemoryStream> streamBuffers,
+            HashSet<Guid> completedStreams,
             Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
             CancellationToken cancellationToken)
         {
@@ -272,14 +280,42 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                     return;
                 }
 
-                if (!streamBuffers.ContainsKey(streamId))
+                // Wait for the End-of-stream frame before dispatching. The Bot Framework
+                // streaming protocol chunks payloads (~4096 bytes per frame), so the first
+                // stream frame's arrival does not mean the body is complete.
+                if (!completedStreams.Contains(streamId))
                 {
                     pendingDispatches[header.Id] = (header, requestPayload);
                     return;
                 }
             }
 
-            TrackDispatch(DispatchRequestSafeAsync(header, requestPayload, streamBuffers, cancellationToken));
+            // Extract the body synchronously on the read-loop thread so the dispatch task
+            // never touches streamBuffers concurrently with the read loop.
+            var body = ExtractStreamBody(header, requestPayload, streamBuffers, completedStreams);
+            TrackDispatch(DispatchRequestSafeAsync(header, requestPayload, body, cancellationToken));
+        }
+
+        /// <summary>
+        /// Extracts the assembled stream body (if any) for a request and removes the corresponding
+        /// entry from <paramref name="streamBuffers"/> and <paramref name="completedStreams"/>.
+        /// Must only be called on the read-loop thread.
+        /// </summary>
+        private byte[] ExtractStreamBody(Header header, RequestPayload requestPayload,
+            Dictionary<Guid, MemoryStream> streamBuffers, HashSet<Guid> completedStreams)
+        {
+            if (requestPayload.Streams is { Count: > 0 }
+                && TryGetStreamId(requestPayload.Streams[0]?.Id, header.Id, out var streamId)
+                && streamBuffers.TryGetValue(streamId, out var ms))
+            {
+                var body = ms.ToArray();
+                ms.Dispose();
+                streamBuffers.Remove(streamId);
+                completedStreams.Remove(streamId);
+                return body;
+            }
+
+            return null;
         }
 
         private bool TryGetStreamId(string id, Guid requestId, out Guid streamId)
@@ -315,6 +351,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
         private Task TryDispatchPendingRequestsAsync(
             Dictionary<Guid, MemoryStream> streamBuffers,
+            HashSet<Guid> completedStreams,
             Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
             CancellationToken cancellationToken)
         {
@@ -329,10 +366,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                         continue;
                     }
 
-                    if (streamBuffers.ContainsKey(streamId))
+                    if (completedStreams.Contains(streamId))
                     {
                         dispatched.Add(requestId);
-                        TrackDispatch(DispatchRequestSafeAsync(pending.header, pending.payload, streamBuffers, cancellationToken));
+                        var body = ExtractStreamBody(pending.header, pending.payload, streamBuffers, completedStreams);
+                        TrackDispatch(DispatchRequestSafeAsync(pending.header, pending.payload, body, cancellationToken));
                     }
                 }
             }
@@ -346,11 +384,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         private async Task DispatchRequestSafeAsync(Header header, RequestPayload requestPayload,
-            Dictionary<Guid, MemoryStream> streamBuffers, CancellationToken cancellationToken)
+            byte[] body, CancellationToken cancellationToken)
         {
             try
             {
-                await DispatchRequestAsync(header, requestPayload, streamBuffers, cancellationToken).ConfigureAwait(false);
+                await DispatchRequestAsync(header, requestPayload, body, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -363,18 +401,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         private async Task DispatchRequestAsync(Header header, RequestPayload requestPayload,
-            Dictionary<Guid, MemoryStream> streamBuffers, CancellationToken cancellationToken)
+            byte[] body, CancellationToken cancellationToken)
         {
-            byte[] body = null;
-            if (requestPayload.Streams is { Count: > 0 }
-                && TryGetStreamId(requestPayload.Streams[0]?.Id, header.Id, out var streamId)
-                && streamBuffers.TryGetValue(streamId, out var ms))
-            {
-                body = ms.ToArray();
-                ms.Dispose();
-                streamBuffers.Remove(streamId);
-            }
-
             var request = new NamedPipeRequest
             {
                 Id = header.Id,
@@ -395,7 +423,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             await SendResponseAsync(header.Id, response, cancellationToken).ConfigureAwait(false);
         }
 
-        private void HandleResponseFrame(Header header, byte[] payload, Dictionary<Guid, MemoryStream> streamBuffers)
+        private void HandleResponseFrame(Header header, byte[] payload,
+            Dictionary<Guid, MemoryStream> streamBuffers,
+            HashSet<Guid> completedStreams,
+            Dictionary<Guid, ResponsePayload> pendingResponses)
         {
             if (payload == null)
             {
@@ -408,39 +439,94 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 return;
             }
 
-            byte[] body = null;
-            if (responsePayload.Streams is { Count: > 0 }
-                && TryGetStreamId(responsePayload.Streams[0]?.Id, header.Id, out var streamId)
-                && streamBuffers.TryGetValue(streamId, out var ms))
+            if (responsePayload.Streams is { Count: > 0 })
             {
-                body = ms.ToArray();
-                ms.Dispose();
-                streamBuffers.Remove(streamId);
+                if (!TryGetStreamId(responsePayload.Streams[0]?.Id, header.Id, out var streamId))
+                {
+                    CompleteResponse(header.Id, responsePayload, body: null);
+                    return;
+                }
+
+                // Wait for the End-of-stream frame before completing the caller's TCS. The Bot
+                // Framework streaming protocol chunks payloads (~4096 bytes per frame).
+                if (!completedStreams.Contains(streamId))
+                {
+                    pendingResponses[header.Id] = responsePayload;
+                    return;
+                }
             }
 
+            var assembledBody = ExtractResponseBody(header.Id, responsePayload, streamBuffers, completedStreams);
+            CompleteResponse(header.Id, responsePayload, assembledBody);
+        }
+
+        private void TryCompletePendingResponses(
+            Dictionary<Guid, MemoryStream> streamBuffers,
+            HashSet<Guid> completedStreams,
+            Dictionary<Guid, ResponsePayload> pendingResponses)
+        {
+            if (pendingResponses.Count == 0)
+            {
+                return;
+            }
+
+            var completed = new List<Guid>();
+            foreach (var (requestId, responsePayload) in pendingResponses)
+            {
+                if (responsePayload.Streams is { Count: > 0 }
+                    && TryGetStreamId(responsePayload.Streams[0]?.Id, requestId, out var streamId)
+                    && completedStreams.Contains(streamId))
+                {
+                    completed.Add(requestId);
+                    var body = ExtractResponseBody(requestId, responsePayload, streamBuffers, completedStreams);
+                    CompleteResponse(requestId, responsePayload, body);
+                }
+            }
+
+            foreach (var id in completed)
+            {
+                pendingResponses.Remove(id);
+            }
+        }
+
+        private byte[] ExtractResponseBody(Guid requestId, ResponsePayload responsePayload,
+            Dictionary<Guid, MemoryStream> streamBuffers, HashSet<Guid> completedStreams)
+        {
+            if (responsePayload.Streams is { Count: > 0 }
+                && TryGetStreamId(responsePayload.Streams[0]?.Id, requestId, out var streamId)
+                && streamBuffers.TryGetValue(streamId, out var ms))
+            {
+                var body = ms.ToArray();
+                ms.Dispose();
+                streamBuffers.Remove(streamId);
+                completedStreams.Remove(streamId);
+                return body;
+            }
+
+            return null;
+        }
+
+        private void CompleteResponse(Guid requestId, ResponsePayload responsePayload, byte[] body)
+        {
             var receiveResponse = new ReceiveResponse { StatusCode = responsePayload.StatusCode, Body = body };
 
             lock (_pendingRequests)
             {
-                if (_pendingRequests.TryGetValue(header.Id, out var tcs))
+                if (_pendingRequests.TryGetValue(requestId, out var tcs))
                 {
                     tcs.TrySetResult(receiveResponse);
-                    _pendingRequests.Remove(header.Id);
+                    _pendingRequests.Remove(requestId);
                 }
                 else
                 {
-                    _logger.LogWarning("NamedPipeProtocol: Received response for unknown request {Id}.", header.Id);
+                    _logger.LogWarning("NamedPipeProtocol: Received response for unknown request {Id}.", requestId);
                 }
             }
         }
 
-        private static bool HandleStreamFrame(Header header, byte[] payload, Dictionary<Guid, MemoryStream> streamBuffers, ILogger logger)
+        private static bool HandleStreamFrame(Header header, byte[] payload,
+            Dictionary<Guid, MemoryStream> streamBuffers, HashSet<Guid> completedStreams, ILogger logger)
         {
-            if (payload == null || payload.Length == 0)
-            {
-                return true;
-            }
-
             if (!streamBuffers.TryGetValue(header.Id, out var ms))
             {
                 if (streamBuffers.Count >= MaxStreamBuffers)
@@ -453,7 +539,18 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 streamBuffers[header.Id] = ms;
             }
 
-            ms.Write(payload);
+            if (payload != null && payload.Length > 0)
+            {
+                ms.Write(payload);
+            }
+
+            // The End flag signals that all chunks for this stream have been received.
+            // Until then the body is incomplete and must not be dispatched.
+            if (header.End)
+            {
+                completedStreams.Add(header.Id);
+            }
+
             return true;
         }
 
@@ -561,7 +658,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
 
             _cts?.Dispose();
-            _writeLock.Dispose();
+
+            // Note: _writeLock (SemaphoreSlim) is intentionally not disposed. An outbound
+            // SendRequestAsync captured before SetProtocol(null) may still be inside
+            // SendFrameAsync at WaitAsync/Release time when DisposeAsync runs. Disposing
+            // the semaphore would race with that caller and surface as ObjectDisposedException
+            // on every reconnect. SemaphoreSlim only requires explicit disposal when its
+            // AvailableWaitHandle has been materialized (it lazily allocates a kernel
+            // handle), which this class never does — so leaving it to GC is safe.
         }
     }
 }

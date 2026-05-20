@@ -63,8 +63,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
 
-            if (!uri.Scheme.Equals("urn", StringComparison.OrdinalIgnoreCase)
-                && !uri.AbsoluteUri.Contains("botframework:namedpipe", StringComparison.OrdinalIgnoreCase))
+            if (!PipeUriPredicate.IsNamedPipeUri(uri))
             {
                 _logger.LogWarning("NamedPipeMessageHandler: Unexpected non-pipe URL: {Url}.", uri);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);

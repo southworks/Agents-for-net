@@ -34,12 +34,18 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// Read exactly <paramref name="count"/> bytes into the buffer.
         /// Returns false if the pipe disconnects before all bytes are read.
         /// </summary>
-        /// <param name="buffer">The buffer to read into.</param>
-        /// <param name="count">The number of bytes to read.</param>
+        /// <param name="buffer">The buffer to read into. Must be at least <paramref name="count"/> bytes long.</param>
+        /// <param name="count">The number of bytes to read. Must be non-negative and not exceed <c>buffer.Length</c>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>True if all bytes were read; false if the pipe disconnected.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="count"/> is negative or greater than <c>buffer.Length</c>.
+        /// </exception>
         public async Task<bool> ReadExactAsync(Memory<byte> buffer, int count, CancellationToken cancellationToken = default)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(count, buffer.Length);
+
             var totalRead = 0;
             while (totalRead < count)
             {

@@ -26,10 +26,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// <summary>
         /// Initializes a new instance of the <see cref="NamedPipeConnection"/> class.
         /// </summary>
-        /// <param name="pipeName">The base pipe name.</param>
+        /// <param name="pipeName">The base pipe name. Must not be null or empty.</param>
         /// <param name="logger">The logger instance.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="pipeName"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public NamedPipeConnection(string pipeName, ILogger logger)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _pipeName = pipeName;
             _logger = logger;
         }

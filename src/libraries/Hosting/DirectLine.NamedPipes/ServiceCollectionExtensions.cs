@@ -69,10 +69,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var uri = request.RequestUri;
-            if (uri != null && (
-                uri.Scheme.Equals("urn", StringComparison.OrdinalIgnoreCase) ||
-                uri.AbsoluteUri.Contains("botframework:namedpipe", StringComparison.OrdinalIgnoreCase)))
+            if (PipeUriPredicate.IsNamedPipeUri(request.RequestUri))
             {
                 return _pipeHandler.SendViaPipeAsync(request, cancellationToken);
             }

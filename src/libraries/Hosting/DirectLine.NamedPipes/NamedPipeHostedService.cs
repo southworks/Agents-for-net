@@ -60,9 +60,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                     protocol = new NamedPipeProtocol(connection.Reader, connection.Writer, _logger);
                     protocol.OnRequestReceived = _activityHandler.HandleAsync;
 
+                    // Start the read loop before publishing the protocol to outbound callers, so
+                    // any SendRequestAsync that races in observes a fully-initialized protocol.
+                    protocol.Start();
                     _messageHandler.SetProtocol(protocol);
 
-                    protocol.Start();
                     _logger.LogInformation("NamedPipeHostedService: Protocol active on '{PipeName}'.", _pipeName);
 
                     try
