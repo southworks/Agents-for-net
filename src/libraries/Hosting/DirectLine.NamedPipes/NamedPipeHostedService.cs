@@ -65,9 +65,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                     protocol.Start();
                     _logger.LogInformation("NamedPipeHostedService: Protocol active on '{PipeName}'.", _pipeName);
 
-                    while (!stoppingToken.IsCancellationRequested && connection.IsConnected)
+                    try
                     {
-                        await Task.Delay(1000, stoppingToken).ConfigureAwait(false);
+                        // Wait for the protocol's read loop to complete (pipe disconnect or error)
+                        // or for the host to request shutdown. This avoids polling IsConnected.
+                        await protocol.Completion.WaitAsync(stoppingToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        throw;
                     }
 
                     _logger.LogInformation("NamedPipeHostedService: Connection lost, will reconnect.");

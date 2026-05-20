@@ -34,9 +34,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         private readonly NamedPipeTransport _writer;
         private readonly ILogger _logger;
         private readonly SemaphoreSlim _writeLock = new(1, 1);
-        private readonly Dictionary<Guid, TaskCompletionSource<ReceiveResponse>> _pendingRequests = new();
+        private readonly Dictionary<Guid, TaskCompletionSource<ReceiveResponse>> _pendingRequests = [];
+        private readonly object _dispatchedTasksLock = new();
+        private readonly List<Task> _dispatchedTasks = [];
         private CancellationTokenSource _cts;
         private Task _readLoop;
+        private int _started;
 
         /// <summary>
         /// Gets or sets the handler invoked when an inbound request is received
@@ -58,10 +61,23 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
+        /// Gets a task that completes when the read loop exits, either due to
+        /// pipe disconnection, a protocol error, or disposal. Callers can await
+        /// this to be signalled of disconnect without polling.
+        /// </summary>
+        public Task Completion => _readLoop ?? Task.CompletedTask;
+
+        /// <summary>
         /// Start the background read loop that processes incoming frames.
+        /// Must be called at most once per instance.
         /// </summary>
         public void Start()
         {
+            if (Interlocked.Exchange(ref _started, 1) != 0)
+            {
+                throw new InvalidOperationException("NamedPipeProtocol has already been started.");
+            }
+
             _cts = new CancellationTokenSource();
             _readLoop = ReadLoopAsync(_cts.Token);
         }
@@ -93,7 +109,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                     Verb = verb,
                     Path = path,
                     Streams = body != null
-                        ? new List<PayloadDescription> { new PayloadDescription { Id = streamId.ToString("D"), ContentType = "application/json", Length = body.Length } }
+                        ? [new PayloadDescription { Id = streamId.ToString("D"), ContentType = "application/json", Length = body.Length }]
                         : null
                 };
 
@@ -199,6 +215,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
             finally
             {
+                // Fail any pending outbound requests so callers don't wait the full timeout.
+                FailPendingRequests(new IOException("Named pipe disconnected."));
+
                 // Dispose any orphaned stream buffers to prevent memory leaks
                 foreach (var ms in streamBuffers.Values)
                 {
@@ -207,6 +226,26 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
                 streamBuffers.Clear();
                 pendingDispatches.Clear();
+            }
+        }
+
+        private void FailPendingRequests(Exception exception)
+        {
+            List<TaskCompletionSource<ReceiveResponse>> pending;
+            lock (_pendingRequests)
+            {
+                if (_pendingRequests.Count == 0)
+                {
+                    return;
+                }
+
+                pending = [.. _pendingRequests.Values];
+                _pendingRequests.Clear();
+            }
+
+            foreach (var tcs in pending)
+            {
+                tcs.TrySetException(exception);
             }
         }
 
@@ -228,7 +267,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
             if (requestPayload.Streams is { Count: > 0 })
             {
-                var streamId = Guid.Parse(requestPayload.Streams[0].Id);
+                if (!TryGetStreamId(requestPayload.Streams[0]?.Id, header.Id, out var streamId))
+                {
+                    return;
+                }
+
                 if (!streamBuffers.ContainsKey(streamId))
                 {
                     pendingDispatches[header.Id] = (header, requestPayload);
@@ -236,7 +279,38 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 }
             }
 
-            _ = DispatchRequestSafeAsync(header, requestPayload, streamBuffers, cancellationToken);
+            TrackDispatch(DispatchRequestSafeAsync(header, requestPayload, streamBuffers, cancellationToken));
+        }
+
+        private bool TryGetStreamId(string id, Guid requestId, out Guid streamId)
+        {
+            if (!Guid.TryParse(id, out streamId))
+            {
+                _logger.LogWarning("NamedPipeProtocol: Invalid stream id '{Id}' for request {RequestId}; ignoring frame.", id, requestId);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void TrackDispatch(Task task)
+        {
+            lock (_dispatchedTasksLock)
+            {
+                _dispatchedTasks.Add(task);
+            }
+
+            _ = task.ContinueWith(
+                t =>
+                {
+                    lock (_dispatchedTasksLock)
+                    {
+                        _dispatchedTasks.Remove(t);
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
 
         private Task TryDispatchPendingRequestsAsync(
@@ -249,11 +323,16 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             {
                 if (pending.payload.Streams is { Count: > 0 })
                 {
-                    var streamId = Guid.Parse(pending.payload.Streams[0].Id);
+                    if (!TryGetStreamId(pending.payload.Streams[0]?.Id, requestId, out var streamId))
+                    {
+                        dispatched.Add(requestId);
+                        continue;
+                    }
+
                     if (streamBuffers.ContainsKey(streamId))
                     {
                         dispatched.Add(requestId);
-                        _ = DispatchRequestSafeAsync(pending.header, pending.payload, streamBuffers, cancellationToken);
+                        TrackDispatch(DispatchRequestSafeAsync(pending.header, pending.payload, streamBuffers, cancellationToken));
                     }
                 }
             }
@@ -287,15 +366,13 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             Dictionary<Guid, MemoryStream> streamBuffers, CancellationToken cancellationToken)
         {
             byte[] body = null;
-            if (requestPayload.Streams is { Count: > 0 })
+            if (requestPayload.Streams is { Count: > 0 }
+                && TryGetStreamId(requestPayload.Streams[0]?.Id, header.Id, out var streamId)
+                && streamBuffers.TryGetValue(streamId, out var ms))
             {
-                var streamId = Guid.Parse(requestPayload.Streams[0].Id);
-                if (streamBuffers.TryGetValue(streamId, out var ms))
-                {
-                    body = ms.ToArray();
-                    ms.Dispose();
-                    streamBuffers.Remove(streamId);
-                }
+                body = ms.ToArray();
+                ms.Dispose();
+                streamBuffers.Remove(streamId);
             }
 
             var request = new NamedPipeRequest
@@ -309,15 +386,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             _logger.LogDebug("NamedPipeProtocol: Dispatching {Verb} {Path} (BodyLen={Len}).",
                 request.Verb, request.Path, body?.Length ?? 0);
 
-            NamedPipeResponse response;
-            if (OnRequestReceived != null)
-            {
-                response = await OnRequestReceived(request, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                response = NamedPipeResponse.NotFound();
-            }
+            // Capture the delegate once to avoid a torn read between the null check and invocation.
+            var handler = OnRequestReceived;
+            var response = handler != null
+                ? await handler(request, cancellationToken).ConfigureAwait(false)
+                : NamedPipeResponse.NotFound();
 
             await SendResponseAsync(header.Id, response, cancellationToken).ConfigureAwait(false);
         }
@@ -336,15 +409,13 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
 
             byte[] body = null;
-            if (responsePayload.Streams is { Count: > 0 })
+            if (responsePayload.Streams is { Count: > 0 }
+                && TryGetStreamId(responsePayload.Streams[0]?.Id, header.Id, out var streamId)
+                && streamBuffers.TryGetValue(streamId, out var ms))
             {
-                var streamId = Guid.Parse(responsePayload.Streams[0].Id);
-                if (streamBuffers.TryGetValue(streamId, out var ms))
-                {
-                    body = ms.ToArray();
-                    ms.Dispose();
-                    streamBuffers.Remove(streamId);
-                }
+                body = ms.ToArray();
+                ms.Dispose();
+                streamBuffers.Remove(streamId);
             }
 
             var receiveResponse = new ReceiveResponse { StatusCode = responsePayload.StatusCode, Body = body };
@@ -393,7 +464,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             {
                 StatusCode = response.StatusCode,
                 Streams = response.Body != null
-                    ? new List<PayloadDescription> { new PayloadDescription { Id = streamId.ToString("D"), ContentType = "application/json", Length = response.Body.Length } }
+                    ? [new PayloadDescription { Id = streamId.ToString("D"), ContentType = "application/json", Length = response.Body.Length }]
                     : null
             };
 
@@ -422,11 +493,25 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                if (!_writer.IsConnected)
+                {
+                    throw new IOException("Named pipe writer is disconnected.");
+                }
+
                 await _writer.WriteAsync(headerBytes, cancellationToken).ConfigureAwait(false);
                 if (payload.Length > 0)
                 {
                     await _writer.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
                 }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // A write failure means the outgoing pipe is broken. Cancel the read loop so
+                // the hosted service observes Completion and reconnects (the old polling code
+                // relied on connection.IsConnected to detect this for the outgoing pipe).
+                _logger.LogWarning(ex, "NamedPipeProtocol: Write failed; tearing down protocol to trigger reconnect.");
+                try { _cts?.Cancel(); } catch { /* already disposed */ }
+                throw;
             }
             finally
             {
@@ -438,6 +523,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         public async ValueTask DisposeAsync()
         {
             _cts?.Cancel();
+
             if (_readLoop != null)
             {
                 try
@@ -447,6 +533,30 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 catch
                 {
                     // Suppress exceptions during shutdown
+                }
+            }
+
+            // Defensive: if Start() was never called, the read loop's finally never ran,
+            // so make sure any pending caller is released.
+            FailPendingRequests(new ObjectDisposedException(nameof(NamedPipeProtocol)));
+
+            // Wait for any in-flight dispatched request handlers to finish before
+            // tearing down the write lock they depend on.
+            Task[] pendingDispatches;
+            lock (_dispatchedTasksLock)
+            {
+                pendingDispatches = _dispatchedTasks.ToArray();
+            }
+
+            if (pendingDispatches.Length > 0)
+            {
+                try
+                {
+                    await Task.WhenAll(pendingDispatches).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Individual dispatch failures are already logged via DispatchRequestSafeAsync.
                 }
             }
 

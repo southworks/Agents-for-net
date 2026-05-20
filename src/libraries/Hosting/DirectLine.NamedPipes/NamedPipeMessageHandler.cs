@@ -78,10 +78,18 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
 
-            // Extract the /v3/... path from the urn: URI
+            // Extract the /v3/... path from the urn: URI. The Connector REST contract
+            // requires a /v3/ prefixed path; anything else indicates a misrouted request
+            // and must not be forwarded over the pipe.
             var fullUri = uri.AbsoluteUri;
             var pathStart = fullUri.IndexOf("/v3/", StringComparison.OrdinalIgnoreCase);
-            var path = pathStart >= 0 ? fullUri[pathStart..] : uri.AbsolutePath;
+            if (pathStart < 0)
+            {
+                _logger.LogError("NamedPipeMessageHandler: Request URI does not contain a '/v3/' path segment: {Url}.", uri);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+            }
+
+            var path = fullUri[pathStart..];
 
             var verb = request.Method.Method;
             byte[] body = null;
