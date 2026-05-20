@@ -869,9 +869,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldSkipValidation()
+        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldReturnBadRequest()
         {
-            // Invoke activities use ExpectReplies delivery mode - validation only applies to Normal/null
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
                 new AdapterOptions { ValidateServiceUrl = true });
@@ -881,8 +880,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            // Should NOT return BadRequest - validation is skipped for non-Normal delivery modes
-            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+            Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
         }
 
         [Fact]
@@ -914,21 +912,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
         }
 
-        [Fact]
-        public async Task ProcessAsync_ValidateServiceUrl_StreamDeliveryMode_ShouldSkipValidation()
-        {
-            var record = UseRecordWithOptions(
-                (record) => new RespondingActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
-            var activity = CreateMessageActivity(deliveryMode: DeliveryModes.Stream, serviceUrl: "https://smba.trafficmanager.net/teams/");
-            activity.Id = Guid.NewGuid().ToString();
-            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
 
-            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-
-            // Should NOT return BadRequest - validation is skipped for Stream delivery mode
-            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
-        }
 
         private static DefaultHttpContext CreateHttpContextWithServiceUrlClaim(Activity activity, string serviceUrlClaimValue)
         {
