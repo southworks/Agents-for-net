@@ -6,15 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    // Event ID registry for CloudAdapter log messages:
-    //   1 = Turn begin (LogTurnBegin)
-    //   2 = Turn response (LogTurnResponse)
-    //   3 = Turn end (LogTurnEnd)
-    //   4 = Activity accepted for background processing (LogActivityAccepted)
-    //   5 = Processing exception (LogProcessingException)
-    //   6 = Request cancelled (LogRequestCancelled)
-    //   7 = Unexpected exception (LogUnexpectedException)
-    //   Future messages: start from 8
+    // Event ID registry for CloudAdapter log messages
     internal static partial class CloudAdapterLog
     {
         [LoggerMessage(EventId = 1, Level = LogLevel.Debug,
