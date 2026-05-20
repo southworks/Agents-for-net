@@ -330,9 +330,7 @@ namespace Microsoft.Agents.Builder
         // avoid noisy false alarms.
         private static bool IsTrustedLocalTransport(IActivity activity)
         {
-            var serviceUrl = activity?.ServiceUrl;
-            return !string.IsNullOrEmpty(serviceUrl)
-                && serviceUrl.StartsWith("urn:botframework:namedpipe", StringComparison.OrdinalIgnoreCase);
+            return TransportConstants.IsNamedPipeServiceUrl(activity?.ServiceUrl);
         }
     }
 }

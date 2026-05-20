@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
             var type = (char)buffer[0];
 
             var lengthStr = Encoding.ASCII.GetString(buffer[2..8]);
-            if (!int.TryParse(lengthStr, out var payloadLength))
+            if (!int.TryParse(lengthStr, out var payloadLength) || payloadLength < 0)
             {
                 throw new FormatException($"Invalid payload length: '{lengthStr}'");
             }

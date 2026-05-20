@@ -116,6 +116,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 
                 return httpResponse;
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("NamedPipeMessageHandler: Request cancelled for {Path}.", path);
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "NamedPipeMessageHandler: Failed to send through pipe for {Path}.", path);

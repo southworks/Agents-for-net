@@ -32,6 +32,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
             string pipeName = "bfv4.pipes")
         {
             ArgumentNullException.ThrowIfNull(builder);
+            ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
 
             builder.Configuration[$"NamedPipe:PipeName"] = pipeName;
 
@@ -64,7 +65,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 
         public PipeRoutingDelegatingHandler(NamedPipeMessageHandler pipeHandler)
         {
-            _pipeHandler = pipeHandler;
+            _pipeHandler = pipeHandler ?? throw new ArgumentNullException(nameof(pipeHandler));
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

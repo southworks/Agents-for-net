@@ -57,9 +57,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         /// <param name="logger">The logger instance.</param>
         public NamedPipeProtocol(NamedPipeTransport reader, NamedPipeTransport writer, ILogger logger)
         {
-            _reader = reader;
-            _writer = writer;
-            _logger = logger;
+            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>

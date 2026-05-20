@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
@@ -13,27 +14,13 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         /// <summary>
         /// The required scheme + authority prefix produced by the named pipe ingress.
         /// </summary>
-        /// <remarks>
-        /// Matches the service URL convention <c>urn:botframework:namedpipe:*</c>. The colon
-        /// after the keyword is included so unrelated URNs such as <c>urn:botframework:namedpipes-other</c>
-        /// or query strings that merely contain the substring are not misclassified.
-        /// </remarks>
-        public const string NamedPipeUriPrefix = "urn:botframework:namedpipe:";
+        public const string NamedPipeUriPrefix = TransportConstants.NamedPipeUriPrefix;
 
         /// <summary>
         /// Returns true when the URI is a well-formed named-pipe service URL that should be
         /// routed through the local pipe transport rather than over HTTP.
         /// </summary>
         /// <param name="uri">The URI to evaluate. May be null.</param>
-        public static bool IsNamedPipeUri(Uri uri)
-        {
-            if (uri == null)
-            {
-                return false;
-            }
-
-            return string.Equals(uri.Scheme, "urn", StringComparison.OrdinalIgnoreCase)
-                && uri.AbsoluteUri.StartsWith(NamedPipeUriPrefix, StringComparison.OrdinalIgnoreCase);
-        }
+        public static bool IsNamedPipeUri(Uri uri) => TransportConstants.IsNamedPipeUri(uri);
     }
 }

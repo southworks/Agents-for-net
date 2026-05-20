@@ -67,14 +67,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
                 PipeDirection.In,
                 1,
                 PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous);
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
             _outgoingPipe = new NamedPipeServerStream(
                 $"{_pipeName}.outgoing",
                 PipeDirection.Out,
                 1,
                 PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous);
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
             _logger.LogInformation("NamedPipeConnection: Waiting for client connection on '{PipeName}'", _pipeName);
 
