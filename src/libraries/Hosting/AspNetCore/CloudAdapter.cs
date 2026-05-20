@@ -307,7 +307,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 var validClaimUri = Uri.TryCreate(serviceUrlClaim.Value, UriKind.Absolute, out var claimUrl);
                 var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
-                if (!validClaimUri || !validActivityUri || claimUrl.Host != activityUrl.Host)
+                if (!validClaimUri || !validActivityUri || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase))
                 {
                     if (_adapterOptions.ValidateServiceUrl)
                     {
