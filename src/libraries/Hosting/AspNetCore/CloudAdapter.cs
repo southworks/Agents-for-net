@@ -297,12 +297,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         private bool ValidateServiceUrl(ClaimsIdentity identity, IActivity activity)
         {
-            if (!string.IsNullOrWhiteSpace(activity.ServiceUrl)
+            if ((activity.DeliveryMode == null || activity.DeliveryMode == DeliveryModes.Normal)
+                && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
                 && identity.Claims.FirstOrDefault(c => c.Type == "serviceurl") is Claim serviceUrlClaim)
             {
-                Uri claimUrl = new(serviceUrlClaim.Value);
-                Uri activityUrl = new(activity.ServiceUrl);
-                if (claimUrl.Host != activityUrl.Host)
+                var validClaimUri = Uri.TryCreate(serviceUrlClaim.Value, UriKind.Absolute, out var claimUrl);
+                var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
+                if (!validClaimUri || !validActivityUri || claimUrl.Host != activityUrl.Host)
                 {
                     if (_adapterOptions.ValidateServiceUrl)
                     {

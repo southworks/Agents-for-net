@@ -869,8 +869,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldReturnBadRequest()
+        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldSkipValidation()
         {
+            // Invoke activities use ExpectReplies delivery mode - validation only applies to Normal/null
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
                 new AdapterOptions { ValidateServiceUrl = true });
@@ -880,7 +881,53 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
+            // Should NOT return BadRequest - validation is skipped for non-Normal delivery modes
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MalformedClaimUri_Enabled_ShouldReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "not-a-valid-uri");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
             Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MalformedActivityUri_Disabled_ShouldNotReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false });
+            var activity = CreateMessageActivity(serviceUrl: "not-a-valid-uri");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/teams/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Validation disabled - should only warn, not reject
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_StreamDeliveryMode_ShouldSkipValidation()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new RespondingActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(deliveryMode: DeliveryModes.Stream, serviceUrl: "https://smba.trafficmanager.net/teams/");
+            activity.Id = Guid.NewGuid().ToString();
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Should NOT return BadRequest - validation is skipped for Stream delivery mode
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
         }
 
         private static DefaultHttpContext CreateHttpContextWithServiceUrlClaim(Activity activity, string serviceUrlClaimValue)
