@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         /// <summary>
         /// Gets or sets the content type of the stream.
         /// </summary>
-        [JsonPropertyName("contentType")]
+        [JsonPropertyName("type")]
         public string ContentType { get; set; } = "application/json";
 
         /// <summary>

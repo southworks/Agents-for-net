@@ -22,20 +22,43 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         /// communication with DirectLineFlex without any HTTP roundtrips.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
+        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        public static IHostApplicationBuilder AddAgentNamedPipeTransport(this IHostApplicationBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+
+            AddNamedPipeServices(builder);
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Adds named pipe transport for the agent, enabling pipe-based
+        /// communication with DirectLineFlex without any HTTP roundtrips.
+        /// </summary>
+        /// <param name="builder">The host application builder.</param>
         /// <param name="pipeName">
-        /// The named pipe base name (default: "bfv4.pipes").
+        /// The named pipe base name. When supplied, this explicitly overrides
+        /// <c>NamedPipe:PipeName</c> from configuration.
         /// Two pipes are created: {pipeName}.incoming and {pipeName}.outgoing.
         /// </param>
         /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentNamedPipeTransport(
             this IHostApplicationBuilder builder,
-            string pipeName = "bfv4.pipes")
+            string pipeName)
         {
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
 
             builder.Configuration[$"NamedPipe:PipeName"] = pipeName;
 
+            AddNamedPipeServices(builder);
+
+            return builder;
+        }
+
+        private static void AddNamedPipeServices(IHostApplicationBuilder builder)
+        {
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<NamedPipeActivityHandler>();
@@ -50,8 +73,6 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                     handlerBuilder.AdditionalHandlers.Add(new PipeRoutingDelegatingHandler(pipeHandler));
                 });
             });
-
-            return builder;
         }
     }
 

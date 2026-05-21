@@ -193,6 +193,75 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(att1, req.Attachments[1].Body);
         }
 
+        /// <summary>
+        /// Reproduces the Bot.Streaming / DirectLineFlex boundary bug where the sender
+        /// declares an attachment stream's descriptor length > 4096 but only sends a
+        /// single frame (len=4096, End=true) followed by the remaining bytes RAW (no framing).
+        /// The drain logic must read those trailing bytes so the next request parses correctly.
+        /// </summary>
+        [Theory]
+        [InlineData(4097)]     // just over the boundary — 1 trailing byte
+        [InlineData(5000)]     // moderate trailing data
+        [InlineData(8192)]     // exactly 2x the chunk size
+        [InlineData(12000)]    // large overflow
+        public async Task BotStreamingBoundaryBug_TrailingBytesAfterEndTrue_AreDrainedAndNextRequestWorks(int attachmentLength)
+        {
+            using var harness = await ProtocolHarness.CreateAsync();
+            var tcs1 = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs2 = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
+            int callCount = 0;
+            harness.Protocol.OnRequestReceived = (req, _) =>
+            {
+                var n = System.Threading.Interlocked.Increment(ref callCount);
+                if (n == 1) tcs1.TrySetResult(req);
+                else tcs2.TrySetResult(req);
+                return Task.FromResult(NamedPipeResponse.OK());
+            };
+            harness.Start();
+
+            var attachmentData = MakePayload(attachmentLength);
+            var primaryBody = Encoding.UTF8.GetBytes("{\"type\":\"message\"}");
+
+            // --- First request: simulates the buggy sender behavior ---
+            var req1Id = Guid.NewGuid();
+            var primaryStreamId1 = Guid.NewGuid();
+            var attachmentId1 = Guid.NewGuid();
+
+            // Descriptor declares the REAL attachment length
+            await harness.WriteRequestAsync(req1Id, primaryStreamId1, primaryBody.Length,
+                new[] { attachmentId1 }, attachmentLength);
+
+            // Primary body stream (small, single frame, fine)
+            await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId1, primaryBody, end: true);
+
+            // Buggy attachment stream: header says len=4096, End=true, but then
+            // raw trailing bytes follow without framing (simulates the DirectLineFlex bug)
+            var framedPart = attachmentData[..FrameChunkSize];
+            var trailingPart = attachmentData[FrameChunkSize..];
+            await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId1, framedPart, end: true);
+            // Write trailing bytes RAW (no header) — this is what the sender bug does
+            await harness.WriteRawBytesAsync(trailingPart);
+
+            // --- Second request: must parse correctly despite the trailing bytes ---
+            var req2Id = Guid.NewGuid();
+            var primaryStreamId2 = Guid.NewGuid();
+            var body2 = Encoding.UTF8.GetBytes("{\"type\":\"message\",\"text\":\"hello\"}");
+            await harness.WriteRequestAsync(req2Id, primaryStreamId2, body2.Length);
+            await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId2, body2, end: true);
+
+            // Both requests should dispatch successfully
+            var r1 = await tcs1.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var r2 = await tcs2.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            // First request: attachment contains the FULL data (framed + trailing)
+            Assert.Single(r1.Attachments);
+            Assert.Equal(attachmentLength, r1.Attachments[0].Body.Length);
+            Assert.Equal(attachmentData, r1.Attachments[0].Body);
+
+            // Second request: body parsed correctly (proves framing wasn't desynchronized)
+            Assert.Equal(body2, r2.Body);
+        }
+
         private static byte[] MakePayload(int length)
         {
             var data = new byte[length];
@@ -330,6 +399,17 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                     await _inboundClient.WriteAsync(payload).ConfigureAwait(false);
                 }
 
+                await _inboundClient.FlushAsync().ConfigureAwait(false);
+            }
+
+            /// <summary>
+            /// Writes raw bytes to the inbound pipe without any framing header.
+            /// Used to simulate the Bot.Streaming bug where trailing attachment bytes
+            /// are written beyond what the frame header declared.
+            /// </summary>
+            public async Task WriteRawBytesAsync(byte[] data)
+            {
+                await _inboundClient.WriteAsync(data).ConfigureAwait(false);
                 await _inboundClient.FlushAsync().ConfigureAwait(false);
             }
 

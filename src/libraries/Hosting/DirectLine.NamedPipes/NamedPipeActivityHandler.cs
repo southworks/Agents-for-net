@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                             ContentType = string.IsNullOrEmpty(pipeAttachment.ContentType)
                                 ? "application/octet-stream"
                                 : pipeAttachment.ContentType,
-                            Content = pipeAttachment.Body,
+                            Content = pipeAttachment.Body ?? [],
                         });
                     }
 

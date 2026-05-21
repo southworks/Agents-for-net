@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -27,6 +28,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// <param name="logger">The logger instance.</param>
     internal sealed class NamedPipeMessageHandler(ILogger<NamedPipeMessageHandler> logger) : HttpMessageHandler
     {
+        private const string StreamingAttachmentsOptionName = "Microsoft.Agents.Connector.StreamingAttachments";
+        private static readonly HttpRequestOptionsKey<IList<(string ContentType, byte[] Body)>> StreamingAttachmentsOption = new(StreamingAttachmentsOptionName);
+
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private volatile NamedPipeProtocol _protocol;
 
@@ -94,12 +98,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 contentType = request.Content.Headers.ContentType?.ToString();
             }
 
-            _logger.LogDebug("NamedPipeMessageHandler: Routing {Verb} {Path} through pipe (BodyLen={Len}, ContentType={ContentType}).",
-                verb, path, body?.Length ?? 0, contentType);
+            var attachments = ReadStreamingAttachments(request);
+
+            _logger.LogDebug("NamedPipeMessageHandler: Routing {Verb} {Path} through pipe (BodyLen={Len}, ContentType={ContentType}, Attachments={AttachmentCount}).",
+                verb, path, body?.Length ?? 0, contentType, attachments?.Count ?? 0);
 
             try
             {
-                var response = await protocol.SendRequestAsync(verb, path, body, attachments: null, contentType, cancellationToken).ConfigureAwait(false);
+                var response = await protocol.SendRequestAsync(verb, path, body, attachments, contentType, cancellationToken).ConfigureAwait(false);
 
                 _logger.LogDebug("NamedPipeMessageHandler: Pipe response {StatusCode} for {Path}.",
                     response.StatusCode, path);
@@ -131,6 +137,28 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 _logger.LogError(ex, "NamedPipeMessageHandler: Failed to send through pipe for {Path}.", path);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
+        }
+
+        private static List<NamedPipeAttachment> ReadStreamingAttachments(HttpRequestMessage request)
+        {
+            if (!request.Options.TryGetValue(StreamingAttachmentsOption, out var streamAttachments)
+                || streamAttachments == null
+                || streamAttachments.Count == 0)
+            {
+                return null;
+            }
+
+            var attachments = new List<NamedPipeAttachment>(streamAttachments.Count);
+            foreach (var attachment in streamAttachments)
+            {
+                attachments.Add(new NamedPipeAttachment
+                {
+                    ContentType = string.IsNullOrEmpty(attachment.ContentType) ? "application/octet-stream" : attachment.ContentType,
+                    Body = attachment.Body ?? [],
+                });
+            }
+
+            return attachments;
         }
     }
 }

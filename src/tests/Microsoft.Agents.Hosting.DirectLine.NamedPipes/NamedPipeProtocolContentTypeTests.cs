@@ -74,6 +74,38 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal("application/json", req.ContentType);
         }
 
+        [Fact]
+        public async Task RequestsWithoutAttachmentStreams_GetIndependentEmptyAttachmentLists()
+        {
+            using var harness = await InboundHarness.CreateAsync();
+            var firstId = Guid.NewGuid();
+            var secondId = Guid.NewGuid();
+            var firstReceived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var secondAttachmentCount = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            harness.Protocol.OnRequestReceived = (req, _) =>
+            {
+                if (req.Id == firstId)
+                {
+                    req.Attachments.Add(new NamedPipeAttachment { ContentType = "text/plain", Body = [1] });
+                    firstReceived.TrySetResult();
+                }
+                else if (req.Id == secondId)
+                {
+                    secondAttachmentCount.TrySetResult(req.Attachments.Count);
+                }
+
+                return Task.FromResult(NamedPipeResponse.OK());
+            };
+            harness.Start();
+
+            await harness.WriteRequestWithoutStreamsAsync(firstId);
+            await firstReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.WriteRequestWithoutStreamsAsync(secondId);
+
+            Assert.Equal(0, await secondAttachmentCount.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+
         // ---------- Inbound: attachment streams (regression coverage) ----------
 
         [Fact]
@@ -110,6 +142,61 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(attachmentBody, req.Attachments[0].Body);
         }
 
+        [Fact]
+        public async Task InboundSingleFrameStream_WithShortHeaderAtBoundary_DrainsDescriptorLength()
+        {
+            using var harness = await InboundHarness.CreateAsync();
+            var received = new List<NamedPipeRequest>();
+            var allReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            harness.Protocol.OnRequestReceived = (req, _) =>
+            {
+                received.Add(req);
+                if (received.Count == 2)
+                {
+                    allReceived.TrySetResult(true);
+                }
+
+                return Task.FromResult(NamedPipeResponse.OK());
+            };
+            harness.Start();
+
+            var requestId = Guid.NewGuid();
+            var primaryId = Guid.NewGuid();
+            var attachmentId = Guid.NewGuid();
+            var primaryBody = Encoding.UTF8.GetBytes("{}");
+            var attachmentBody = new byte[NamedPipeProtocol.MaxPayloadLength];
+            for (int i = 0; i < attachmentBody.Length; i++)
+            {
+                attachmentBody[i] = (byte)(i % 251);
+            }
+
+            await harness.WriteRequestAsync(
+                requestId,
+                primaryId,
+                primaryBody.Length,
+                primaryContentType: "application/json",
+                attachmentStreams: new[] { (attachmentId, attachmentBody.Length, "application/octet-stream") });
+
+            await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
+
+            // Bot.Streaming 4.18.x can advertise a too-short payload length while
+            // CopyToAsync writes the full 4096-byte stream. The receiver must drain
+            // the descriptor length so trailing bytes are not parsed as a header.
+            await harness.WriteFrameAsync(
+                PayloadTypes.Stream,
+                attachmentId,
+                attachmentBody,
+                end: true,
+                declaredPayloadLength: 123);
+
+            await harness.WriteRequestWithoutStreamsAsync(Guid.NewGuid());
+
+            await allReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(2, received.Count);
+            Assert.Single(received[0].Attachments);
+            Assert.Equal(attachmentBody, received[0].Attachments[0].Body);
+        }
+
         // ---------- Outbound: primary content type on request and response ----------
 
         [Fact]
@@ -133,6 +220,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.NotNull(payload.Streams);
             Assert.Single(payload.Streams);
             Assert.Equal("text/plain", payload.Streams[0].ContentType);
+            var requestJson = Encoding.UTF8.GetString(requestFrame.Payload);
+            Assert.Contains("\"type\":\"text/plain\"", requestJson);
+            Assert.DoesNotContain("\"contentType\"", requestJson);
 
             // Drain body stream + complete the call.
             await harness.ReadFrameAsync();
@@ -301,13 +391,26 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 return WriteFrameAsync(PayloadTypes.Request, requestId, json, end: true);
             }
 
-            public async Task WriteFrameAsync(char type, Guid id, byte[] payload, bool end)
+            public Task WriteRequestWithoutStreamsAsync(Guid requestId)
+            {
+                var payload = new RequestPayload
+                {
+                    Verb = "POST",
+                    Path = "/v3/conversations/abc/activities",
+                    Streams = null,
+                };
+
+                var json = JsonSerializer.SerializeToUtf8Bytes(payload);
+                return WriteFrameAsync(PayloadTypes.Request, requestId, json, end: true);
+            }
+
+            public async Task WriteFrameAsync(char type, Guid id, byte[] payload, bool end, int? declaredPayloadLength = null)
             {
                 var header = new Header
                 {
                     Type = type,
                     Id = id,
-                    PayloadLength = payload?.Length ?? 0,
+                    PayloadLength = declaredPayloadLength ?? payload?.Length ?? 0,
                     End = end,
                 };
                 var headerBytes = HeaderSerializer.Serialize(header);

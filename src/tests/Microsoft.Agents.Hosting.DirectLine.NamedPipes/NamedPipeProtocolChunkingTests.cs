@@ -15,10 +15,10 @@ using Xunit;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Verifies the outbound 4 KB chunking invariant: payloads larger than
-    /// <see cref="NamedPipeProtocol.MaxPayloadLength"/> (4096) are split across multiple frames
-    /// sharing the same payload id, and only the last chunk carries End=true when the caller
-    /// requested termination.  Matches Bot.Streaming TransportConstants.MaxPayloadLength.
+    /// Verifies the outbound 4 KB chunking invariant for stream payloads: stream bytes larger
+    /// than <see cref="NamedPipeProtocol.MaxPayloadLength"/> (4096) are split across multiple
+    /// frames sharing the same payload id, and only the last chunk carries End=true when the
+    /// caller requested termination.  Matches Bot.Streaming TransportConstants.MaxPayloadLength.
     /// </summary>
     public class NamedPipeProtocolChunkingTests
     {
@@ -89,6 +89,29 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.True(requestFrame.Header.End);
 
             // No stream frame expected when body is null.
+            await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
+            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(200, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task LargeRequestEnvelope_IsSentAsSingleFrame()
+        {
+            using var harness = await FrameInspectorHarness.CreateAsync();
+            var longPath = "/v3/conversations/" + new string('x', Max + 100) + "/activities";
+
+            var requestTask = harness.Protocol.SendRequestAsync(
+                "GET",
+                longPath,
+                body: null,
+                CancellationToken.None);
+
+            var requestFrame = await harness.ReadFrameAsync();
+            Assert.Equal(PayloadTypes.Request, requestFrame.Header.Type);
+            Assert.True(requestFrame.Header.End);
+            Assert.True(requestFrame.Header.PayloadLength > Max);
+            Assert.Equal(requestFrame.Header.PayloadLength, requestFrame.Payload.Length);
+
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
             var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
             Assert.Equal(200, response.StatusCode);
