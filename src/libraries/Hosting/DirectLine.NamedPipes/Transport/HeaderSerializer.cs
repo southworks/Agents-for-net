@@ -60,6 +60,35 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
                 throw new ArgumentException($"Buffer must be at least {HeaderSize} bytes.", nameof(buffer));
             }
 
+            // Fixed-shape validation. Matches botbuilder-dotnet's HeaderSerializer so we fail
+            // fast on framing desynchronization rather than silently accepting garbage and
+            // failing later mid-stream with confusing errors.
+            // Wire format: T.LLLLLL.GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG.E\n
+            if (buffer[1] != (byte)'.')
+            {
+                throw new FormatException("Header type delimiter is malformed (expected '.' at offset 1).");
+            }
+
+            if (buffer[8] != (byte)'.')
+            {
+                throw new FormatException("Header length delimiter is malformed (expected '.' at offset 8).");
+            }
+
+            if (buffer[45] != (byte)'.')
+            {
+                throw new FormatException("Header id delimiter is malformed (expected '.' at offset 45).");
+            }
+
+            if (buffer[46] != (byte)'0' && buffer[46] != (byte)'1')
+            {
+                throw new FormatException($"Header end flag is malformed (expected '0' or '1' at offset 46, got 0x{buffer[46]:X2}).");
+            }
+
+            if (buffer[47] != (byte)'\n')
+            {
+                throw new FormatException($"Header terminator is malformed (expected '\\n' at offset 47, got 0x{buffer[47]:X2}).");
+            }
+
             var type = (char)buffer[0];
 
             var lengthStr = Encoding.ASCII.GetString(buffer[2..8]);
@@ -74,7 +103,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
                 throw new FormatException($"Invalid GUID: '{idStr}'");
             }
 
-            var end = (char)buffer[46] == '1';
+            var end = buffer[46] == (byte)'1';
 
             return new Header
             {

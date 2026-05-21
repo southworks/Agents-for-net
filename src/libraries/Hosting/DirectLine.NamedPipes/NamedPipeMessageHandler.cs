@@ -21,19 +21,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// This enables the Agents SDK's ConversationsRestClient to send reply activities
     /// back to DirectLineFlex through the named pipe, without any HTTP roundtrip.
     /// </remarks>
-    internal sealed class NamedPipeMessageHandler : HttpMessageHandler
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="NamedPipeMessageHandler"/> class.
+    /// </remarks>
+    /// <param name="logger">The logger instance.</param>
+    internal sealed class NamedPipeMessageHandler(ILogger<NamedPipeMessageHandler> logger) : HttpMessageHandler
     {
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private volatile NamedPipeProtocol _protocol;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NamedPipeMessageHandler"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        public NamedPipeMessageHandler(ILogger<NamedPipeMessageHandler> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         /// <summary>
         /// Set the active named pipe protocol instance. Called by the hosted service
@@ -92,17 +87,19 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 
             var verb = request.Method.Method;
             byte[] body = null;
+            string contentType = null;
             if (request.Content != null)
             {
                 body = await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+                contentType = request.Content.Headers.ContentType?.ToString();
             }
 
-            _logger.LogDebug("NamedPipeMessageHandler: Routing {Verb} {Path} through pipe (BodyLen={Len}).",
-                verb, path, body?.Length ?? 0);
+            _logger.LogDebug("NamedPipeMessageHandler: Routing {Verb} {Path} through pipe (BodyLen={Len}, ContentType={ContentType}).",
+                verb, path, body?.Length ?? 0, contentType);
 
             try
             {
-                var response = await protocol.SendRequestAsync(verb, path, body, cancellationToken).ConfigureAwait(false);
+                var response = await protocol.SendRequestAsync(verb, path, body, attachments: null, contentType, cancellationToken).ConfigureAwait(false);
 
                 _logger.LogDebug("NamedPipeMessageHandler: Pipe response {StatusCode} for {Path}.",
                     response.StatusCode, path);
@@ -111,7 +108,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 if (response.Body != null && response.Body.Length > 0)
                 {
                     httpResponse.Content = new ByteArrayContent(response.Body);
-                    httpResponse.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    var responseContentType = string.IsNullOrEmpty(response.ContentType) ? "application/json" : response.ContentType;
+                    if (MediaTypeHeaderValue.TryParse(responseContentType, out var parsed))
+                    {
+                        httpResponse.Content.Headers.ContentType = parsed;
+                    }
+                    else
+                    {
+                        httpResponse.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    }
                 }
 
                 return httpResponse;

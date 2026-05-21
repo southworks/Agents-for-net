@@ -146,9 +146,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         }
 
         [Fact]
-        public void Deserialize_EndCharNonOne_TreatedAsFalse()
+        public void Deserialize_EndCharZero_TreatedAsFalse()
         {
-            // Anything other than '1' must be treated as End=false per the wire contract.
+            // '0' indicates a non-terminal frame for this payload-id; must deserialize to End=false.
             var bytes = BuildHeaderBytes(
                 type: PayloadTypes.Stream,
                 lengthAscii: "000010",
@@ -198,6 +198,56 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var deserialized = HeaderSerializer.Deserialize(bytes);
 
             Assert.Equal(payloadLength, deserialized.PayloadLength);
+        }
+
+        [Fact]
+        public void Deserialize_TypeDelimiterMalformed_ThrowsFormatException()
+        {
+            var bytes = BuildHeaderBytes(PayloadTypes.Request, "000000", Guid.NewGuid().ToString("D"), '1');
+            bytes[1] = (byte)'!'; // expected '.'
+
+            var ex = Assert.Throws<FormatException>(() => HeaderSerializer.Deserialize(bytes));
+            Assert.Contains("offset 1", ex.Message);
+        }
+
+        [Fact]
+        public void Deserialize_LengthDelimiterMalformed_ThrowsFormatException()
+        {
+            var bytes = BuildHeaderBytes(PayloadTypes.Request, "000000", Guid.NewGuid().ToString("D"), '1');
+            bytes[8] = (byte)'X';
+
+            var ex = Assert.Throws<FormatException>(() => HeaderSerializer.Deserialize(bytes));
+            Assert.Contains("offset 8", ex.Message);
+        }
+
+        [Fact]
+        public void Deserialize_IdDelimiterMalformed_ThrowsFormatException()
+        {
+            var bytes = BuildHeaderBytes(PayloadTypes.Request, "000000", Guid.NewGuid().ToString("D"), '1');
+            bytes[45] = (byte)' ';
+
+            var ex = Assert.Throws<FormatException>(() => HeaderSerializer.Deserialize(bytes));
+            Assert.Contains("offset 45", ex.Message);
+        }
+
+        [Fact]
+        public void Deserialize_EndCharNotZeroOrOne_ThrowsFormatException()
+        {
+            // Strict: only '0' or '1' are valid. Anything else indicates framing desync.
+            var bytes = BuildHeaderBytes(PayloadTypes.Stream, "000000", Guid.NewGuid().ToString("D"), '2');
+
+            var ex = Assert.Throws<FormatException>(() => HeaderSerializer.Deserialize(bytes));
+            Assert.Contains("offset 46", ex.Message);
+        }
+
+        [Fact]
+        public void Deserialize_TerminatorNotNewline_ThrowsFormatException()
+        {
+            var bytes = BuildHeaderBytes(PayloadTypes.Request, "000000", Guid.NewGuid().ToString("D"), '1');
+            bytes[47] = (byte)'\r'; // expected '\n'
+
+            var ex = Assert.Throws<FormatException>(() => HeaderSerializer.Deserialize(bytes));
+            Assert.Contains("offset 47", ex.Message);
         }
 
         private static byte[] BuildHeaderBytes(char type, string lengthAscii, string idStr, char end)

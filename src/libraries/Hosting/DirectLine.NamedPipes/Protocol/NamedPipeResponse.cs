@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
+
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 {
     /// <summary>
@@ -14,9 +16,21 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         public int StatusCode { get; set; }
 
         /// <summary>
+        /// Gets or sets the content type advertised on <c>Streams[0]</c> (the primary body).
+        /// Defaults to <c>application/json</c>; set on outbound responses when sending a non-JSON body.
+        /// </summary>
+        public string ContentType { get; set; } = "application/json";
+
+        /// <summary>
         /// Gets or sets the response body bytes.
         /// </summary>
         public byte[] Body { get; set; }
+
+        /// <summary>
+        /// Gets or sets the additional attachment streams to send alongside the response
+        /// (Streams[1..N] on the wire). Null or empty when no attachments are needed.
+        /// </summary>
+        public IList<NamedPipeAttachment> Attachments { get; set; }
 
         /// <summary>
         /// Creates a 200 OK response with an optional body.
@@ -38,9 +52,16 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         public static NamedPipeResponse NotFound() => new() { StatusCode = 404 };
 
         /// <summary>
+        /// Creates a 415 Unsupported Media Type response.
+        /// </summary>
+        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        public static NamedPipeResponse UnsupportedMediaType() => new() { StatusCode = 415 };
+
+        /// <summary>
         /// Creates a 500 Internal Server Error response.
         /// </summary>
         /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse InternalServerError() => new() { StatusCode = 500 };
     }
 }
+

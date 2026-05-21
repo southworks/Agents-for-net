@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
@@ -108,6 +109,90 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(body, received);
         }
 
+        [Fact]
+        public async Task MultiStreamRequest_DispatchesPrimaryBody_AndDeliversAttachmentStreams()
+        {
+            using var harness = await ProtocolHarness.CreateAsync();
+            var bodyReceived = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
+            harness.Protocol.OnRequestReceived = (req, _) =>
+            {
+                bodyReceived.TrySetResult(req);
+                return Task.FromResult(NamedPipeResponse.OK());
+            };
+            harness.Start();
+
+            // Drive enough rounds that any per-request leak of attachment buffers would
+            // trip the MaxStreamBuffers=100 force-disconnect.
+            for (int round = 0; round < 50; round++)
+            {
+                bodyReceived = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
+                harness.Protocol.OnRequestReceived = (req, _) =>
+                {
+                    bodyReceived.TrySetResult(req);
+                    return Task.FromResult(NamedPipeResponse.OK());
+                };
+
+                var requestId = Guid.NewGuid();
+                var primaryStreamId = Guid.NewGuid();
+                var attachmentIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+                var primaryBody = Encoding.UTF8.GetBytes($"activity-{round}");
+                var attachmentBody = MakePayload(2048);
+
+                await harness.WriteRequestAsync(requestId, primaryStreamId, primaryBody.Length, attachmentIds, attachmentBody.Length);
+
+                // Send the attachment streams first, then the primary, to exercise the
+                // "buffer attachments while waiting for primary completion" path.
+                foreach (var attachmentId in attachmentIds)
+                {
+                    await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
+                }
+
+                await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId, primaryBody, end: true);
+
+                var received = await bodyReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Assert.Equal(primaryBody, received.Body);
+                Assert.Equal(attachmentIds.Length, received.Attachments.Count);
+                for (int i = 0; i < attachmentIds.Length; i++)
+                {
+                    Assert.Equal(attachmentIds[i].ToString("D"), received.Attachments[i].Id);
+                    Assert.Equal(attachmentBody, received.Attachments[i].Body);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task MultiStreamRequest_AttachmentBytes_AreDeliveredIntact()
+        {
+            using var harness = await ProtocolHarness.CreateAsync();
+            var received = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
+            harness.Protocol.OnRequestReceived = (req, _) =>
+            {
+                received.TrySetResult(req);
+                return Task.FromResult(NamedPipeResponse.OK());
+            };
+            harness.Start();
+
+            var requestId = Guid.NewGuid();
+            var primaryStreamId = Guid.NewGuid();
+            var attachmentIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+            var primaryBody = Encoding.UTF8.GetBytes("primary-activity");
+
+            // Heterogeneous attachment payloads of different sizes
+            var att0 = MakePayload(7000);
+            var att1 = MakePayload(123);
+
+            await harness.WriteRequestAsync(requestId, primaryStreamId, primaryBody.Length, attachmentIds, attachmentLength: 0);
+            await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId, primaryBody, end: true);
+            await harness.WriteChunkedStreamAsync(attachmentIds[0], att0, FrameChunkSize);
+            await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentIds[1], att1, end: true);
+
+            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(primaryBody, req.Body);
+            Assert.Equal(2, req.Attachments.Count);
+            Assert.Equal(att0, req.Attachments[0].Body);
+            Assert.Equal(att1, req.Attachments[1].Body);
+        }
+
         private static byte[] MakePayload(int length)
         {
             var data = new byte[length];
@@ -177,20 +262,38 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             public void Start() => Protocol.Start();
 
             public Task WriteRequestAsync(Guid requestId, Guid streamId, int bodyLength)
+                => WriteRequestAsync(requestId, streamId, bodyLength, attachmentStreamIds: null, attachmentLength: 0);
+
+            public Task WriteRequestAsync(Guid requestId, Guid streamId, int bodyLength, Guid[] attachmentStreamIds, int attachmentLength)
             {
+                var streams = new List<PayloadDescription>
+                {
+                    new()
+                    {
+                        Id = streamId.ToString("D"),
+                        ContentType = "application/json",
+                        Length = bodyLength,
+                    }
+                };
+
+                if (attachmentStreamIds != null)
+                {
+                    foreach (var attachmentId in attachmentStreamIds)
+                    {
+                        streams.Add(new PayloadDescription
+                        {
+                            Id = attachmentId.ToString("D"),
+                            ContentType = "application/octet-stream",
+                            Length = attachmentLength,
+                        });
+                    }
+                }
+
                 var payload = new RequestPayload
                 {
                     Verb = "POST",
                     Path = "/v3/conversations/abc/activities",
-                    Streams =
-                    [
-                        new PayloadDescription
-                        {
-                            Id = streamId.ToString("D"),
-                            ContentType = "application/json",
-                            Length = bodyLength
-                        }
-                    ]
+                    Streams = streams,
                 };
 
                 var json = JsonSerializer.SerializeToUtf8Bytes(payload);

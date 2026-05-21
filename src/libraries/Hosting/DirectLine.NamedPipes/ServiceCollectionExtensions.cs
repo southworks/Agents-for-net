@@ -59,14 +59,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// <see cref="DelegatingHandler"/> that routes urn:botframework:namedpipe requests to the
     /// <see cref="NamedPipeMessageHandler"/>, while passing all other requests through normally.
     /// </summary>
-    internal sealed class PipeRoutingDelegatingHandler : DelegatingHandler
+    internal sealed class PipeRoutingDelegatingHandler(NamedPipeMessageHandler pipeHandler) : DelegatingHandler
     {
-        private readonly NamedPipeMessageHandler _pipeHandler;
-
-        public PipeRoutingDelegatingHandler(NamedPipeMessageHandler pipeHandler)
-        {
-            _pipeHandler = pipeHandler ?? throw new ArgumentNullException(nameof(pipeHandler));
-        }
+        private readonly NamedPipeMessageHandler _pipeHandler = pipeHandler ?? throw new ArgumentNullException(nameof(pipeHandler));
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

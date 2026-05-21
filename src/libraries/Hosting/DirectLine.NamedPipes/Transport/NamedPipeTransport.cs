@@ -11,19 +11,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
     /// <summary>
     /// Thin async wrapper over a <see cref="PipeStream"/> for reading and writing byte buffers.
     /// </summary>
-    internal sealed class NamedPipeTransport : IAsyncDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="NamedPipeTransport"/> class.
+    /// </remarks>
+    /// <param name="stream">The underlying pipe stream.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
+    internal sealed class NamedPipeTransport(PipeStream stream) : IAsyncDisposable
     {
-        private readonly PipeStream _stream;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NamedPipeTransport"/> class.
-        /// </summary>
-        /// <param name="stream">The underlying pipe stream.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
-        public NamedPipeTransport(PipeStream stream)
-        {
-            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-        }
+        private readonly PipeStream _stream = stream ?? throw new ArgumentNullException(nameof(stream));
 
         /// <summary>
         /// Gets a value indicating whether the pipe is connected.
