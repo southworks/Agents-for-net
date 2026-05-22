@@ -94,26 +94,33 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         {
             if (_incomingPipe != null)
             {
-                if (_incomingPipe.IsConnected)
-                {
-                    _incomingPipe.Disconnect();
-                }
-
+                TryDisconnect(_incomingPipe);
                 await _incomingPipe.DisposeAsync().ConfigureAwait(false);
             }
 
             if (_outgoingPipe != null)
             {
-                if (_outgoingPipe.IsConnected)
-                {
-                    _outgoingPipe.Disconnect();
-                }
-
+                TryDisconnect(_outgoingPipe);
                 await _outgoingPipe.DisposeAsync().ConfigureAwait(false);
             }
 
             Reader = null;
             Writer = null;
+        }
+
+        private static void TryDisconnect(NamedPipeServerStream pipe)
+        {
+            try
+            {
+                if (pipe.IsConnected)
+                {
+                    pipe.Disconnect();
+                }
+            }
+            catch (Exception)
+            {
+                // Client may have already disconnected between the check and the call.
+            }
         }
     }
 }
