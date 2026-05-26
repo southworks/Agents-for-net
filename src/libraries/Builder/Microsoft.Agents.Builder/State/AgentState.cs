@@ -91,6 +91,8 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
             var cachedState = GetCachedState();
 
             // For concurrent access safety, use GetOrAdd when a defaultValueFactory is provided
