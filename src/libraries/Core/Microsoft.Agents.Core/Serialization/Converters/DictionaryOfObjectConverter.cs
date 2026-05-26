@@ -140,9 +140,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         SerializeJsonObject(jObj, item.Value, options);
                     }
-                    else if (newValue is JsonArray jArray)
+                    else if (newValue is JsonArray jArray && item.Value is IList sourceList)
                     {
-                        SerializeJsonArray(jArray, (IList)item.Value);
+                        SerializeJsonArray(jArray, sourceList);
                     }
                 }
 
@@ -221,12 +221,23 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             for (int i = 0; i < jArray.Count; i++)
             {
-                jArray[i].AddTypeInfo(sourceList[i]);
-                if (i == 0)
+                // JsonObject
+                if (jArray[i] is JsonObject jObj)
                 {
-                    // storing the array type in the first element
-                    jArray[i].AddCollectionTypeInfo(sourceList.GetType());
+                    jObj.AddTypeInfo(sourceList[i]);
+                    if (i == 0)
+                    {
+                        jObj.AddCollectionTypeInfo(sourceList.GetType());
+                    }
                 }
+
+                // JsonArray
+                else if (jArray[i] is JsonArray nestedArray && sourceList[i] is IList nestedList)
+                {
+                    SerializeJsonArray(nestedArray, nestedList);
+                }
+
+                // JsonValue (primitives like string, int, bool): no type info to add
             }
         }
 
@@ -264,7 +275,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 }
                 else
                 {
-                    objValue.Add(aItem);
+                    // Primitive array elements (string, int, bool) have no $type metadata.
+                    // Initialize the list on first encounter since typed-element path was never entered.
+                    objValue ??= new List<object>();
+
+                    objValue.Add(DeserializeJsonValue(aItem));
                 }
             }
 
