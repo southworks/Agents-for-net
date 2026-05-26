@@ -5,7 +5,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -21,6 +20,7 @@ namespace Microsoft.Agents.Builder.State
     public abstract class AgentState : IPropertyManager, IAgentState
     {
         private readonly IStorage _storage;
+        private readonly object _stateLock = new object();
         private CachedAgentState _cachedAgentState;
 
         /// <summary>
@@ -93,53 +93,35 @@ namespace Microsoft.Agents.Builder.State
 
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
-            var cachedState = GetCachedState();
-
-            // For concurrent access safety, use GetOrAdd when a defaultValueFactory is provided
-            // and the state dictionary supports it (ConcurrentDictionary).
-            if (defaultValueFactory != null && cachedState.State is ConcurrentDictionary<string, object> concurrentState)
+            lock (_stateLock)
             {
-                var raw = concurrentState.GetOrAdd(name, _ => defaultValueFactory());
-                if (raw is T typed)
+                T result = default;
+
+                try
                 {
-                    return typed;
+                    // if T is a value type, lookup up will throw key not found if not found, but as perf
+                    // optimization it will return null if not found for types which are not value types (string and object).
+                    result = GetPropertyValue<T>(name);
+
+                    if (result == null && defaultValueFactory != null)
+                    {
+                        // use default Value Factory and save default value for any further calls
+                        result = defaultValueFactory();
+                        SetPropertyValue(name, result);
+                    }
+                }
+                catch (KeyNotFoundException)
+                {
+                    if (defaultValueFactory != null)
+                    {
+                        // use default Value Factory and save default value for any further calls
+                        result = defaultValueFactory();
+                        SetPropertyValue(name, result);
+                    }
                 }
 
-                if (raw == null)
-                {
-                    return default;
-                }
-
-                // Convert the typed value
-                return ProtocolJsonSerializer.ToObject<T>(raw);
+                return result;
             }
-
-            T result = default;
-
-            try
-            {
-                // if T is a value type, lookup up will throw key not found if not found, but as perf
-                // optimization it will return null if not found for types which are not value types (string and object).
-                result = GetPropertyValue<T>(name);
-
-                if (result == null && defaultValueFactory != null)
-                {
-                    // use default Value Factory and save default value for any further calls
-                    result = defaultValueFactory();
-                    SetValue(name, result);
-                }
-            }
-            catch (KeyNotFoundException)
-            {
-                if (defaultValueFactory != null)
-                {
-                    // use default Value Factory and save default value for any further calls
-                    result = defaultValueFactory();
-                    SetValue(name, result);
-                }
-            }
-
-            return result;
         }
 
         public bool TryGetValue<T>(string name, out T result)
@@ -150,14 +132,17 @@ namespace Microsoft.Agents.Builder.State
                 return false;
             }
 
-            if (!HasValue(name))
+            lock (_stateLock)
             {
-                result = default;
-                return false;
-            }
+                if (!HasValue(name))
+                {
+                    result = default;
+                    return false;
+                }
 
-            result = GetPropertyValue<T>(name);
-            return true;
+                result = GetPropertyValue<T>(name);
+                return true;
+            }
         }
 
         /// <inheritdoc/>
@@ -168,7 +153,10 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            SetPropertyValue(name, value);
+            lock (_stateLock)
+            {
+                SetPropertyValue(name, value);
+            }
         }
 
         /// <summary>
@@ -225,21 +213,32 @@ namespace Microsoft.Agents.Builder.State
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var cachedState = GetCachedState();
-            if (cachedState != null && (force || cachedState.IsChanged()))
+            if (cachedState != null)
             {
-                var key = GetStorageKey(turnContext);
-
-                // Snapshot state to ensure the same data is written and hashed,
-                // preventing concurrent mutations from being reflected in the hash
-                // but missing from the persisted payload.
-                var snapshot = new Dictionary<string, object>(cachedState.State);
-                var changes = new Dictionary<string, object>
+                // Snapshot state and compute new hash under lock to prevent concurrent
+                // mutations from being reflected during serialization.
+                Dictionary<string, object> snapshot;
+                string newHash;
+                lock (_stateLock)
                 {
-                    { key, snapshot },
-                };
-                await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
-                cachedState.Hash = CachedAgentState.ComputeHash(snapshot);
-                return;
+                    snapshot = new Dictionary<string, object>(cachedState.State);
+                    newHash = CachedAgentState.ComputeHash(snapshot);
+                }
+
+                // Check if changed outside the lock (cheap string comparison)
+                if (force || cachedState.Hash != newHash)
+                {
+                    var key = GetStorageKey(turnContext);
+                    var changes = new Dictionary<string, object>
+                    {
+                        { key, snapshot },
+                    };
+                    await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+                    
+                    // Update hash after successful write
+                    cachedState.Hash = newHash;
+                    return;
+                }
             }
         }
 
@@ -368,9 +367,7 @@ namespace Microsoft.Agents.Builder.State
             /// <param name="state">Initial state for the <see cref="CachedAgentState"/>.</param>
             public CachedAgentState(string key, IDictionary<string, object> state = null)
             {
-                State = state != null
-                    ? new ConcurrentDictionary<string, object>(state)
-                    : new ConcurrentDictionary<string, object>();
+                State = state ?? new Dictionary<string, object>();
                 Hash = ComputeHash(State);
                 Key = key;
             }
@@ -399,7 +396,7 @@ namespace Microsoft.Agents.Builder.State
 
             internal void Clear()
             {
-                State = new ConcurrentDictionary<string, object>();
+                State = new Dictionary<string, object>();
                 Hash = string.Empty;
             }
         }
