@@ -110,10 +110,8 @@ namespace Microsoft.Agents.Builder.State
                     return default;
                 }
 
-                // Convert and cache the typed value
-                var converted = ProtocolJsonSerializer.ToObject<T>(raw);
-                concurrentState[name] = converted;
-                return converted;
+                // Convert the typed value
+                return ProtocolJsonSerializer.ToObject<T>(raw);
             }
 
             T result = default;
