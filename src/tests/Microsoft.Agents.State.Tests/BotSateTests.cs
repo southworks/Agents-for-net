@@ -196,6 +196,21 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
+        public async Task State_GetValueWithNullDefaultFactory_ReturnsNull()
+        {
+            // Arrange - verifies that a factory returning null doesn't throw
+            var userState = new UserState(new MemoryStorage());
+            var context = TestUtilities.CreateEmptyContext();
+            await userState.LoadAsync(context);
+
+            // Act
+            var value = userState.GetValue<string>("nullProp", () => null);
+
+            // Assert
+            Assert.Null(value);
+        }
+
+        [Fact]
         public async Task State_POCO_NoDefault()
         {
             // Arrange
@@ -885,7 +900,8 @@ namespace Microsoft.Agents.State.Tests
                 userState.SetValue($"key{i}", $"value{i}");
             }
 
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            // Timeout is a safety net only; the test completes when the writer finishes.
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             Exception capturedException = null;
 
             // Act - concurrent readers (simulating OnSendActivities on timer thread)
@@ -927,6 +943,11 @@ namespace Microsoft.Agents.State.Tests
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     capturedException = ex;
+                    cts.Cancel();
+                }
+                finally
+                {
+                    // Stop the reader as soon as the writer is done
                     cts.Cancel();
                 }
             });
