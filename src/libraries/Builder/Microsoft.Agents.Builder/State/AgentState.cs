@@ -5,6 +5,7 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -88,6 +89,29 @@ namespace Microsoft.Agents.Builder.State
             if (!IsLoaded())
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
+            }
+
+            var cachedState = GetCachedState();
+
+            // For concurrent access safety, use GetOrAdd when a defaultValueFactory is provided
+            // and the state dictionary supports it (ConcurrentDictionary).
+            if (defaultValueFactory != null && cachedState.State is ConcurrentDictionary<string, object> concurrentState)
+            {
+                var raw = concurrentState.GetOrAdd(name, _ => defaultValueFactory());
+                if (raw is T typed)
+                {
+                    return typed;
+                }
+
+                if (raw == null)
+                {
+                    return default;
+                }
+
+                // Convert and cache the typed value
+                var converted = ProtocolJsonSerializer.ToObject<T>(raw);
+                concurrentState[name] = converted;
+                return converted;
             }
 
             T result = default;
@@ -339,7 +363,9 @@ namespace Microsoft.Agents.Builder.State
             /// <param name="state">Initial state for the <see cref="CachedAgentState"/>.</param>
             public CachedAgentState(string key, IDictionary<string, object> state = null)
             {
-                State = state ?? new Dictionary<string, object>();
+                State = state != null
+                    ? new ConcurrentDictionary<string, object>(state)
+                    : new ConcurrentDictionary<string, object>();
                 Hash = ComputeHash(State);
                 Key = key;
             }
@@ -368,7 +394,7 @@ namespace Microsoft.Agents.Builder.State
 
             internal void Clear()
             {
-                State = new Dictionary<string, object>();
+                State = new ConcurrentDictionary<string, object>();
                 Hash = string.Empty;
             }
         }
