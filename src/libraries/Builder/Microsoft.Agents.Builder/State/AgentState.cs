@@ -230,12 +230,17 @@ namespace Microsoft.Agents.Builder.State
             if (cachedState != null && (force || cachedState.IsChanged()))
             {
                 var key = GetStorageKey(turnContext);
+
+                // Snapshot state to ensure the same data is written and hashed,
+                // preventing concurrent mutations from being reflected in the hash
+                // but missing from the persisted payload.
+                var snapshot = new Dictionary<string, object>(cachedState.State);
                 var changes = new Dictionary<string, object>
                 {
-                    { key, cachedState.State },
+                    { key, snapshot },
                 };
                 await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
-                cachedState.Hash = CachedAgentState.ComputeHash(cachedState.State);
+                cachedState.Hash = CachedAgentState.ComputeHash(snapshot);
                 return;
             }
         }
