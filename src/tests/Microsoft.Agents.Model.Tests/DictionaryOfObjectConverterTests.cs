@@ -577,6 +577,101 @@ namespace Microsoft.Agents.Model.Tests
 
         #endregion
 
+        #region Roundtrip: primitive arrays deserialize to typed CLR arrays (not JsonElement / List<object>)
+
+        [Fact]
+        public void Roundtrip_StringArray_DeserializesToStringArray()
+        {
+            var dictionary = new Dictionary<string, object>
+            {
+                ["parameters"] = new string[] { "AddressNormalizerResponse", "AzureMaps", "{Street}" }
+            };
+
+            var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+            IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
+
+            Assert.NotNull(deserialized);
+            Assert.IsType<string[]>(deserialized["parameters"]);
+            string[] parameters = (string[])deserialized["parameters"];
+            Assert.Equal(3, parameters.Length);
+            Assert.Equal("AddressNormalizerResponse", parameters[0]);
+            Assert.Equal("AzureMaps", parameters[1]);
+            Assert.Equal("{Street}", parameters[2]);
+        }
+
+        [Fact]
+        public void Roundtrip_IntArray_DeserializesToIntArray()
+        {
+            var dictionary = new Dictionary<string, object>
+            {
+                ["counters"] = new int[] { 10, 20, 30 }
+            };
+
+            var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+            IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
+
+            Assert.NotNull(deserialized);
+            Assert.IsType<int[]>(deserialized["counters"]);
+            int[] counters = (int[])deserialized["counters"];
+            Assert.Equal(3, counters.Length);
+            Assert.Equal(10, counters[0]);
+            Assert.Equal(20, counters[1]);
+            Assert.Equal(30, counters[2]);
+        }
+
+        [Fact]
+        public void Roundtrip_BoolArray_DeserializesToBoolArray()
+        {
+            var dictionary = new Dictionary<string, object>
+            {
+                ["flags"] = new bool[] { true, false, true }
+            };
+
+            var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+            IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
+
+            Assert.NotNull(deserialized);
+            Assert.IsType<bool[]>(deserialized["flags"]);
+            bool[] flags = (bool[])deserialized["flags"];
+            Assert.Equal(3, flags.Length);
+            Assert.True(flags[0]);
+            Assert.False(flags[1]);
+            Assert.True(flags[2]);
+        }
+
+        [Fact]
+        public void Roundtrip_WaterfallValues_StringArray_DeserializesToStringArray()
+        {
+            // Simulates the exact WaterfallDialog multi-step pattern:
+            // Step 1 stores string[] in stepContext.Values, state is serialized to storage.
+            // Step 2 loads state from storage, reads stepContext.Values["ApiParameters"].
+            // The value must come back as string[], not JsonElement or List<object>.
+            var waterfallState = new Dictionary<string, object>
+            {
+                ["options"] = (object)null,
+                ["values"] = new Dictionary<string, object>
+                {
+                    ["ApiParameters"] = new string[] { "AddressNormalizerResponse", "AzureMaps", "{Street}" }
+                },
+                ["instanceId"] = "test-id",
+                ["stepIndex"] = 1
+            };
+
+            var json = JsonSerializer.Serialize<IDictionary<string, object>>(waterfallState, SdkOptions);
+            IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
+
+            Assert.NotNull(deserialized);
+            IDictionary<string, object> values = (IDictionary<string, object>)deserialized["values"];
+            Assert.IsType<string[]>(values["ApiParameters"]);
+            string[] parameters = (string[])values["ApiParameters"];
+            Assert.Equal(3, parameters.Length);
+            Assert.Equal("AddressNormalizerResponse", parameters[0]);
+            Assert.Equal("AzureMaps", parameters[1]);
+            Assert.Equal("{Street}", parameters[2]);
+        }
+
+        #endregion
+
         #region Complex real-world scenarios
 
         [Fact]
@@ -631,15 +726,15 @@ namespace Microsoft.Agents.Model.Tests
 
             Assert.NotNull(deserialized);
             Assert.Equal("test-dialog", deserialized["dialogId"].ToString());
-            
+
             IList options = (IList)deserialized["options"];
             Assert.Equal(3, options.Count);
             Assert.Equal("A", options[0].ToString());
-            
+
             IList scores = (IList)deserialized["scores"];
             Assert.Equal(3, scores.Count);
             Assert.Equal(10, Convert.ToInt32(scores[0]));
-            
+
             IList enabled = (IList)deserialized["enabled"];
             Assert.Equal(2, enabled.Count);
             Assert.True(Convert.ToBoolean(enabled[0]));
