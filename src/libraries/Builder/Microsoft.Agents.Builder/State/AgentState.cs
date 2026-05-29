@@ -68,6 +68,8 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
             lock (_stateLock)
             {
                 var cachedState = GetCachedState();
@@ -82,6 +84,8 @@ namespace Microsoft.Agents.Builder.State
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
+
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
             lock (_stateLock)
             {
@@ -159,6 +163,8 @@ namespace Microsoft.Agents.Builder.State
             {
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
+
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
             lock (_stateLock)
             {
