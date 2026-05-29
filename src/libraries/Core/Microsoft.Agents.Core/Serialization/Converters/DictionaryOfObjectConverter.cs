@@ -95,6 +95,18 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                         dict[child.Key] = valValue.GetBoolean();
 #endif
                                         break;
+
+                                    case JsonValueKind.Array:
+                                        JsonArray childArray = JsonArray.Create(valValue);
+                                        if (childArray != null)
+                                        {
+#if NETSTANDARD
+                                            changes.Add(new KeyValuePair<string, object>(child.Key, DeserializeJsonArray(childArray, options)));
+#else
+                                            dict[child.Key] = DeserializeJsonArray(childArray, options);
+#endif
+                                        }
+                                        break;
                                 }
                             }
                         }
@@ -291,6 +303,36 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     array.SetValue(objValue[i], i);
                 }
                 return array;
+            }
+
+            // Promote homogeneous primitive lists to typed arrays so that
+            // round-tripped primitive arrays (e.g. string[], int[], bool[])
+            // come back as their original CLR type instead of List<object>.
+            if (objValue is List<object> { Count: > 0 })
+            {
+                Type elementType = objValue[0]?.GetType();
+                if (elementType != null)
+                {
+                    bool allSameType = true;
+                    for (int i = 1; i < objValue.Count; i++)
+                    {
+                        if (objValue[i]?.GetType() != elementType)
+                        {
+                            allSameType = false;
+                            break;
+                        }
+                    }
+
+                    if (allSameType)
+                    {
+                        Array typedArray = Array.CreateInstance(elementType, objValue.Count);
+                        for (int i = 0; i < objValue.Count; i++)
+                        {
+                            typedArray.SetValue(objValue[i], i);
+                        }
+                        return typedArray;
+                    }
+                }
             }
 
             return objValue;
