@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.State
 
             lock (_stateLock)
             {
-                DeletePropertyValue(name);
+                DeletePropertyValueCore(name);
             }
         }
 
@@ -107,13 +107,13 @@ namespace Microsoft.Agents.Builder.State
                 {
                     // if T is a value type, lookup up will throw key not found if not found, but as perf
                     // optimization it will return null if not found for types which are not value types (string and object).
-                    result = GetPropertyValue<T>(name);
+                    result = GetPropertyValueCore<T>(name);
 
                     if (result == null && defaultValueFactory != null)
                     {
                         // use default Value Factory and save default value for any further calls
                         result = defaultValueFactory();
-                        SetPropertyValue(name, result);
+                        SetPropertyValueCore(name, result);
                     }
                 }
                 catch (KeyNotFoundException)
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Builder.State
                     {
                         // use default Value Factory and save default value for any further calls
                         result = defaultValueFactory();
-                        SetPropertyValue(name, result);
+                        SetPropertyValueCore(name, result);
                     }
                 }
 
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Builder.State
                     return false;
                 }
 
-                result = GetPropertyValue<T>(name);
+                result = GetPropertyValueCore<T>(name);
                 return true;
             }
         }
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Builder.State
 
             lock (_stateLock)
             {
-                SetPropertyValue(name, value);
+                SetPropertyValueCore(name, value);
             }
         }
 
@@ -289,7 +289,8 @@ namespace Microsoft.Agents.Builder.State
         /// <typeparam name="T">The value type of the property.</typeparam>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
+        /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).
+        /// This method is thread-safe and can be called directly by derived classes.</remarks>
         protected T GetPropertyValue<T>(string propertyName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -301,32 +302,7 @@ namespace Microsoft.Agents.Builder.State
 
             lock (_stateLock)
             {
-                var cachedState = GetCachedState();
-                if (cachedState.State.TryGetValue(propertyName, out object result))
-                {
-                    if (result is T t)
-                    {
-                        return t;
-                    }
-
-                    if (result == null)
-                    {
-                        return default;
-                    }
-
-                    // If types are not used by storage serialization try to convert the object to the type expected
-                    // using the serializer.
-                    var converted = ProtocolJsonSerializer.ToObject<T>(result);
-                    cachedState.State[propertyName] = converted;
-                    return converted;
-                }
-
-                if (typeof(T).IsValueType)
-                {
-                    throw new KeyNotFoundException(propertyName);
-                }
-
-                return default;
+                return GetPropertyValueCore<T>(propertyName);
             }
         }
 
@@ -335,13 +311,15 @@ namespace Microsoft.Agents.Builder.State
         /// </summary>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>Caller must hold _stateLock when calling this method.</remarks>
+        /// <remarks>This method is thread-safe and can be called directly by derived classes.</remarks>
         protected void DeletePropertyValue(string propertyName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
-            var cachedState = GetCachedState();
-            cachedState.State.Remove(propertyName);
+            lock (_stateLock)
+            {
+                DeletePropertyValueCore(propertyName);
+            }
         }
 
         /// <summary>
@@ -350,11 +328,64 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="propertyName">The name of the property to set.</param>
         /// <param name="value">The value to set on the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>Caller must hold _stateLock when calling this method.</remarks>
+        /// <remarks>This method is thread-safe and can be called directly by derived classes.</remarks>
         protected void SetPropertyValue(string propertyName, object value)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
 
+            lock (_stateLock)
+            {
+                SetPropertyValueCore(propertyName, value);
+            }
+        }
+
+        /// <summary>
+        /// Core implementation for getting a property value. Must be called under _stateLock.
+        /// </summary>
+        private T GetPropertyValueCore<T>(string propertyName)
+        {
+            var cachedState = GetCachedState();
+            if (cachedState.State.TryGetValue(propertyName, out object result))
+            {
+                if (result is T t)
+                {
+                    return t;
+                }
+
+                if (result == null)
+                {
+                    return default;
+                }
+
+                // If types are not used by storage serialization try to convert the object to the type expected
+                // using the serializer.
+                var converted = ProtocolJsonSerializer.ToObject<T>(result);
+                cachedState.State[propertyName] = converted;
+                return converted;
+            }
+
+            if (typeof(T).IsValueType)
+            {
+                throw new KeyNotFoundException(propertyName);
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// Core implementation for deleting a property value. Must be called under _stateLock.
+        /// </summary>
+        private void DeletePropertyValueCore(string propertyName)
+        {
+            var cachedState = GetCachedState();
+            cachedState.State.Remove(propertyName);
+        }
+
+        /// <summary>
+        /// Core implementation for setting a property value. Must be called under _stateLock.
+        /// </summary>
+        private void SetPropertyValueCore(string propertyName, object value)
+        {
             var cachedState = GetCachedState();
             cachedState.State[propertyName] = value;
         }
