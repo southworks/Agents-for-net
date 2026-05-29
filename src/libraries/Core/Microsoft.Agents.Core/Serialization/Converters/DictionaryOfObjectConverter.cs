@@ -308,18 +308,18 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             // Promote homogeneous primitive lists to typed arrays so that
             // round-tripped primitive arrays (e.g. string[], int[], bool[])
             // come back as their original CLR type instead of List<object>.
-            if (objValue is List<object> { Count: > 0 })
+            if (objValue is List<object> list && list.Count > 0)
             {
-                Type elementType = objValue[0]?.GetType();
+                Type elementType = list[0]?.GetType();
                 if (elementType != null
                     && (elementType == typeof(string)
                         || elementType == typeof(int)
                         || elementType == typeof(bool)))
                 {
                     bool allSameType = true;
-                    for (int i = 1; i < objValue.Count; i++)
+                    for (int i = 1; i < list.Count; i++)
                     {
-                        if (objValue[i]?.GetType() != elementType)
+                        if (list[i]?.GetType() != elementType)
                         {
                             allSameType = false;
                             break;
@@ -328,10 +328,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 
                     if (allSameType)
                     {
-                        Array typedArray = Array.CreateInstance(elementType, objValue.Count);
-                        for (int i = 0; i < objValue.Count; i++)
+                        Array typedArray = Array.CreateInstance(elementType, list.Count);
+                        for (int i = 0; i < list.Count; i++)
                         {
-                            typedArray.SetValue(objValue[i], i);
+                            typedArray.SetValue(list[i], i);
                         }
                         return typedArray;
                     }
