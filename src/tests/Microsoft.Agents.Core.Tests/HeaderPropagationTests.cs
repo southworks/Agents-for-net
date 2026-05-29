@@ -125,6 +125,7 @@ namespace Microsoft.Agents.Core.HeaderPropagation.Tests
         {
             HeaderPropagationContext.HeadersToPropagate = new HeaderPropagationEntryCollection();
             HeaderPropagationContext.HeaderProviders = new List<IHeaderValueProvider>();
+            HeaderPropagationContext.HeadersFromRequest = new Dictionary<string, StringValues>();
         }
 
         [Fact]
