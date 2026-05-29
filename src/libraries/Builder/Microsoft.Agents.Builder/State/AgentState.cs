@@ -68,8 +68,11 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            var cachedState = GetCachedState();
-            return cachedState.State.ContainsKey(name);
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                return cachedState.State.ContainsKey(name);
+            }
         }
 
         /// <inheritdoc/>
@@ -80,7 +83,10 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            DeletePropertyValue(name);
+            lock (_stateLock)
+            {
+                DeletePropertyValue(name);
+            }
         }
 
         /// <inheritdoc/>
@@ -134,7 +140,8 @@ namespace Microsoft.Agents.Builder.State
 
             lock (_stateLock)
             {
-                if (!HasValue(name))
+                var cachedState = GetCachedState();
+                if (!cachedState.State.ContainsKey(name))
                 {
                     result = default;
                     return false;
@@ -250,8 +257,11 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
-            GetCachedState().Clear();
+            lock (_stateLock)
+            {
+                // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
+                GetCachedState().Clear();
+            }
         }
 
         /// <inheritdoc/>
@@ -289,32 +299,35 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            var cachedState = GetCachedState();
-            if (cachedState.State.TryGetValue(propertyName, out object result))
+            lock (_stateLock)
             {
-                if (result is T t)
+                var cachedState = GetCachedState();
+                if (cachedState.State.TryGetValue(propertyName, out object result))
                 {
-                    return t;
+                    if (result is T t)
+                    {
+                        return t;
+                    }
+
+                    if (result == null)
+                    {
+                        return default;
+                    }
+
+                    // If types are not used by storage serialization try to convert the object to the type expected
+                    // using the serializer.
+                    var converted = ProtocolJsonSerializer.ToObject<T>(result);
+                    cachedState.State[propertyName] = converted;
+                    return converted;
                 }
 
-                if (result == null)
+                if (typeof(T).IsValueType)
                 {
-                    return default;
+                    throw new KeyNotFoundException(propertyName);
                 }
 
-                // If types are not used by storage serialization try to convert the object to the type expected
-                // using the serializer.
-                var converted = ProtocolJsonSerializer.ToObject<T>(result);
-                cachedState.State[propertyName] = converted;
-                return converted;
+                return default;
             }
-
-            if (typeof(T).IsValueType)
-            {
-                throw new KeyNotFoundException(propertyName);
-            }
-
-            return default;
         }
 
         /// <summary>
@@ -322,6 +335,7 @@ namespace Microsoft.Agents.Builder.State
         /// </summary>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>Caller must hold _stateLock when calling this method.</remarks>
         protected void DeletePropertyValue(string propertyName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -336,6 +350,7 @@ namespace Microsoft.Agents.Builder.State
         /// <param name="propertyName">The name of the property to set.</param>
         /// <param name="value">The value to set on the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>Caller must hold _stateLock when calling this method.</remarks>
         protected void SetPropertyValue(string propertyName, object value)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -346,8 +361,11 @@ namespace Microsoft.Agents.Builder.State
 
         internal JsonElement Get()
         {
-            var cachedState = GetCachedState();
-            return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
+            }
         }
 
         internal CachedAgentState GetCachedState()
