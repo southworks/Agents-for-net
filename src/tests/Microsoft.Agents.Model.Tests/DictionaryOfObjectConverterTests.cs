@@ -590,6 +590,7 @@ namespace Microsoft.Agents.Model.Tests
             var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
             IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
 
+            Assert.NotNull(deserialized);
             Assert.IsType<string[]>(deserialized["parameters"]);
             string[] parameters = (string[])deserialized["parameters"];
             Assert.Equal(3, parameters.Length);
@@ -609,6 +610,7 @@ namespace Microsoft.Agents.Model.Tests
             var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
             IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
 
+            Assert.NotNull(deserialized);
             Assert.IsType<int[]>(deserialized["counters"]);
             int[] counters = (int[])deserialized["counters"];
             Assert.Equal(3, counters.Length);
@@ -628,6 +630,7 @@ namespace Microsoft.Agents.Model.Tests
             var json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
             IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
 
+            Assert.NotNull(deserialized);
             Assert.IsType<bool[]>(deserialized["flags"]);
             bool[] flags = (bool[])deserialized["flags"];
             Assert.Equal(3, flags.Length);
@@ -657,6 +660,7 @@ namespace Microsoft.Agents.Model.Tests
             var json = JsonSerializer.Serialize<IDictionary<string, object>>(waterfallState, SdkOptions);
             IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
 
+            Assert.NotNull(deserialized);
             IDictionary<string, object> values = (IDictionary<string, object>)deserialized["values"];
             Assert.IsType<string[]>(values["ApiParameters"]);
             string[] parameters = (string[])values["ApiParameters"];
