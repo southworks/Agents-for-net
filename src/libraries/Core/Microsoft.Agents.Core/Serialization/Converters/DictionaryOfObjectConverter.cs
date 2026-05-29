@@ -311,7 +311,10 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             if (objValue is List<object> { Count: > 0 })
             {
                 Type elementType = objValue[0]?.GetType();
-                if (elementType != null)
+                if (elementType != null
+                    && (elementType == typeof(string)
+                        || elementType == typeof(int)
+                        || elementType == typeof(bool)))
                 {
                     bool allSameType = true;
                     for (int i = 1; i < objValue.Count; i++)
