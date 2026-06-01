@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -27,12 +28,13 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly string _agentName;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
-        
+
         public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
@@ -45,7 +47,9 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
-            Logger = options.LoggerFactory?.CreateLogger<AgentApplication>() ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
+            _agentName = GetType().GetCustomAttribute<AgentAttribute>()?.Name ?? GetType().Name;
 
             if (Options.TurnStateFactory == null)
             {
@@ -756,6 +760,20 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            // Register Activity-derived header provider for agentic requests.
+            if (turnContext.Activity.IsAgenticRequest())
+            {
+                HeaderPropagationContext.HeaderProviders.Add(
+                    new AgenticHeaderProvider(turnContext.Activity, _agentName));
+            }
+
+            using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["RequestId"] = turnContext.Activity.RequestId,
+                ["ConversationId"] = turnContext.Activity.Conversation?.Id,
+                ["ActivityType"] = turnContext.Activity.Type
+            });
+
             using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
             if (_userAuth != null)
@@ -836,7 +854,7 @@ namespace Microsoft.Agents.Builder.App
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList(turnContext);
                         LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
@@ -887,6 +905,11 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
                     onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
+
+                    if (!routeMatched)
+                    {
+                        LogNoRouteMatched(Logger, turnContext.Activity.Type);
+                    }
 
                     // Call after turn handler
                     using (var telemetryScope = new ScopeAfterTurn())
