@@ -132,10 +132,11 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Null(result);
 
             // Assert - OAuthCard was sent to prompt user sign-in
-            var oauthCardActivity = sentActivities.FirstOrDefault(a =>
-                a.Type == ActivityTypes.Message || (a as Activity)?.Attachments?.Any(att => att.ContentType == OAuthCard.ContentType) == true);
+            var oauthCardActivity = sentActivities
+                .OfType<Activity>()
+                .FirstOrDefault(a => a.Attachments?.Any(att => att.ContentType == OAuthCard.ContentType) == true);
             Assert.NotNull(oauthCardActivity);
-            Assert.Contains(((Activity)oauthCardActivity).Attachments, a => a.ContentType == OAuthCard.ContentType);
+            Assert.Contains(oauthCardActivity.Attachments, a => a.ContentType == OAuthCard.ContentType);
         }
 
         [Fact]
