@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         SerializeJsonObject(jObj, item.Value, options);
                     }
-                    else if (newValue is JsonArray jArray && item.Value is IList sourceList)
+                    else if (newValue is JsonArray jArray && item.Value is IList sourceList && !(item.Value is Array arr && arr.Rank > 1))
                     {
                         SerializeJsonArray(jArray, sourceList);
                     }
