@@ -145,7 +145,7 @@ sequenceDiagram
     UserAuthorization->>Teams: OAuthCard
     UserAuthorization->>UserAuthorization: Set FlowState (started, expires)
     UserAuthorization->>UserAuthorization: Store Continuation Activity
-    UserAuthorization-->>AgentApplication: SingIn (pending)
+    UserAuthorization-->>AgentApplication: SignIn (pending)
     deactivate UserAuthorization
     AgentApplication-->>Teams: (turn ends, no route)
     deactivate AgentApplication
