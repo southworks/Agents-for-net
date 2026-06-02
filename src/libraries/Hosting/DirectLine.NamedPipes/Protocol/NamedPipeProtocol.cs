@@ -76,6 +76,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
         private CancellationTokenSource _cts;
         private volatile Task _readLoop;
+        private int _disposed;
         private int _started;
 
         /// <summary>
@@ -340,33 +341,42 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
                                         if (remaining > 0)
                                         {
-                                            var drainBuffer = new byte[remaining];
-                                            bool drained;
+                                            // Drain in fixed-size chunks to avoid LOH pressure for large streams.
+                                            var drainChunk = new byte[Math.Min(remaining, MaxSendStreamChunkSize)];
+                                            bool drainFailed = false;
                                             using (var drainCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                                             {
                                                 drainCts.CancelAfter(TimeSpan.FromSeconds(TrailingByteDrainTimeoutSeconds));
                                                 try
                                                 {
-                                                    drained = await _reader.ReadExactAsync(drainBuffer, remaining, drainCts.Token).ConfigureAwait(false);
+                                                    int left = remaining;
+                                                    while (left > 0)
+                                                    {
+                                                        int toRead = Math.Min(left, drainChunk.Length);
+                                                        if (!await _reader.ReadExactAsync(drainChunk, toRead, drainCts.Token).ConfigureAwait(false))
+                                                        {
+                                                            _logger.LogWarning("NamedPipeProtocol: Pipe disconnected during trailing-byte drain for stream {Id}.", header.Id);
+                                                            drainFailed = true;
+                                                            break;
+                                                        }
+                                                        streamMs.Write(drainChunk, 0, toRead);
+                                                        left -= toRead;
+                                                    }
                                                 }
                                                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                                                 {
                                                     _logger.LogError(
                                                         "NamedPipeProtocol: Trailing-byte drain for stream {Id} timed out after {Timeout}s (remaining={Remaining}). Disconnecting.",
                                                         header.Id, TrailingByteDrainTimeoutSeconds, remaining);
-                                                    connected = false;
-                                                    break;
+                                                    drainFailed = true;
                                                 }
                                             }
 
-                                            if (!drained)
+                                            if (drainFailed)
                                             {
-                                                _logger.LogWarning("NamedPipeProtocol: Pipe disconnected during trailing-byte drain for stream {Id}.", header.Id);
                                                 connected = false;
                                                 break;
                                             }
-
-                                            streamMs.Write(drainBuffer, 0, remaining);
                                         }
 
                                         _logger.LogInformation(
@@ -1278,6 +1288,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
             // Best-effort shutdown notification with a real token so a wedged pipe releases _writeLock.
             try
             {

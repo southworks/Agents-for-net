@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -12,7 +11,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -278,8 +276,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 ContentType = "application/json",
                 Attachments =
                 [
-                    new NamedPipeAttachment { ContentType = "image/png", Body = new byte[] { 0x89, 0x50 } },
-                    new NamedPipeAttachment { ContentType = null, Body = new byte[] { 1, 2, 3 } },
+                    new NamedPipeAttachment { ContentType = "image/png", Body = [0x89, 0x50] },
+                    new NamedPipeAttachment { ContentType = null, Body = [1, 2, 3] },
                 ],
             };
 

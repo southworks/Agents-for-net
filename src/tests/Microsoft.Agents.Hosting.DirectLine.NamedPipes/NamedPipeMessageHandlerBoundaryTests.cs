@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
@@ -254,7 +253,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 

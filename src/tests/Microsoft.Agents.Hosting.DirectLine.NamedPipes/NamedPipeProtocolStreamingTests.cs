@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // Descriptor says declaredLength, but we'll only send actualLength bytes
             await harness.WriteRequestAsync(req1Id, primaryStreamId1, primaryBody.Length,
-                new[] { attachmentId1 }, declaredLength);
+                [attachmentId1], declaredLength);
 
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId1, primaryBody, end: true);
 
@@ -359,7 +359,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var body = Encoding.UTF8.GetBytes("{\"type\":\"message\",\"text\":\"hello\"}");
 
             await harness.WriteRequestAsync(requestId, bodyStreamId, body.Length,
-                new[] { attachmentStreamId }, 1024);
+                [attachmentStreamId], 1024);
 
             // Send the body stream (arrives fine)
             await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId, body, end: true);
@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // The request should still be dispatched after the pending dispatch timeout (15s)
             // plus the 5s read-timeout sweep interval
-            var result = await receivedRequests.Task.WaitAsync(TimeSpan.FromSeconds(25));
+            var result = await receivedRequests.Task.WaitAsync(TimeSpan.FromSeconds(NamedPipeProtocol.PendingDispatchTimeoutSeconds + 10));
 
             Assert.NotNull(result);
             Assert.Equal(body, result.Body);
@@ -406,12 +406,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var body1 = Encoding.UTF8.GetBytes("{\"type\":\"message\",\"text\":\"first\"}");
 
             await harness.WriteRequestAsync(req1Id, bodyStreamId1, body1.Length,
-                new[] { attachmentStreamId }, 500);
+                [attachmentStreamId], 500);
             await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId1, body1, end: true);
             // Attachment stream deliberately NOT sent
 
             // Wait for timeout to fire
-            await Task.Delay(TimeSpan.FromSeconds(21));
+            await Task.Delay(TimeSpan.FromSeconds(NamedPipeProtocol.PendingDispatchTimeoutSeconds + 6));
 
             // Second request: should dispatch immediately (no missing streams)
             var req2Id = Guid.NewGuid();
@@ -451,7 +451,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(requestId, bodyStreamId, trailingData.Length);
 
             // Send a stream frame with PayloadLength=0, End=true (DLFlex bug: stream.Length returned 0)
-            await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId, Array.Empty<byte>(), end: true);
+            await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId, [], end: true);
 
             // Write trailing unframed bytes (this is what DLFlex's CopyToAsync actually writes)
             await harness.WriteRawBytesAsync(trailingData);

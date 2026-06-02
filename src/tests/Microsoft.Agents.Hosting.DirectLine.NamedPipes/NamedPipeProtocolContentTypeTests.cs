@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
@@ -131,7 +130,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 primaryId,
                 primaryBody.Length,
                 primaryContentType: "application/json",
-                attachmentStreams: new[] { (attachmentId, attachmentBody.Length, "image/png") });
+                attachmentStreams: [(attachmentId, attachmentBody.Length, "image/png")]);
 
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
@@ -178,7 +177,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 primaryId,
                 primaryBody.Length,
                 primaryContentType: "application/json",
-                attachmentStreams: new[] { (attachmentId, 262144, "application/octet-stream") });
+                attachmentStreams: [(attachmentId, 262144, "application/octet-stream")]);
 
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
 
@@ -270,11 +269,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             {
                 StatusCode = 200,
                 Body = Encoding.UTF8.GetBytes("{}"),
-                Attachments = new List<NamedPipeAttachment>
-                {
-                    new() { ContentType = "image/png", Body = new byte[] { 1, 2, 3 } },
-                    new() { ContentType = "audio/wav", Body = new byte[] { 4, 5, 6, 7 } },
-                },
+                Attachments =
+                [
+                    new() { ContentType = "image/png", Body = [1, 2, 3] },
+                    new() { ContentType = "audio/wav", Body = [4, 5, 6, 7] },
+                ],
             });
 
             var requestId = Guid.NewGuid();
@@ -482,7 +481,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 

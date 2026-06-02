@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         // ----- Malformed header in read loop -----
 
         [Fact]
-        public async Task ReadLoop_MalformedHeader_CompletionFaults()
+        public async Task ReadLoop_MalformedHeader_CompletesGracefully()
         {
             using var harness = await TestHarness.CreateAsync();
 
@@ -255,7 +255,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                     PayloadLength = 1,
                     End = false,
                 };
-                await harness.WriteFrameAsync(header, new byte[] { 0xFF });
+                await harness.WriteFrameAsync(header, [0xFF]);
             }
 
             // Read loop should exit due to MaxStreamBuffers exceeded.
@@ -328,23 +328,21 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             };
             await harness.WriteFrameAsync(header, badJson);
 
-            // The read loop should exit due to the unhandled JsonException.
+            // The read loop should exit due to the JsonException.
             await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
-        // ----- DisposeAsync after prior dispose does not throw -----
-        // NOTE: DisposeAsync currently throws ObjectDisposedException on second call
-        // because _cts is disposed. This test documents actual behavior.
+        // ----- DisposeAsync is idempotent -----
 
         [Fact]
-        public async Task DisposeAsync_SecondCall_ThrowsObjectDisposed()
+        public async Task DisposeAsync_SecondCall_DoesNotThrow()
         {
             using var harness = await TestHarness.CreateAsync();
 
             await harness.Protocol.DisposeAsync();
 
-            await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-                await harness.Protocol.DisposeAsync());
+            // Second call should be a no-op.
+            await harness.Protocol.DisposeAsync();
         }
 
         // ----- DisposeAsync sends CancelAll frame -----
@@ -479,7 +477,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 
