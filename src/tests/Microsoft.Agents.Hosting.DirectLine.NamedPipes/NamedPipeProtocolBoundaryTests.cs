@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
         }
 
-        // ----- Oversized payload triggers disconnect -----
+        // ----- Pipe closure completes gracefully -----
 
         [Fact]
         public async Task ReadLoop_PipeClosed_CompletesGracefully()

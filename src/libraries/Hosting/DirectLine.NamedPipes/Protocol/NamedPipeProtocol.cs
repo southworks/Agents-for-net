@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                                 && streamMs.Length < expectedLen)
                             {
                                 var missing = (int)(expectedLen - streamMs.Length);
-                                if (missing <= MaxStreamSize)
+                                if (expectedLen <= MaxStreamSize)
                                 {
                                     // Probe: read 1 byte with 20ms timeout. DLFlex trailing bytes
                                     // are synchronously available if they exist.
@@ -400,8 +400,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                                 else
                                 {
                                     _logger.LogWarning(
-                                        "NamedPipeProtocol: Stream {Id} missing {Missing} bytes exceeds MaxStreamSize; skipping drain.",
-                                        header.Id, missing);
+                                        "NamedPipeProtocol: Stream {Id} expected length {Expected} exceeds MaxStreamSize; skipping drain.",
+                                        header.Id, expectedLen);
                                 }
                             }
 
@@ -626,10 +626,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 else
                 {
                     _logger.LogWarning(
-                        "NamedPipeProtocol: TakeAttachmentStreams — no buffer found for stream {Id} (descriptor[{Index}], type={ContentType}, declaredLen={Len}). completedStreams.Contains={InCompleted}, bufferKeys=[{Keys}].",
+                        "NamedPipeProtocol: TakeAttachmentStreams — no buffer found for stream {Id} (descriptor[{Index}], type={ContentType}, declaredLen={Len}). completedStreams.Contains={InCompleted}, activeBufferCount={Count}.",
                         attachmentId, i, descriptor.ContentType, descriptor.Length,
                         completedStreams.Contains(attachmentId),
-                        string.Join(",", streamBuffers.Keys));
+                        streamBuffers.Count);
                 }
 
                 completedStreams.Remove(attachmentId);
