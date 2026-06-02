@@ -1,7 +1,7 @@
 # Teams SSO (non-Agentic) OAuth flow via DotNet AgentApplication
 
 - **Teams** is the Teams backend (SMBA).
-- **Agent** is the business logic for the Agent.  The customers code.
+- **Agent** is the business logic for the Agent.  The customer's code.
 - **AgentApplication** is SDK provided application logic.
 - **UserAuthorization** is SDK provided OAuth flow logic.
 - **Token Service** is the Azure Token Service.
