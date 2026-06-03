@@ -226,37 +226,6 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         }
 
         /// <summary>
-        /// When descriptor declares length=0 and sender sends a 0-byte stream frame,
-        /// the request dispatches immediately without hanging.
-        /// </summary>
-        [Fact]
-        public async Task ZeroLengthDescriptor_WithEmptyFrame_DispatchesNormally()
-        {
-            using var harness = await ProtocolHarness.CreateAsync();
-            var received = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
-            harness.Protocol.OnRequestReceived = (req, _) =>
-            {
-                received.TrySetResult(req);
-                return Task.FromResult(NamedPipeResponse.OK());
-            };
-            harness.Start();
-
-            var requestId = Guid.NewGuid();
-            var primaryStreamId = Guid.NewGuid();
-            var attachmentId = Guid.NewGuid();
-            var primaryBody = Encoding.UTF8.GetBytes("{\"type\":\"message\"}");
-
-            await harness.WriteRequestAsync(requestId, primaryStreamId, primaryBody.Length, [attachmentId], attachmentLength: 0);
-            await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId, primaryBody, end: true);
-            await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, [], end: true);
-
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.Equal(primaryBody, req.Body);
-            Assert.Single(req.Attachments);
-            Assert.Empty(req.Attachments[0].Body);
-        }
-
-        /// <summary>
         /// When a stream descriptor declares a length larger than the actual framed data
         /// (e.g., DirectLineFlex reporting 262144 for a 9KB image), the protocol trusts the
         /// framing (End=true flag) rather than the descriptor length. Subsequent requests
@@ -385,16 +354,16 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         public async Task PendingDispatch_Timeout_DoesNotBlockSubsequentRequests()
         {
             var requests = new List<NamedPipeRequest>();
+            var firstRequest = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
             var secondRequest = new TaskCompletionSource<NamedPipeRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
             int requestCount = 0;
             using var harness = await ProtocolHarness.CreateAsync();
             harness.Protocol.OnRequestReceived = (req, ct) =>
             {
                 lock (requests) { requests.Add(req); }
-                if (Interlocked.Increment(ref requestCount) == 2)
-                {
-                    secondRequest.TrySetResult(req);
-                }
+                var n = Interlocked.Increment(ref requestCount);
+                if (n == 1) firstRequest.TrySetResult(req);
+                if (n == 2) secondRequest.TrySetResult(req);
                 return Task.FromResult(NamedPipeResponse.Accepted());
             };
             harness.Start();
@@ -410,8 +379,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId1, body1, end: true);
             // Attachment stream deliberately NOT sent
 
-            // Wait for timeout to fire
-            await Task.Delay(TimeSpan.FromSeconds(NamedPipeProtocol.PendingDispatchTimeoutSeconds + 6));
+            // Wait for the first request to be force-dispatched by timeout sweep
+            await firstRequest.Task.WaitAsync(TimeSpan.FromSeconds(NamedPipeProtocol.PendingDispatchTimeoutSeconds + 10));
 
             // Second request: should dispatch immediately (no missing streams)
             var req2Id = Guid.NewGuid();

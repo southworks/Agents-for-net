@@ -894,7 +894,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             pendingResponses.Clear();
 
             // Cancel every in-flight inbound dispatch.
-            foreach (var cts in _inflightDispatches.Values)            {
+            foreach (var cts in _inflightDispatches.Values)
+            {
                 try { cts.Cancel(); } catch { /* already disposed */ }
             }
 
