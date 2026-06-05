@@ -35,6 +35,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public string InvalidSignInRetryMessage { get; set; } = "Invalid sign in code. Please enter the 6-digit code.";
         public int InvalidSignInRetryMax { get; set; } = 2;
+        public string TeamsSignInInProgressMessage { get; set; } = "Please finish signing and wait for completion";
 
         /// <summary>
         /// Gets or sets the number of milliseconds the prompt waits for the user to authenticate.

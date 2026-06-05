@@ -1258,6 +1258,117 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal((int)HttpStatusCode.OK, ((InvokeResponse)secondResponse.Value).Status);
         }
 
+        [Fact]
+        public async Task SignInUserAsync_ThrowsAuthException_WhenTextMessageDuringFlow()
+        {
+            // Arrange - Teams may deliver a user message before the expected signin invoke arrives.
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                InvalidSignInRetryMax = 1,
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+            var finalToken = new TokenResponse { Token = "token", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) };
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            mockTokenClient
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), ConnectionName, It.IsAny<ChannelId>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(finalToken);
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            // Start the flow.
+            var startContext = CreateTurnContext(ActivityTypes.Message, mockTokenClient.Object);
+            var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(startResult);
+
+            // User sends text before Teams sends signin/tokenExchange.
+            sentActivities.Clear();
+            var textDuringFlow = CreateMessageActivity();
+            var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<AuthException>(() =>
+                handler.SignInUserAsync(textContext, forceSignIn: false, cancellationToken: CancellationToken.None));
+            Assert.Equal(AuthExceptionReason.InvalidSignIn, ex.Cause);
+        }
+
+        [Fact]
+        public async Task TeamsSSO_TextMessageDuringFlow_SendsInProgressMessage_AndDoesNotConsumeRetry()
+        {
+            // Arrange - Teams may deliver a user message before the expected signin invoke arrives.
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                InvalidSignInRetryMax = 1,
+                TeamsSignInInProgressMessage = "Please finish signing and wait for completion"
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+            var finalToken = new TokenResponse { Token = "teams-sso-token", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) };
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            mockTokenClient
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), ConnectionName, It.IsAny<ChannelId>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(finalToken);
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            // Start the flow.
+            var startContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(startResult);
+
+            // User sends text before Teams sends signin/tokenExchange.
+            sentActivities.Clear();
+            var textDuringFlow = CreateMessageActivity(Channels.Msteams);
+            
+            var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
+
+            var pendingResult = await handler.SignInUserAsync(textContext, cancellationToken: CancellationToken.None);
+
+            // Assert - flow remains pending and user gets a Teams-specific in-progress message.
+            Assert.Null(pendingResult);
+            var inProgressMessage = sentActivities.OfType<Activity>().LastOrDefault(a => a.Type == ActivityTypes.Message);
+            Assert.NotNull(inProgressMessage);
+            Assert.Equal(settings.TeamsSignInInProgressMessage, inProgressMessage.Text);
+
+            // The delayed signin/tokenExchange should still succeed even though retry max is 1.
+            sentActivities.Clear();
+            var tokenExchangeActivity = CreateTokenExchangeInvokeActivity("teams-sso-jwt");
+            var tokenExchangeContext = CreateTurnContextWithCapture(tokenExchangeActivity, mockTokenClient.Object, sentActivities);
+
+            var finalResult = await handler.SignInUserAsync(tokenExchangeContext, cancellationToken: CancellationToken.None);
+
+            Assert.NotNull(finalResult);
+            Assert.Equal("teams-sso-token", finalResult.Token);
+        }
+
         #endregion
 
         #region Helpers

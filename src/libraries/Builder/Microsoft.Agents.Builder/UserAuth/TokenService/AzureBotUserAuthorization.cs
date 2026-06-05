@@ -220,7 +220,11 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             if (tokenResponse == null)
             {
-                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
+                if (ShouldSendTeamsSignInInProgressMessage(turnContext))
+                {
+                    await turnContext.SendActivityAsync(_settings.TeamsSignInInProgressMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                else if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
                 {
                     state.ContinueCount++;
                     if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
@@ -238,6 +242,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
             state.FlowStarted = false;
             return tokenResponse;
+        }
+
+        private bool ShouldSendTeamsSignInInProgressMessage(ITurnContext turnContext)
+        {
+            return turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
+                && turnContext.Activity.IsType(ActivityTypes.Message)
+                && !string.IsNullOrWhiteSpace(_settings.TeamsSignInInProgressMessage);
         }
 
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
