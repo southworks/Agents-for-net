@@ -1295,9 +1295,9 @@ namespace Microsoft.Agents.Builder.Tests
             var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
             Assert.Null(startResult);
 
-            // User sends text before Teams sends signin/tokenExchange.
+            // User sends a text message before the expected signin/tokenExchange arrives.
             sentActivities.Clear();
-            var textDuringFlow = CreateMessageActivity();
+            var textDuringFlow = CreateMessageActivity(text: "hello?");
             var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
 
             // Act & Assert
@@ -1344,9 +1344,9 @@ namespace Microsoft.Agents.Builder.Tests
             var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
             Assert.Null(startResult);
 
-            // User sends text before Teams sends signin/tokenExchange.
+            // User sends a text message before Teams sends signin/tokenExchange.
             sentActivities.Clear();
-            var textDuringFlow = CreateMessageActivity(Channels.Msteams);
+            var textDuringFlow = CreateMessageActivity(Channels.Msteams, "Hello?");
             
             var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
 
