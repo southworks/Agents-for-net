@@ -203,6 +203,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
+            if (ShouldCancelFlow(turnContext))
+            {
+                await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+
+                if (!string.IsNullOrWhiteSpace(_settings.SignInCancelledMessage))
+                {
+                    await turnContext.SendActivityAsync(_settings.SignInCancelledMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+
+                throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
+            }
+
             TokenResponse tokenResponse;
 
             try
@@ -248,7 +260,26 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             return turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
                 && turnContext.Activity.IsType(ActivityTypes.Message)
+                && !ShouldCancelFlow(turnContext)
                 && !string.IsNullOrWhiteSpace(_settings.TeamsSignInInProgressMessage);
+        }
+
+        private bool ShouldCancelFlow(ITurnContext turnContext)
+        {
+            if (!turnContext.Activity.IsType(ActivityTypes.Message) || string.IsNullOrWhiteSpace(turnContext.Activity.Text))
+            {
+                return false;
+            }
+
+            foreach (var command in _settings.CancelSignInCommands ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(command) && string.Equals(turnContext.Activity.Text.Trim(), command.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -266,6 +297,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                     { key, state }
                 };
             await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task ResetFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
+        {
+            state.FlowStarted = false;
+            state.FlowExpires = DateTime.MinValue;
+            state.ContinueCount = 0;
+            await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
         }
 
         private string GetStorageKey(ITurnContext turnContext)
