@@ -1258,6 +1258,73 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal((int)HttpStatusCode.OK, ((InvokeResponse)secondResponse.Value).Status);
         }
 
+        [Fact]
+        public async Task TeamsSso_ConsentRequired_ThenVerifyState_Succeeds()
+        {
+            // Arrange
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+            var finalToken = new TokenResponse { Token = "verify-state-token", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) };
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            mockTokenClient
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), ConnectionName, It.IsAny<ChannelId>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ErrorResponseException("Consent required") { Body = new ErrorResponse { Error = new Error { Code = Error.ConsentRequiredCode } } });
+
+            mockTokenClient
+                .Setup(c => c.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(finalToken);
+
+            var handler = CreateHandler();
+
+            var startContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+
+            var tokenExchangeContext = CreateTurnContextWithCapture(CreateTokenExchangeInvokeActivity("pre-consent-token"), mockTokenClient.Object, sentActivities);
+            var tokenExchangeResult = await handler.SignInUserAsync(tokenExchangeContext, cancellationToken: CancellationToken.None);
+
+            Assert.Null(tokenExchangeResult);
+            var tokenExchangeResponse = sentActivities.FirstOrDefault(a => a.Type == ActivityTypes.InvokeResponse);
+            Assert.NotNull(tokenExchangeResponse);
+            Assert.Equal((int)HttpStatusCode.PreconditionFailed, ((InvokeResponse)tokenExchangeResponse.Value).Status);
+
+            sentActivities.Clear();
+
+            var verifyStateActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.VerifyStateOperationName,
+                From = new ChannelAccount { Id = "user1" },
+                Recipient = new ChannelAccount { Id = "bot" },
+                Conversation = new ConversationAccount { Id = "convo1" },
+                ChannelId = Channels.Msteams,
+                Value = new Dictionary<string, object> { { "state", "123456" } }
+            };
+
+            var verifyStateContext = CreateTurnContextWithCapture(verifyStateActivity, mockTokenClient.Object, sentActivities);
+
+            // Act
+            var result = await handler.SignInUserAsync(verifyStateContext, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("verify-state-token", result.Token);
+
+            var verifyStateResponse = sentActivities.FirstOrDefault(a => a.Type == ActivityTypes.InvokeResponse);
+            Assert.NotNull(verifyStateResponse);
+            Assert.Equal((int)HttpStatusCode.OK, ((InvokeResponse)verifyStateResponse.Value).Status);
+        }
+
         #endregion
 
         #region Helpers

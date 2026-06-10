@@ -15,6 +15,8 @@ namespace Microsoft.Agents.Hosting.A2A;
 
 internal class TaskStore(IStorage storage) : ITaskStore
 {
+    private readonly IStorageV2 _storage = StorageCompatibility.AsV2(storage);
+
     public async Task<CreateOrContinueResult> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default)
     {
         AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
@@ -54,7 +56,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
             throw new ArgumentException("Task must have a Id to update the task.", nameof(task));
         }
 
-        await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+        await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
 
         return task;
     }
@@ -75,7 +77,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
                 task.Artifacts = AddArtifact(task, artifactUpdate.Artifact);
             }
 
-            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         }
 
         return task;
@@ -96,7 +98,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
             task.Status = statusUpdate.Status;
 
-            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         }
 
         return task;
@@ -110,7 +112,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
         var task = await GetTaskAsync(message.TaskId, cancellationToken).ConfigureAwait(false);
         task.History = AppendMessage(task.History, message);
 
-        await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+        await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         return task;
     }
 
@@ -119,8 +121,8 @@ internal class TaskStore(IStorage storage) : ITaskStore
         AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
 
         var key = GetKey(taskId);
-        var items = await storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-        if (items.TryGetValue(key, out var existingItem) && existingItem is AgentTask existingTask)
+        var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+        if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is AgentTask existingTask)
         {
             return existingTask;
         }

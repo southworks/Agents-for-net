@@ -214,10 +214,10 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             // No changes. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync((IDictionary<string, object>)null));
 
             // Empty changes. Should return.
-            await _storage.WriteAsync(new Dictionary<string, object>());
+            await _storage.WriteAsync((IDictionary<string, object>)new Dictionary<string, object>());
         }
 
         [Fact]
@@ -234,7 +234,7 @@ namespace Microsoft.Agents.Storage.Tests
                 { "key3", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "ETag" } },
             };
 
-            await _storage.WriteAsync(changes);
+            await _storage.WriteAsync((IDictionary<string, object>)changes);
 
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Storage.Tests
                 { "key", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = string.Empty } },
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<ArgumentException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
         }
 
         [Fact]
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var changes = new Dictionary<string, object> { { "key", new CosmosDbPartitionedStorage.DocumentStoreItem() } };
 
-            await Assert.ThrowsAsync<CosmosException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<CosmosException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -280,7 +280,7 @@ namespace Microsoft.Agents.Storage.Tests
                 { "key3", new DocumentStoreItem { ETag = "ETag" } },
             };
 
-            await _storage.WriteAsync(changes);
+            await _storage.WriteAsync((IDictionary<string, DocumentStoreItem>)changes);
 
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<DocumentStoreItem>(null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync((IDictionary<string, DocumentStoreItem>)null, CancellationToken.None));
         }
 
         [Fact]
@@ -300,7 +300,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var nestedJson = GenerateNestedDict();
 
-            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync(nestedJson));
+            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync((IDictionary<string, object>)nestedJson));
         }
 
         [Fact]
@@ -314,7 +314,7 @@ namespace Microsoft.Agents.Storage.Tests
             var dialogState = new DialogState([dialogInstance]);
             var changes = new Dictionary<string, object> { { "state", dialogState } };
 
-            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             // No keys. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.DeleteAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.DeleteAsync((string[])null));
         }
 
         [Fact]
