@@ -323,5 +323,86 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.True(countAfterExpected > countBeforeReset,
                 $"Second typing should have fired after reset interval elapsed, got {countAfterExpected}");
         }
+
+        [Fact]
+        public async Task Start_ResetsInterval_WhenResetFiresDuringSend()
+        {
+            // Exercises the race where ResetInterval fires while SendTypingActivityAsync is
+            // in-flight (i.e., outside WaitAsync). A slow adapter delays the typing send so
+            // the reset is guaranteed to land during the send window.
+            var slowAdapter = new SlowSendAdapter(sendDelayMs: 200);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = Channels.Test,
+                Conversation = new ConversationAccount { Id = "conv1" },
+                From = new ChannelAccount { Id = "user1" },
+                Recipient = new ChannelAccount { Id = "bot1" },
+            };
+            var context = new TurnContext(slowAdapter, activity);
+            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 500))!;
+            worker.Start();
+
+            // At t~=100ms the worker is inside SendTypingActivityAsync (200ms delay).
+            // Send a non-typing activity to trigger ResetInterval during the send window.
+            await Task.Delay(100);
+            await context.SendActivityAsync(
+                new Activity
+                {
+                    Type = ActivityTypes.Event,
+                    Name = "ping",
+                    ChannelId = Channels.Test,
+                    Conversation = new ConversationAccount { Id = "conv1" }
+                },
+                CancellationToken.None);
+
+            // After the adapter's 200ms send completes (~t=200ms), WaitAsync should see the
+            // pending reset and restart a fresh 500ms countdown from ~t=200ms.
+            // Second typing expected at ~t=700ms. At t=500ms it should NOT have fired.
+            await Task.Delay(300); // t~=400ms
+            var countAtMid = slowAdapter.TypingSendCount;
+            Assert.Equal(1, countAtMid); // Only the initial typing.
+
+            // At t~=900ms (well past 200ms + 500ms), second typing should have fired.
+            await Task.Delay(500); // t~=900ms
+            var countAtEnd = slowAdapter.TypingSendCount;
+            await worker.DisposeAsync();
+
+            Assert.True(countAtEnd >= 2,
+                $"Expected at least 2 typing sends after reset-during-send, got {countAtEnd}");
+        }
+
+        /// <summary>
+        /// A <see cref="TestAdapter"/> that introduces an artificial delay in
+        /// <see cref="SendActivitiesAsync"/> for typing activities, simulating a slow network.
+        /// </summary>
+        private sealed class SlowSendAdapter : TestAdapter
+        {
+            private readonly int _sendDelayMs;
+            private int _typingSendCount;
+
+            public int TypingSendCount => Volatile.Read(ref _typingSendCount);
+
+            public SlowSendAdapter(int sendDelayMs) : base(Channels.Test)
+            {
+                _sendDelayMs = sendDelayMs;
+            }
+
+            public override async Task<ResourceResponse[]> SendActivitiesAsync(
+                ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+            {
+                foreach (var a in activities)
+                {
+                    if (a.Type == ActivityTypes.Typing)
+                    {
+                        await Task.Delay(_sendDelayMs, cancellationToken);
+                        Interlocked.Increment(ref _typingSendCount);
+                    }
+                }
+
+                return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
+            }
+        }
     }
 }

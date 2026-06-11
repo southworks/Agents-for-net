@@ -187,7 +187,23 @@ namespace Microsoft.Agents.Builder.App
 
         private void ResetInterval()
         {
-            Volatile.Read(ref _resetTcs).TrySetResult(true);
+            while (true)
+            {
+                var tcs = Volatile.Read(ref _resetTcs);
+                if (tcs.TrySetResult(true))
+                {
+                    return; // Successfully signaled the active TCS.
+                }
+
+                // TCS already completed — either WaitAsync is about to swap it, or a
+                // prior reset already signaled it.  If _resetTcs was replaced (WaitAsync
+                // consumed the signal and installed a new TCS), retry so the new TCS is
+                // signaled.  Otherwise the pending signal will be consumed on next entry.
+                if (Volatile.Read(ref _resetTcs) == tcs)
+                {
+                    return;
+                }
+            }
         }
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)
