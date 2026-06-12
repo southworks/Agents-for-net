@@ -111,7 +111,7 @@ public class SlackAgentExtensionTests
     public async Task OnBeforeTurn_RegistersSlackApi_ForSlackActivity()
     {
         var (app, _) = CreateApplication();
-        var ext = new SlackAgentExtension(app);
+        _ = new SlackAgentExtension(app);
 
         var activity = CreateSlackMessageActivity();
         var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -126,7 +126,7 @@ public class SlackAgentExtensionTests
     public async Task OnBeforeTurn_DoesNotRegisterSlackApi_ForNonSlackActivity()
     {
         var (app, _) = CreateApplication();
-        var ext = new SlackAgentExtension(app);
+        _ = new SlackAgentExtension(app);
 
         var activity = CreateNonSlackMessageActivity();
         var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
