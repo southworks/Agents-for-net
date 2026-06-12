@@ -4,12 +4,17 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using ProactiveApp = Microsoft.Agents.Builder.App.Proactive.Proactive;
 using System;
 using System.Collections.Generic;
@@ -531,6 +536,75 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Same(turnState, resolvedTurnState);
             Assert.Same(app.AdaptiveCards, resolvedAdaptiveCards);
             Assert.Same(app.Proactive, resolvedProactive);
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsCoreServices()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.core");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null)
+            {
+                StartTypingTimer = false,
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Null(turnContext.Services.Get<UserAuthorization>());
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsUserAuthorization_WhenConfigured()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.auth");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var connections = new Moq.Mock<IConnections>();
+            var handler = new Moq.Mock<Microsoft.Agents.Builder.UserAuth.IUserAuthorization>();
+            handler.SetupGet(h => h.Name).Returns("test");
+
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)new MemoryStorage())
+            {
+                StartTypingTimer = false,
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    new MemoryStorage(),
+                    connections.Object,
+                    handler.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                    DefaultHandlerName = "test"
+                }
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Same(app.UserAuthorization, turnContext.Services.Get<UserAuthorization>());
         }
 
         [Fact]
