@@ -3,12 +3,14 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
+using ProactiveApp = Microsoft.Agents.Builder.App.Proactive.Proactive;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -485,6 +487,50 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.Single(messages);
             Assert.Equal("hello.1", messages[0]);
+        }
+
+        [Fact]
+        public async Task Test_Application_Route_CanResolveServicesFromTurnContext()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            ITurnState resolvedTurnState = null;
+            AdaptiveCard resolvedAdaptiveCards = null;
+            ProactiveApp resolvedProactive = null;
+
+            var app = new AgentApplication(new(() => turnState)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            app.AddRoute(
+                (context, _) => Task.FromResult(string.Equals("hello.services", context.Activity.Text)),
+                (context, state, _) =>
+                {
+                    resolvedTurnState = context.Services.Get<ITurnState>();
+                    resolvedAdaptiveCards = context.Services.Get<AdaptiveCard>();
+                    resolvedProactive = context.Services.Get<ProactiveApp>();
+
+                    Assert.Same(state, resolvedTurnState);
+                    return Task.CompletedTask;
+                },
+                false);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Same(turnState, resolvedTurnState);
+            Assert.Same(app.AdaptiveCards, resolvedAdaptiveCards);
+            Assert.Same(app.Proactive, resolvedProactive);
         }
 
         [Fact]

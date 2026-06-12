@@ -780,6 +780,8 @@ namespace Microsoft.Agents.Builder.App
             {
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
             }
+            turnContext.Services.Set<Proactive.Proactive>(Proactive);
+            turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
 
             bool routeMatched = false;
             bool routeAuthorized = false;
@@ -808,6 +810,7 @@ namespace Microsoft.Agents.Builder.App
                 // Load turn state
                 ITurnState turnState = Options.TurnStateFactory!();
                 await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                turnContext.Services.Set<ITurnState>(turnState);
 
                 try
                 {
