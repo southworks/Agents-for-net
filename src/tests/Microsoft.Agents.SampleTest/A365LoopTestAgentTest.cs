@@ -12,7 +12,6 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
@@ -95,7 +94,11 @@ namespace Microsoft.Agents.SampleTest
             mockConnections.Setup(c => c.GetConnection(It.IsAny<string>()))
                 .Returns(mockTokenProvider.Object);
             mockConnections.Setup(c => c.TryGetConnection(It.IsAny<string>(), out It.Ref<IAccessTokenProvider>.IsAny))
-                .Returns(true);
+                .Returns((string _, out IAccessTokenProvider provider) =>
+                {
+                    provider = mockTokenProvider.Object;
+                    return true;
+                });
             mockConnections.Setup(c => c.GetDefaultConnection())
                 .Returns(mockTokenProvider.Object);
             mockConnections.Setup(c => c.GetTokenProvider(It.IsAny<ClaimsIdentity>(), It.IsAny<string>()))
