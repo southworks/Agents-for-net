@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Builder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Runtime.CompilerServices;
@@ -6,7 +9,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams
+namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Provides a base wrapper around an <see cref="ITurnContext"/> instance.
@@ -90,64 +93,64 @@ namespace Microsoft.Agents.Extensions.Teams
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
+        public virtual Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
         {
             return _turnContext.SendActivityAsync(text, speak, inputHint, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+        public virtual Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             return _turnContext.SendActivityAsync(activity, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
+        public virtual Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
         {
             return _turnContext.SendActivitiesAsync(activities, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+        public virtual Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
         {
             return _turnContext.UpdateActivityAsync(activity, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
+        public virtual Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
         {
             return _turnContext.DeleteActivityAsync(activityId, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
+        public virtual Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
         {
             return _turnContext.DeleteActivityAsync(conversationReference, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public ITurnContext OnSendActivities(SendActivitiesHandler handler)
+        public virtual ITurnContext OnSendActivities(SendActivitiesHandler handler)
         {
             _turnContext.OnSendActivities(handler);
             return this;
         }
 
         /// <inheritdoc/>
-        public ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
+        public virtual ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
         {
             _turnContext.OnUpdateActivity(handler);
             return this;
         }
 
         /// <inheritdoc/>
-        public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
+        public virtual ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
         {
             _turnContext.OnDeleteActivity(handler);
             return this;
         }
 
         /// <inheritdoc/>
-        public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
+        public virtual Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
         {
             return _turnContext.TraceActivityAsync(name, value, valueType, label, cancellationToken);
         }

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams;
 using System;
 using System.Threading.Tasks;
 using Xunit;
