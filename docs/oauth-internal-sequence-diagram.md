@@ -305,7 +305,7 @@ sequenceDiagram
 | `AzureBotUserAuthorization` | `IUserAuthorization` for Azure Token Service, FlowState persistence | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/AzureBotUserAuthorization.cs` |
 | `OAuthFlow` | Protocol-level: OAuthCard, token exchange, magic code, invoke responses | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/OAuthFlow.cs` |
 | `UserTokenClientWrapper` | Static façade over `IUserTokenClient` from turn services | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/UserTokenClientWrapper.cs` |
-| `IUserTokenClient` | Azure Token Service interface (GetToken, Exchange, SignOut) | `src/libraries/Connector/Microsoft.Agents.Connector/IUserTokenClient.cs` |
+| `IUserTokenClient` | Azure Token Service interface (GetToken, Exchange, SignOut) | `src/libraries/Client/Microsoft.Agents.Connector/IUserTokenClient.cs` |
 | `OBOExchange` | On-Behalf-Of exchange via `IConnections` / `IOBOExchange` | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/OBOExchange.cs` |
 | `FlowState` | Persisted state: FlowStarted, FlowExpires, ContinueCount | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/AzureBotUserAuthorization.cs` |
 

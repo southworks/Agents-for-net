@@ -16,7 +16,7 @@ If you also want to deploy and use the Azure Bot Service Channel System, you wil
 1. Ability to deploy App Services and or Containers
 1. Additionally Teams deployments requires ability to create and deploy teams apps.
 
-This is a general list only, Each Sample has a more detailed ReadMe.md that include the specific requirements of the sample.
+This is a general list only. Each Sample has a more detailed ReadMe.md that includes the specific requirements of the sample.
 
 ## Clone and build
 

@@ -14,7 +14,7 @@ The best way to consume this SDK is via our Nuget packages found here: [nuget.or
 ### Nightly Nuget feed.
 Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-beta.**
 - This feed is updated overnight (PT) whenever commits occur in our repo. 
-- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
+- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessarily stable.
 
 ## Working with this codebase
 

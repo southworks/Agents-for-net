@@ -11,7 +11,7 @@ applyTo:
 
 # CloudAdapter Pipeline Context
 
-When working on the request processing pipeline, delivery modes, or response handling, read `docs/cloudadapter-sequence-diagram.md` for the full mermaid sequence diagram.
+When working on the request processing pipeline, delivery modes, or response handling, read `docs/full-cloudadapter-sequence-diagram.md` for the full mermaid sequence diagram.
 
 ## Key Design Points
 

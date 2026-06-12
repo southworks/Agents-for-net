@@ -32,7 +32,7 @@ When working on OAuth, token exchange, or user sign-in code, reference these seq
 | AzureBotUserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/AzureBotUserAuthorization.cs` |
 | OAuthFlow | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/OAuthFlow.cs` |
 | UserTokenClientWrapper | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/TokenService/UserTokenClientWrapper.cs` |
-| IUserTokenClient | `src/libraries/Connector/Microsoft.Agents.Connector/IUserTokenClient.cs` |
+| IUserTokenClient | `src/libraries/Client/Microsoft.Agents.Connector/IUserTokenClient.cs` |
 | OBOExchange | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/OBOExchange.cs` |
 | Authentication.Msal | `src/libraries/Authentication/Authentication.Msal/` |
 | High-level diagrams | `docs/teams-sso-sequence-diagram.md` |
