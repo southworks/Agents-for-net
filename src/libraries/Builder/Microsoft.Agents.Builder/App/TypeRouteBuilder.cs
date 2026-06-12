@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
+using System;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class TypeRouteBuilder : TypeRouteBuilderBase<TypeRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the TypeRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A TypeRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static TypeRouteBuilder Create()
+        {
+            return new TypeRouteBuilder();
+        }
+
         /// <summary>
         /// Assigns the specified route handler to the current route and returns the updated builder instance.
         /// </summary>

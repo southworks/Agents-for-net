@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
+using System;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class MessageRouteBuilder : MessageRouteBuilderBase<MessageRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the MessageRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A MessageRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static MessageRouteBuilder Create()
+        {
+            return new MessageRouteBuilder();
+        }
+
         /// <summary>
         /// Assigns the specified route handler to the current route and returns the updated builder instance.
         /// </summary>

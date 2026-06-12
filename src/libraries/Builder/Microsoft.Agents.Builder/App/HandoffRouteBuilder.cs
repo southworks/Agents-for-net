@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
@@ -13,6 +15,16 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class HandoffRouteBuilder : HandoffRouteBuilderBase<HandoffRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the HandoffRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A HandOffRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static HandoffRouteBuilder Create()
+        {
+            return new HandoffRouteBuilder();
+        }
+
         /// <summary>
         /// Configures the route to handle handoff actions using the specified handler.
         /// </summary>

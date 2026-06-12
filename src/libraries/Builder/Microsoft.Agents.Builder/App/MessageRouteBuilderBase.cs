@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.App
     /// constraints, and agentic routing support.
     /// </remarks>
     /// <typeparam name="TBuilder">The concrete builder type returned from fluent members.</typeparam>
-    public class MessageRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
+    public abstract class MessageRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
         where TBuilder : MessageRouteBuilderBase<TBuilder>
     {
         protected string _text;

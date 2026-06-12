@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.App
     /// be treated as an invoke route.
     /// </remarks>
     /// <typeparam name="TBuilder">The concrete builder type returned from fluent members.</typeparam>
-    public class TypeRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
+    public abstract class TypeRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
         where TBuilder : TypeRouteBuilderBase<TBuilder>
     {
         private string _type;

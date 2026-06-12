@@ -13,6 +13,16 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class FeedbackRouteBuilder : FeedbackRouteBuilderBase<FeedbackRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the FeedbackRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A FeedbackRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static FeedbackRouteBuilder Create()
+        {
+            return new FeedbackRouteBuilder();
+        }
+
         /// <summary>
         /// Configures the route to handle feedback actions using the specified feedback loop handler.
         /// </summary>
