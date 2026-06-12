@@ -28,6 +28,8 @@ namespace Microsoft.Agents.Builder.App
         protected string _text;
         protected Regex _textPattern;
 
+        protected MessageRouteBuilderBase() { }
+
         /// <summary>
         /// Adds a selector to the route that matches incoming message activities with text equal to the specified
         /// value, ignoring case.

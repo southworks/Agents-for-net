@@ -30,6 +30,8 @@ namespace Microsoft.Agents.Builder.App
         private string _type;
         private Regex _typePattern;
 
+        protected TypeRouteBuilderBase() { }
+
         /// <summary>
         /// Configures the route to match activities of the specified type.
         /// </summary>

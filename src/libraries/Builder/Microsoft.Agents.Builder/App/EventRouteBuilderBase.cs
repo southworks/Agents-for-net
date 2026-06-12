@@ -29,6 +29,8 @@ namespace Microsoft.Agents.Builder.App
         private string _eventName;
         private Regex _eventRegex;
 
+        protected EventRouteBuilderBase() { }
+
         /// <summary>
         /// Configures the route to match event activities with the specified name, using a case-insensitive comparison.
         /// </summary>

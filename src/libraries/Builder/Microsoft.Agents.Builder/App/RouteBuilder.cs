@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.App
     {
         protected readonly Route _route = new();
 
-        public RouteBuilderBase() { }
+        protected RouteBuilderBase() { }
 
         /// <summary>
         /// Sets the route selector used to determine how incoming requests are matched to this route builder.
