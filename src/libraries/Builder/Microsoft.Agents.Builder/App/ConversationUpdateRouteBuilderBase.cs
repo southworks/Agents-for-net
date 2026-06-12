@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.App
         where TBuilder : ConversationUpdateRouteBuilderBase<TBuilder>
     {
 
-        protected ConversationUpdateRouteBuilderBase() { }
+        protected ConversationUpdateRouteBuilderBase() : base() { }
 
         /// <summary>
         /// Configures the route to match a specific <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/>, such as members being added or removed.
