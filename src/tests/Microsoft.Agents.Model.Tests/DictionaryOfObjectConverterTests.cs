@@ -779,10 +779,12 @@ namespace Microsoft.Agents.Model.Tests
 
             string json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
 
-            Assert.Contains("key1", json);
-            Assert.Contains("value1", json);
-            Assert.Contains("42", json);
-        }
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement nested = doc.RootElement.GetProperty("nested");
+                Assert.Equal("value1", nested.GetProperty("key1").GetString());
+                Assert.Equal(42, nested.GetProperty("key2").GetInt32());
+            }
 
         [Fact]
         public void Roundtrip_DictionaryWithGenericListValue_PreservesData()
