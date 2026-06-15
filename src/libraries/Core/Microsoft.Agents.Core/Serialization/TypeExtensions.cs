@@ -125,16 +125,8 @@ namespace Microsoft.Agents.Core.Serialization
         // synthetic culture metadata (e.g. runtime-generated generic type assemblies).
         private static string GetAssemblySimpleName(Assembly assembly)
         {
-            string fullName = assembly.FullName;
-            if (string.IsNullOrEmpty(fullName))
-            {
-                throw new ArgumentException(
-                    $"Cannot extract simple name: assembly '{assembly}' has a null or empty FullName.",
-                    nameof(assembly));
-            }
-
-            int commaIndex = fullName.IndexOf(',');
-            return commaIndex > 0 ? fullName.Substring(0, commaIndex) : fullName;
+            int commaIndex = assembly.FullName.IndexOf(',');
+            return commaIndex > 0 ? assembly.FullName.Substring(0, commaIndex) : assembly.FullName;
         }
 
         private static Type GetType(JsonObject jsonObject)
