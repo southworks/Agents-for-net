@@ -5,7 +5,7 @@ Shows how the SDK discovers and registers serialization extensions (custom conve
 ## Participants
 
 - **Developer** — Authors a library or extension that adds custom serialization (converters, entities).
-- **Source Generators** — Compile-time Roslyn analyzers that emit assembly attributes.
+- **Source Generators** — Compile-time Roslyn source generators that emit assembly attributes.
 - **Assembly Attributes** — Generated `[assembly: ...]` markers that the runtime scans.
 - **ProtocolJsonSerializer** — The central static serializer that owns `SerializationOptions` and `EntityTypes`.
 
