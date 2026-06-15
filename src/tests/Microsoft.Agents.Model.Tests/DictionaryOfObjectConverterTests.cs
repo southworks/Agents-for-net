@@ -826,17 +826,19 @@ namespace Microsoft.Agents.Model.Tests
 
             // $typeAssembly values written by AddTypeInfo must be simple assembly
             // names (no Version=, Culture=, PublicKeyToken= qualifiers).
-            JsonDocument doc = JsonDocument.Parse(json);
-            JsonElement root = doc.RootElement;
-            JsonElement child = root.GetProperty("child");
-            string typeAssembly = child.GetProperty("$typeAssembly").GetString();
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement root = doc.RootElement;
+                JsonElement child = root.GetProperty("child");
+                string typeAssembly = child.GetProperty("$typeAssembly").GetString();
 
-            Assert.NotNull(typeAssembly);
-            Assert.NotEmpty(typeAssembly);
-            Assert.DoesNotContain(",", typeAssembly);
-            Assert.DoesNotContain("Version=", typeAssembly);
-            Assert.DoesNotContain("Culture=", typeAssembly);
-            Assert.DoesNotContain("PublicKeyToken=", typeAssembly);
+                Assert.NotNull(typeAssembly);
+                Assert.NotEmpty(typeAssembly);
+                Assert.DoesNotContain(",", typeAssembly);
+                Assert.DoesNotContain("Version=", typeAssembly);
+                Assert.DoesNotContain("Culture=", typeAssembly);
+                Assert.DoesNotContain("PublicKeyToken=", typeAssembly);
+            }
         }
 
         #endregion
