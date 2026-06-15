@@ -785,6 +785,7 @@ namespace Microsoft.Agents.Model.Tests
                 Assert.Equal("value1", nested.GetProperty("key1").GetString());
                 Assert.Equal(42, nested.GetProperty("key2").GetInt32());
             }
+        }
 
         [Fact]
         public void Roundtrip_DictionaryWithGenericListValue_PreservesData()
