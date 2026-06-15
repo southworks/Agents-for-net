@@ -44,6 +44,8 @@ The SDK is organized into layered libraries under `src/libraries/`:
 - **Extensions** (`Extensions/`) — Platform-specific: Teams, SharePoint.
 - **Storage** (`Storage/`) — `IStorage` abstraction with `MemoryStorage` (dev), Blob, and CosmosDb implementations.
 
+See `doc/architecture.md` for a architecture overview.
+
 ### Agent Pattern
 
 ```csharp
@@ -126,7 +128,7 @@ Samples are in `src/samples/`. Each has its own README with setup instructions.
 
 - Default agent port: `http://localhost:3978`
 - Use `devtunnel` for external client connections (Teams, Bot Service)
-- BotFramework Emulator or Agents Playground for local testing without tunnels
+- Use Agents Playground for local testing without tunnels
 
 ## Package Publishing
 
