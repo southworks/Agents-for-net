@@ -1,6 +1,6 @@
 # Serialization Extension Sequence Diagram
 
-Shows how the SDK discovers and registers serialization extensions (custom converters, type resolvers, and Entity subclasses) at runtime via Roslyn source generators and assembly-level attributes.
+Shows how the SDK discovers and registers serialization extensions (custom converters, type resolvers, and Entity subclasses) by using assembly-level attributes generated at build time by Roslyn source generators and scanned at runtime.
 
 ## Participants
 
