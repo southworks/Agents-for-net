@@ -128,7 +128,9 @@ namespace Microsoft.Agents.Core.Serialization
             string fullName = assembly.FullName;
             if (string.IsNullOrEmpty(fullName))
             {
-                return string.Empty;
+                throw new ArgumentException(
+                    $"Cannot extract simple name: assembly '{assembly}' has a null or empty FullName.",
+                    nameof(assembly));
             }
 
             int commaIndex = fullName.IndexOf(',');
