@@ -749,9 +749,8 @@ namespace Microsoft.Agents.Model.Tests
         public void Serialize_DictionaryWithGenericListValue_DoesNotThrowCultureNotFoundException()
         {
             // Regression: Assembly.GetName() internally calls CultureInfo.GetCultureInfo()
-            // which can throw CultureNotFoundException for assemblies whose metadata
-            // contains synthetic culture identifiers (e.g. the backtick-arity suffix
-            // in generic type names like List`1). The fix extracts the simple assembly
+            // which can throw CultureNotFoundException for assemblies whose AssemblyName
+            // contains invalid Culture metadata. The fix extracts the simple assembly
             // name from Assembly.FullName without invoking GetName().
             var dictionary = new Dictionary<string, object>
             {
