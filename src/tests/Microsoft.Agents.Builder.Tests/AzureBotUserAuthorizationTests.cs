@@ -321,6 +321,11 @@ namespace Microsoft.Agents.Builder.Tests
             var ex = await Assert.ThrowsAsync<AuthException>(() =>
                 handler.SignInUserAsync(continueContext, forceSignIn: false, cancellationToken: CancellationToken.None));
             Assert.Equal(AuthExceptionReason.Timeout, ex.Cause);
+
+            // The timed-out flow should be cleared so a new sign-in can start.
+            var restartContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            var restartResult = await handler.SignInUserAsync(restartContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(restartResult);
         }
 
         #endregion
@@ -633,6 +638,11 @@ namespace Microsoft.Agents.Builder.Tests
             var ex = await Assert.ThrowsAsync<AuthException>(() =>
                 handler.SignInUserAsync(badCode2, cancellationToken: CancellationToken.None));
             Assert.Equal(AuthExceptionReason.InvalidSignIn, ex.Cause);
+
+            // Retry exhaustion should clear the stale flow state.
+            var restartContext = CreateTurnContext(ActivityTypes.Message, mockTokenClient.Object);
+            var restartResult = await handler.SignInUserAsync(restartContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(restartResult);
         }
 
         #endregion
@@ -1406,10 +1416,9 @@ namespace Microsoft.Agents.Builder.Tests
             var cancelActivity = CreateMessageActivity(Channels.Msteams, "-cancel");
             var cancelContext = CreateTurnContextWithCapture(cancelActivity, mockTokenClient.Object, sentActivities);
 
-            var ex = await Assert.ThrowsAsync<AuthException>(() =>
-                handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None));
+            var pendingResult = await handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None);
+            Assert.Null(pendingResult);
 
-            Assert.Equal(AuthExceptionReason.UserCancelled, ex.Cause);
             var cancelMessage = sentActivities.OfType<Activity>().LastOrDefault(a => a.Type == ActivityTypes.Message);
             Assert.NotNull(cancelMessage);
             Assert.Equal(settings.SignInCancelledMessage, cancelMessage.Text);
@@ -1459,10 +1468,9 @@ namespace Microsoft.Agents.Builder.Tests
             var cancelActivity = CreateMessageActivity("test", "  -CANCEL  ");
             var cancelContext = CreateTurnContextWithCapture(cancelActivity, mockTokenClient.Object, sentActivities);
 
-            var ex = await Assert.ThrowsAsync<AuthException>(() =>
-                handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None));
+            var pendingResult = await handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None);
 
-            Assert.Equal(AuthExceptionReason.UserCancelled, ex.Cause);
+            Assert.Null(pendingResult);
             Assert.Contains(sentActivities.OfType<Activity>(), a => a.Text == settings.SignInCancelledMessage);
 
             sentActivities.Clear();
