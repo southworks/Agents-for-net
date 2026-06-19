@@ -376,11 +376,11 @@ namespace Microsoft.Agents.Client
                 .ReadAsync(new[] { GetAgentConversationStorageKey(agentConversationId) }, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (channelConversationInfo.TryGetValue(agentConversationId, out var channelConversationReference)
-                && channelConversationReference.Status == StorageOperationStatus.Succeeded
-                && channelConversationReference.Value is object value)
+            if (channelConversationInfo.TryGetValue(agentConversationId, out var result)
+                && result.Status == StorageOperationStatus.Succeeded
+                && result.Value != null)
             {
-                return ProtocolJsonSerializer.ToObject<ChannelConversationReference>(value);
+                return ProtocolJsonSerializer.ToObject<ChannelConversationReference>(result.Value);
             }
 
             return null;

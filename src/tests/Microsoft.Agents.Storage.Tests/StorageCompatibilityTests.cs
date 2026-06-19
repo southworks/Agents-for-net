@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,16 +57,30 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
-        public async Task StorageCompatibility_AsV2_WriteAsync_WithExpectedVersion_Succeeds()
+        public async Task StorageCompatibility_AsV2_WriteAsync_WithExpectedVersion_ThrowsNotSupported()
         {
             var storageV2 = StorageCompatibility.AsV2(new FakeStorage());
 
-            var results = await storageV2.WriteAsync(
+            var exception = await Assert.ThrowsAsync<NotSupportedException>(() => storageV2.WriteAsync(
                 new Dictionary<string, PocoItem>() { ["item"] = new PocoItem() { Id = "1" } },
                 new StorageWriteOptions() { ExpectedVersion = "abc" },
-                CancellationToken.None);
+                CancellationToken.None));
 
-            Assert.Equal(StorageOperationStatus.Succeeded, results["item"].Status);
+            Assert.Contains(nameof(StorageWriteOptions.ExpectedVersion), exception.Message);
+        }
+
+        [Fact]
+        public async Task StorageCompatibility_AsV2_WriteAsync_WithNonDefaultMode_ThrowsNotSupported()
+        {
+            var storageV2 = StorageCompatibility.AsV2(new FakeStorage());
+
+            var exception = await Assert.ThrowsAsync<NotSupportedException>(() => storageV2.WriteAsync(
+                new Dictionary<string, PocoItem>() { ["item"] = new PocoItem() { Id = "1" } },
+                new StorageWriteOptions() { Mode = StorageWriteMode.CreateOnly },
+                CancellationToken.None));
+
+            Assert.Contains(nameof(StorageWriteOptions.Mode), exception.Message);
+            Assert.Contains(nameof(StorageWriteMode.CreateOnly), exception.Message);
         }
 
         [Fact]
@@ -95,19 +110,19 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
-        public async Task StorageCompatibility_AsV2_DeleteAsync_WithExpectedVersion_Succeeds()
+        public async Task StorageCompatibility_AsV2_DeleteAsync_WithExpectedVersion_ThrowsNotSupported()
         {
             var storage = new FakeStorage();
             await storage.WriteAsync(new Dictionary<string, object>() { ["item"] = new PocoItem() { Id = "1" } }, CancellationToken.None);
 
             var storageV2 = StorageCompatibility.AsV2(storage);
 
-            var results = await storageV2.DeleteAsync(
+            var exception = await Assert.ThrowsAsync<NotSupportedException>(() => storageV2.DeleteAsync(
                 ["item"],
                 new StorageDeleteOptions() { ExpectedVersion = "abc" },
-                CancellationToken.None);
+                CancellationToken.None));
 
-            Assert.Equal(StorageOperationStatus.Succeeded, results["item"].Status);
+            Assert.Contains(nameof(StorageDeleteOptions.ExpectedVersion), exception.Message);
         }
 
         private class FakeStorage : IStorage

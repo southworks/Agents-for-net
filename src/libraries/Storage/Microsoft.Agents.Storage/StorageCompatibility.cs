@@ -106,6 +106,25 @@ namespace Microsoft.Agents.Storage
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
 
+            if (options != null)
+            {
+                List<string> unsupportedOptions = new();
+                if (options.Mode != StorageWriteMode.Upsert)
+                {
+                    unsupportedOptions.Add($"{nameof(StorageWriteOptions.Mode)}={options.Mode}");
+                }
+
+                if (options.ExpectedVersion != null)
+                {
+                    unsupportedOptions.Add(nameof(StorageWriteOptions.ExpectedVersion));
+                }
+
+                if (unsupportedOptions.Count > 0)
+                {
+                    throw new NotSupportedException($"StorageCompatibility does not support {string.Join(", ", unsupportedOptions)}. Handle optimistic concurrency and create-only/replace semantics outside this adapter.");
+                }
+            }
+
             if (changes.Count == 0)
             {
                 return new Dictionary<string, StorageWriteResult>();
@@ -146,6 +165,11 @@ namespace Microsoft.Agents.Storage
         public async Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, StorageDeleteOptions options, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            if (!string.IsNullOrEmpty(options?.ExpectedVersion))
+            {
+                throw new NotSupportedException($"StorageCompatibility does not support {nameof(StorageDeleteOptions.ExpectedVersion)}. Handle optimistic concurrency outside this adapter.");
+            }
 
             if (keys.Count == 0)
             {

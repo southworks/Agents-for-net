@@ -294,6 +294,31 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task WriteAsync_ShouldHandleNullStoreItemValue()
+        {
+            InitStorage();
+
+            DocumentStoreItem capturedDocument = null;
+            _container.Setup(e => e.UpsertItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<DocumentStoreItem, PartitionKey?, ItemRequestOptions, CancellationToken>((item, _, _, _) => capturedDocument = item)
+                .ReturnsAsync(new DocumentStoreItemResponseMock(new DocumentStoreItem { ETag = "etag" }));
+
+            IReadOnlyDictionary<string, DocumentStoreItem> changes = new Dictionary<string, DocumentStoreItem>
+            {
+                { "key", null },
+            };
+
+            var results = await _storage.WriteAsync(changes, CancellationToken.None);
+
+            Assert.Single(results);
+            Assert.Equal(StorageOperationStatus.Succeeded, results["key"].Status);
+            Assert.Equal("etag", results["key"].Version);
+            Assert.NotNull(capturedDocument);
+            Assert.NotNull(capturedDocument.Document);
+            Assert.Empty(capturedDocument.Document);
+        }
+
+        [Fact]
         public async Task WriteAsyncWithNestedFailure()
         {
             InitStorage();
@@ -315,6 +340,24 @@ namespace Microsoft.Agents.Storage.Tests
             var changes = new Dictionary<string, object> { { "state", dialogState } };
 
             await Assert.ThrowsAsync<JsonException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
+        }
+
+        [Fact]
+        public async Task WriteAsync_WithExpectedVersionPreconditionFailed_DoesNotEchoExpectedVersion()
+        {
+            InitStorage();
+
+            _container.Setup(e => e.ReplaceItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new CosmosException("PreconditionFailed", HttpStatusCode.PreconditionFailed, 0, "0", 0));
+
+            var results = await _storage.WriteAsync(
+                new Dictionary<string, DocumentStoreItem> { { "key", new DocumentStoreItem() } },
+                new StorageWriteOptions() { Mode = StorageWriteMode.Replace, ExpectedVersion = "stale-version" });
+
+            Assert.Single(results);
+            Assert.Equal(StorageOperationStatus.ConditionNotMet, results["key"].Status);
+            Assert.Null(results["key"].Version);
+            _container.Verify(e => e.ReplaceItemAsync(It.IsAny<DocumentStoreItem>(), It.IsAny<string>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

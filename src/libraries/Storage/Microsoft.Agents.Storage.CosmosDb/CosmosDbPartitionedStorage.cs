@@ -326,7 +326,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
                     {
                         Key = change.Key,
                         Status = StorageOperationStatus.ConditionNotMet,
-                        Version = options.ExpectedVersion,
+                        Version = null,
                     };
                 }
                 catch (CosmosException exception)
@@ -520,9 +520,12 @@ namespace Microsoft.Agents.Storage.CosmosDb
 
         private DocumentStoreItem CreateDocumentStoreItem(string key, object value)
         {
-            var document = JsonObject.Create(JsonSerializer.SerializeToElement(value, _serializerOptions));
+            var document = value == null ? new JsonObject() : JsonObject.Create(JsonSerializer.SerializeToElement(value, _serializerOptions));
             document.Remove("eTag");
-            document.AddTypeInfo(value);
+            if (value != null)
+            {
+                document.AddTypeInfo(value);
+            }
 
             return new DocumentStoreItem
             {
