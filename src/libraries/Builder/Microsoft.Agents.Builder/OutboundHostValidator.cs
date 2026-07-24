@@ -78,10 +78,10 @@ namespace Microsoft.Agents.Builder
             "smba.trafficmanager.net",    // Teams service URLs (exact host; trafficmanager.net is a shared namespace)
             "teams.microsoft.com",
             "teams.microsoft.us",
-            "graph.microsoft.com",        // Microsoft Graph
-            "sharepoint.com",             // SharePoint / OneDrive hosted attachments
-            "svc.ms",                     // Teams attachment CDN (*.svc.ms)
-            "blob.core.windows.net",      // Azure Blob Storage / Attachment Management Service
+            "graph.microsoft.com",      // Microsoft Graph
+            "sharepoint.com",           // SharePoint / OneDrive hosted attachments
+            "svc.ms",                   // Teams attachment CDN (*.svc.ms)
+            "blob.core.windows.net",    // Azure Blob Storage / Attachment Management Service
         };
 
         private readonly bool _enabled;
@@ -174,6 +174,27 @@ namespace Microsoft.Agents.Builder
             if (host.StartsWith("*.", StringComparison.Ordinal))
             {
                 host = host.Substring(2);
+            }
+
+            // Tolerate operators pasting a full URL (e.g. "https://contoso.com/path") or a
+            // "host:port"/"host/path" value: extract just the host so it can match Uri.Host.
+            if (Uri.TryCreate(host, UriKind.Absolute, out var uri) && !string.IsNullOrEmpty(uri.Host))
+            {
+                host = uri.Host;
+            }
+            else
+            {
+                var slash = host.IndexOf('/');
+                if (slash >= 0)
+                {
+                    host = host.Substring(0, slash);
+                }
+
+                var colon = host.IndexOf(':');
+                if (colon >= 0)
+                {
+                    host = host.Substring(0, colon);
+                }
             }
 
             return string.IsNullOrWhiteSpace(host) ? null : host;

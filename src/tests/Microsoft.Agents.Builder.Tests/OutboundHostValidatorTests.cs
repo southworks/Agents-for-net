@@ -60,6 +60,23 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.False(validator.IsAllowed(url));
         }
 
+        [Theory]
+        [InlineData("https://contoso.com")]
+        [InlineData("https://contoso.com/some/path")]
+        [InlineData("contoso.com:8443")]
+        [InlineData("contoso.com/path")]
+        public void Enabled_NormalizesConfiguredHost_FromFullUrlOrHostPort(string configured)
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                Hosts = new List<string> { configured }
+            });
+
+            Assert.True(validator.IsAllowed("https://contoso.com/api"));
+            Assert.True(validator.IsAllowed("https://files.contoso.com/api"));
+        }
+
         [Fact]
         public void Enabled_AllowsConfiguredHost_ExactAndSubdomain()
         {
