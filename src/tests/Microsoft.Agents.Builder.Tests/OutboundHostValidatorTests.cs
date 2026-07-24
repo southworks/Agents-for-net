@@ -51,39 +51,12 @@ namespace Microsoft.Agents.Builder.Tests
         [InlineData("https://evil.example.com/relay")]
         [InlineData("https://169.254.169.254/latest/meta-data")]
         [InlineData("https://internal-test.local:8443/secret")]
+        [InlineData("http://localhost/admin")]
+        [InlineData("https://localhost/admin")]
         [InlineData("https://evil.trafficmanager.net/relay")]
         public void Enabled_DeniesUnknownHosts(string url)
         {
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
-
-            Assert.False(validator.IsAllowed(url));
-        }
-
-        [Theory]
-        [InlineData("http://localhost/admin")]
-        [InlineData("https://localhost/admin")]
-        [InlineData("http://127.0.0.1:3978/api/messages")]
-        [InlineData("http://[::1]:3978/api/messages")]
-        public void Enabled_AllowsLocalhostByDefault(string url)
-        {
-            // Defaults to allowing loopback so the Agents Playground (localhost, no auth) keeps working.
-            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
-
-            Assert.True(validator.IsAllowed(url));
-        }
-
-        [Theory]
-        [InlineData("http://localhost/admin")]
-        [InlineData("https://localhost/admin")]
-        [InlineData("http://127.0.0.1:3978/api/messages")]
-        [InlineData("http://[::1]:3978/api/messages")]
-        public void Enabled_DeniesLocalhost_WhenAllowLocalhostFalse(string url)
-        {
-            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
-            {
-                Enabled = true,
-                AllowLocalhost = false
-            });
 
             Assert.False(validator.IsAllowed(url));
         }
