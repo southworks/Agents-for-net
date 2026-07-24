@@ -35,6 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
         private readonly ChannelResponseQueue _responseQueue;
+        private readonly IOutboundHostValidator _hostValidator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> class.
@@ -45,6 +46,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
+        /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, Activity.ServiceUrl is validated against it.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -52,12 +54,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null)
+            IConfiguration config = null,
+            IOutboundHostValidator hostValidator = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? config?.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
             _responseQueue = new ChannelResponseQueue(Logger);
+            _hostValidator = hostValidator ?? new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>());
 
             if (middlewares != null)
             {
@@ -317,6 +321,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     CloudAdapterLog.LogInvalidServiceUrlWarning(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
                 }
+            }
+
+            // Shared allowed-hosts control (opt-in, disabled by default). Provides a fail-closed check on the
+            // outbound, token-bearing ServiceUrl even when the 'serviceurl' claim is absent from the token.
+            if (_hostValidator != null
+                && _hostValidator.Enabled
+                && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
+                && !_hostValidator.IsAllowed(activity.ServiceUrl))
+            {
+                CloudAdapterLog.LogServiceUrlHostNotAllowed(Logger, activity.ServiceUrl);
+                return false;
             }
 
             return true;

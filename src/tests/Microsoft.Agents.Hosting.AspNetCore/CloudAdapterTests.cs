@@ -912,6 +912,76 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
         }
 
+        [Fact]
+        public async Task ProcessAsync_AllowedHosts_Enabled_DisallowedHost_NoClaim_ShouldReturnBadRequest()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false },
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: "https://evil.example.com/relay/");
+            // No serviceurl claim: fail-closed allowed-hosts fallback must still reject.
+            var context = CreateHttpContext(activity);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_AllowedHosts_Enabled_FirstPartyHost_ShouldNotReturnBadRequest()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false },
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContext(activity);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_AllowedHosts_Enabled_ConfiguredHost_ShouldNotReturnBadRequest()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                Hosts = new List<string> { "contoso.com" }
+            });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false },
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: "https://callback.contoso.com/api/");
+            var context = CreateHttpContext(activity);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_AllowedHosts_Disabled_DisallowedHost_ShouldNotReturnBadRequest()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false },
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: "https://evil.example.com/relay/");
+            var context = CreateHttpContext(activity);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Enforcement disabled (default) - preserves existing behavior.
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
 
 
         private static DefaultHttpContext CreateHttpContextWithServiceUrlClaim(Activity activity, string serviceUrlClaimValue)
@@ -926,7 +996,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return context;
         }
 
-        private static Record UseRecordWithOptions(Func<Record, IAgent> createAgent, AdapterOptions options)
+        private static Record UseRecordWithOptions(Func<Record, IAgent> createAgent, AdapterOptions options, IOutboundHostValidator hostValidator = null)
         {
             var factory = new Mock<IChannelServiceClientFactory>();
             var adapterLogger = new Mock<ILogger<CloudAdapter>>();
@@ -934,7 +1004,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
-            var adapter = new CloudAdapter(factory.Object, queue, adapterLogger.Object, options: options);
+            var adapter = new CloudAdapter(factory.Object, queue, adapterLogger.Object, options: options, hostValidator: hostValidator);
             var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
 
             var record = new Record(null, adapter, factory, service, queue, adapterLogger, serviceLogger);
