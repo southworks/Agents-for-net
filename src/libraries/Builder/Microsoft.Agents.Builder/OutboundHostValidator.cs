@@ -74,15 +74,14 @@ namespace Microsoft.Agents.Builder
         // Built-in Microsoft first-party host suffixes used for channel callbacks and attachment downloads.
         private static readonly string[] DefaultMicrosoftHosts =
         {
-            "botframework.com",         // Bot Connector / channel service URLs
-            "trafficmanager.net",       // smba.trafficmanager.net (Teams service URLs)
+            "botframework.com",           // Bot Connector / channel service URLs
+            "smba.trafficmanager.net",    // Teams service URLs (exact host; trafficmanager.net is a shared namespace)
             "teams.microsoft.com",
             "teams.microsoft.us",
-            "graph.microsoft.com",      // Microsoft Graph
-            "sharepoint.com",           // SharePoint / OneDrive hosted attachments
-            "svc.ms",                   // Teams attachment CDN (*.svc.ms)
-            "blob.core.windows.net",    // Azure Blob Storage / Attachment Management Service
-            "localhost",                // Localhost (for testing)
+            "graph.microsoft.com",        // Microsoft Graph
+            "sharepoint.com",             // SharePoint / OneDrive hosted attachments
+            "svc.ms",                     // Teams attachment CDN (*.svc.ms)
+            "blob.core.windows.net",      // Azure Blob Storage / Attachment Management Service
         };
 
         private readonly bool _enabled;

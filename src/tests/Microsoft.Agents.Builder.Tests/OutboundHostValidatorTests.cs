@@ -51,6 +51,8 @@ namespace Microsoft.Agents.Builder.Tests
         [InlineData("https://evil.example.com/relay")]
         [InlineData("https://169.254.169.254/latest/meta-data")]
         [InlineData("https://internal-test.local:8443/secret")]
+        [InlineData("http://localhost/admin")]
+        [InlineData("https://evil.trafficmanager.net/relay")]
         public void Enabled_DeniesUnknownHosts(string url)
         {
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });

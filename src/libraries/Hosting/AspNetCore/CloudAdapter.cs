@@ -301,6 +301,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         private bool ValidateServiceUrl(ClaimsIdentity identity, IActivity activity)
         {
+            // Shared allowed-hosts control (opt-in, disabled by default). Evaluated unconditionally so
+            // that the allowlist blocks disallowed hosts even when identity is null (no token claims).
+            if (_hostValidator != null
+                && _hostValidator.Enabled
+                && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
+                && !_hostValidator.IsAllowed(activity.ServiceUrl))
+            {
+                CloudAdapterLog.LogServiceUrlHostNotAllowed(Logger, activity.ServiceUrl);
+                return false;
+            }
+
             if (identity == null)
             {
                 return true;
@@ -321,17 +332,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                     CloudAdapterLog.LogInvalidServiceUrlWarning(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
                 }
-            }
-
-            // Shared allowed-hosts control (opt-in, disabled by default). Provides a fail-closed check on the
-            // outbound, token-bearing ServiceUrl even when the 'serviceurl' claim is absent from the token.
-            if (_hostValidator != null
-                && _hostValidator.Enabled
-                && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
-                && !_hostValidator.IsAllowed(activity.ServiceUrl))
-            {
-                CloudAdapterLog.LogServiceUrlHostNotAllowed(Logger, activity.ServiceUrl);
-                return false;
             }
 
             return true;
