@@ -59,6 +59,15 @@ namespace Microsoft.Agents.Builder
         public bool IncludeDefaultMicrosoftHosts { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets a value indicating whether loopback/localhost addresses (e.g. <c>localhost</c>,
+        /// <c>127.0.0.1</c>, <c>::1</c>) are permitted when enforcement is enabled. Defaults to
+        /// <see langword="true"/> so local testing tools such as the Agents Playground, which call back
+        /// to a localhost service without authentication, continue to work with enforcement on.
+        /// Set to <see langword="false"/> in production to block loopback SSRF.
+        /// </summary>
+        public bool AllowLocalhost { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets the additional allowed host suffixes. An entry matches a request host when the host equals the
         /// entry or is a subdomain of it (e.g. <c>contoso.com</c> matches <c>contoso.com</c> and <c>files.contoso.com</c>).
         /// A leading <c>*.</c> is accepted and ignored (treated as a suffix).
@@ -85,6 +94,7 @@ namespace Microsoft.Agents.Builder
         };
 
         private readonly bool _enabled;
+        private readonly bool _allowLocalhost;
         private readonly string[] _suffixes;
 
         /// <summary>
@@ -95,6 +105,7 @@ namespace Microsoft.Agents.Builder
         {
             options ??= new OutboundHostValidatorOptions();
             _enabled = options.Enabled;
+            _allowLocalhost = options.AllowLocalhost;
 
             var suffixes = new List<string>();
             if (options.IncludeDefaultMicrosoftHosts)
@@ -148,6 +159,13 @@ namespace Microsoft.Agents.Builder
             if (string.IsNullOrEmpty(host))
             {
                 return false;
+            }
+
+            // Loopback/localhost (opt-out). Enabled by default so local tooling such as the Agents
+            // Playground, which calls back to a localhost service without auth, keeps working.
+            if (_allowLocalhost && uri.IsLoopback)
+            {
+                return true;
             }
 
             foreach (var suffix in _suffixes)
