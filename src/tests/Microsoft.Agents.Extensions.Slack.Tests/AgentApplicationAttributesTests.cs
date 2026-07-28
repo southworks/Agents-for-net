@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -282,7 +282,7 @@ class ActivityRouteTypeApp(AgentApplicationOptions options) : AgentApplication(o
     public List<string> calls = [];
 
     [SlackActivityRoute(ActivityTypes.Event)]
-    public Task OnEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEvent"); return Task.CompletedTask; }
+    public Task OnEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEvent"); return Task.CompletedTask; }
 }
 
 class ActivityRouteRegexApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -290,7 +290,7 @@ class ActivityRouteRegexApp(AgentApplicationOptions options) : AgentApplication(
     public List<string> calls = [];
 
     [SlackActivityRoute(typeRegex: "event|invoke")]
-    public Task OnEventOrInvoke(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEventOrInvoke"); return Task.CompletedTask; }
+    public Task OnEventOrInvoke(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEventOrInvoke"); return Task.CompletedTask; }
 }
 
 class ActivityRouteAnyApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -298,10 +298,10 @@ class ActivityRouteAnyApp(AgentApplicationOptions options) : AgentApplication(op
     public List<string> calls = [];
 
     [SlackActivityRoute(ActivityTypes.Event)]
-    public Task OnEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEvent"); return Task.CompletedTask; }
+    public Task OnEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEvent"); return Task.CompletedTask; }
 
     [SlackActivityRoute]
-    public Task OnAny(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAny"); return Task.CompletedTask; }
+    public Task OnAny(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAny"); return Task.CompletedTask; }
 }
 
 class InstallationUpdateRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -309,7 +309,7 @@ class InstallationUpdateRouteApp(AgentApplicationOptions options) : AgentApplica
     public List<string> calls = [];
 
     [SlackInstallationUpdateRoute]
-    public Task OnInstallationUpdate(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnInstallationUpdate"); return Task.CompletedTask; }
+    public Task OnInstallationUpdate(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnInstallationUpdate"); return Task.CompletedTask; }
 }
 
 class MessageRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -317,13 +317,13 @@ class MessageRouteApp(AgentApplicationOptions options) : AgentApplication(option
     public List<string> calls = [];
 
     [SlackMessageRoute]
-    public Task OnAnyMessage(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyMessage"); return Task.CompletedTask; }
+    public Task OnAnyMessage(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyMessage"); return Task.CompletedTask; }
 
     [SlackMessageRoute(text: "-test")]
-    public Task OnTest(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnTest"); return Task.CompletedTask; }
+    public Task OnTest(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnTest"); return Task.CompletedTask; }
 
     [SlackMessageRoute(textRegex: "test.*")]
-    public Task OnRegEx(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnRegEx"); return Task.CompletedTask; }
+    public Task OnRegEx(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnRegEx"); return Task.CompletedTask; }
 }
 
 class EventRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -331,13 +331,13 @@ class EventRouteApp(AgentApplicationOptions options) : AgentApplication(options)
     public List<string> calls = [];
 
     [SlackEventRoute(name: "myEvent")]
-    public Task OnMyEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMyEvent"); return Task.CompletedTask; }
+    public Task OnMyEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMyEvent"); return Task.CompletedTask; }
 
     [SlackEventRoute(nameRegex: "my.+Event")]
-    public Task OnRegexEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnRegexEvent"); return Task.CompletedTask; }
+    public Task OnRegexEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnRegexEvent"); return Task.CompletedTask; }
 
     [SlackEventRoute]
-    public Task OnAnyEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyEvent"); return Task.CompletedTask; }
+    public Task OnAnyEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyEvent"); return Task.CompletedTask; }
 }
 
 class ConversationUpdateRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -345,7 +345,7 @@ class ConversationUpdateRouteApp(AgentApplicationOptions options) : AgentApplica
     public List<string> calls = [];
 
     [SlackConversationUpdateRoute]
-    public Task OnAnyConversationUpdate(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyConversationUpdate"); return Task.CompletedTask; }
+    public Task OnAnyConversationUpdate(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyConversationUpdate"); return Task.CompletedTask; }
 }
 
 class ConversationUpdateEventApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -353,7 +353,7 @@ class ConversationUpdateEventApp(AgentApplicationOptions options) : AgentApplica
     public List<string> calls = [];
 
     [SlackConversationUpdateRoute(eventName: ConversationUpdateEvents.MembersAdded)]
-    public Task OnMembersAddedEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersAddedEvent"); return Task.CompletedTask; }
+    public Task OnMembersAddedEvent(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersAddedEvent"); return Task.CompletedTask; }
 }
 
 class MembersAddedRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -361,7 +361,7 @@ class MembersAddedRouteApp(AgentApplicationOptions options) : AgentApplication(o
     public List<string> calls = [];
 
     [SlackMembersAddedRoute]
-    public Task OnMembersAdded(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersAdded"); return Task.CompletedTask; }
+    public Task OnMembersAdded(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersAdded"); return Task.CompletedTask; }
 }
 
 class MembersRemovedRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -369,7 +369,7 @@ class MembersRemovedRouteApp(AgentApplicationOptions options) : AgentApplication
     public List<string> calls = [];
 
     [SlackMembersRemovedRoute]
-    public Task OnMembersRemoved(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersRemoved"); return Task.CompletedTask; }
+    public Task OnMembersRemoved(ISlackTurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMembersRemoved"); return Task.CompletedTask; }
 }
 
 class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -377,5 +377,5 @@ class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(o
     public List<string> calls = [];
 
     [SlackFeedbackLoopRoute]
-    public Task OnFeedback(ITurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedback"); return Task.CompletedTask; }
+    public Task OnFeedback(ISlackTurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedback"); return Task.CompletedTask; }
 }
