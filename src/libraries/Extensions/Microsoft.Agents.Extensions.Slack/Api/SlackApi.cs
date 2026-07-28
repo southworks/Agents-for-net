@@ -69,11 +69,6 @@ public class SlackApi
     {
         AssertionHelpers.ThrowIfNullOrWhiteSpace(method, nameof(method));
 
-        // Notify the turn that a message is being delivered out-of-band (bypassing ITurnContext send
-        // pipeline). This resets the per-turn typing timer interval so the typing indicator timing stays
-        // consistent with normal pipeline sends. See https://github.com/microsoft/Agents-for-net/issues/846.
-        _onCallAsync?.Invoke();
-
         var json = options is string str ? str : JsonSerializer.Serialize(options ?? new { }, JsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -86,7 +81,14 @@ public class SlackApi
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-            
+
+        // Notify the turn that a message is being delivered out-of-band (bypassing ITurnContext send
+        // pipeline). This resets the per-turn typing timer interval so the typing indicator timing stays
+        // consistent with normal pipeline sends. The callback fires only after the request has been
+        // successfully constructed, so a serialization/setup failure does not reset the timer for a send
+        // that never happened. See https://github.com/microsoft/Agents-for-net/issues/846.
+        _onCallAsync?.Invoke();
+
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
