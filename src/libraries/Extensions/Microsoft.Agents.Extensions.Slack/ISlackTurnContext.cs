@@ -12,12 +12,13 @@ namespace Microsoft.Agents.Extensions.Slack;
 public interface ISlackTurnContext : ITurnContext
 {
     /// <summary>
+    /// Gets the current <see cref="ISlackActivity"/>, exposing the Activity as a strongly-typed
+    /// <see cref="ISlackActivity"/> instead of <see cref="IActivity"/>.
+    /// </summary>
+    new ISlackActivity Activity { get; }
+
+    /// <summary>
     /// Gets the <see cref="SlackApi"/> client registered for Slack API access in the current turn context.
     /// </summary>
     SlackApi Client { get; }
-
-    /// <summary>
-    /// Gets the strongly-typed Slack channel data (envelope / interactive payload) carried on the current Activity.
-    /// </summary>
-    SlackChannelData SlackChannelData { get; }
 }

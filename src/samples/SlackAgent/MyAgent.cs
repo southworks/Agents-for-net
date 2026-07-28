@@ -33,7 +33,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     [SlackMessageRoute]
     public async Task OnSlackMessageAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.SlackChannelData;
+        var channelData = turnContext.Activity.ChannelData;
 
         var message = $$"""
         {
@@ -49,7 +49,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     [SlackEventRoute]
     public async Task OnSlackEventAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.SlackChannelData;
+        var channelData = turnContext.Activity.ChannelData;
 
         var message = $$"""
         {
@@ -64,7 +64,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     [SlackMessageRoute("-buttons")]
     public async Task OnSlackButtonsAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.SlackChannelData;
+        var channelData = turnContext.Activity.ChannelData;
         var buttons = $$"""
         {
             "channel": "{{channelData.Channel}}",
@@ -170,7 +170,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     [SlackFeedbackLoopRoute]
     public async Task OnSlackFeedbackLoopAsync(ISlackTurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.SlackChannelData;
+        var channelData = turnContext.Activity.ChannelData;
         var message = $$"""
         {
             "channel": "{{channelData.Channel}}",
