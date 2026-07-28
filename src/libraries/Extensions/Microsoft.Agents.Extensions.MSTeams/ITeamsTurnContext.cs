@@ -15,8 +15,8 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 public interface ITeamsTurnContext : ITurnContext
 {
     /// <summary>
-    /// Gets the current <see cref="ITeamsActivity"/>, exposing the Teams channel data as a strongly-typed
-    /// <see cref="Microsoft.Teams.Api.ChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+    /// Gets the current <see cref="ITeamsActivity"/>, exposing the Activity as a strongly-typed
+    /// <see cref="ITeamsActivity"/> instead of <see cref="IActivity"/>.
     /// </summary>
     new ITeamsActivity Activity { get; }
 
