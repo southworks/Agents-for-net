@@ -15,6 +15,12 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 public interface ITeamsTurnContext : ITurnContext
 {
     /// <summary>
+    /// Gets the current <see cref="ITeamsActivity"/>, exposing the Teams channel data as a strongly-typed
+    /// <see cref="Microsoft.Teams.Api.ChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+    /// </summary>
+    new ITeamsActivity Activity { get; }
+
+    /// <summary>
     /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
     /// </summary>
     Microsoft.Teams.Api.Clients.ApiClient Client { get; }
