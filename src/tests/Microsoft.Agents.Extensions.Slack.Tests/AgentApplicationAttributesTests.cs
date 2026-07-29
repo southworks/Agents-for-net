@@ -289,6 +289,18 @@ public class AgentApplicationAttributesTests
     }
 
     [Fact]
+    public async Task SlackActivityRoute_SupportsTypedSlackActivityHandler()
+    {
+        var app = new ActivityRouteTypedApp(new AgentApplicationOptions((IStorage)null));
+        var turnContext = CreateTurnContext(SlackActivity(ActivityTypes.Event));
+
+        await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+        Assert.Single(app.calls);
+        Assert.Equal("OnEventTyped", app.calls[0]);
+    }
+
+    [Fact]
     public async Task SlackFeedbackLoopRoute_SupportsNativeFeedbackLoopHandler()
     {
         var app = new FeedbackLoopRouteNativeApp(new AgentApplicationOptions((IStorage)null));
@@ -421,6 +433,14 @@ class ActivityRouteNativeApp(AgentApplicationOptions options) : AgentApplication
 
     [SlackActivityRoute(ActivityTypes.Event)]
     public Task OnEventNative(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEventNative"); return Task.CompletedTask; }
+}
+
+class ActivityRouteTypedApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackActivityRoute(ActivityTypes.Event)]
+    public Task OnEventTyped(ITurnContext<ISlackActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEventTyped"); return Task.CompletedTask; }
 }
 
 class FeedbackLoopRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)

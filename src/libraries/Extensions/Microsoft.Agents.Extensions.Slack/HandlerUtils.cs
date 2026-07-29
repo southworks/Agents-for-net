@@ -26,14 +26,29 @@ internal static class HandlerUtils
         };
     }
 
+    public static RouteHandler WrapHandler(TypedRouteHandler<ISlackActivity> handler)
+    {
+        return async (ctx, turnState, cancellationToken) =>
+        {
+            var stc = new SlackTurnContext(ctx);
+            await handler(stc, turnState, cancellationToken);
+        };
+    }
+
     /// <summary>
     /// Resolves a delegate created from a decorated method to a <see cref="RouteHandler"/>. A
-    /// <see cref="SlackRouteHandler"/> (Slack-specific context) is wrapped; a native
+    /// <see cref="SlackRouteHandler"/> (Slack-specific context) or a
+    /// <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> is wrapped; a native
     /// <see cref="RouteHandler"/> is used as-is.
     /// </summary>
     public static RouteHandler ResolveRouteHandler(Delegate handler)
     {
-        return handler is SlackRouteHandler slackHandler ? WrapHandler(slackHandler) : (RouteHandler)handler;
+        return handler switch
+        {
+            SlackRouteHandler slackHandler => WrapHandler(slackHandler),
+            TypedRouteHandler<ISlackActivity> typedHandler => WrapHandler(typedHandler),
+            _ => (RouteHandler)handler,
+        };
     }
 
     /// <summary>
