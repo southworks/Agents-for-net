@@ -190,5 +190,81 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var roundTrip = await reader.ReadToEndAsync();
             Assert.Equal(json, roundTrip);
         }
+
+        [Fact]
+        public async Task ChannelIdAfterLargePayload_SpanningMultipleChunks_IsResolved()
+        {
+            // channelId sits after ~64KB of content, forcing the incremental scanner to refill its buffer.
+            var filler = new string('a', 64 * 1024);
+            var json = $$"""{"type":"message","text":"{{filler}}","channelId":"msteams"}""";
+            var channelAdapter = new HttpChannelAdapter();
+            var defaultAdapter = new DefaultHttpAdapter();
+            var registry = new StubRegistry();
+            registry.Add("msteams", channelAdapter);
+
+            var request = MakeRequest(json);
+
+            var resolved = await AgentEndpointExtensions.ResolveAdapterAsync(registry, defaultAdapter, request, CancellationToken.None);
+
+            Assert.Same(channelAdapter, resolved);
+        }
+
+        [Fact]
+        public async Task ChunkedChannelIdAfterLargePayload_IsResolved()
+        {
+            // Same as above but with unknown length (no Content-Length) to exercise the chunked path.
+            var filler = new string('b', 64 * 1024);
+            var json = $$"""{"type":"message","text":"{{filler}}","channelId":"directline"}""";
+            var channelAdapter = new HttpChannelAdapter();
+            var defaultAdapter = new DefaultHttpAdapter();
+            var registry = new StubRegistry();
+            registry.Add("directline", channelAdapter);
+
+            var request = MakeChunkedRequest(json);
+
+            var resolved = await AgentEndpointExtensions.ResolveAdapterAsync(registry, defaultAdapter, request, CancellationToken.None);
+
+            Assert.Same(channelAdapter, resolved);
+        }
+
+        [Fact]
+        public async Task Cancellation_IsPropagated_NotSwallowed()
+        {
+            // A canceled/aborted read must surface as cancellation, not fall back to the default adapter.
+            var defaultAdapter = new DefaultHttpAdapter();
+            var registry = new StubRegistry();
+            registry.Add("msteams", new HttpChannelAdapter());
+
+            var ctx = new DefaultHttpContext();
+            ctx.Request.Body = new ThrowOnReadStream();
+            ctx.Request.ContentLength = 128;
+            ctx.Request.ContentType = "application/json";
+
+            await Assert.ThrowsAsync<OperationCanceledException>(
+                async () => await AgentEndpointExtensions.ResolveAdapterAsync(registry, defaultAdapter, ctx.Request, CancellationToken.None));
+        }
+
+        // Stream that throws OperationCanceledException on read to simulate an aborted request.
+        private sealed class ThrowOnReadStream : Stream
+        {
+            public override bool CanRead => true;
+            public override bool CanSeek => true; // seekable so EnableBuffering keeps it as the body
+            public override bool CanWrite => false;
+            public override long Length => 128;
+            public override long Position { get; set; }
+
+            public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+                => throw new OperationCanceledException();
+
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+                => throw new OperationCanceledException();
+
+            public override int Read(byte[] buffer, int offset, int count) => throw new OperationCanceledException();
+
+            public override long Seek(long offset, SeekOrigin origin) => Position = 0;
+            public override void Flush() { }
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        }
     }
 }
