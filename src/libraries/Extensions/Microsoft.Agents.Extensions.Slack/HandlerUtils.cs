@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using System;
 
 namespace Microsoft.Agents.Extensions.Slack;
 
@@ -23,5 +24,25 @@ internal static class HandlerUtils
             var stc = new SlackTurnContext(ctx);
             await handler(stc, turnState, feedbackData, cancellationToken);
         };
+    }
+
+    /// <summary>
+    /// Resolves a delegate created from a decorated method to a <see cref="RouteHandler"/>. A
+    /// <see cref="SlackRouteHandler"/> (Slack-specific context) is wrapped; a native
+    /// <see cref="RouteHandler"/> is used as-is.
+    /// </summary>
+    public static RouteHandler ResolveRouteHandler(Delegate handler)
+    {
+        return handler is SlackRouteHandler slackHandler ? WrapHandler(slackHandler) : (RouteHandler)handler;
+    }
+
+    /// <summary>
+    /// Resolves a delegate created from a decorated method to a <see cref="FeedbackLoopHandler"/>. A
+    /// <see cref="SlackFeedbackLoopHandler"/> (Slack-specific context) is wrapped; a native
+    /// <see cref="FeedbackLoopHandler"/> is used as-is.
+    /// </summary>
+    public static FeedbackLoopHandler ResolveFeedbackLoopHandler(Delegate handler)
+    {
+        return handler is SlackFeedbackLoopHandler slackHandler ? WrapHandler(slackHandler) : (FeedbackLoopHandler)handler;
     }
 }

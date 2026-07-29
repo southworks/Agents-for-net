@@ -271,6 +271,41 @@ public class AgentApplicationAttributesTests
         Assert.Single(app.calls);
         Assert.Equal("OnFeedback", app.calls[0]);
     }
+
+    // ---------------------------------------------------------------------------
+    // Native handler signature support (RouteHandler / FeedbackLoopHandler)
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task SlackActivityRoute_SupportsNativeRouteHandler()
+    {
+        var app = new ActivityRouteNativeApp(new AgentApplicationOptions((IStorage)null));
+        var turnContext = CreateTurnContext(SlackActivity(ActivityTypes.Event));
+
+        await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+        Assert.Single(app.calls);
+        Assert.Equal("OnEventNative", app.calls[0]);
+    }
+
+    [Fact]
+    public async Task SlackFeedbackLoopRoute_SupportsNativeFeedbackLoopHandler()
+    {
+        var app = new FeedbackLoopRouteNativeApp(new AgentApplicationOptions((IStorage)null));
+        var activity = SlackActivity(ActivityTypes.Invoke);
+        activity.Name = "message/submitAction";
+        activity.Value = new Dictionary<string, object>
+        {
+            { "actionName", "feedback" },
+            { "actionValue", new Dictionary<string, object> { { "reaction", "like" } } }
+        };
+        var turnContext = CreateTurnContext(activity);
+
+        await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+        Assert.Single(app.calls);
+        Assert.Equal("OnFeedbackNative", app.calls[0]);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -378,4 +413,20 @@ class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(o
 
     [SlackFeedbackLoopRoute]
     public Task OnFeedback(ISlackTurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedback"); return Task.CompletedTask; }
+}
+
+class ActivityRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackActivityRoute(ActivityTypes.Event)]
+    public Task OnEventNative(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEventNative"); return Task.CompletedTask; }
+}
+
+class FeedbackLoopRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackFeedbackLoopRoute]
+    public Task OnFeedbackNative(ITurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedbackNative"); return Task.CompletedTask; }
 }

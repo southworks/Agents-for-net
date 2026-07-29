@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// Decorate a method with this attribute to register it as a handler for activities of the specified type.
 /// Provide either <paramref name="type"/> for an exact match or <paramref name="typeRegex"/> for a pattern match; they are mutually exclusive.
 /// When neither is provided the route matches any activity type and defaults to <see cref="RouteRank.Last"/>.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// // Match by exact type
 /// [SlackActivityRoute(ActivityTypes.Event)]
@@ -48,11 +48,12 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackActivityRouteAttribute(string type = null, string typeRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = HandlerUtils.WrapHandler(RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method));
+        var handler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var builder = TypeRouteBuilder.Create();
         if (!string.IsNullOrWhiteSpace(type))
         {
@@ -73,7 +74,7 @@ public class SlackActivityRouteAttribute(string type = null, string typeRegex = 
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for installation update activities.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [SlackInstallationUpdateRoute]
 /// public async Task OnInstallationUpdateAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -87,11 +88,12 @@ public class SlackActivityRouteAttribute(string type = null, string typeRegex = 
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackInstallationUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = HandlerUtils.WrapHandler(RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method));
+        var handler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.InstallationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -105,7 +107,7 @@ public class SlackInstallationUpdateRouteAttribute(bool isAgenticOnly = false, u
 /// Decorate a method with this attribute to register it as a handler for message activities.
 /// Provide <paramref name="text"/> for an exact match, <paramref name="textRegex"/> for a pattern match, or neither to match any message.
 /// <paramref name="text"/> and <paramref name="textRegex"/> are mutually exclusive.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// // Match any message
 /// [SlackMessageRoute]
@@ -136,13 +138,12 @@ public class SlackInstallationUpdateRouteAttribute(bool isAgenticOnly = false, u
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackMessageRouteAttribute(string text = null, string textRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var b = MessageRouteBuilder.Create().WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
 
@@ -166,7 +167,7 @@ public class SlackMessageRouteAttribute(string text = null, string textRegex = n
 /// Decorate a method with this attribute to register it as a handler for event activities.
 /// Provide <paramref name="name"/> for an exact match, <paramref name="nameRegex"/> for a pattern match, or neither to match any event.
 /// <paramref name="name"/> and <paramref name="nameRegex"/> are mutually exclusive.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// // Match any event
 /// [SlackEventRoute]
@@ -197,13 +198,12 @@ public class SlackMessageRouteAttribute(string text = null, string textRegex = n
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackEventRouteAttribute(string name = null, string nameRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var b = EventRouteBuilder.Create().WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
 
@@ -228,7 +228,7 @@ public class SlackEventRouteAttribute(string name = null, string nameRegex = nul
 /// When <paramref name="eventName"/> is provided, it is matched against <see cref="ConversationUpdateEvents"/> values.
 /// When omitted, all conversation update activities are matched.
 /// Use <see cref="MembersAddedRouteAttribute"/> or <see cref="MembersRemovedRouteAttribute"/> for the common member events.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// // Match any conversation update
 /// [SlackConversationUpdateRoute]
@@ -250,13 +250,12 @@ public class SlackEventRouteAttribute(string name = null, string nameRegex = nul
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackConversationUpdateRouteAttribute(string eventName = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         if (!string.IsNullOrWhiteSpace(eventName))
         {
             var b = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(eventName).WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
@@ -277,7 +276,7 @@ public class SlackConversationUpdateRouteAttribute(string eventName = null, bool
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersAdded"/> event.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [SlackMembersAddedRoute]
 /// public async Task OnMembersAddedAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -297,13 +296,12 @@ public class SlackConversationUpdateRouteAttribute(string eventName = null, bool
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackMembersAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersAdded).WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -315,7 +313,7 @@ public class SlackMembersAddedRouteAttribute(bool isAgenticOnly = false, ushort 
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersRemoved"/> event.
-/// The method must match the <see cref="SlackRouteHandler"/> delegate signature.
+/// The method must match the <see cref="SlackRouteHandler"/> or <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [SlackMembersRemovedRoute]
 /// public async Task OnMembersRemovedAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -329,13 +327,12 @@ public class SlackMembersAddedRouteAttribute(bool isAgenticOnly = false, ushort 
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
+[RouteHandlerType(typeof(RouteHandler))]
 public class SlackMembersRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackRouteHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveRouteHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersRemoved).WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -348,7 +345,7 @@ public class SlackMembersRemovedRouteAttribute(bool isAgenticOnly = false, ushor
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for <c>message/submitAction</c> invoke activities
 /// where <c>actionName</c> is <c>feedback</c>.
-/// The method must match the <see cref="SlackFeedbackLoopHandler"/> delegate signature.
+/// The method must match the <see cref="SlackFeedbackLoopHandler"/> or <see cref="FeedbackLoopHandler"/> delegate signature.
 /// <code>
 /// [SlackFeedbackLoopRoute]
 /// public async Task OnFeedbackAsync(ISlackTurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
@@ -362,13 +359,12 @@ public class SlackMembersRemovedRouteAttribute(bool isAgenticOnly = false, ushor
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackFeedbackLoopHandler))]
+[RouteHandlerType(typeof(FeedbackLoopHandler))]
 public class SlackFeedbackLoopRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<SlackFeedbackLoopHandler>(app, method);
-        var routeHandler = HandlerUtils.WrapHandler(handler);
-
+        var routeHandler = HandlerUtils.ResolveFeedbackLoopHandler(RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType()));
         var builder = FeedbackRouteBuilder.Create().WithHandler(routeHandler).AsAgentic(isAgenticOnly).WithOrderRank(rank).WithChannelId(Channels.Slack);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

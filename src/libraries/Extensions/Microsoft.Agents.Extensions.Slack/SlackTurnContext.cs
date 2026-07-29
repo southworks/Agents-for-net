@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// Initializes a new instance of the <see cref="SlackTurnContext"/> class wrapping the specified inner turn context.
 /// </remarks>
 /// <param name="turnContext">The inner turn context to wrap.</param>
-public class SlackTurnContext(ITurnContext turnContext) : TurnContextWrapper(turnContext), ISlackTurnContext
+public class SlackTurnContext(ITurnContext turnContext) : TurnContextWrapper(turnContext), ISlackTurnContext, ITurnContext<ISlackActivity>
 {
     /// <inheritdoc/>
     public SlackApi Client => _turnContext.Services.Get<SlackApi>();
