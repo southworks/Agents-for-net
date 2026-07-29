@@ -34,6 +34,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(CloudAdapter), // Default Type passed to AddCloudAdapter.
                 typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
+                typeof(ChannelAdapterRegistry), // IChannelAdapterRegistry.
             };
 
             Assert.Equal(expected, services);
@@ -60,6 +61,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(CloudAdapter),
                 typeof(IAgentHttpAdapter),
                 typeof(IChannelAdapter),
+                typeof(ChannelAdapterRegistry), // IChannelAdapterRegistry.
                 typeof(ActivityHandler), // IAgent.
                 typeof(ActivityHandler), // TAgent.
             };

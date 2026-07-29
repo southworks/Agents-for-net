@@ -13,10 +13,12 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -123,8 +125,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
 
                     agentGroup.MapMethods(agentInterface.Path, ["POST"],
-                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IServiceProvider services, CancellationToken cancellationToken) =>
+                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IChannelAdapterRegistry registry, IServiceProvider services, CancellationToken cancellationToken) =>
                         {
+                            // Tier 2 resolution: when channel-specific adapters are registered, peek the
+                            // channelId from the inbound Activity and resolve a channel-specific adapter.
+                            // Otherwise (the common case) use the default AP adapter (CloudAdapter) directly.
+                            var adapter = registry != null && registry.HasChannelSpecificAdapters
+                                ? await ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken).ConfigureAwait(false)
+                                : defaultAdapter;
+
                             IAgent agentInstance = (IAgent)services.GetService(agent);
                             // This is to handle declaring an AgentApplication in an AddTransient lambda.
                             agentInstance ??= (IAgent)services.GetRequiredService(typeof(IAgent));
@@ -151,6 +160,138 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             return agentGroup;
+        }
+
+        /// <summary>
+        /// Tier 2 adapter resolution for a shared Activity Protocol endpoint. Peeks the <c>channelId</c>
+        /// from the inbound Activity and returns the channel-specific adapter when one is registered;
+        /// otherwise returns the default Activity Protocol adapter (CloudAdapter).
+        /// </summary>
+        /// <remarks>Only reached when <see cref="IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
+        internal static async ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
+            IChannelAdapterRegistry registry,
+            IAgentHttpAdapter defaultAdapter,
+            HttpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var channelId = await PeekChannelIdAsync(request, cancellationToken).ConfigureAwait(false);
+
+            // A channel-specific adapter must also handle HTTP (IAgentHttpAdapter) to serve this endpoint.
+            if (channelId != null
+                && registry.TryGetAdapter(channelId, out var channelAdapter)
+                && channelAdapter is IAgentHttpAdapter httpAdapter)
+            {
+                return httpAdapter;
+            }
+
+            // Default: CloudAdapter handles all unspecialized AP channels.
+            return defaultAdapter;
+        }
+
+        /// <summary>
+        /// Extracts the top-level <c>channelId</c> from a buffered JSON request body without deserializing
+        /// the Activity. Enables request buffering so the resolved adapter can re-read the full body in
+        /// <see cref="IAgentHttpAdapter.ProcessAsync"/>.
+        /// </summary>
+        private static async ValueTask<string> PeekChannelIdAsync(HttpRequest request, CancellationToken cancellationToken)
+        {
+            request.EnableBuffering();
+
+            var body = request.Body;
+            var contentLength = (int)(request.ContentLength ?? 0);
+
+            byte[] rented = null;
+            try
+            {
+                int read;
+                if (contentLength > 0)
+                {
+                    rented = ArrayPool<byte>.Shared.Rent(contentLength);
+                    read = 0;
+                    while (read < contentLength)
+                    {
+                        var n = await body.ReadAsync(rented.AsMemory(read, contentLength - read), cancellationToken).ConfigureAwait(false);
+                        if (n == 0)
+                        {
+                            break;
+                        }
+
+                        read += n;
+                    }
+                }
+                else
+                {
+                    // Unknown length (e.g. chunked): buffer to end.
+                    using var ms = new System.IO.MemoryStream();
+                    await body.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+                    if (body.CanSeek)
+                    {
+                        body.Position = 0;
+                    }
+
+                    return ms.TryGetBuffer(out var segment) && segment.Array != null
+                        ? TryReadChannelId(new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count))
+                        : TryReadChannelId(ms.ToArray());
+                }
+
+                if (body.CanSeek)
+                {
+                    body.Position = 0;
+                }
+
+                return TryReadChannelId(new ReadOnlySpan<byte>(rented, 0, read));
+            }
+            catch (Exception)
+            {
+                // If the body cannot be inspected, fall back to the default adapter.
+                if (body.CanSeek)
+                {
+                    body.Position = 0;
+                }
+
+                return null;
+            }
+            finally
+            {
+                if (rented != null)
+                {
+                    ArrayPool<byte>.Shared.Return(rented);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Scans top-level JSON properties for <c>channelId</c> using a zero-allocation streaming reader.
+        /// Returns <see langword="null"/> when the value is absent or the payload is not a JSON object.
+        /// </summary>
+        internal static string TryReadChannelId(ReadOnlySpan<byte> json)
+        {
+            if (json.IsEmpty)
+            {
+                return null;
+            }
+
+            try
+            {
+                var reader = new Utf8JsonReader(json);
+                while (reader.Read())
+                {
+                    if (reader.CurrentDepth == 1
+                        && reader.TokenType == JsonTokenType.PropertyName
+                        && reader.ValueTextEquals("channelId"u8))
+                    {
+                        return reader.Read() && reader.TokenType == JsonTokenType.String
+                            ? reader.GetString()
+                            : null;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Malformed JSON — let the adapter surface the error.
+            }
+
+            return null;
         }
 
         /// <summary>
