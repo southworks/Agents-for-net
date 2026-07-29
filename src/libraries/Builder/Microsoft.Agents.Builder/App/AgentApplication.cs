@@ -769,6 +769,10 @@ namespace Microsoft.Agents.Builder.App
             {
                 turnContext.Services.Set<IConnections>(Options.Connections);
             }
+            if (Options.ChannelAdapterRegistry != null)
+            {
+                turnContext.Services.Set<IChannelAdapterRegistry>(Options.ChannelAdapterRegistry);
+            }
             turnContext.Services.Set<Proactive.Proactive>(Proactive);
             turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
             turnContext.Services.Set<ITurnState>(turnState);
