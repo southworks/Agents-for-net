@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;

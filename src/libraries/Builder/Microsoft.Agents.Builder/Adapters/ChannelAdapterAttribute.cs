@@ -3,12 +3,10 @@
 
 using System;
 
-namespace Microsoft.Agents.Hosting.AspNetCore
+namespace Microsoft.Agents.Builder.Adapters
 {
-    using Microsoft.Agents.Builder.App;
-
     /// <summary>
-    /// Declares that an <see cref="IAgentHttpAdapter"/> implementation handles inbound requests for a
+    /// Declares that an <see cref="IChannelAdapter"/> implementation handles inbound requests for a
     /// specific <c>channelId</c>. Annotated adapters are auto-registered in the
     /// <see cref="IChannelAdapterRegistry"/> so that shared-endpoint (Tier 2) dispatch and SDK features
     /// (proactive messaging, diagnostics) can resolve the correct adapter by channelId.
@@ -23,9 +21,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// assembly that declares the annotated adapter.
     /// </para>
     /// <para>
-    /// The annotated type must implement <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> (so it can
-    /// be resolved through <see cref="IChannelAdapterRegistry"/>); to also serve shared-endpoint HTTP
-    /// dispatch it must implement <see cref="IAgentHttpAdapter"/>. Both hold for adapters deriving from
+    /// The annotated type must implement <see cref="IChannelAdapter"/> (so it can be resolved through
+    /// <see cref="IChannelAdapterRegistry"/>); to also serve shared-endpoint HTTP dispatch it must
+    /// implement the host's HTTP adapter contract (<c>IAgentHttpAdapter</c> in
+    /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). Both hold for adapters deriving from
     /// <c>CloudAdapter</c> or <c>ChannelAdapter</c>. It does <b>not</b> need to derive from
     /// <c>CloudAdapter</c> — the default Activity Protocol adapter (CloudAdapter) remains the registry
     /// default and is not annotated.

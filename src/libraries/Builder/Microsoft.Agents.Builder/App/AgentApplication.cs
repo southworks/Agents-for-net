@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;

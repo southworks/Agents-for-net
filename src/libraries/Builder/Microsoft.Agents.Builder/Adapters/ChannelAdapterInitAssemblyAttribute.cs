@@ -5,17 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Agents.Builder;
 
-namespace Microsoft.Agents.Hosting.AspNetCore
+namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
-    /// Assembly-level attribute that points at an <see cref="IAgentHttpAdapter"/> implementation annotated
+    /// Assembly-level attribute that points at an <see cref="IChannelAdapter"/> implementation annotated
     /// with a <see cref="ChannelAdapterAttribute"/>, together with the <c>channelId</c> it handles.
     /// </summary>
     /// <remarks>
     /// One instance is emitted by the <c>ChannelAdapterInitSourceGenerator</c> for each
-    /// <c>[ChannelAdapter]</c> declaration in an assembly. At <see cref="Builder.App.IChannelAdapterRegistry"/>
+    /// <c>[ChannelAdapter]</c> declaration in an assembly. At <see cref="IChannelAdapterRegistry"/>
     /// construction these attributes are read off the loaded assemblies and their adapters registered, so
     /// adapter authors do not need to call an explicit DI registration method and the runtime never has to
     /// scan every type to find channel adapters. Follows the same discovery pattern as

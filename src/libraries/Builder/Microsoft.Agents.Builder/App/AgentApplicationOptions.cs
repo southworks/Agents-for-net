@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Adapters;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Builder.App

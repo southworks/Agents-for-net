@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Xunit;

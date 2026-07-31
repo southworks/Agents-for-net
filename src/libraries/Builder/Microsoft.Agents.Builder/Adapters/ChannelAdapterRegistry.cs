@@ -4,11 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.Agents.Hosting.AspNetCore
+namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
     /// Default <see cref="IChannelAdapterRegistry"/> implementation.

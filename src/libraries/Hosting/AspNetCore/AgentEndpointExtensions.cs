@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Errors;

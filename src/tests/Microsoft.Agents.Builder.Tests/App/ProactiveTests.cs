@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;

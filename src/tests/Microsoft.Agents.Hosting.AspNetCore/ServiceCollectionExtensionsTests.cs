@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;

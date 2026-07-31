@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Builder.App
+namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
     /// Registry of <see cref="IChannelAdapter"/> instances keyed by <c>channelId</c>.
@@ -13,8 +14,8 @@ namespace Microsoft.Agents.Builder.App
     /// <remarks>
     /// <para>
     /// The interface lives in the Builder layer so it can be surfaced through
-    /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The default implementation lives in
-    /// <c>Microsoft.Agents.Hosting.AspNetCore</c> and is populated from adapters annotated with the
+    /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The default implementation also lives
+    /// in the Builder layer and is populated from adapters annotated with the
     /// <c>[ChannelAdapter("channelId")]</c> attribute (plus the default Activity Protocol adapter,
     /// CloudAdapter).
     /// </para>

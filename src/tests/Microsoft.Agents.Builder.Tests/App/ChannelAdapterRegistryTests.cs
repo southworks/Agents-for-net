@@ -5,13 +5,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Microsoft.Agents.Hosting.AspNetCore.Tests
+namespace Microsoft.Agents.Builder.Tests
 {
     public class ChannelAdapterRegistryTests
     {
