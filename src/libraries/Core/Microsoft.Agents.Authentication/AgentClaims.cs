@@ -19,15 +19,13 @@ namespace Microsoft.Agents.Authentication
     {
         private const string MappedTenantIdClaim = "http://schemas.microsoft.com/identity/claims/tenantid";
         private const string TenantGuidPattern = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
-        private static readonly Regex EntraV1IssuerPattern = new(
-            $"^(?i:https://sts\\.windows\\.net/){TenantGuidPattern}/$",
-            RegexOptions.CultureInvariant);
-        private static readonly Regex EntraV2IssuerPattern = new(
-            $"^(?i:https://login\\.microsoftonline\\.(?:com|us)/){TenantGuidPattern}/v2\\.0$",
-            RegexOptions.CultureInvariant);
-        private static readonly Regex EntraChinaV2IssuerPattern = new(
-            $"^(?i:https://login\\.partner\\.microsoftonline\\.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/){TenantGuidPattern}/v2\\.0$",
-            RegexOptions.CultureInvariant);
+        private static readonly Regex[] EntraIssuerPatterns =
+        [
+            BuildIssuerPattern(AuthenticationConstants.ValidTokenIssuerUrlTemplateV1),
+            BuildIssuerPattern(AuthenticationConstants.ValidTokenIssuerUrlTemplateV2),
+            BuildIssuerPattern(AuthenticationConstants.ValidGovernmentTokenIssuerUrlTemplateV2),
+            BuildIssuerPattern(AuthenticationConstants.ValidChinaTokenIssuerUrlTemplateV2),
+        ];
 
         /// <summary>
         /// Determines if a token is exchangeable based on its claims. An exchangeable token is one that is not a user token and has 
@@ -161,17 +159,26 @@ namespace Microsoft.Agents.Authentication
                 return false;
             }
 
-            var match = EntraV1IssuerPattern.Match(issuer);
-            if (!match.Success)
+            foreach (var pattern in EntraIssuerPatterns)
             {
-                match = EntraV2IssuerPattern.Match(issuer);
-            }
-            if (!match.Success)
-            {
-                match = EntraChinaV2IssuerPattern.Match(issuer);
+                var match = pattern.Match(issuer);
+                if (match.Success && Guid.TryParse(match.Groups[1].Value, out tenantId))
+                {
+                    return true;
+                }
             }
 
-            return match.Success && Guid.TryParse(match.Groups[1].Value, out tenantId);
+            return false;
+        }
+
+        private static Regex BuildIssuerPattern(string template)
+        {
+            var placeholderIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            var prefix = Regex.Escape(template.Substring(0, placeholderIndex));
+            var suffix = Regex.Escape(template.Substring(placeholderIndex + 3));
+            return new Regex(
+                $"^(?i:{prefix}){TenantGuidPattern}{suffix}$",
+                RegexOptions.CultureInvariant);
         }
 
         /// <summary>
