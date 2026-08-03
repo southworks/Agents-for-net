@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 
 namespace Microsoft.Agents.Authentication
@@ -16,6 +17,18 @@ namespace Microsoft.Agents.Authentication
     /// </summary>
     public static class AgentClaims
     {
+        private const string MappedTenantIdClaim = "http://schemas.microsoft.com/identity/claims/tenantid";
+        private const string TenantGuidPattern = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+        private static readonly Regex EntraV1IssuerPattern = new(
+            $"^(?i:https://sts\\.windows\\.net/){TenantGuidPattern}/$",
+            RegexOptions.CultureInvariant);
+        private static readonly Regex EntraV2IssuerPattern = new(
+            $"^(?i:https://login\\.microsoftonline\\.(?:com|us)/){TenantGuidPattern}/v2\\.0$",
+            RegexOptions.CultureInvariant);
+        private static readonly Regex EntraChinaV2IssuerPattern = new(
+            $"^(?i:https://login\\.partner\\.microsoftonline\\.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/){TenantGuidPattern}/v2\\.0$",
+            RegexOptions.CultureInvariant);
+
         /// <summary>
         /// Determines if a token is exchangeable based on its claims. An exchangeable token is one that is not a user token and has 
         /// an audience claim that contains the appId of the token.
@@ -103,6 +116,62 @@ namespace Microsoft.Agents.Authentication
         public static string GetIncomingAudience(this ClaimsIdentity identity)
         {
             return GetIncomingAudienceClaim(identity);
+        }
+
+        /// <summary>
+        /// Determines whether a token's tenant ID claim matches the tenant embedded in its Entra issuer.
+        /// </summary>
+        /// <remarks>
+        /// The comparison applies only to recognized Entra v1 and v2 issuers containing a tenant GUID
+        /// and only when the token contains a tenant ID claim. Other issuers and tokens without a tenant
+        /// ID claim are left to the existing issuer and signing-key validation pipeline.
+        /// </remarks>
+        /// <param name="identity">The validated claims identity.</param>
+        /// <returns>
+        /// <c>false</c> when a present tenant ID differs from the recognized issuer tenant; otherwise,
+        /// <c>true</c>.
+        /// </returns>
+        public static bool IsTenantIdIssuerValid(this ClaimsIdentity identity)
+        {
+            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
+
+            var issuer = identity.FindFirst(AuthenticationConstants.IssuerClaim)?.Value;
+            if (!TryGetEntraIssuerTenant(issuer, out var issuerTenant))
+            {
+                return true;
+            }
+
+            var tenantIdClaims = identity.Claims.Where(claim =>
+                claim.Type == AuthenticationConstants.TenantIdClaim
+                || claim.Type == MappedTenantIdClaim);
+            if (!tenantIdClaims.Any())
+            {
+                return true;
+            }
+
+            return tenantIdClaims.All(claim =>
+                Guid.TryParse(claim.Value, out var tokenTenant) && tokenTenant == issuerTenant);
+        }
+
+        private static bool TryGetEntraIssuerTenant(string issuer, out Guid tenantId)
+        {
+            tenantId = default;
+            if (issuer == null)
+            {
+                return false;
+            }
+
+            var match = EntraV1IssuerPattern.Match(issuer);
+            if (!match.Success)
+            {
+                match = EntraV2IssuerPattern.Match(issuer);
+            }
+            if (!match.Success)
+            {
+                match = EntraChinaV2IssuerPattern.Match(issuer);
+            }
+
+            return match.Success && Guid.TryParse(match.Groups[1].Value, out tenantId);
         }
 
         /// <summary>
