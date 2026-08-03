@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <remarks>
     /// Enforcement is <b>opt-in</b>: <see cref="Enabled"/> defaults to <see langword="false"/> so existing behavior
-    /// is preserved until an operator explicitly turns it on (mirroring <c>CloudAdapterOptions.ValidateServiceUrl</c>).
+    /// is preserved until an operator explicitly turns it on.
     /// </remarks>
     public class OutboundHostValidatorOptions
     {

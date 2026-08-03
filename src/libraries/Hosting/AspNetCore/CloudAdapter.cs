@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
                 if (!validClaimUri || !validActivityUri || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (_adapterOptions.ValidateServiceUrl)
+                    if (_hostValidator.Enabled)
                     {
                         CloudAdapterLog.LogInvalidServiceUrl(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
                         return false;

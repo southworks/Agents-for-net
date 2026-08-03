@@ -797,9 +797,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MatchingHosts_ShouldSucceed()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/other/");
 
@@ -812,9 +814,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_Enabled_ShouldReturnBadRequest()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
 
@@ -826,24 +830,62 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_Disabled_ShouldNotReturnBadRequest()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
+            record.AdapterLogger.Setup(logger => logger.IsEnabled(LogLevel.Warning)).Returns(true);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
             // Should not be rejected - validation is disabled (warning only)
             Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+            record.AdapterLogger.Verify(
+                logger => logger.Log(
+                    LogLevel.Warning,
+                    It.Is<EventId>(eventId => eventId.Id == 9),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString().Contains("Invalid service URL")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_Disabled_NoServiceUrlClaim_ShouldNotLogWarning()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions(),
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContext(activity);
+            record.AdapterLogger.Setup(logger => logger.IsEnabled(LogLevel.Warning)).Returns(true);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+            record.AdapterLogger.Verify(
+                logger => logger.Log(
+                    LogLevel.Warning,
+                    It.Is<EventId>(eventId => eventId.Id == 9),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Never);
         }
 
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_NoServiceUrlClaim_ShouldSucceed()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             // No serviceurl claim in identity - validation should pass
             var context = CreateHttpContext(activity);
@@ -856,9 +898,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_NoActivityServiceUrl_ShouldSucceed()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             // Activity with no ServiceUrl
             var activity = CreateMessageActivity(serviceUrl: null);
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/teams/");
@@ -871,9 +915,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldReturnBadRequest()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             var activity = CreateInvokeActivity();
             activity.ServiceUrl = "https://smba.trafficmanager.net/teams/";
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
@@ -886,9 +932,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MalformedClaimUri_Enabled_ShouldReturnBadRequest()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = true });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             var context = CreateHttpContextWithServiceUrlClaim(activity, "not-a-valid-uri");
 
@@ -900,9 +948,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Fact]
         public async Task ProcessAsync_ValidateServiceUrl_MalformedActivityUri_Disabled_ShouldNotReturnBadRequest()
         {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false });
+                new AdapterOptions(),
+                validator);
             var activity = CreateMessageActivity(serviceUrl: "not-a-valid-uri");
             var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/teams/");
 
@@ -918,7 +968,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false },
+                new AdapterOptions(),
                 validator);
             var activity = CreateMessageActivity(serviceUrl: "https://evil.example.com/relay/");
             // No serviceurl claim: fail-closed allowed-hosts fallback must still reject.
@@ -935,7 +985,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false },
+                new AdapterOptions(),
                 validator);
             var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
             var context = CreateHttpContext(activity);
@@ -955,7 +1005,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false },
+                new AdapterOptions(),
                 validator);
             var activity = CreateMessageActivity(serviceUrl: "https://callback.contoso.com/api/");
             var context = CreateHttpContext(activity);
@@ -971,7 +1021,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
-                new AdapterOptions { ValidateServiceUrl = false },
+                new AdapterOptions(),
                 validator);
             var activity = CreateMessageActivity(serviceUrl: "https://evil.example.com/relay/");
             var context = CreateHttpContext(activity);
