@@ -5,7 +5,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -45,17 +44,53 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        /// <param name="options"></param>
+        /// <param name="options">Legacy adapter options.</param>
+        [Obsolete("Use the constructor overload accepting HostedActivityServiceOptions instead.")]
         public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
+            : this(provider, config, activityTaskQueue, logger, CreateHostedActivityServiceOptions(config, options))
+        {
+        }
+
+        /// <summary>
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
+        /// on background threads.
+        /// </summary>
+        /// <remarks>
+        /// It is important to note that exceptions on the background thread are only logged in the <see cref="Microsoft.Extensions.Logging.ILogger"/>.
+        /// </remarks>
+        /// <param name="provider"></param>
+        /// <param name="config">Application configuration.</param>
+        /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.</param>
+        /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
+        /// <param name="hostedOptions">Options for the hosted activity service.</param>
+        public HostedActivityService(
+            IServiceProvider provider,
+            IConfiguration config,
+            IActivityTaskQueue activityTaskQueue,
+            ILogger<HostedActivityService> logger,
+            HostedActivityServiceOptions hostedOptions)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
-            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
+            _shutdownTimeoutSeconds = hostedOptions?.ShutdownTimeoutSeconds ?? 60;
             _activityQueue = activityTaskQueue;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
+        }
+
+        private static HostedActivityServiceOptions CreateHostedActivityServiceOptions(IConfiguration config, AdapterOptions options)
+        {
+            var hostedOptions = new HostedActivityServiceOptions(config);
+            if (options != null)
+            {
+#pragma warning disable CS0618
+                hostedOptions.ShutdownTimeoutSeconds = options.ShutdownTimeoutSeconds;
+#pragma warning restore CS0618
+            }
+
+            return hostedOptions;
         }
 
         /// <summary>
