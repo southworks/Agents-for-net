@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -247,6 +246,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Serialization
                     if (valValue.TryGetValue<int>(out var intValue))
                     {
                         objValue = intValue;
+                    }
+                    else if (valValue.TryGetValue<long>(out var longValue))
+                    {
+                        objValue = longValue;
+                    }
+                    else if (valValue.TryGetValue<double>(out var doubleValue))
+                    {
+                        objValue = doubleValue;
                     }
                     break;
 

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
-using static Microsoft.Agents.Builder.Dialogs.Tests.Debugging.SourceMapTests;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -523,17 +521,50 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         #region Untyped nested JsonObject (no $type discriminator) - issue #959
 
         [Fact]
-        public void Deserialize_UntypedNestedObject_DoesNotThrow()
+        public void Deserialize_Issue959DialogState_PreservesNestedState()
         {
-            // Simulates state persisted without "$type"/"$typeAssembly" discriminators
-            // (e.g. from an older SDK, or hand-edited/migrated storage), where a nested
-            // JSON object has no type metadata at all.
-            var json = "{\"State\":{\"DialogState\":{\"DialogStack\":[],\"state\":{\"nested\":{\"foo\":\"bar\",\"count\":3,\"flag\":true}}}}}";
+            var json = """
+                {
+                  "DialogState": {
+                    "dialogStack": [
+                      {
+                        "id": "MainDialog",
+                        "state": {
+                          "dialogs": {
+                            "dialogStack": [
+                              {
+                                "id": "WaterfallDialog",
+                                "state": {
+                                  "options": null,
+                                  "values": {},
+                                  "instanceId": "cb1cfa9d-6ed4-405f-bb3b-8665091731b6",
+                                  "stepIndex": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "version": "DJt0Lz9dTELmGqJat59wr9q+dsRSkyF9pdOQYnBwPCI="
+                      }
+                    ]
+                  }
+                }
+                """;
 
-            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+            var deserialized = ProtocolJsonSerializer.ToObject<PersistedState>(json);
 
             Assert.NotNull(deserialized);
-            Assert.True(deserialized.State.ContainsKey("DialogState"));
+            var dialogState = Assert.IsAssignableFrom<IDictionary<string, object>>(deserialized["DialogState"]);
+            var dialogStack = Assert.IsAssignableFrom<IList>(dialogState["dialogStack"]);
+            var mainDialog = Assert.IsAssignableFrom<IDictionary<string, object>>(Assert.Single(dialogStack));
+            var mainState = Assert.IsAssignableFrom<IDictionary<string, object>>(mainDialog["state"]);
+            var dialogs = Assert.IsAssignableFrom<IDictionary<string, object>>(mainState["dialogs"]);
+            var nestedStack = Assert.IsAssignableFrom<IList>(dialogs["dialogStack"]);
+            var waterfallDialog = Assert.IsAssignableFrom<IDictionary<string, object>>(Assert.Single(nestedStack));
+            var waterfallState = Assert.IsAssignableFrom<IDictionary<string, object>>(waterfallDialog["state"]);
+
+            Assert.IsAssignableFrom<IDictionary<string, object>>(waterfallState["values"]);
+            Assert.Equal(0, waterfallState["stepIndex"]);
         }
 
         [Fact]
@@ -580,6 +611,19 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var b = Assert.IsAssignableFrom<IDictionary<string, object>>(a["b"]);
             var c = Assert.IsAssignableFrom<IDictionary<string, object>>(b["c"]);
             Assert.Equal("value", c["d"].ToString());
+        }
+
+        [Fact]
+        public void Deserialize_UntypedNestedObject_PreservesNonIntNumbers()
+        {
+            var json = "{\"State\":{\"metrics\":{\"large\":3000000000,\"ratio\":1.5}}}";
+
+            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+
+            Assert.NotNull(deserialized);
+            var metrics = Assert.IsAssignableFrom<IDictionary<string, object>>(deserialized.State["metrics"]);
+            Assert.Equal(3000000000L, Assert.IsType<long>(metrics["large"]));
+            Assert.Equal(1.5, Assert.IsType<double>(metrics["ratio"]));
         }
 
         #endregion
