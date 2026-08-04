@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -119,6 +120,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Serialization
                     }
                     value.Add(keyString, obj);
                 }
+                else if (itemValue is JsonObject untypedObj)
+                {
+                    // Object has no "$type"/"$typeAssembly" metadata (e.g. state persisted
+                    // by an older SDK version, or hand-crafted/migrated storage). Fall back
+                    // to a plain dictionary instead of crashing in DeserializeJsonValue,
+                    // which assumes a JsonValue leaf node.
+                    value.Add(keyString, DeserializeUntypedJsonObject(untypedObj, options));
+                }
                 else if (itemValue is JsonArray jArray)
                 {
                     value.Add(keyString, DeserializeJsonArray(jArray, options));
@@ -181,6 +190,46 @@ namespace Microsoft.Agents.Builder.Dialogs.Serialization
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Recursively converts a JsonObject that has no "$type"/"$typeAssembly" metadata
+        /// into a plain Dictionary&lt;string, object&gt;, resolving nested typed objects,
+        /// untyped objects, arrays and primitive leaves along the way. This handles state
+        /// persisted without type discriminators (e.g. an older SDK version, or storage
+        /// populated/migrated outside of <see cref="Write"/>).
+        /// </summary>
+        private static Dictionary<string, object> DeserializeUntypedJsonObject(JsonObject jObj, JsonSerializerOptions options)
+        {
+            var result = new Dictionary<string, object>();
+
+            foreach (var property in jObj)
+            {
+                var propValue = property.Value;
+
+                if (propValue is JsonObject childObj)
+                {
+                    if (childObj.GetTypeInfo(out var childType))
+                    {
+                        childObj.RemoveTypeInfo();
+                        result[property.Key] = JsonSerializer.Deserialize(childObj, childType, options);
+                    }
+                    else
+                    {
+                        result[property.Key] = DeserializeUntypedJsonObject(childObj, options);
+                    }
+                }
+                else if (propValue is JsonArray childArray)
+                {
+                    result[property.Key] = DeserializeJsonArray(childArray, options);
+                }
+                else
+                {
+                    result[property.Key] = DeserializeJsonValue(propValue);
+                }
+            }
+
+            return result;
         }
 
         private static object DeserializeJsonValue(JsonNode itemValue)
@@ -287,11 +336,24 @@ namespace Microsoft.Agents.Builder.Dialogs.Serialization
                 }
                 else
                 {
-                    // Primitive array elements (string, int, bool) have no $type metadata.
-                    // Initialize the list on first encounter since typed-element path was never entered.
+                    // Elements without $type metadata: primitives (string, int, bool), untyped
+                    // nested objects (e.g. state persisted without type discriminators), or
+                    // nested arrays. Initialize the list on first encounter since the typed
+                    // element path above was never entered.
                     objValue ??= new List<object>();
 
-                    objValue.Add(DeserializeJsonValue(aItem));
+                    if (aItem is JsonObject untypedItem)
+                    {
+                        objValue.Add(DeserializeUntypedJsonObject(untypedItem, options));
+                    }
+                    else if (aItem is JsonArray nestedArray)
+                    {
+                        objValue.Add(DeserializeJsonArray(nestedArray, options));
+                    }
+                    else
+                    {
+                        objValue.Add(DeserializeJsonValue(aItem));
+                    }
                 }
             }
 

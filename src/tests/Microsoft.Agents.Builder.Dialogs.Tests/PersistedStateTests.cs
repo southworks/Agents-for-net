@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
+using static Microsoft.Agents.Builder.Dialogs.Tests.Debugging.SourceMapTests;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -514,6 +516,70 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             Assert.Contains("1000000000", json);
             Assert.Contains("2000000000", json);
             Assert.Contains("3000000000", json);
+        }
+
+        #endregion
+
+        #region Untyped nested JsonObject (no $type discriminator) - issue #959
+
+        [Fact]
+        public void Deserialize_UntypedNestedObject_DoesNotThrow()
+        {
+            // Simulates state persisted without "$type"/"$typeAssembly" discriminators
+            // (e.g. from an older SDK, or hand-edited/migrated storage), where a nested
+            // JSON object has no type metadata at all.
+            var json = "{\"State\":{\"DialogState\":{\"DialogStack\":[],\"state\":{\"nested\":{\"foo\":\"bar\",\"count\":3,\"flag\":true}}}}}";
+
+            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+
+            Assert.NotNull(deserialized);
+            Assert.True(deserialized.State.ContainsKey("DialogState"));
+        }
+
+        [Fact]
+        public void Deserialize_UntypedNestedObject_PreservesValues()
+        {
+            var json = "{\"State\":{\"outer\":{\"inner\":{\"foo\":\"bar\",\"count\":3,\"flag\":true}}}}";
+
+            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+
+            Assert.NotNull(deserialized);
+            var outer = Assert.IsAssignableFrom<IDictionary<string, object>>(deserialized.State["outer"]);
+            var inner = Assert.IsAssignableFrom<IDictionary<string, object>>(outer["inner"]);
+
+            Assert.Equal("bar", inner["foo"].ToString());
+            Assert.Equal(3, Convert.ToInt32(inner["count"]));
+            Assert.True(Convert.ToBoolean(inner["flag"]));
+        }
+
+        [Fact]
+        public void Deserialize_UntypedObjectInArray_DoesNotThrow()
+        {
+            // Array elements that are plain (untyped) objects hit the same
+            // AsValue() crash inside DeserializeJsonArray.
+            var json = "{\"State\":{\"items\":[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]}}";
+
+            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+
+            Assert.NotNull(deserialized);
+            IList items = (IList)deserialized.State["items"];
+            Assert.Equal(2, items.Count);
+            var first = Assert.IsAssignableFrom<IDictionary<string, object>>(items[0]);
+            Assert.Equal("bar", first["foo"].ToString());
+        }
+
+        [Fact]
+        public void Deserialize_DeeplyNestedUntypedObjects_DoesNotThrow()
+        {
+            var json = "{\"State\":{\"a\":{\"b\":{\"c\":{\"d\":\"value\"}}}}}";
+
+            var deserialized = ProtocolJsonSerializer.ToObject<TestState>(json);
+
+            Assert.NotNull(deserialized);
+            var a = Assert.IsAssignableFrom<IDictionary<string, object>>(deserialized.State["a"]);
+            var b = Assert.IsAssignableFrom<IDictionary<string, object>>(a["b"]);
+            var c = Assert.IsAssignableFrom<IDictionary<string, object>>(b["c"]);
+            Assert.Equal("value", c["d"].ToString());
         }
 
         #endregion
