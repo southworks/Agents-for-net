@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
-        private readonly int _shutdownTimeoutSeconds;
+        private readonly HostedActivityServiceOptions _serviceOptions;
         private readonly IServiceProvider _serviceProvider;
         private int _stopping;
 
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
         /// <param name="options">Legacy adapter options.</param>
         [Obsolete("Use the constructor overload accepting HostedActivityServiceOptions instead.")]
-        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options)
             : this(provider, config, activityTaskQueue, logger, CreateHostedActivityServiceOptions(config, options))
         {
         }
@@ -68,13 +68,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             IConfiguration config,
             IActivityTaskQueue activityTaskQueue,
             ILogger<HostedActivityService> logger,
-            HostedActivityServiceOptions hostedOptions)
+            HostedActivityServiceOptions hostedOptions = null)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
-            _shutdownTimeoutSeconds = hostedOptions?.ShutdownTimeoutSeconds ?? 60;
+            _serviceOptions = hostedOptions ?? new HostedActivityServiceOptions(config);
+            
             _activityQueue = activityTaskQueue;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
@@ -115,10 +116,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             _activityQueue.Stop();
 
             // Obtain a write lock and do not release it, preventing new tasks from starting
-            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
+            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
             await base.StopAsync(stoppingToken).ConfigureAwait(false);

@@ -209,10 +209,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         private static int GetShutdownTimeoutSeconds(HostedActivityService service)
         {
             var field = typeof(HostedActivityService).GetField(
-                "_shutdownTimeoutSeconds",
+                "_serviceOptions",
                 BindingFlags.Instance | BindingFlags.NonPublic);
 
-            return (int)field.GetValue(service);
+            var options = (HostedActivityServiceOptions)field.GetValue(service);
+            return options.ShutdownTimeoutSeconds;
         }
 
         private static Record UseRecord(IAgent agent = null)
