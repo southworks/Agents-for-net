@@ -3,6 +3,7 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.SharePoint</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 	
