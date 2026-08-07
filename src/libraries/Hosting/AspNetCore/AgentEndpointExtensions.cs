@@ -126,14 +126,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
 
                     agentGroup.MapMethods(agentInterface.Path, ["POST"],
-                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IChannelAdapterRegistry registry, IServiceProvider services, CancellationToken cancellationToken) =>
+                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IServiceProvider services, CancellationToken cancellationToken) =>
                         {
                             // Tier 2 resolution: when channel-specific adapters are registered, peek the
                             // channelId from the inbound Activity and resolve a channel-specific adapter.
                             // Otherwise (the common case) use the default AP adapter (CloudAdapter) directly.
-                            var adapter = registry != null && registry.HasChannelSpecificAdapters
-                                ? await ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken).ConfigureAwait(false)
-                                : defaultAdapter;
+                            var adapter = await ResolveAdapterAsync(services, defaultAdapter, request, cancellationToken).ConfigureAwait(false);
 
                             IAgent agentInstance = (IAgent)services.GetService(agent);
                             // This is to handle declaring an AgentApplication in an AddTransient lambda.
@@ -161,6 +159,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             return agentGroup;
+        }
+
+        internal static ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
+            IServiceProvider services,
+            IAgentHttpAdapter defaultAdapter,
+            HttpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var registry = services.GetService<IChannelAdapterRegistry>();
+            return registry?.HasChannelSpecificAdapters == true
+                ? ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken)
+                : new ValueTask<IAgentHttpAdapter>(defaultAdapter);
         }
 
         /// <summary>

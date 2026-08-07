@@ -11,6 +11,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
@@ -81,6 +82,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             ctx.Request.Body = new MemoryStream(bytes);
             ctx.Request.ContentType = "application/json";
             return ctx.Request;
+        }
+
+        [Fact]
+        public async Task RegistryNotRegistered_ReturnsDefaultWithoutReadingBody()
+        {
+            var defaultAdapter = new DefaultHttpAdapter();
+            using var services = new ServiceCollection().BuildServiceProvider();
+            var ctx = new DefaultHttpContext();
+            ctx.Request.Body = new ThrowOnReadStream();
+
+            var resolved = await AgentEndpointExtensions.ResolveAdapterAsync(
+                services,
+                defaultAdapter,
+                ctx.Request,
+                CancellationToken.None);
+
+            Assert.Same(defaultAdapter, resolved);
         }
 
         [Fact]
