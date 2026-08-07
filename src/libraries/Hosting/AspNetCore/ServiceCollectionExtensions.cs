@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
@@ -131,6 +132,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Add factory for ConnectorClient and UserTokenClient creation
                 services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
+            }
+
+            if (!services.Any(x => x.ServiceType == typeof(IOutboundHostValidator)))
+            {
+                // Shared allowed-hosts anti-SSRF control. Opt-in via the "OutboundHostValidator" config section
+                // (disabled by default). Consumed by CloudAdapter (ServiceUrl) and the attachment downloaders.
+                services.AddSingleton<IOutboundHostValidator>(sp =>
+                {
+                    var config = sp.GetService<IConfiguration>();
+                    return new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>());
+                });
             }
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
