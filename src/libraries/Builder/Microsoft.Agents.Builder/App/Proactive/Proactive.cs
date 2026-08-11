@@ -104,7 +104,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 activity.Type = ActivityTypes.Message;
             }
 
-            using var telemetryScope = new ScopeSendActivity(conversation.Reference.Conversation.Id, activity);
+            using var telemetryScope = new ScopeSendActivity(
+                conversation.Reference.Conversation.Id,
+                activity,
+                createActivityLink(conversation));
 
             ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
@@ -210,7 +213,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             var conversationId = conversation.Reference.Conversation.Id;
-            using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity);
+            using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity, createActivityLink(conversation));
             ExceptionDispatchInfo exceptionInfo = null;
 
             await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
@@ -325,6 +328,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
 
             using var telemetryScope = new ScopeStoreConversation(conversation.Reference.Conversation.Id);
+            conversation.ActivityContext = telemetryScope.Context;
 
             var key = GetRecordKey(conversation.Reference.Conversation.Id);
             await _app.Options.Proactive.Storage.WriteAsync(
@@ -437,5 +441,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return $"proactive/conversations/{conversationId}";
         }
         #endregion
+
+        internal static System.Diagnostics.ActivityLink? createActivityLink(Conversation conversation)
+        {
+            if (conversation?.ActivityContext != null)
+            {
+                return new System.Diagnostics.ActivityLink((System.Diagnostics.ActivityContext) conversation.ActivityContext);
+            }
+            return null;
+        }
     }
 }
