@@ -96,31 +96,11 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             var linkContext = CreateActivityContext();
             var link = new ActivityLink(linkContext);
 
-            using var scope = new TelemetryScope("TestOperation", links: [link]);
+            using var scope = new TelemetryScope("TestOperation", link: link);
 
             var started = Assert.Single(_startedActivities);
             var actualLink = Assert.Single(started.Links);
             Assert.Equal(linkContext, actualLink.Context);
-        }
-
-        [Fact]
-        public void TelemetryScope_MultipleLinks_AreAddedInOrder()
-        {
-            var firstContext = CreateActivityContext();
-            var secondContext = CreateActivityContext();
-            var links = new[]
-            {
-                new ActivityLink(firstContext),
-                new ActivityLink(secondContext)
-            };
-
-            using var scope = new TelemetryScope("TestOperation", links: links);
-
-            var started = Assert.Single(_startedActivities);
-            var actualLinks = started.Links.ToList();
-            Assert.Equal(2, actualLinks.Count);
-            Assert.Equal(firstContext, actualLinks[0].Context);
-            Assert.Equal(secondContext, actualLinks[1].Context);
         }
 
         [Fact]
@@ -134,7 +114,7 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
             using var scope = new TelemetryScope(
                 "TestOperation",
-                links: [new ActivityLink(linkContext, attributes)]);
+                link: new ActivityLink(linkContext, attributes));
 
             var started = Assert.Single(_startedActivities);
             var actualLink = Assert.Single(started.Links);
