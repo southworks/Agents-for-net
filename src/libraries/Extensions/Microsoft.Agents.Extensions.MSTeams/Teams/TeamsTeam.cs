@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
 {
     /// <summary>
     /// Provides fluent-style registration of handlers for Microsoft Teams team lifecycle events,
-    /// such as archived, unarchived, renamed, restored, deleted, and hard-deleted.
+    /// such as archived, unarchived, renamed, restored, and deleted.
     /// </summary>
     public class TeamsTeam
     {
@@ -139,23 +139,5 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
             return this;
         }
 
-        /// <summary>
-        /// Registers a handler to be invoked when a team is hard deleted.
-        /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamsTeamHardDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
-        /// <param name="handler">The delegate that handles the team hard deleted event. This handler is called with information about the team.</param>
-        /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-        /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
-        /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
-        public TeamsTeam OnHardDeleted(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
-        {
-            _app.AddRoute(TeamUpdateRouteBuilder.Create()
-                .ForTeamHardDeleted()
-                .WithChannelId(_channelId).WithOrderRank(rank)
-                .WithHandler(handler)
-                .WithOAuthHandlers(autoSignInHandlers)
-                .Build());
-            return this;
-        }
     }
 }

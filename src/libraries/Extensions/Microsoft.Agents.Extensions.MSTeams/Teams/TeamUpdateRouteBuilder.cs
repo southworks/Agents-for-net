@@ -67,16 +67,6 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     }
 
     /// <summary>
-    /// Match on team hard deleted events.
-    /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
-    public TeamUpdateRouteBuilder ForTeamHardDeleted()
-    {
-        _teamEvents.Add("teamHardDeleted");
-        return this;
-    }
-
-    /// <summary>
     /// Match on team renamed events.
     /// </summary>
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>

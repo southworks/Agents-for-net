@@ -252,35 +252,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnHardDeleted_MatchesTeamHardDeleted()
-        {
-            // Arrange
-            var adapter = new NotImplementedAdapter();
-            var team = new Team { Id = "hard-deleted-team" };
-            var turnContexts = CreateTeamContexts(new ConversationEventType("teamHardDeleted"), team, adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
-            var app = CreateApp(turnState);
-            var capturedIds = new List<string>();
-            var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) =>
-            {
-                ext.Teams.OnHardDeleted((ctx, _, data, ct) =>
-                {
-                    capturedIds.Add(data.Id);
-                    return Task.CompletedTask;
-                });
-            });
-
-            // Act
-            foreach (var ctx in turnContexts)
-                await app.OnTurnAsync(ctx, CancellationToken.None);
-
-            // Assert
-            Assert.Single(capturedIds);
-            Assert.Equal("hard-deleted-team", capturedIds[0]);
-        }
-
-        [Fact]
         public async Task Test_TeamHandlers_DoNotFireForNonTeamsChannel()
         {
             // Arrange

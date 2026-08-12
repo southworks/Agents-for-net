@@ -7,11 +7,9 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.MSTeams.Config;
 using Microsoft.Agents.Extensions.MSTeams.FileConsents;
 using Microsoft.Agents.Extensions.MSTeams.Meetings;
 using Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
-using Microsoft.Agents.Extensions.MSTeams.Messages;
 using Microsoft.Agents.Extensions.MSTeams.TaskModules;
 using Microsoft.Agents.Extensions.MSTeams.Channels;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
@@ -54,8 +52,6 @@ public class TeamsAgentExtension : AgentExtension
         Channels = new TeamsChannel(agentApplication, ChannelId);
         Teams = new TeamsTeam(agentApplication, ChannelId);
         FileConsent = new FileConsent(agentApplication, ChannelId);
-        Messages = new Message(agentApplication, ChannelId);
-        Config = new TeamsConfig(agentApplication, ChannelId);
 
         _agentApplication = agentApplication;
         _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
@@ -101,16 +97,6 @@ public class TeamsAgentExtension : AgentExtension
     /// Teams File Consent features.
     /// </summary>
     public FileConsent FileConsent { get; }
-
-    /// <summary>
-    /// Message features.
-    /// </summary>
-    public Message Messages { get; }
-
-    /// <summary>
-    /// Teams config features.
-    /// </summary>
-    public TeamsConfig Config { get; }
 
     /// <summary>
     /// Gets the Teams API client for the specified turn context.

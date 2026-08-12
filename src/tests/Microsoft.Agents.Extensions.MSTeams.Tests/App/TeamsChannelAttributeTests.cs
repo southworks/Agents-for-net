@@ -151,7 +151,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         [
             [ConversationEventType.TeamArchived],
             [ConversationEventType.TeamDeleted],
-            [new ConversationEventType("teamHardDeleted")],
             [ConversationEventType.TeamRenamed],
             [ConversationEventType.TeamRestored],
             [ConversationEventType.TeamUnarchived],

@@ -6,7 +6,10 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
+using Microsoft.Teams.Apps.Meetings;
+using Microsoft.Teams.Apps.Schema;
 using Moq;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -98,6 +101,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantJoin", adapter);
+            turnContexts[0].Activity.Value = ProtocolJsonSerializer.ToJsonElements(new MeetingParticipantJoinValue
+            {
+                Members =
+                [
+                    new MeetingParticipantMember
+                    {
+                        User = new TeamsChannelAccount { Id = "joined-user" },
+                        Meeting = new MeetingParticipantInfo { InMeeting = true, Role = "attendee" },
+                    }
+                ]
+            });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
             var app = new AgentApplication(new(() => turnState.Result)
@@ -109,11 +123,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
+            MeetingParticipantJoinValue details = null;
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Meetings.OnParticipantsJoin((context, _, _, _) =>
+                ext.Meetings.OnParticipantsJoin((context, _, participants, _) =>
                 {
                     ids.Add(context.Activity.Id);
+                    details = participants;
                     return Task.CompletedTask;
                 });
             });
@@ -127,6 +143,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Assert
             Assert.Single(ids);
             Assert.Equal("test.id", ids[0]);
+            Assert.Equal("joined-user", Assert.Single(details.Members).User.Id);
         }
 
         [Fact]
@@ -135,6 +152,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var turnContexts = CreateMeetingTurnContext("application/vnd.microsoft.meetingParticipantLeave", adapter);
+            turnContexts[0].Activity.Value = ProtocolJsonSerializer.ToJsonElements(new MeetingParticipantLeaveValue
+            {
+                Members =
+                [
+                    new MeetingParticipantMember
+                    {
+                        User = new TeamsChannelAccount { Id = "left-user" },
+                        Meeting = new MeetingParticipantInfo { InMeeting = false, Role = "attendee" },
+                    }
+                ]
+            });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
 
             var app = new AgentApplication(new(() => turnState.Result)
@@ -146,12 +174,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
+            MeetingParticipantLeaveValue details = null;
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Meetings.OnParticipantsLeave((context, _, _, _) =>
+                ext.Meetings.OnParticipantsLeave((context, _, participants, _) =>
                 {
                     ids.Add(context.Activity.Id);
+                    details = participants;
                     return Task.CompletedTask;
                 });
             });
@@ -165,6 +195,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Assert
             Assert.Single(ids);
             Assert.Equal("test.id", ids[0]);
+            Assert.Equal("left-user", Assert.Single(details.Members).User.Id);
         }
 
         private static ITurnContext[] CreateMeetingTurnContext(string activityName, ChannelAdapter adapter)

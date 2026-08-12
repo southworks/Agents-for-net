@@ -65,20 +65,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [Fact]
-        public async Task TeamHardDeletedAttribute_AddRoute_CreatesWorkingRoute()
-        {
-            // Arrange
-            var (app, turnContext) = CreateAppAndContext(new ConversationEventType("teamHardDeleted"), "hard-deleted-team");
-
-            // Act
-            await app.OnTurnAsync(turnContext, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(new ConversationEventType("teamHardDeleted"), app.LastCalledEvent);
-            Assert.Equal("hard-deleted-team", app.LastTeamId);
-        }
-
-        [Fact]
         public async Task TeamRenamedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
@@ -111,7 +97,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             [ConversationEventType.TeamArchived],
             [ConversationEventType.TeamUnarchived],
             [ConversationEventType.TeamDeleted],
-            [new ConversationEventType("teamHardDeleted")],
             [ConversationEventType.TeamRenamed],
             [ConversationEventType.TeamRestored],
         ];
@@ -249,14 +234,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
             LastCalledEvent = ConversationEventType.TeamDeleted;
-            LastTeamId = team.Id;
-            return Task.CompletedTask;
-        }
-
-        [TeamsTeamHardDeletedRoute]
-        public Task OnTeamHardDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
-        {
-            LastCalledEvent = new ConversationEventType("teamHardDeleted");
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }

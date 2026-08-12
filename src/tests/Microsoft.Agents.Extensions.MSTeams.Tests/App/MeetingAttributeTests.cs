@@ -9,7 +9,7 @@ using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
 using Microsoft.Agents.Extensions.MSTeams.Meetings;
-using Microsoft.Agents.Extensions.MSTeams.Models;
+using Microsoft.Teams.Apps.Meetings;
 using Moq;
 using System.Net.Http;
 using System.Threading;
@@ -260,7 +260,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnParticipantsJoinAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            MeetingParticipantsEventDetails participants,
+            MeetingParticipantJoinValue participants,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
@@ -279,7 +279,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnParticipantsLeaveAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            MeetingParticipantsEventDetails participants,
+            MeetingParticipantLeaveValue participants,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
