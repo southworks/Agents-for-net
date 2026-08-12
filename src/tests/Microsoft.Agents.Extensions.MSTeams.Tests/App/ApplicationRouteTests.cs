@@ -10,8 +10,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams.Models;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
-using Microsoft.Teams.Api;
-using Microsoft.Teams.Api.Config;
+using Microsoft.Teams.Apps.Schema;
+using Microsoft.Agents.Extensions.MSTeams.Config;
 using Moq;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -32,9 +32,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.MessageUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "editMessage"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("editMessage")
                 },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -47,9 +47,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "softDeleteMessage"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("softDeleteMessage")
                 }
             };
             var activity3 = new Activity
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -101,9 +101,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.MessageUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "undeleteMessage"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("undeleteMessage")
                 },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -116,9 +116,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "softDeleteMessage"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("softDeleteMessage")
                 }
             };
             var activity3 = new Activity
@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -170,9 +170,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.MessageDelete,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "softDeleteMessage"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("softDeleteMessage")
                 },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -183,9 +183,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.MessageDelete,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData
+                ChannelData = new TeamsChannelData
                 {
-                    EventType = "unknown"
+                    EventType = new Microsoft.Teams.Apps.ConversationEventType("unknown")
                 },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -209,7 +209,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var names = new List<string>();
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -392,7 +392,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var names = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -481,7 +481,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -567,7 +567,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -646,7 +646,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -681,7 +681,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.Event,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                Name = Microsoft.Teams.Api.Activities.Events.Name.ReadReceipt,
+                Name = "application/vnd.microsoft.readReceipt",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new ReadReceiptInfo
                 {
                     LastReadMessageId = "10101010",
@@ -698,7 +698,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             var names = new List<string>();
@@ -744,7 +744,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var extension = new TeamsAgentExtension(app);

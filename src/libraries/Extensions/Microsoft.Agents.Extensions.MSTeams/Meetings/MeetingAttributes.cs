@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// The method must match the <see cref="MeetingStartHandler"/> delegate signature.
 /// <code>
 /// [TeamsMeetingStartRoute]
-/// public async Task OnMeetingStartAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingStartAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Clients.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting start event
 /// }
@@ -47,7 +47,7 @@ public class TeamsMeetingStartRouteAttribute(bool isAgenticOnly = false, ushort 
 /// The method must match the <see cref="MeetingEndHandler"/> delegate signature.
 /// <code>
 /// [TeamsMeetingEndRoute]
-/// public async Task OnMeetingEndAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingEndAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Clients.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting end event
 /// }

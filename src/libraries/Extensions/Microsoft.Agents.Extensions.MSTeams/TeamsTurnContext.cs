@@ -26,7 +26,7 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
         _turnContext.Activity as ITeamsActivity ?? ProtocolJsonSerializer.ToObject<TeamsActivity>(_turnContext.Activity);
 
     /// <inheritdoc/>
-    public Microsoft.Teams.Api.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();
+    public Microsoft.Teams.Apps.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Apps.Clients.ApiClient>();
 
     /// <inheritdoc/>
     public Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default)

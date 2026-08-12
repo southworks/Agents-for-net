@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Extensions.MSTeams
 {
     /// <summary>
     /// A Teams-specific <see cref="Activity"/> that surfaces the Teams channel payload as a
-    /// strongly-typed <see cref="Microsoft.Teams.Api.ChannelData"/>.
+    /// strongly-typed <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData"/>.
     /// </summary>
     /// <remarks>
     /// The <c>[ActivityType(ChannelId = "msteams")]</c> annotation auto-registers this type (via the
@@ -23,9 +23,9 @@ namespace Microsoft.Agents.Extensions.MSTeams
         /// <summary>
         /// The Teams channel data carried on the Activity.
         /// </summary>
-        public new Microsoft.Teams.Api.ChannelData ChannelData
+        public new Microsoft.Teams.Apps.Schema.TeamsChannelData ChannelData
         {
-            get => this.GetChannelData<Microsoft.Teams.Api.ChannelData>();
+            get => this.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
             set => base.ChannelData = value;
         }
     }

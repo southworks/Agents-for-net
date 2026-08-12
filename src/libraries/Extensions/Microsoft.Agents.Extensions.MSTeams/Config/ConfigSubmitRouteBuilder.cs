@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// <remarks>
 /// Use <see cref="ConfigSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit"/>.
+/// <c>config/submit</c>.
 /// </remarks>
 public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRouteBuilder>
 {
@@ -31,7 +31,7 @@ public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRoute
     /// </summary>
     public ConfigSubmitRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit;
+        InvokeName = "config/submit";
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class ConfigSubmitRouteBuilder : ConfigRouteBuilderBase<ConfigSubmitRoute
     /// </summary>
     /// <param name="handler">An asynchronous delegate invoked when a config submit request is received.
     /// Receives the turn context, turn state, config data from the activity value,
-    /// and a cancellation token. Must return a <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</param>
+    /// and a cancellation token. Must return a <see cref="ConfigResponse"/>.</param>
     /// <returns>The current <see cref="ConfigSubmitRouteBuilder"/> instance for method chaining.</returns>
     public ConfigSubmitRouteBuilder WithHandler(ConfigHandler handler)
     {

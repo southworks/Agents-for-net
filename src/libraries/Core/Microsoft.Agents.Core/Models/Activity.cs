@@ -228,6 +228,31 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
+        public IActivity WithMention(ChannelAccount account, string text = null, bool addText = true)
+        {
+            AssertionHelpers.ThrowIfNull(account, nameof(account));
+
+            string mentionText = text ?? account.Name;
+
+            if (addText)
+            {
+                Text = $"<at>{mentionText}</at> {Text}";
+            }
+
+            Entities ??= [];
+            Entities.Add(new Mention(account, $"<at>{mentionText}</at>"));
+
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithMention(string id, string name = null, bool addText = true)
+        {
+            AssertionHelpers.ThrowIfNullOrEmpty(id, nameof(id));
+            return WithMention(new ChannelAccount(id, name), name, addText);
+        }
+
+        /// <inheritdoc/>
         public IActivity AddText(string text)
         {
             Text += text;

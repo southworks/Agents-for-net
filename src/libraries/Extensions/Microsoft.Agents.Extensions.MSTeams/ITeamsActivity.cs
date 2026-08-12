@@ -7,13 +7,13 @@ namespace Microsoft.Agents.Extensions.MSTeams
 {
     /// <summary>
     /// A Teams-specific <see cref="IActivity"/> that exposes the Teams channel data as a strongly-typed
-    /// <see cref="Microsoft.Teams.Api.ChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+    /// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
     /// </summary>
     public interface ITeamsActivity : IActivity
     {
         /// <summary>
         /// The Teams channel data carried on the Activity.
         /// </summary>
-        new Microsoft.Teams.Api.ChannelData ChannelData { get; set; }
+        new Microsoft.Teams.Apps.Schema.TeamsChannelData ChannelData { get; set; }
     }
 }

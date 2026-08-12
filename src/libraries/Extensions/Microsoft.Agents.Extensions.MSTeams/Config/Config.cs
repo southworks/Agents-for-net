@@ -16,12 +16,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// </para>
 /// <list type="number">
 ///   <item>Register fetch and submit handlers via <see cref="OnConfigFetch"/> and <see cref="OnConfigSubmit"/>.</item>
-///   <item>On fetch, return a <see cref="Microsoft.Teams.Api.Config.ConfigTaskResponse"/> containing a
-///     <see cref="Microsoft.Teams.Api.TaskModules.ContinueTask"/> with a <see cref="Microsoft.Teams.Api.TaskModules.TaskInfo"/>
-///     that holds the config adaptive card.</item>
+///   <item>On fetch, return a <see cref="ConfigResponse"/> containing the config adaptive card.</item>
 ///   <item>When the user submits the form, the submit handler receives the form data via <c>configData</c>.
-///     Return a <see cref="Microsoft.Teams.Api.Config.ConfigTaskResponse"/> containing a
-///     <see cref="Microsoft.Teams.Api.TaskModules.MessageTask"/> to close the config pane.</item>
+///     Return a <see cref="ConfigResponse"/> containing a completion message to close the config pane.</item>
 /// </list>
 /// <example>
 /// The following example handles fetch and submit using route attributes.
@@ -30,7 +27,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
 ///     [TeamsConfigFetchRoute]
-///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
+///     public Task&lt;ConfigResponse&gt; OnConfigFetchAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         object configData,
@@ -50,35 +47,44 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 ///             }
 ///             """;
 ///
-///         var response = new Microsoft.Teams.Api.Config.ConfigTaskResponse(
-///             new Microsoft.Teams.Api.TaskModules.ContinueTask(
-///                 new Microsoft.Teams.Api.TaskModules.TaskInfo
+///         var response = new ConfigResponse
+///         {
+///             ResponseType = "config",
+///             Config = new
+///             {
+///                 type = "continue",
+///                 value = new
 ///                 {
-///                     Title = "Configure Bot",
-///                     Height = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(300),
-///                     Width = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(400),
-///                     Card = new Microsoft.Agents.Core.Models.Attachment
+///                     title = "Configure Bot",
+///                     height = 300,
+///                     width = 400,
+///                     card = new Microsoft.Agents.Core.Models.Attachment
 ///                     {
 ///                         ContentType = "application/vnd.microsoft.card.adaptive",
 ///                         Content = System.Text.Json.JsonSerializer.Deserialize&lt;System.Text.Json.JsonElement&gt;(cardJson)
 ///                     }
-///                 }));
+///                 }
+///             }
+///         };
 ///
-///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
+///         return Task.FromResult(response);
 ///     }
 ///
 ///     [TeamsConfigSubmitRoute]
-///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
+///     public Task&lt;ConfigResponse&gt; OnConfigSubmitAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         object configData,
 ///         CancellationToken cancellationToken)
 ///     {
 ///         // configData contains the submitted form values
-///         var response = new Microsoft.Teams.Api.Config.ConfigTaskResponse(
-///             new Microsoft.Teams.Api.TaskModules.MessageTask("Config saved!"));
+///         var response = new ConfigResponse
+///         {
+///             ResponseType = "config",
+///             Config = new { type = "message", value = "Config saved!" }
+///         };
 ///
-///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
+///         return Task.FromResult(response);
 ///     }
 /// }
 /// </code>

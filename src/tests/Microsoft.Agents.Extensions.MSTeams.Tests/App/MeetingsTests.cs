@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var ids = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             var ids = new List<string>();

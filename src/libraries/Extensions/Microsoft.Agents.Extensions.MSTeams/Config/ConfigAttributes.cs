@@ -11,19 +11,19 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// Attribute to define a route that handles Teams config fetch invocations.
 /// The decorated method must match the <see cref="ConfigHandler"/> delegate signature —
 /// the third parameter must be <see langword="object"/> and the return type must be
-/// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
+/// <c>Task&lt;ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config fetch invocations.
 /// <code>
 /// [TeamsConfigFetchRoute]
-/// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
+/// public Task&lt;ConfigResponse&gt; OnConfigFetchAsync(
 ///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
 ///     object configData,
 ///     CancellationToken cancellationToken)
 /// {
-///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
+///     return Task.FromResult(new ConfigResponse { /* ... */ });
 /// }
 /// </code>
 /// Alternatively, <see cref="TeamsConfig.OnConfigFetch"/> can be used to register the handler via the fluent API.
@@ -52,19 +52,19 @@ public class TeamsConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort r
 /// Attribute to define a route that handles Teams config submit invocations.
 /// The decorated method must match the <see cref="ConfigHandler"/> delegate signature —
 /// the third parameter must be <see langword="object"/> and the return type must be
-/// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
+/// <c>Task&lt;ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config submit invocations.
 /// <code>
 /// [TeamsConfigSubmitRoute]
-/// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
+/// public Task&lt;ConfigResponse&gt; OnConfigSubmitAsync(
 ///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
 ///     object configData,
 ///     CancellationToken cancellationToken)
 /// {
-///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
+///     return Task.FromResult(new ConfigResponse { /* ... */ });
 /// }
 /// </code>
 /// Alternatively, <see cref="TeamsConfig.OnConfigSubmit"/> can be used to register the handler via the fluent API.

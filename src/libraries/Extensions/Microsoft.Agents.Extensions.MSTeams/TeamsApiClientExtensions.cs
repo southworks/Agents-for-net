@@ -7,7 +7,14 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.HeaderPropagation;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.MSTeams;
 
@@ -35,7 +42,12 @@ internal static class TeamsApiClientExtensions
     /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
     internal static void SetTeamsApiClient(this ITurnContext context, AgentApplication application, CancellationToken ct = default)
     {
-        SetTeamsApiClient(context, application?.Options?.Connections, application?.Options?.HttpClientFactory, ct);
+        SetTeamsApiClient(
+            context,
+            application?.Options?.Connections,
+            application?.Options?.HttpClientFactory,
+            application?.Options?.LoggerFactory,
+            ct);
     }
 
     /// <summary>
@@ -48,48 +60,123 @@ internal static class TeamsApiClientExtensions
     /// <param name="context">The turn context in which to register the Teams ApiClient. Cannot be null.</param>
     /// <param name="connections">The connections provider used to obtain authentication tokens for Teams API requests. Cannot be null.</param>
     /// <param name="httpClientFactory">The factory used to create HTTP clients for communicating with the Teams API. Cannot be null.</param>
+    /// <param name="loggerFactory">The logger factory used by the Teams API clients. Cannot be null.</param>
     /// <param name="ct">A cancellation token that can be used to cancel the registration operation. Optional.</param>
-    internal static void SetTeamsApiClient(this ITurnContext context, IConnections connections, System.Net.Http.IHttpClientFactory httpClientFactory, CancellationToken ct = default)
+    internal static void SetTeamsApiClient(
+        this ITurnContext context,
+        IConnections connections,
+        System.Net.Http.IHttpClientFactory httpClientFactory,
+        ILoggerFactory loggerFactory,
+        CancellationToken ct = default)
     {
         AssertionHelpers.ThrowIfNull(connections, nameof(connections));
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
+        AssertionHelpers.ThrowIfNull(loggerFactory, nameof(loggerFactory));
 
         bool useAnonymous = AgentClaims.AllowAnonymous(context.Identity);
-        Microsoft.Teams.Common.Http.IHttpClientOptions.HttpTokenFactory tokenFactory = useAnonymous ? null : () =>
-        {
-            var tokenAccess = connections.GetTokenProvider(context.Identity, context.Activity.ServiceUrl);
-            return tokenAccess.GetAccessTokenAsync(AuthenticationConstants.BotFrameworkAudience, [AuthenticationConstants.BotFrameworkDefaultScope]).ConfigureAwait(false).GetAwaiter().GetResult();
-        };
+        var innerHttpClient = httpClientFactory.CreateClient(nameof(TeamsApiClientExtensions));
+        AssertionHelpers.ThrowIfNull(innerHttpClient, nameof(httpClientFactory));
 
-        var client = new Microsoft.Teams.Api.Clients.ApiClient(
-            context.Activity.ServiceUrl,
-            new TeamsHttpClientFactory(httpClientFactory, tokenFactory),
-            ct);
+        var httpClient = useAnonymous
+            ? innerHttpClient
+            : new HttpClient(new TeamsAuthenticationHandler(
+                innerHttpClient,
+                () => connections.GetTokenProvider(context.Identity, context.Activity.ServiceUrl)));
+        httpClient.AddDefaultUserAgent();
+        httpClient.AddHeaderPropagation();
 
-        context.Services.Set<Microsoft.Teams.Api.Clients.ApiClient>(client);
+        var conversationClient = new Microsoft.Teams.Core.ConversationClient(
+            httpClient,
+            loggerFactory.CreateLogger<Microsoft.Teams.Core.ConversationClient>());
+        var userTokenClient = new Microsoft.Teams.Core.UserTokenClient(
+            httpClient,
+            new ConfigurationBuilder().Build(),
+            loggerFactory.CreateLogger<Microsoft.Teams.Core.UserTokenClient>());
+        Uri.TryCreate(context.Activity.ServiceUrl, UriKind.Absolute, out var serviceUrl);
+        var client = CreateApiClient(
+            serviceUrl,
+            httpClient,
+            conversationClient,
+            userTokenClient,
+            loggerFactory.CreateLogger<Microsoft.Teams.Apps.Clients.ApiClient>());
+
+        context.Services.Set<Microsoft.Teams.Apps.Clients.ApiClient>(client);
     }
 
-    internal static Microsoft.Teams.Api.Clients.ApiClient GetTeamsApiClient(this ITurnContext context)
+    internal static Microsoft.Teams.Apps.Clients.ApiClient GetTeamsApiClient(this ITurnContext context)
     {
-        return context.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();
+        return context.Services.Get<Microsoft.Teams.Apps.Clients.ApiClient>();
+    }
+
+    private static Microsoft.Teams.Apps.Clients.ApiClient CreateApiClient(
+        Uri serviceUrl,
+        System.Net.Http.HttpClient httpClient,
+        Microsoft.Teams.Core.ConversationClient conversationClient,
+        Microsoft.Teams.Core.UserTokenClient userTokenClient,
+        ILogger logger)
+    {
+        // Microsoft.Teams.Apps 2.1 documents this constructor but exposes it as internal.
+        if (serviceUrl == null)
+        {
+            var unboundConstructor = typeof(Microsoft.Teams.Apps.Clients.ApiClient).GetConstructor(
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                [
+                    typeof(System.Net.Http.HttpClient),
+                    typeof(Microsoft.Teams.Core.ConversationClient),
+                    typeof(Microsoft.Teams.Core.UserTokenClient),
+                    typeof(ILogger)
+                ],
+                modifiers: null);
+
+            if (unboundConstructor == null)
+            {
+                throw new MissingMethodException(
+                    typeof(Microsoft.Teams.Apps.Clients.ApiClient).FullName,
+                    ".ctor(HttpClient, ConversationClient, UserTokenClient, ILogger)");
+            }
+
+            return (Microsoft.Teams.Apps.Clients.ApiClient)unboundConstructor.Invoke(
+                [httpClient, conversationClient, userTokenClient, logger]);
+        }
+
+        var constructor = typeof(Microsoft.Teams.Apps.Clients.ApiClient).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            [
+                typeof(Uri),
+                typeof(System.Net.Http.HttpClient),
+                typeof(Microsoft.Teams.Core.ConversationClient),
+                typeof(Microsoft.Teams.Core.UserTokenClient),
+                typeof(ILogger),
+                typeof(Microsoft.Teams.Core.Schema.AgenticIdentity)
+            ],
+            modifiers: null);
+
+        if (constructor == null)
+        {
+            throw new MissingMethodException(
+                typeof(Microsoft.Teams.Apps.Clients.ApiClient).FullName,
+                ".ctor(Uri, HttpClient, ConversationClient, UserTokenClient, ILogger, AgenticIdentity)");
+        }
+
+        return (Microsoft.Teams.Apps.Clients.ApiClient)constructor.Invoke(
+            [serviceUrl, httpClient, conversationClient, userTokenClient, logger, null]);
     }
 }
 
-class TeamsHttpClientFactory(System.Net.Http.IHttpClientFactory inner, Microsoft.Teams.Common.Http.IHttpClientOptions.HttpTokenFactory tokenFactory) : Microsoft.Teams.Common.Http.IHttpClientFactory
+internal sealed class TeamsAuthenticationHandler(
+    HttpClient inner,
+    Func<IAccessTokenProvider> tokenProviderFactory) : HttpMessageHandler
 {
-    public Microsoft.Teams.Common.Http.IHttpClient CreateClient()
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var httpClient = inner.CreateClient(nameof(TeamsHttpClientFactory));
-        httpClient.AddDefaultUserAgent();
-        httpClient.AddHeaderPropagation();
-        return new Microsoft.Teams.Common.Http.HttpClient(httpClient) { Options = { TokenFactory = tokenFactory } };
-    }
-
-    Microsoft.Teams.Common.Http.IHttpClient Microsoft.Teams.Common.Http.IHttpClientFactory.CreateClient(string name)
-    {
-        var httpClient = inner.CreateClient(nameof(TeamsHttpClientFactory));
-        httpClient.AddDefaultUserAgent();
-        httpClient.AddHeaderPropagation();
-        return new Microsoft.Teams.Common.Http.HttpClient(httpClient) { Options = { TokenFactory = tokenFactory } };
+        var tokenProvider = tokenProviderFactory();
+        AssertionHelpers.ThrowIfNull(tokenProvider, nameof(tokenProviderFactory));
+        var token = await tokenProvider.GetAccessTokenAsync(
+            AuthenticationConstants.BotFrameworkAudience,
+            [AuthenticationConstants.BotFrameworkDefaultScope]).ConfigureAwait(false);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await inner.SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }

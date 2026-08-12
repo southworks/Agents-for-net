@@ -68,28 +68,28 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     }
 
     [TeamsChannelCreatedRoute]
-    public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the Channel created");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [TeamsChannelRenamedRoute]
-    public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the new Channel name");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [TeamsChannelDeletedRoute]
-    public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the Channel deleted");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [TeamsTeamRenamedRoute]
-    public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team teamInfo, CancellationToken cancellationToken)
+    public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team teamInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{teamInfo.Name} is the new Team name");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
@@ -135,7 +135,11 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
 
         do
         {
-            var currentPage = await api.Conversations.Members.GetPagedAsync(turnContext.Activity.Conversation.Id, 100, continuationToken!, cancellationToken);
+            var currentPage = await api.Conversations.GetMembersPagedAsync(
+                turnContext.Activity.Conversation.Id,
+                100,
+                continuationToken!,
+                cancellationToken: cancellationToken);
             continuationToken = currentPage.ContinuationToken;
 
             foreach (var activity in from teamMember in currentPage.Members
@@ -182,7 +186,11 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         try
         {
             var api = TeamsExtension.GetTeamsClient(turnContext);
-            var member = await api.Conversations.Members.GetByIdAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, turnContext.Activity.From.Id, cancellationToken);
+            var member = await api.Conversations.GetMemberByIdAsync(
+                turnContext.Activity.TeamsGetTeamInfo()?.Id!,
+                turnContext.Activity.From.Id,
+                cancellationToken: cancellationToken)
+                ?? throw new InvalidOperationException("The Teams API returned an empty conversation member.");
             await turnContext.SendActivityAsync($"You are: {member.Name}.", cancellationToken: cancellationToken);
         }
         catch (ErrorResponseException e)
@@ -216,11 +224,20 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         do
         {
             var api = TeamsExtension.GetTeamsClient(turnContext);
-            var currentPage = await api.Conversations.Members.GetPagedAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, 100, continuationToken, cancellationToken);
+            var currentPage = await api.Conversations.GetMembersPagedAsync(
+                turnContext.Activity.TeamsGetTeamInfo()?.Id!,
+                100,
+                continuationToken,
+                cancellationToken: cancellationToken);
             continuationToken = currentPage.ContinuationToken;
 
-            foreach (var teamMember in currentPage.Members!)
+            foreach (var teamMember in currentPage.Members ?? [])
             {
+                if (teamMember is null)
+                {
+                    continue;
+                }
+
                 var createOptions = CreateConversationOptionsBuilder
                     .Create(turnContext.Identity.GetIncomingAudience(), Microsoft.Agents.Core.Models.Channels.Msteams, turnContext.Activity.ServiceUrl)
                     .WithUser(teamMember.ToCoreChannelAccount())
@@ -249,7 +266,11 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         try
         {
             var api = TeamsExtension.GetTeamsClient(turnContext);
-            var member = await api.Conversations.Members.GetByIdAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, turnContext.Activity.From.Id, cancellationToken);
+            var member = await api.Conversations.GetMemberByIdAsync(
+                turnContext.Activity.TeamsGetTeamInfo()?.Id!,
+                turnContext.Activity.From.Id,
+                cancellationToken: cancellationToken)
+                ?? throw new InvalidOperationException("The Teams API returned an empty conversation member.");
 
             var card = new Microsoft.Teams.Cards.AdaptiveCard([
                 new Microsoft.Teams.Cards.TextBlock($"Mention a user by User Principle Name: Hello <at>${member.Name} UPN</at>"),

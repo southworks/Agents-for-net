@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.Api;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.MSTeams.Models;
+using Microsoft.Teams.Apps.Schema;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -89,8 +91,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
 
             activity.TeamsNotifyUser();
 
-            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
+            var notification = GetNotification(activity);
+            Assert.Equal(true, notification.Alert);
+            Assert.Equal(false, notification.AlertInMeeting);
         }
 
         [Fact]
@@ -100,8 +103,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
 
             activity.TeamsNotifyUser(alertInMeeting: true);
 
-            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
-            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.Alert);
+            var notification = GetNotification(activity);
+            Assert.Equal(true, notification.AlertInMeeting);
+            Assert.Equal(false, notification.Alert);
         }
 
         [Fact]
@@ -113,24 +117,24 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
 
             activity.TeamsNotifyUser(false, externalResourceUrl: resourceUrl);
 
-            Assert.Equal(resourceUrl, ((ChannelData)activity.ChannelData).Notification.ExternalResourceUrl);
+            Assert.Equal(resourceUrl, GetNotification(activity).ExternalResourceUrl);
         }
 
         [Fact]
         public void TeamsNotifyUser_ShouldNotOverrideExistingChannelData()
         {
-            var activity = new Activity { ChannelData = new ChannelData { Team = new Team { Id = "team123" } } };
+            var activity = new Activity { ChannelData = new TeamsChannelData { Team = new Team { Id = "team123" } } };
 
             activity.TeamsNotifyUser();
 
-            Assert.True(((ChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal("team123", ((ChannelData)activity.ChannelData).Team.Id);
+            Assert.True(GetNotification(activity).Alert);
+            Assert.Equal("team123", ((TeamsChannelData)activity.ChannelData).Team.Id);
         }
 
         [Fact]
         public void TeamsGetTeamOnBehalfOf_ShouldReturnOnBehalfOf()
         {
-            var onBehalfOf = new OnBehalfOf
+            var onBehalfOf = new TeamsOnBehalfOf
             {
                 DisplayName = "TestOnBehalfOf",
                 ItemId = 0,
@@ -138,7 +142,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Mri = Guid.NewGuid().ToString()
             };
 
-            IActivity activity = new Activity { ChannelData = JsonSerializer.SerializeToElement(new { onBehalfOf = new List<OnBehalfOf> { onBehalfOf } }) };
+            IActivity activity = new Activity { ChannelData = JsonSerializer.SerializeToElement(new { onBehalfOf = new List<TeamsOnBehalfOf> { onBehalfOf } }) };
 
             var onBehalfOfList = activity.TeamsGetTeamOnBehalfOf();
 
@@ -161,13 +165,19 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         [Fact]
         public void TeamsEnableFeedbackLoop_ShouldReturnFalse_WhenChannelDataAlreadySet()
         {
-            var existingChannelData = new ChannelData { Team = new Team { Id = "team123" } };
+            var existingChannelData = new TeamsChannelData { Team = new Team { Id = "team123" } };
             var activity = new Activity { ChannelData = existingChannelData };
 
             var result = activity.TeamsEnableFeedbackLoop();
 
             Assert.False(result);
             Assert.Same(existingChannelData, activity.ChannelData);
+        }
+
+        private static TeamsNotification GetNotification(IActivity activity)
+        {
+            var channelData = Assert.IsType<TeamsChannelData>(activity.ChannelData);
+            return ProtocolJsonSerializer.ToObject<TeamsNotification>(channelData.Properties["notification"]);
         }
     }
 }

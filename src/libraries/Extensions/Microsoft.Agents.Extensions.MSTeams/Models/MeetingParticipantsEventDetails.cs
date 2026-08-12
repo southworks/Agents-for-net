@@ -47,7 +47,7 @@ public class TeamsMeetingMember
     /// </summary>
     /// <param name="user">The channel user data.</param>
     /// <param name="meeting">The user meeting details.</param>
-    public TeamsMeetingMember(Microsoft.Teams.Api.Account user, UserMeetingDetails meeting)
+    public TeamsMeetingMember(Microsoft.Teams.Apps.Schema.TeamsChannelAccount user, UserMeetingDetails meeting)
     {
         User = user;
         Meeting = meeting;
@@ -59,7 +59,7 @@ public class TeamsMeetingMember
     /// <value>
     /// The joined participant account.
     /// </value>
-    public Microsoft.Teams.Api.Account User { get; set; }
+    public Microsoft.Teams.Apps.Schema.TeamsChannelAccount User { get; set; }
 
     /// <summary>
     /// Gets or sets the user meeting details.

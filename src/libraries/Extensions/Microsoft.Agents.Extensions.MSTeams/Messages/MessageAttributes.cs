@@ -143,10 +143,10 @@ public class TeamsReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort r
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for O365 Connector Card Action invokes in Teams.
 /// The decorated method must match the <see cref="O365ConnectorCardActionHandler"/> delegate signature —
-/// the third parameter must be <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/>.
+/// the third parameter must be <see cref="ConnectorCardActionQuery"/>.
 /// <code>
 /// [TeamsExecuteActionRoute]
-/// public async Task OnO365ConnectorCardActionAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken)
+/// public async Task OnO365ConnectorCardActionAsync(ITeamsTurnContext turnContext, ITurnState turnState, ConnectorCardActionQuery query, CancellationToken cancellationToken)
 /// {
 ///     // Handle O365 connector card action
 /// }

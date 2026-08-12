@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "channelCreated" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("channelCreated") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 
@@ -320,7 +320,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "teamRenamed" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("teamRenamed") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 

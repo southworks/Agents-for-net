@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -183,7 +183,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public TestConfigAttributeApp(AgentApplicationOptions options) : base(options) { }
 
         [TeamsConfigFetchRoute]
-        public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigFetchAsync(
+        public Task<Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse> OnConfigFetchAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
             object configData,
@@ -207,11 +207,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             FetchHandlerCalled = true;
             ReceivedConfigData = configData;
-            return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+            return Task.FromResult(new Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse());
         }
 
         [TeamsConfigSubmitRoute]
-        public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigSubmitAsync(
+        public Task<Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse> OnConfigSubmitAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
             object configData,
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             SubmitHandlerCalled = true;
             ReceivedConfigData = configData;
-            return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
+            return Task.FromResult(new Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse());
         }
     }
 }

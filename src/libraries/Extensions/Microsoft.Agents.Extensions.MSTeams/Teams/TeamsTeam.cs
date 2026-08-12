@@ -23,10 +23,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
 
         /// <summary>
         /// Registers a handler to be invoked for any team update event.
-        /// Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
+        /// Use <see cref="Microsoft.Teams.Apps.ConversationEventType"/> to differentiate between
         /// team update event types (e.g. archived, deleted, etc.) using:
         /// <code>
-        /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
+        /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Apps.Schema.TeamsChannelData>().EventType;
         /// </code>
         /// </summary>
         /// <remarks>Alternatively, the <see cref="TeamsTeamUpdateRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>

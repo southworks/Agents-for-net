@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 /// </summary>
 /// <remarks>
 /// Use <see cref="MessageEditRouteBuilder"/> to create and configure routes that respond to Activity Type of
-/// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"editMessage"</c>.
+/// <see cref="Microsoft.Teams.Apps.Schema.TeamsActivityTypes.MessageUpdate"/> with <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> of <c>"editMessage"</c>.
 /// </remarks>
 public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditRouteBuilder>
 {
@@ -32,7 +32,7 @@ public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditR
     /// </summary>
     public MessageEditRouteBuilder() : base()
     {
-        ActivityTypeName = Microsoft.Teams.Api.Activities.ActivityType.MessageUpdate;
+        ActivityTypeName = Microsoft.Teams.Apps.Schema.TeamsActivityTypes.MessageUpdate;
         EventTypeName = "editMessage";
     }
 

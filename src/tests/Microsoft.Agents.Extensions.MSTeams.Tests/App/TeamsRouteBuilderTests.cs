@@ -816,10 +816,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             var adapter = new NotImplementedAdapter();
             var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Microsoft.Agents.Core.Models.Channels.Msteams);
-            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData
             {
-                EventType = Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType.ChannelDeleted,
-                Channel = new Microsoft.Teams.Api.Channel { Id = "channel1" }
+                EventType = Microsoft.Teams.Apps.ConversationEventType.ChannelDeleted,
+                Channel = new Microsoft.Teams.Apps.Schema.TeamsChannel { Id = "channel1" }
             };
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -844,10 +844,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             var adapter = new NotImplementedAdapter();
             var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Microsoft.Agents.Core.Models.Channels.Msteams);
-            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData
             {
-                EventType = Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType.TeamDeleted,
-                Team = new Microsoft.Teams.Api.Team { Id = "team1" }
+                EventType = Microsoft.Teams.Apps.ConversationEventType.TeamDeleted,
+                Team = new Microsoft.Teams.Apps.Schema.Team { Id = "team1" }
             };
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -872,9 +872,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             var adapter = new NotImplementedAdapter();
             var nonMatchingActivity = CreateActivity(ActivityTypes.MessageUpdate, Microsoft.Agents.Core.Models.Channels.Msteams);
-            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData
             {
-                EventType = "undeleteMessage"
+                EventType = new Microsoft.Teams.Apps.ConversationEventType("undeleteMessage")
             };
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -898,9 +898,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             var adapter = new NotImplementedAdapter();
             var nonMatchingActivity = CreateActivity(ActivityTypes.MessageDelete, Microsoft.Agents.Core.Models.Channels.Msteams);
-            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData
             {
-                EventType = "unknown"
+                EventType = new Microsoft.Teams.Apps.ConversationEventType("unknown")
             };
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -924,9 +924,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             var adapter = new NotImplementedAdapter();
             var nonMatchingActivity = CreateActivity(ActivityTypes.MessageUpdate, Microsoft.Agents.Core.Models.Channels.Msteams);
-            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData
             {
-                EventType = "editMessage"
+                EventType = new Microsoft.Teams.Apps.ConversationEventType("editMessage")
             };
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -958,8 +958,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var nonMatchingActivity = CreateActivity(
                 ActivityTypes.Invoke,
                 Microsoft.Agents.Core.Models.Channels.Msteams,
-                name: Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Query,
-                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.O365.ConnectorCardActionQuery()));
+                name: Microsoft.Teams.Apps.InvokeNames.MessageExtensionQuery,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Agents.Extensions.MSTeams.Messages.ConnectorCardActionQuery()));
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
             var contexts = new List<ITeamsTurnContext>();
@@ -1017,8 +1017,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var nonMatchingActivity = CreateActivity(
                 ActivityTypes.Invoke,
                 Microsoft.Agents.Core.Models.Channels.Msteams,
-                name: Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent,
-                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.FileConsentCardResponse { Action = Microsoft.Teams.Api.Action.Decline }));
+                name: Microsoft.Teams.Apps.InvokeNames.FileConsent,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Apps.Files.FileConsentValue { Action = "decline" }));
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
             var contexts = new List<ITeamsTurnContext>();
@@ -1050,8 +1050,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var nonMatchingActivity = CreateActivity(
                 ActivityTypes.Invoke,
                 Microsoft.Agents.Core.Models.Channels.Msteams,
-                name: Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent,
-                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.FileConsentCardResponse { Action = Microsoft.Teams.Api.Action.Accept }));
+                name: Microsoft.Teams.Apps.InvokeNames.FileConsent,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Apps.Files.FileConsentValue { Action = "accept" }));
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
             var contexts = new List<ITeamsTurnContext>();
@@ -1083,7 +1083,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var nonMatchingActivity = CreateActivity(
                 ActivityTypes.Invoke,
                 Microsoft.Agents.Core.Models.Channels.Msteams,
-                name: Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit,
+                name: "config/submit",
                 value: ProtocolJsonSerializer.ToJsonElements(new { key = "value" }));
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -1093,7 +1093,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 .WithHandler((turnContext, turnState, configData, cancellationToken) =>
                 {
                     contexts.Add(turnContext);
-                    return Task.FromResult<Microsoft.Teams.Api.Config.ConfigResponse>(null);
+                    return Task.FromResult<Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse>(null);
                 })
                 .Build());
 
@@ -1116,7 +1116,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var nonMatchingActivity = CreateActivity(
                 ActivityTypes.Invoke,
                 Microsoft.Agents.Core.Models.Channels.Msteams,
-                name: Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch,
+                name: "config/fetch",
                 value: ProtocolJsonSerializer.ToJsonElements(new { key = "value" }));
 
             var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
@@ -1126,7 +1126,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 .WithHandler((turnContext, turnState, configData, cancellationToken) =>
                 {
                     contexts.Add(turnContext);
-                    return Task.FromResult<Microsoft.Teams.Api.Config.ConfigResponse>(null);
+                    return Task.FromResult<Microsoft.Agents.Extensions.MSTeams.Config.ConfigResponse>(null);
                 })
                 .Build());
 
@@ -1165,7 +1165,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             return app;

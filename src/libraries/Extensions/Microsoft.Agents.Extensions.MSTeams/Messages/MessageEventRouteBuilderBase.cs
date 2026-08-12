@@ -42,7 +42,7 @@ public abstract class MessageEventRouteBuilderBase<TBuilder> : RouteBuilderBase<
             IsContextMatch(context, _route)
             && context.Activity.IsType(ActivityTypeName)
             && string.Equals(
-                context.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>()?.EventType,
+                context.Activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>()?.EventType,
                 EventTypeName,
                 StringComparison.OrdinalIgnoreCase)
         );

@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 /// </summary>
 /// <remarks>
 /// Use <see cref="MessageDeleteRouteBuilder"/> to create and configure routes that respond to Activity Type of
-/// <see cref="Microsoft.Teams.Api.Activities.ActivityType.MessageDelete"/> with <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> of <c>"softDeleteMessage"</c>.
+/// <see cref="Microsoft.Teams.Apps.Schema.TeamsActivityTypes.MessageDelete"/> with <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> of <c>"softDeleteMessage"</c>.
 /// </remarks>
 public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDeleteRouteBuilder>
 {
@@ -32,7 +32,7 @@ public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDel
     /// </summary>
     public MessageDeleteRouteBuilder() : base()
     {
-        ActivityTypeName = Microsoft.Teams.Api.Activities.ActivityType.MessageDelete;
+        ActivityTypeName = Microsoft.Teams.Apps.Schema.TeamsActivityTypes.MessageDelete;
         EventTypeName = "softDeleteMessage";
     }
 

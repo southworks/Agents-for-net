@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.MSTeams.Models;
+using Microsoft.Teams.Core.Schema;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Extensions.MSTeams;
@@ -19,7 +21,7 @@ public static class TeamsActivityExtensions
     /// <returns>The current activity's team's selected channel, or empty string.</returns>
     public static string TeamsGetSelectedChannelId(this IActivity activity)
     {
-        var channelData = activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
+        var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
         return channelData?.Settings?.SelectedChannel?.Id;
     }
 
@@ -30,7 +32,7 @@ public static class TeamsActivityExtensions
     /// <returns>The current activity's team's channel, or empty string.</returns>
     public static string TeamsGetChannelId(this IActivity activity)
     {
-        var channelData = activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
+        var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
         return channelData?.Channel?.Id;
     }
 
@@ -39,12 +41,12 @@ public static class TeamsActivityExtensions
     /// </summary>
     /// <param name="activity">This activity.</param>
     /// <returns>The current activity's team's meeting, or null.</returns>
-    public static Microsoft.Teams.Api.Meetings.Meeting TeamsGetMeetingInfo(this IActivity activity)
+    public static Microsoft.Teams.Apps.Clients.Meeting TeamsGetMeetingInfo(this IActivity activity)
     {
-        var channelData = activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
+        var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
         if (channelData != null && channelData.Properties.TryGetValue("meeting", out var meetingObj))
         {
-            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.Meeting>(meetingObj);
+            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Clients.Meeting>(meetingObj);
         }
 
         return null;
@@ -55,9 +57,9 @@ public static class TeamsActivityExtensions
     /// </summary>
     /// <param name="activity">This activity.</param>
     /// <returns>The current activity's team information, or null.</returns>
-    public static Microsoft.Teams.Api.Team TeamsGetTeamInfo(this IActivity activity)
+    public static Microsoft.Teams.Apps.Schema.Team TeamsGetTeamInfo(this IActivity activity)
     {
-        var channelData = activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
+        var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
         return channelData?.Team;
     }
 
@@ -70,13 +72,14 @@ public static class TeamsActivityExtensions
     /// <param name="externalResourceUrl">Url to external resource. Must be included in manifest's valid domains.</param>
     public static void TeamsNotifyUser(this IActivity activity, bool alertInMeeting, string externalResourceUrl = null)
     {
-        if (activity.ChannelData is not Microsoft.Teams.Api.ChannelData teamsChannelData)
+        if (activity.ChannelData is not Microsoft.Teams.Apps.Schema.TeamsChannelData teamsChannelData)
         {
-            teamsChannelData = new Microsoft.Teams.Api.ChannelData();
+            teamsChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData();
             activity.ChannelData = teamsChannelData;
         }
 
-        teamsChannelData.Notification = new Microsoft.Teams.Api.Notification
+        teamsChannelData.Properties ??= new ExtendedPropertiesDictionary();
+        teamsChannelData.Properties["notification"] = new TeamsNotification
         {
             Alert = !alertInMeeting,
             AlertInMeeting = alertInMeeting,
@@ -98,10 +101,15 @@ public static class TeamsActivityExtensions
     /// </summary>
     /// <param name="activity">The current activity.</param>
     /// <returns>The current activity's OnBehalfOf list, or null.</returns>
-    public static IList<Microsoft.Teams.Api.OnBehalfOf> TeamsGetTeamOnBehalfOf(this IActivity activity)
+    public static IList<TeamsOnBehalfOf> TeamsGetTeamOnBehalfOf(this IActivity activity)
     {
-        var channelData = activity.GetChannelData<Microsoft.Teams.Api.ChannelData>();
-        return channelData?.OnBehalfOf;
+        var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
+        if (channelData?.Properties?.TryGetValue("onBehalfOf", out var onBehalfOf) == true)
+        {
+            return ProtocolJsonSerializer.ToObject<IList<TeamsOnBehalfOf>>(onBehalfOf);
+        }
+
+        return null;
     }
 
     /// <summary>

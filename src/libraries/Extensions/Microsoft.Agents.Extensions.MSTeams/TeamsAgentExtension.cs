@@ -66,7 +66,7 @@ public class TeamsAgentExtension : AgentExtension
                 turnContext.SetTeamsApiClient(_agentApplication, cancellationToken);
 
                 // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
-                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
+                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsChannelData>(turnContext.Activity.ChannelData);
             }
             return Task.FromResult(true);
         });
@@ -117,7 +117,7 @@ public class TeamsAgentExtension : AgentExtension
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
     /// <returns>The Teams API client.</returns>
-    public Microsoft.Teams.Api.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
+    public Microsoft.Teams.Apps.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return turnContext.GetTeamsApiClient();

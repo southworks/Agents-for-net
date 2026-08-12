@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 /// </summary>
 /// <remarks>
 /// Use <see cref="ExecuteActionRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction"/> triggered by O365 Connector Card action buttons.
+/// <c>actionableMessage/executeAction</c> triggered by O365 Connector Card action buttons.
 /// </remarks>
 public class ExecuteActionRouteBuilder : RouteBuilderBase<ExecuteActionRouteBuilder>
 {
@@ -30,7 +30,7 @@ public class ExecuteActionRouteBuilder : RouteBuilderBase<ExecuteActionRouteBuil
 
     /// <summary>
     /// Configures the route to use the specified handler for processing O365 Connector Card Action invokes.
-    /// The handler receives the deserialized <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/> from the activity value.
+    /// The handler receives the deserialized <see cref="ConnectorCardActionQuery"/> from the activity value.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the O365 Connector Card Action invoke.</param>
     /// <returns>The current <see cref="ExecuteActionRouteBuilder"/> instance for method chaining.</returns>
@@ -38,8 +38,8 @@ public class ExecuteActionRouteBuilder : RouteBuilderBase<ExecuteActionRouteBuil
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            Microsoft.Teams.Api.O365.ConnectorCardActionQuery query =
-                ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(ctx.Activity.Value) ?? new();
+            ConnectorCardActionQuery query =
+                ProtocolJsonSerializer.ToObject<ConnectorCardActionQuery>(ctx.Activity.Value) ?? new();
             await handler(new TeamsTurnContext(ctx), ts, query, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
         };
@@ -55,7 +55,7 @@ public class ExecuteActionRouteBuilder : RouteBuilderBase<ExecuteActionRouteBuil
             && context.Activity.IsType(ActivityTypes.Invoke)
             && context.Activity.Name != null
             && string.Equals(
-                Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction,
+                "actionableMessage/executeAction",
                 context.Activity.Name, StringComparison.OrdinalIgnoreCase)
         );
     }

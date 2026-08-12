@@ -371,6 +371,10 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Sets both <see cref="Microsoft.Agents.Core.Models.IActivity.Value"/> and <see cref="Microsoft.Agents.Core.Models.IActivity.ValueType"/> and returns this activity. </summary>
         IActivity WithValue(object value, string valueType);
 
+        IActivity WithMention(ChannelAccount account, string text = null, bool addText = true);
+
+        IActivity WithMention(string id, string name = null, bool addText = true);
+
         /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.SuggestedActions"/> and returns this activity. </summary>
         IActivity WithSuggestedActions(SuggestedActions suggestedActions);
 

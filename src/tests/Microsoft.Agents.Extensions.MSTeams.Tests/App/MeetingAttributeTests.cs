@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -98,7 +98,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnMeetingStartAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            Microsoft.Teams.Api.Meetings.MeetingDetails meeting,
+            Microsoft.Teams.Apps.Clients.MeetingDetails meeting,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
@@ -241,7 +241,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnMeetingEndAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            Microsoft.Teams.Api.Meetings.MeetingDetails meeting,
+            Microsoft.Teams.Apps.Clients.MeetingDetails meeting,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;

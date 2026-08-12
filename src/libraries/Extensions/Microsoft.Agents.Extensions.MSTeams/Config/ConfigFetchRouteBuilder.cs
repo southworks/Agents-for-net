@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// <remarks>
 /// Use <see cref="ConfigFetchRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch"/>.
+/// <c>config/fetch</c>.
 /// </remarks>
 public class ConfigFetchRouteBuilder : ConfigRouteBuilderBase<ConfigFetchRouteBuilder>
 {
@@ -31,7 +31,7 @@ public class ConfigFetchRouteBuilder : ConfigRouteBuilderBase<ConfigFetchRouteBu
     /// </summary>
     public ConfigFetchRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch;
+        InvokeName = "config/fetch";
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class ConfigFetchRouteBuilder : ConfigRouteBuilderBase<ConfigFetchRouteBu
     /// </summary>
     /// <param name="handler">An asynchronous delegate invoked when a config fetch request is received.
     /// Receives the turn context, turn state, config data from the activity value,
-    /// and a cancellation token. Must return a <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</param>
+    /// and a cancellation token. Must return a <see cref="ConfigResponse"/>.</param>
     /// <returns>The current <see cref="ConfigFetchRouteBuilder"/> instance for method chaining.</returns>
     public ConfigFetchRouteBuilder WithHandler(ConfigHandler handler)
     {
