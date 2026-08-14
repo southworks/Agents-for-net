@@ -81,6 +81,19 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public void SuppliedDefaultAdapter_IsReusedForMatchingChannelRegistration()
+        {
+            var sp = BuildProvider();
+            var adapter = new TeamsAdapter();
+            var registry = new ChannelAdapterRegistry(
+                sp,
+                new[] { new ChannelAdapterRegistration("msteams", typeof(TeamsAdapter)) },
+                adapter);
+
+            Assert.Same(adapter, registry.GetAdapter("msteams"));
+        }
+
+        [Fact]
         public void TryGetAdapter_UnknownChannel_ReturnsFalse()
         {
             var sp = BuildProvider();
@@ -130,6 +143,53 @@ namespace Microsoft.Agents.Builder.Tests
 
             // Last explicit registration for a channelId wins.
             Assert.IsType<TeamsAdapter>(registry.GetAdapter("msteams"));
+        }
+
+        [Fact]
+        public void DefaultRegistration_ResolvesSelectedAdapter()
+        {
+            var services = new ServiceCollection();
+            services.AddChannelAdapter<TeamsAdapter>("msteams");
+            services.SetDefaultChannelAdapter<TeamsAdapter>();
+            using var provider = services.BuildServiceProvider();
+
+            var registry = provider.GetRequiredService<IChannelAdapterRegistry>();
+
+            Assert.IsType<TeamsAdapter>(registry.GetDefault());
+            Assert.Same(registry.GetDefault(), provider.GetRequiredService<IChannelAdapter>());
+            Assert.Single(registry.GetAll());
+        }
+
+        [Fact]
+        public void SetDefaultChannelAdapter_ReplacesFrameworkDefault()
+        {
+            var services = new ServiceCollection();
+            services.TrySetDefaultChannelAdapter<DefaultAdapter>();
+            services.SetDefaultChannelAdapter<TeamsAdapter>();
+            using var provider = services.BuildServiceProvider();
+
+            Assert.IsType<TeamsAdapter>(provider.GetRequiredService<IChannelAdapter>());
+        }
+
+        [Fact]
+        public void TrySetDefaultChannelAdapter_DoesNotReplaceExplicitDefault()
+        {
+            var services = new ServiceCollection();
+            services.SetDefaultChannelAdapter<TeamsAdapter>();
+            services.TrySetDefaultChannelAdapter<DefaultAdapter>();
+            using var provider = services.BuildServiceProvider();
+
+            Assert.IsType<TeamsAdapter>(provider.GetRequiredService<IChannelAdapter>());
+        }
+
+        [Fact]
+        public void AddChannelAdapter_RejectsScopedAdapterRegistration()
+        {
+            var services = new ServiceCollection();
+            services.AddScoped<TeamsAdapter>();
+
+            Assert.Throws<InvalidOperationException>(() =>
+                services.AddChannelAdapter<TeamsAdapter>("msteams"));
         }
     }
 }
