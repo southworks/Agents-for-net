@@ -54,17 +54,14 @@ public class TeamsAgentExtension : AgentExtension
         FileConsent = new FileConsent(agentApplication, ChannelId);
 
         _agentApplication = agentApplication;
-        _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
+        _agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
                 // Set the TeamsApiClient in the turn context for use in handlers.
-                turnContext.SetTeamsApiClient(_agentApplication, cancellationToken);
-
-                // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
-                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsChannelData>(turnContext.Activity.ChannelData);
+                await turnContext.SetTeamsApiClient(_agentApplication, cancellationToken).ConfigureAwait(false);
             }
-            return Task.FromResult(true);
+            return true;
         });
     }
 
