@@ -378,6 +378,22 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.SuggestedActions"/> and returns this activity. </summary>
         IActivity WithSuggestedActions(SuggestedActions suggestedActions);
 
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> and configures whether the activity is targeted.
+        /// </summary>
+        /// <param name="recipient">The account that should receive the activity.</param>
+        /// <param name="isTargeted">Whether the activity should be visible only to the recipient.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithRecipient(ChannelAccount recipient, bool isTargeted = false);
+
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> to a user account with the specified ID and configures whether the activity is targeted.
+        /// </summary>
+        /// <param name="id">The ID of the user account that should receive the activity.</param>
+        /// <param name="isTargeted">Whether the activity should be visible only to the recipient.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithRecipient(string id, bool isTargeted = false);
+
         /// <summary> Appends the given text to <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> and returns this activity. </summary>
         IActivity AddText(string text);
 

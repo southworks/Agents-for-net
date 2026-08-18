@@ -29,6 +29,41 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     public Microsoft.Teams.Apps.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Apps.Clients.ApiClient>();
 
     /// <inheritdoc/>
+    public override Task<ResourceResponse> SendActivityAsync(
+        string text,
+        string speak = null,
+        string inputHint = InputHints.AcceptingInput,
+        CancellationToken cancellationToken = default)
+    {
+        return SendActivityAsync(new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = text,
+            Speak = speak,
+            InputHint = inputHint
+        }, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public override Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+    {
+        ApplyPromptPreview(activity);
+
+        return base.SendActivityAsync(activity, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public override Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
+    {
+        foreach (var activity in activities)
+        {
+            ApplyPromptPreview(activity);
+        }
+
+        return base.SendActivitiesAsync(activities, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         return SendActivityAsync(activity.Clone().MakeTargetedActivity(), cancellationToken);
@@ -44,6 +79,16 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
         }
 
         return SendActivitiesAsync([.. clonedActivities], cancellationToken);
+    }
+
+    private void ApplyPromptPreview(IActivity activity)
+    {
+        if (activity?.Type == ActivityTypes.Message
+            && Activity.IsRecipientTargeted()
+            && !string.IsNullOrWhiteSpace(Activity.Id))
+        {
+            PromptPreviewActivityNormalizer.Apply(activity, Activity.Id);
+        }
     }
 
     /// <inheritdoc/>

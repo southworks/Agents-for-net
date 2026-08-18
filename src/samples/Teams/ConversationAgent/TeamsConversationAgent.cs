@@ -103,7 +103,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             new CardAction(type: ActionTypes.MessageBack, title: "Who am I?", text: "whoami"),
             new CardAction(type: ActionTypes.MessageBack, title: "Mention Me", text: "mentionme"),
             new CardAction(type: ActionTypes.MessageBack, title: "Delete Card", text: "delete"),
-            new CardAction(type: ActionTypes.MessageBack, title: "Send Targeted", text: "targeted")
+            new CardAction(type: ActionTypes.MessageBack, title: "Send Targeted", text: "targeted"),
+            new CardAction(type: ActionTypes.MessageBack, title: "Quoted Reply", text: "quotedreply")
         ]
     };
 
@@ -143,18 +144,43 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             continuationToken = currentPage.ContinuationToken;
 
             foreach (var activity in from teamMember in currentPage.Members
-                let activity = new Activity
-                {
-                    Type = ActivityTypes.Message,
-                    Text = $"{teamMember.Name}, this is a **targeted message** - only you can see this.",
-                    Recipient = new ChannelAccount() { Id = teamMember.Id, Name = teamMember.Name, Role = RoleTypes.User }
-                }
+                let activity = Activity.CreateMessageActivity()
+                    .WithText($"{teamMember.Name}, this is a **targeted message** - only you can see this.")
+                    .WithRecipient(
+                        new ChannelAccount(teamMember.Id, teamMember.Name, RoleTypes.User),
+                        isTargeted: true)
                 select activity)
             {
-                await turnContext.SendTargetedActivityAsync(activity, cancellationToken);
+                await turnContext.SendActivityAsync(activity, cancellationToken);
             }
         }
         while (continuationToken != null);
+    }
+
+    [TeamsMessageRoute("quotedreply")]
+    public static async Task SendQuotedReplyAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var messageId = turnContext.Activity.Id
+            ?? throw new InvalidOperationException("The incoming activity must have an ID to create a quoted reply.");
+        ITeamsActivity reply = new TeamsActivity
+        {
+            Type = ActivityTypes.Message,
+            Text = string.Empty
+        };
+        reply.AddQuotedReply(messageId, "This response includes a quoted reply to your message.");
+
+        await turnContext.SendActivityAsync(reply, cancellationToken);
+    }
+
+    [TeamsMessageRoute("promptpreview")]
+    public static async Task SendPromptPreviewAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var response = Activity.CreateMessageActivity()
+            .WithText("This targeted response includes Prompt Preview metadata for your slash command.")
+            .WithRecipient(turnContext.Activity.From, isTargeted: true);
+
+        // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
+        await turnContext.SendActivityAsync(response, cancellationToken);
     }
 
     [TeamsMessageRoute("update")]

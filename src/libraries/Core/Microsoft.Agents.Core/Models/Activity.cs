@@ -228,6 +228,47 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
+        public IActivity WithRecipient(ChannelAccount recipient, bool isTargeted = false)
+        {
+            AssertionHelpers.ThrowIfNull(recipient, nameof(recipient));
+
+            Recipient = recipient;
+            var foundTargetedTreatment = false;
+            if (Entities != null)
+            {
+                for (var index = Entities.Count - 1; index >= 0; index--)
+                {
+                    if (Entities[index] is ActivityTreatment treatment
+                        && treatment.Treatment == ActivityTreatmentTypes.Targeted)
+                    {
+                        if (!isTargeted || foundTargetedTreatment)
+                        {
+                            Entities.RemoveAt(index);
+                        }
+                        else
+                        {
+                            foundTargetedTreatment = true;
+                        }
+                    }
+                }
+            }
+
+            if (isTargeted && !foundTargetedTreatment)
+            {
+                Entities ??= [];
+                Entities.Add(new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted });
+            }
+
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithRecipient(string id, bool isTargeted = false)
+        {
+            return WithRecipient(new ChannelAccount(id, role: RoleTypes.User), isTargeted);
+        }
+
+        /// <inheritdoc/>
         public IActivity WithMention(ChannelAccount account, string text = null, bool addText = true)
         {
             AssertionHelpers.ThrowIfNull(account, nameof(account));
@@ -411,22 +452,12 @@ namespace Microsoft.Agents.Core.Models
         /// <inheritdoc/>
         public IActivity MakeTargetedActivity(ChannelAccount user = null)
         {
-            if (IsTargetedActivity())
-            {
-                return this;
-            }
-
             if (Recipient == null && user == null)
             {
                 throw new InvalidOperationException("Cannot mark activity as targeted because both the Activity.Recipient and `user` argument are null. At least one must be provided.");
             }
 
-            Entities ??= [];
-            Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
-
-            Recipient = user ?? Recipient;
-
-            return this;
+            return WithRecipient(user ?? Recipient, isTargeted: true);
         }
 
         /// <inheritdoc/>
