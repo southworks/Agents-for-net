@@ -71,7 +71,7 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
       with:
-        languages: csharp
+        languages: ${{ matrix.language }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -92,4 +92,4 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
       with:
-        category: "/language:csharp"
+        category: "/language:${{ matrix.language }}"
