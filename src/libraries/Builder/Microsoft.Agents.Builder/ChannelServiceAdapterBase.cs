@@ -29,9 +29,11 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
+    /// <param name="hostValidator">The validator used to restrict outbound service URLs.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
-        ILogger logger = null) : ChannelAdapter(logger)
+        ILogger logger = null,
+        IOutboundHostValidator hostValidator = null) : ChannelAdapter(logger)
     {
         /// <summary>
         /// Gets the <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
@@ -40,6 +42,11 @@ namespace Microsoft.Agents.Builder
         /// The <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </value>
         protected IChannelServiceClientFactory ChannelServiceFactory { get; private set; } = channelServiceClientFactory ?? throw new ArgumentNullException(nameof(channelServiceClientFactory));
+
+        /// <summary>
+        /// Gets the validator used to restrict outbound service URLs.
+        /// </summary>
+        protected IOutboundHostValidator HostValidator { get; } = hostValidator;
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
@@ -146,6 +153,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
             AssertionHelpers.ThrowIfNull(parameters, nameof(parameters));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+            ValidateOutboundServiceUrl(serviceUrl, nameof(serviceUrl));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
@@ -200,6 +208,7 @@ namespace Microsoft.Agents.Builder
             }
 
             ValidateContinuationActivity(continuationActivity);
+            ValidateOutboundServiceUrl(continuationActivity.ServiceUrl, nameof(continuationActivity));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
@@ -275,6 +284,16 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+        }
+
+        private void ValidateOutboundServiceUrl(string serviceUrl, string parameterName)
+        {
+            if (HostValidator?.Enabled == true
+                && !string.IsNullOrWhiteSpace(serviceUrl)
+                && !HostValidator.IsAllowed(serviceUrl))
+            {
+                throw new ArgumentException("The service URL host is not allowed.", parameterName);
+            }
         }
 
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
