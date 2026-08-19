@@ -4,12 +4,14 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.TestSupport;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -58,6 +60,24 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             Assert.Equal(storeActivity.TraceId, _conversation.ActivityContext.Value.TraceId);
             Assert.Equal(storeActivity.SpanId, _conversation.ActivityContext.Value.SpanId);
             Assert.Equal(storeActivity.ActivityTraceFlags, _conversation.ActivityContext.Value.TraceFlags);
+        }
+
+        [Fact]
+        public async Task ConversationActivityContext_RoundTripsThroughJson()
+        {
+            using var parentActivity = StartW3CActivity();
+            await _proactive.StoreConversationAsync(_conversation);
+
+            var json = JsonSerializer.Serialize(
+                _conversation,
+                ProtocolJsonSerializer.SerializationOptions);
+            var roundTripped = JsonSerializer.Deserialize<Conversation>(
+                json,
+                ProtocolJsonSerializer.SerializationOptions);
+
+            Assert.NotNull(roundTripped);
+            Assert.True(roundTripped.ActivityContext.HasValue);
+            Assert.Equal(_conversation.ActivityContext, roundTripped.ActivityContext);
         }
 
         [Fact]

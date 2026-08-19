@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Core.Telemetry
         private Exception? _error = null;
         private bool _disposed = false;
 
-        public ActivityContext Context => _telemetryActivity?.Context ?? default;
+        public ActivityContext? Context => _telemetryActivity?.Context;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts

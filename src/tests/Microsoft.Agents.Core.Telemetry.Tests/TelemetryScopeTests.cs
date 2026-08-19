@@ -69,6 +69,26 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             Assert.Equal(ActivityKind.Client, _startedActivities[0].Kind);
         }
 
+        [Fact]
+        public void TelemetryScope_Context_IsAvailable_WhenActivityIsCreated()
+        {
+            using var scope = new TelemetryScope("TestOperation");
+
+            var started = Assert.Single(_startedActivities);
+            Assert.Equal(started.Context, scope.Context);
+        }
+
+        [Fact]
+        public void TelemetryScope_Context_IsNull_WhenActivityIsNotCreated()
+        {
+            _listener.Dispose();
+
+            using var scope = new TelemetryScope("TestOperation");
+
+            Assert.Empty(_startedActivities);
+            Assert.Null(scope.Context);
+        }
+
         [Theory]
         [InlineData(ActivityKind.Server)]
         [InlineData(ActivityKind.Producer)]

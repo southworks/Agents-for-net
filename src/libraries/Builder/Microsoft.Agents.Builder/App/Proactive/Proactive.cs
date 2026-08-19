@@ -460,6 +460,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
 
             using var telemetryScope = new ScopeStoreConversation(conversation.Reference.Conversation.Id);
+
+            // enable tracing of future proactive calls with the same conversation
             conversation.ActivityContext = telemetryScope.Context;
 
             var key = GetRecordKey(conversation.Reference.Conversation.Id);
