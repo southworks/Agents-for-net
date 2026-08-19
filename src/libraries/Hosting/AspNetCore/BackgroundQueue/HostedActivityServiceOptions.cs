@@ -31,11 +31,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Gets or sets a value indicating whether each queued Activity is processed in its own dependency injection scope.
         /// </summary>
         /// <remarks>
-        /// When <see langword="true"/> (the default), the <see cref="Microsoft.Agents.Builder.IAgent"/> and its dependencies
-        /// are resolved from a scope that is disposed when the turn completes. Set this to <see langword="false"/> to resolve
-        /// from the root <see cref="System.IServiceProvider"/> instead. Root resolution promotes scoped registrations in the
-        /// Agent's dependency graph to the root scope, sharing one instance across turns for the lifetime of the process.
+        /// When <see langword="false"/> (the default), queued Activities resolve the
+        /// <see cref="Microsoft.Agents.Builder.IAgent"/> from the root <see cref="System.IServiceProvider"/>.
+        /// Set this to <see langword="true"/> to resolve the Agent and its dependencies from a scope that is disposed when
+        /// the turn completes.
         /// </remarks>
-        public bool UseScopedServices { get; set; } = true;
+        public bool UseScopedServices { get; set; } = false;
     }
 }
