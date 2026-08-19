@@ -552,7 +552,7 @@ namespace Microsoft.Agents.Builder.Tests
         private class TestChannelAdapter : ChannelServiceAdapterBase
         {
             public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory, IOutboundHostValidator hostValidator = null)
-                : base(channelServiceClientFactory, hostValidator: hostValidator)
+                : base(channelServiceClientFactory, null, hostValidator)
             {
             }
         }
