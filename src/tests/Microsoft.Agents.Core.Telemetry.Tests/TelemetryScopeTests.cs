@@ -116,7 +116,7 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             var linkContext = CreateActivityContext();
             var link = new ActivityLink(linkContext);
 
-            using var scope = new TelemetryScope("TestOperation", link: link);
+            using var scope = new TelemetryScope("TestOperation", ActivityKind.Internal, link);
 
             var started = Assert.Single(_startedActivities);
             var actualLink = Assert.Single(started.Links);
@@ -134,7 +134,8 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
             using var scope = new TelemetryScope(
                 "TestOperation",
-                link: new ActivityLink(linkContext, attributes));
+                ActivityKind.Internal,
+                new ActivityLink(linkContext, attributes));
 
             var started = Assert.Single(_startedActivities);
             var actualLink = Assert.Single(started.Links);
