@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var options = new HostedActivityServiceOptions(configuration);
 
             Assert.Equal(60, options.ShutdownTimeoutSeconds);
-            Assert.False(options.UseScopedServices);
+            Assert.True(options.UseScopedServices);
         }
 
         [Fact]

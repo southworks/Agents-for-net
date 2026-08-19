@@ -187,8 +187,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 //
                 // Resolving from the root IServiceProvider promotes any scoped registration in the Agent's dependency graph to
                 // the root scope, so a single instance is shared by every turn for the lifetime of the process. When
-                // AdapterOptions.UseScopePerTurn is set, the turn gets its own scope instead, which is disposed once the turn
-                // completes. The SDK registers no scoped services, so this only affects registrations made by the application.
+                // HostedActivityServiceOptions.UseScopedServices is set, the turn gets its own scope instead, which is disposed
+                // once the turn completes. The SDK registers no scoped services, so this only affects registrations made by
+                // the application.
                 // Note that disposable transients resolved for the turn - IAgent itself is registered transient - are then
                 // disposed with the turn scope instead of being retained by the root scope until the host shuts down.
                 turnScope = _serviceOptions.UseScopedServices ? _serviceProvider.CreateAsyncScope() : null;
