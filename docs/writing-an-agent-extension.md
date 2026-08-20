@@ -28,6 +28,7 @@ An extension can use any combination of these extensibility points:
 | Custom entities | Add polymorphic objects to `Activity.Entities` | `Entity` subclass and optional `[EntityName]` |
 | Custom activities | Select a protocol-specific `Activity` subtype from wire discriminators | `[ActivityType]` |
 | Serialization customization | Add converters or `JsonTypeInfoResolver` instances | `[SerializationInit]` |
+| Host endpoint mapping | Expose host- or channel-specific HTTP endpoints | Explicit mapping in `Program.cs` |
 | Custom adapters | Translate a native protocol to and from the Activity Protocol | `[ChannelAdapter]` |
 | Custom DI | Register extension services and adapter aliases | `IAgentServiceRegistrar` and `[assembly: AgentServiceRegistration]` |
 | Custom access-token providers | Acquire application/service tokens for named connections | `IAccessTokenProvider` selected by `Connections` configuration |
@@ -41,6 +42,7 @@ An extension can use any combination of these extensibility points:
 - [Custom entities](#custom-entities)
 - [Custom activities](#custom-activities)
 - [Serialization customization](#serialization-customization)
+- [Map host endpoints](#map-host-endpoints)
 - [Custom adapters](#custom-adapters)
 - [Custom DI with `IAgentServiceRegistrar`](#custom-di-with-iagentserviceregistrar)
 - [Custom `IAccessTokenProvider`](#custom-iaccesstokenprovider)
@@ -488,6 +490,82 @@ the options instance.
 If `ApplyExtensionOptions` replaces `TypeInfoResolver`, preserve the SDK's resolver chain,
 including `CoreJsonContext.Default`. Omitting core metadata can silently change or break Activity
 Protocol serialization.
+
+## Map host endpoints
+
+Endpoint mapping is not automatically discovered or applied. The consuming application must
+explicitly map endpoints in `Program.cs` after building the host:
+
+```csharp
+WebApplication app = builder.Build();
+
+app.UseAgents();
+app.MapAgentApplicationEndpoints();
+```
+
+Mapping is host-, transport-, and sometimes channel-specific. An extension that exposes a native
+HTTP protocol normally provides a host-specific mapping extension alongside its service
+extensions. Service registration makes the adapter and its dependencies available through DI;
+the mapping extension makes the protocol reachable over HTTP. These are separate operations.
+
+For example, `AgentEndpointExtensions.MapAgentApplicationEndpoints` maps the shared Activity
+Protocol endpoint. An A2A extension can provide its own mapping extension for A2A routes:
+
+```csharp
+WebApplication app = builder.Build();
+
+app.UseAgents();
+app.MapAgentApplicationEndpoints();
+app.MapA2AApplicationEndpoints();
+```
+
+`A2AServiceExtensions.MapA2AApplicationEndpoints` is an example of a protocol-specific endpoint
+mapper. It maps the A2A request surface and resolves the A2A adapter from DI. Other hosts or
+channels can require different endpoint types, middleware, authentication conventions, or route
+metadata, so endpoint mapping belongs in the host-specific package rather than the
+host-independent Builder registration contract.
+
+Use `AgentInterfaceAttribute` when an endpoint mapper needs to discover which interfaces an
+`AgentApplication` exposes:
+
+```csharp
+[AgentInterface(
+    AgentTransportProtocol.ActivityProtocol,
+    "/api/messages")]
+[AgentInterface(
+    A2AAgentTransportProtocol.JsonRpc,
+    "/a2a")]
+public sealed class ContosoAgent : AgentApplication
+{
+    // Agent implementation.
+}
+```
+
+The attribute declares the transport protocol and relative path for one agent interface. Because
+it allows multiple instances, the same agent can expose multiple transports or multiple paths for
+a transport when the corresponding host endpoint mappers support them.
+
+`AgentInterfaceAttribute.Protocol` is the endpoint mapper's selection key, not descriptive
+metadata and not the Activity `channelId`. A mapper inspects the attributes and maps only entries
+whose `Protocol` value it recognizes:
+
+- `MapAgentApplicationEndpoints` selects `AgentTransportProtocol.ActivityProtocol` and maps the
+  matching `Path` as an Activity Protocol endpoint.
+- `MapA2AApplicationEndpoints` selects the A2A JSON-RPC and HTTP+JSON protocol values and maps each
+  matching `Path` with the appropriate A2A endpoint shape.
+- A mapper ignores attributes for protocols it does not support, allowing multiple mappers to
+  process the same `AgentApplication` without mapping each other's interfaces.
+
+Protocol values are an exact contract between the attribute and the endpoint mapper. Extension
+authors should define public constants for their protocol values and application authors should
+use those constants rather than string literals. A mismatch means the mapper will not create an
+endpoint for that interface.
+
+When a single agent has no `AgentInterfaceAttribute`, a mapper can synthesize its own protocol and
+default path. Once the agent declares any interface attribute, each intended interface should be
+declared explicitly; a mapper does not synthesize a missing protocol-specific default when
+attributes already exist. Applications with multiple agents must also declare their interfaces
+explicitly so protocols and paths can be assigned unambiguously.
 
 ## Custom adapters
 
@@ -1323,6 +1401,8 @@ Before publishing an AgentExtension package, verify:
 - Referencing the package is sufficient for entity, activity, serialization, adapter, and DI
   discovery.
 - A minimal `AddAgent` application does not call an extension-specific DI method.
+- Required host- or channel-specific endpoints are explicitly mapped in `Program.cs`.
+- Endpoint mapping extensions honor `AgentInterfaceAttribute` protocol and path declarations.
 - The `AgentApplication` extension attribute generates the expected property and eagerly
   initializes required before-turn behavior.
 - Route helpers and route attributes use the same specialized Builders.
