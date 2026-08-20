@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Model.Tests
     public class ActivityContextSerializationTests
     {
         [Fact]
-        public void ActivityContextRoundTrips()
+        public void ActivityContextDeserializesAsRemote()
         {
             var expected = new ActivityContext(
                 ActivityTraceId.CreateRandom(),
                 ActivitySpanId.CreateRandom(),
                 ActivityTraceFlags.Recorded,
                 "vendor=value",
-                isRemote: true);
+                isRemote: false);
 
             var json = JsonSerializer.Serialize(expected, ProtocolJsonSerializer.SerializationOptions);
             var actual = JsonSerializer.Deserialize<ActivityContext>(
@@ -29,7 +29,8 @@ namespace Microsoft.Agents.Model.Tests
             Assert.Equal(expected.SpanId, actual.SpanId);
             Assert.Equal(expected.TraceFlags, actual.TraceFlags);
             Assert.Equal(expected.TraceState, actual.TraceState);
-            Assert.Equal(expected.IsRemote, actual.IsRemote);
+            Assert.False(expected.IsRemote);
+            Assert.True(actual.IsRemote);
         }
 
         [Fact]

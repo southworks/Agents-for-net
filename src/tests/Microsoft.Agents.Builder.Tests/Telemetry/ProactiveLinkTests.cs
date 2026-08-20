@@ -77,7 +77,12 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
             Assert.NotNull(roundTripped);
             Assert.True(roundTripped.ActivityContext.HasValue);
-            Assert.Equal(_conversation.ActivityContext, roundTripped.ActivityContext);
+            Assert.Equal(_conversation.ActivityContext.Value.TraceId, roundTripped.ActivityContext.Value.TraceId);
+            Assert.Equal(_conversation.ActivityContext.Value.SpanId, roundTripped.ActivityContext.Value.SpanId);
+            Assert.Equal(_conversation.ActivityContext.Value.TraceFlags, roundTripped.ActivityContext.Value.TraceFlags);
+            Assert.Equal(_conversation.ActivityContext.Value.TraceState, roundTripped.ActivityContext.Value.TraceState);
+            Assert.False(_conversation.ActivityContext.Value.IsRemote);
+            Assert.True(roundTripped.ActivityContext.Value.IsRemote);
         }
 
         [Fact]
@@ -87,6 +92,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             await _proactive.StoreConversationAsync(_conversation);
             var storeActivity = StoppedActivities.Single(
                 activity => activity.OperationName == "agents.proactive.store_conversation");
+            var roundTripped = RoundTripConversation(_conversation);
             _adapter
                 .Setup(adapter => adapter.ContinueConversationAsync(
                     It.IsAny<ClaimsIdentity>(),
@@ -97,7 +103,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
             await Proactive.SendActivityAsync(
                 _adapter.Object,
-                _conversation,
+                roundTripped,
                 new Activity { Type = ActivityTypes.Message });
 
             var sendActivity = StoppedActivities.Single(
@@ -105,6 +111,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             var link = Assert.Single(sendActivity.Links);
             Assert.Equal(storeActivity.TraceId, link.Context.TraceId);
             Assert.Equal(storeActivity.SpanId, link.Context.SpanId);
+            Assert.True(link.Context.IsRemote);
         }
 
         [Fact]
@@ -114,6 +121,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             await _proactive.StoreConversationAsync(_conversation);
             var storeActivity = StoppedActivities.Single(
                 activity => activity.OperationName == "agents.proactive.store_conversation");
+            var roundTripped = RoundTripConversation(_conversation);
             _adapter
                 .Setup(adapter => adapter.ProcessProactiveAsync(
                     It.IsAny<ClaimsIdentity>(),
@@ -125,7 +133,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
             await _proactive.ContinueConversationAsync(
                 _adapter.Object,
-                _conversation,
+                roundTripped,
                 (turnContext, turnState, cancellationToken) => Task.CompletedTask);
 
             var continueActivity = StoppedActivities.Single(
@@ -133,6 +141,18 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             var link = Assert.Single(continueActivity.Links);
             Assert.Equal(storeActivity.TraceId, link.Context.TraceId);
             Assert.Equal(storeActivity.SpanId, link.Context.SpanId);
+            Assert.True(link.Context.IsRemote);
+        }
+
+        private static Conversation RoundTripConversation(Conversation conversation)
+        {
+            var json = JsonSerializer.Serialize(
+                conversation,
+                ProtocolJsonSerializer.SerializationOptions);
+
+            return JsonSerializer.Deserialize<Conversation>(
+                json,
+                ProtocolJsonSerializer.SerializationOptions);
         }
 
         private static System.Diagnostics.Activity StartW3CActivity()

@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                             ActivitySpanId.CreateFromString(spanId.AsSpan()),
                             traceFlags,
                             traceState,
-                            isRemote);
+                            isRemote: true);
                     }
                     catch (ArgumentOutOfRangeException exception)
                     {
