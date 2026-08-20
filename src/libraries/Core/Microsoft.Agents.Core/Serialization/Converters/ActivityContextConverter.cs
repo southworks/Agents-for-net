@@ -21,7 +21,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             string spanId = null;
             string traceState = null;
             var traceFlags = ActivityTraceFlags.None;
-            var isRemote = false;
 
             while (reader.Read())
             {
@@ -76,7 +75,8 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 }
                 else if (string.Equals(propertyName, "isRemote", StringComparison.OrdinalIgnoreCase))
                 {
-                    isRemote = reader.GetBoolean();
+                    // Rehydrated contexts are always remote. Just validating the value here, but not using it.
+                    _ = reader.GetBoolean();
                 }
                 else
                 {
