@@ -160,9 +160,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task ExecuteAsync_WithScopedServices_ShouldResolveAndDisposeDependencyPerActivity()
+        public async Task ExecuteAsync_WithDefaultOptions_ShouldResolveAndDisposeDependencyPerActivity()
         {
-            var record = UseScopedRecord(useScopedServices: true, expectedActivities: 2);
+            var record = UseScopedRecord(useScopedServices: null, expectedActivities: 2);
 
             record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
             record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return options.ShutdownTimeoutSeconds;
         }
 
-        private static ScopedRecord UseScopedRecord(bool useScopedServices, int expectedActivities)
+        private static ScopedRecord UseScopedRecord(bool? useScopedServices, int expectedActivities)
         {
             var collector = new ProbeCollector();
             var services = new ServiceCollection();
@@ -332,10 +332,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     }
                 });
 
-            var options = new HostedActivityServiceOptions(new ConfigurationBuilder().Build())
+            var options = new HostedActivityServiceOptions(new ConfigurationBuilder().Build());
+            if (useScopedServices.HasValue)
             {
-                UseScopedServices = useScopedServices
-            };
+                options.UseScopedServices = useScopedServices.Value;
+            }
             var service = new HostedActivityService(
                 provider,
                 new ConfigurationBuilder().Build(),
