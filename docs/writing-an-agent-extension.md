@@ -1140,11 +1140,9 @@ public sealed class ContosoUserAuthorization
         CancellationToken cancellationToken = default)
     {
         // Start or continue the provider-specific, multi-turn flow.
-        return GetRefreshedUserTokenAsync(
-            context,
-            exchangeConnection,
-            exchangeScopes,
-            cancellationToken);
+        // When forceSignIn is true, restart authentication rather than
+        // reusing an existing session.
+        throw new NotImplementedException();
     }
 
     public Task<TokenResponse> GetRefreshedUserTokenAsync(
