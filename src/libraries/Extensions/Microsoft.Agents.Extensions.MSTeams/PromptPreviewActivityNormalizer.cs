@@ -33,7 +33,11 @@ internal static class PromptPreviewActivityNormalizer
 
         if (activity.Text != null)
         {
-            activity.Text = QuotedPlaceholderRegex.Replace(activity.Text, string.Empty).Trim();
+            var textWithoutPlaceholder = QuotedPlaceholderRegex.Replace(activity.Text, string.Empty);
+            if (textWithoutPlaceholder.Length != activity.Text.Length)
+            {
+                activity.Text = textWithoutPlaceholder.Trim();
+            }
         }
 
         if (activity.Entities?.Any(entity => entity.Type == TargetedMessageInfoEntity.EntityName) != true)

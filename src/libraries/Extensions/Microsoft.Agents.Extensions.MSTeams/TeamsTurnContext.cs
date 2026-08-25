@@ -34,6 +34,8 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
         string inputHint = InputHints.AcceptingInput,
         CancellationToken cancellationToken = default)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
+
         return SendActivityAsync(new Activity
         {
             Type = ActivityTypes.Message,
@@ -91,6 +93,8 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
         ChannelAccount recipient,
         CancellationToken cancellationToken = default)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
+
         return SendTargetedActivityAsync(
             new Activity
             {

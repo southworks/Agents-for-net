@@ -75,7 +75,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
   - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
   - `Teams.Teams` — archived/unarchived/renamed/deleted/restored
   - `Teams.FileConsent` — file upload consent accept/decline
-- `TeamsAgentExtension` also provides Graph helpers: `GetTeamsClient()` (teams.net `Microsoft.Teams.Api.Clients.ApiClient`), `GetGraphClient()` (user token), `GetAppGraphClient()` / `GetAppGraphClientForConnection()` (app-only)
+- `TeamsAgentExtension` also provides Graph helpers: `GetTeamsClient()` (teams.net `Microsoft.Teams.Apps.Clients.ApiClient`), `GetGraphClient()` (user token), `GetAppGraphClient()` / `GetAppGraphClientForConnection()` (app-only)
 - App-level Teams route extension methods on `AgentApplication` (in `TeamsAppExtensions`): `OnTeamsHandoff()` (Copilot handoff), `OnTeamsFeedbackLoop()`, `OnTeamsMessageReactionsAdded()` / `OnTeamsMessageReactionsRemoved()`, plus generic `OnTeamsActivity()` / `OnTeamsMessage()` / `OnTeamsConversationUpdate()` / `OnTeamsEvent()`
 - `ITeamsTurnContext` / `TeamsTurnContext` — `SendTargetedActivityAsync()` for sending to specific recipients
 - `TeamsActivityExtensions` — activity helpers: `TeamsGetChannelId()`, `TeamsGetMeetingInfo()`, `TeamsGetTeamInfo()`, `TeamsEnableFeedbackLoop()`, etc.
@@ -99,10 +99,10 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [TeamsQueryRoute("searchCmd")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnSearchAsync(
         ITurnContext ctx, ITurnState state,
-        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
-        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
+        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken ct)
+        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse { ComposeExtension = BuildResults(query) });
 }
 ```
 

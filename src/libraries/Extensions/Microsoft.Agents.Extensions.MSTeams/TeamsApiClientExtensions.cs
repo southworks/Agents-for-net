@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,7 +56,7 @@ internal static class TeamsApiClientExtensions
     /// <param name="context">The turn context in which to register the Teams ApiClient. Cannot be null.</param>
     /// <param name="loggerFactory">The logger factory used by the Teams API clients. Cannot be null.</param>
     /// <param name="ct">A cancellation token that can be used to cancel the registration operation. Optional.</param>
-    internal static async Task SetTeamsApiClient(
+    internal static Task SetTeamsApiClient(
         this ITurnContext context,
         ILoggerFactory loggerFactory,
         CancellationToken ct = default)
@@ -70,9 +71,8 @@ internal static class TeamsApiClientExtensions
         var userTokenTransport = GetRequiredRestTransport<IUserTokenClient>(context);
 
         ct.ThrowIfCancellationRequested();
-        var connectorHttpClient = await connectorTransport.GetHttpClientAsync().ConfigureAwait(false);
-        ct.ThrowIfCancellationRequested();
-        var userTokenHttpClient = await userTokenTransport.GetHttpClientAsync().ConfigureAwait(false);
+        var connectorHttpClient = CreateLazyHttpClient(connectorTransport);
+        var userTokenHttpClient = CreateLazyHttpClient(userTokenTransport);
 
         // teams.net separates conversation and user-token operations. Reuse the matching Agents SDK
         // transport for each so neither client reconstructs authentication or endpoint configuration.
@@ -101,6 +101,7 @@ internal static class TeamsApiClientExtensions
             loggerFactory.CreateLogger<Microsoft.Teams.Apps.Clients.ApiClient>());
 
         context.Services.Set<Microsoft.Teams.Apps.Clients.ApiClient>(client);
+        return Task.CompletedTask;
     }
 
     internal static Microsoft.Teams.Apps.Clients.ApiClient GetTeamsApiClient(this ITurnContext context)
@@ -128,7 +129,7 @@ internal static class TeamsApiClientExtensions
 
     private static Microsoft.Teams.Apps.Clients.ApiClient CreateApiClient(
         Uri serviceUrl,
-        System.Net.Http.HttpClient httpClient,
+        HttpClient httpClient,
         Microsoft.Teams.Core.ConversationClient conversationClient,
         Microsoft.Teams.Core.UserTokenClient userTokenClient,
         ILogger logger)
@@ -157,5 +158,59 @@ internal static class TeamsApiClientExtensions
 
         return (Microsoft.Teams.Apps.Clients.ApiClient)constructor.Invoke(
             [serviceUrl, httpClient, conversationClient, userTokenClient, logger, null]);
+    }
+
+    private static HttpClient CreateLazyHttpClient(IRestTransport transport)
+    {
+        return new HttpClient(new RestTransportHandler(transport))
+        {
+            BaseAddress = transport.Endpoint
+        };
+    }
+
+    private sealed class RestTransportHandler(IRestTransport transport) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            using var forwardedRequest = await CloneRequestAsync(request, cancellationToken).ConfigureAwait(false);
+            using var httpClient = await transport.GetHttpClientAsync().ConfigureAwait(false);
+            return await httpClient.SendAsync(forwardedRequest, cancellationToken).ConfigureAwait(false);
+        }
+
+        private static async Task<HttpRequestMessage> CloneRequestAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var clone = new HttpRequestMessage(request.Method, request.RequestUri)
+            {
+                Version = request.Version,
+                VersionPolicy = request.VersionPolicy
+            };
+
+            foreach (var header in request.Headers)
+            {
+                clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+
+            foreach (var option in request.Options)
+            {
+                clone.Options.Set(new HttpRequestOptionsKey<object>(option.Key), option.Value);
+            }
+
+            if (request.Content != null)
+            {
+                var content = new ByteArrayContent(
+                    await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false));
+                foreach (var header in request.Content.Headers)
+                {
+                    content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+                clone.Content = content;
+            }
+
+            return clone;
+        }
     }
 }

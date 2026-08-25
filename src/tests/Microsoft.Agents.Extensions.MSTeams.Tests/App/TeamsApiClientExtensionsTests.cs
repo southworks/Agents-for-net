@@ -61,6 +61,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
             Assert.NotNull(requestedUri);
             Assert.Equal(regionalEndpoint.Host, requestedUri.Host);
+            userTokenClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Once);
+            connectorClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Never);
         }
 
         [Fact]
@@ -93,6 +99,36 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
             Assert.NotNull(requestedUri);
             Assert.Equal(regionalEndpoint.Host, requestedUri.Host);
+            connectorClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Once);
+            userTokenClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task SetTeamsApiClient_DoesNotAcquireTransportsWhenApiIsUnused()
+        {
+            var connectorClient = CreateRestTransport<IConnectorClient>(
+                new Uri("https://smba.trafficmanager.net/amer/"),
+                CreateResponseClient("{}"));
+            var userTokenClient = CreateRestTransport<IUserTokenClient>(
+                new Uri("https://token.botframework.com/"),
+                CreateResponseClient("{}"));
+            var turnContext = CreateTurnContext(connectorClient.Object, userTokenClient.Object);
+            var app = CreateApplication(turnContext, CreateResponseClient("{}"));
+            _ = new TeamsAgentExtension(app);
+            app.OnActivity(ActivityTypes.Message, (_, _, _) => Task.CompletedTask);
+
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            connectorClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Never);
+            userTokenClient.As<IRestTransport>().Verify(
+                transport => transport.GetHttpClientAsync(),
+                Times.Never);
         }
 
         [Fact]

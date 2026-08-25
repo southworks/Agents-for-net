@@ -199,6 +199,30 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             Assert.Equal("inbound-message", promptPreview.MessageId);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public async Task SendActivityAsync_String_RejectsNullOrWhitespace(string text)
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => turnContext.SendActivityAsync(text));
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_TargetedInboundWithoutQuotedPlaceholder_PreservesWhitespace()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivityAsync("    indented code");
+
+            Assert.Equal("    indented code", Assert.Single(captured).Text);
+        }
+
         [Fact]
         public async Task SendActivitiesAsync_TargetedInbound_AddsPromptPreviewToEachMessage()
         {
@@ -262,6 +286,19 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             Assert.Equal("hello", sent.Text);
             Assert.Same(TargetUser, sent.Recipient);
             Assert.True(sent.IsTargetedActivity());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public async Task SendTargetedActivityAsync_Text_RejectsNullOrWhitespace(string text)
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+                turnContext.SendTargetedActivityAsync(text, TargetUser));
         }
 
         [Fact]
