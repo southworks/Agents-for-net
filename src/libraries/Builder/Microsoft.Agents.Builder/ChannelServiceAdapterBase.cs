@@ -170,13 +170,13 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(identity, nameof(identity));
             AssertionHelpers.ThrowIfNull(parameters, nameof(parameters));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
-            ValidateOutboundServiceUrl(serviceUrl, nameof(serviceUrl));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
 
             var reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl)
                 .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(identity.GetIncomingAudience(), role: RoleTypes.User))
                 .Build();
+            ValidateOutboundServiceUrl(reference.ServiceUrl, nameof(serviceUrl));
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
             // with the correct context and then make the create conversation call.

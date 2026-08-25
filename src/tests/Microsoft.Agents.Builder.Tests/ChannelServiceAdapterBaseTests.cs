@@ -441,9 +441,33 @@ namespace Microsoft.Agents.Builder.Tests
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(
                 () => adapter.CreateConversationAsync(
-                    new ClaimsIdentity(),
+                    new ClaimsIdentity([new Claim("aud", "agent-id")]),
                     Channels.Test,
                     "https://evil.example.com",
+                    null,
+                    new ConversationParameters(),
+                    ContinueCallback,
+                    CancellationToken.None));
+            factory.Verify(
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateConversationAsync_ShouldRejectDisallowedDefaultServiceUrl()
+        {
+            // Arrange
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(
+                factory.Object,
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => adapter.CreateConversationAsync(
+                    new ClaimsIdentity([new Claim("aud", "agent-id")]),
+                    Channels.Test,
+                    null,
                     null,
                     new ConversationParameters(),
                     ContinueCallback,
