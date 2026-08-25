@@ -1289,6 +1289,51 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [Fact]
+        public async Task Test_SelectItemHandlerFailure_ReturnsWrappedErrorResponse()
+        {
+            IActivity[] activitiesToSend = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => activitiesToSend = activities));
+            var turnContext = new TurnContext(adapter, new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = Microsoft.Teams.Apps.InvokeNames.MessageExtensionSelectItem,
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new { }),
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                StartTypingTimer = false,
+                Connections = new Mock<IConnections>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
+            });
+            var extension = new TeamsAgentExtension(app);
+            app.RegisterExtension(extension, ext =>
+            {
+                ext.MessageExtensions.OnSelectItem<object>((_, _, _, _) =>
+                    throw new InvalidOperationException("select failed"));
+            });
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => app.OnTurnAsync(turnContext, CancellationToken.None));
+
+            var sent = Assert.Single(activitiesToSend);
+            var invokeResponse = Assert.IsType<InvokeResponse>(sent.Value);
+            Assert.Equal(500, invokeResponse.Status);
+            var response = Assert.IsType<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse>(
+                invokeResponse.Body);
+            Assert.Equal(
+                Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponseTypes.Message,
+                response.ComposeExtension.Type);
+            Assert.Equal(
+                "An error occurred while processing the select item action: select failed",
+                response.ComposeExtension.Text);
+        }
+
+        [Fact]
         public async Task Test_SelectItem_NotHit()
         {
             // Arrange

@@ -245,6 +245,16 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         }
 
         [Fact]
+        public async Task SendActivitiesAsync_NullActivities_ThrowsArgumentNullException()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => turnContext.SendActivitiesAsync(null));
+        }
+
+        [Fact]
         public async Task SendTargetedActivityAsync_RecipientArgumentOverridesActivityRecipient()
         {
             IActivity[] captured = null;

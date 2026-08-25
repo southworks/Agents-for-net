@@ -56,6 +56,8 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     /// <inheritdoc/>
     public override Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
     {
+        AssertionHelpers.ThrowIfNull(activities, nameof(activities));
+
         foreach (var activity in activities)
         {
             ApplyPromptPreview(activity);

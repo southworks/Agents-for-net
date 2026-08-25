@@ -57,13 +57,16 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
             }
             catch (Exception ex)
             {
-                var result = new Microsoft.Teams.Apps.MessageExtensions.ComposeExtension
+                var response = new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse
                 {
-                    Type = Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponseTypes.Message,
-                    Text = $"An error occurred while processing the select item action: {ex.Message}"
+                    ComposeExtension = new Microsoft.Teams.Apps.MessageExtensions.ComposeExtension
+                    {
+                        Type = Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponseTypes.Message,
+                        Text = $"An error occurred while processing the select item action: {ex.Message}"
+                    }
                 };
 
-                await TeamsAgentExtension.SetResponse(ctx, result, 500).ConfigureAwait(false);
+                await TeamsAgentExtension.SetResponse(ctx, response, 500).ConfigureAwait(false);
                 throw;
             }
         };
