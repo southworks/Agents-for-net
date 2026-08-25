@@ -143,15 +143,14 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
                 cancellationToken: cancellationToken);
             continuationToken = currentPage.ContinuationToken;
 
-            foreach (var activity in from teamMember in currentPage.Members
-                let activity = Activity.CreateMessageActivity()
-                    .WithText($"{teamMember.Name}, this is a **targeted message** - only you can see this.")
-                    .WithRecipient(
-                        new ChannelAccount(teamMember.Id, teamMember.Name, RoleTypes.User),
-                        isTargeted: true)
-                select activity)
+            foreach (var teamMember in currentPage.Members)
             {
-                await turnContext.SendActivityAsync(activity, cancellationToken);
+                var member = teamMember ?? throw new InvalidOperationException("The Teams members response contained a null member.");
+                var recipient = new ChannelAccount(member.Id, member.Name, RoleTypes.User);
+                var activity = Activity.CreateMessageActivity()
+                    .WithText($"{member.Name}, this is a **targeted message** - only you can see this.");
+
+                await turnContext.SendTargetedActivityAsync(activity, recipient, cancellationToken);
             }
         }
         while (continuationToken != null);
@@ -177,7 +176,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     {
         var response = Activity.CreateMessageActivity()
             .WithText("This targeted response includes Prompt Preview metadata for your slash command.")
-            .WithRecipient(turnContext.Activity.From, isTargeted: true);
+            .WithTargetedRecipient(turnContext.Activity.From);
 
         // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
         await turnContext.SendActivityAsync(response, cancellationToken);

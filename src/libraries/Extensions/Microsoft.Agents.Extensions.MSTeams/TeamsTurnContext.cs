@@ -9,7 +9,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Graph;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -64,21 +63,55 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     }
 
     /// <inheritdoc/>
-    public Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+    public Task<ResourceResponse> SendTargetedActivityAsync(
+        IActivity activity,
+        ChannelAccount recipient,
+        CancellationToken cancellationToken = default)
     {
-        return SendActivityAsync(activity.Clone().MakeTargetedActivity(), cancellationToken);
+        AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+
+        return SendActivityAsync(activity.Clone().WithTargetedRecipient(recipient), cancellationToken);
     }
 
     /// <inheritdoc/>
-    public Task<ResourceResponse[]> SendTargetedActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
+    public Task<ResourceResponse> SendTargetedActivityAsync(
+        IActivity activity,
+        string recipientId,
+        CancellationToken cancellationToken = default)
     {
-        var clonedActivities = new List<IActivity>(activities.Length);
-        foreach (var activity in activities)
-        {
-            clonedActivities.Add(activity.Clone().MakeTargetedActivity());
-        }
+        return SendTargetedActivityAsync(
+            activity,
+            new ChannelAccount(recipientId, role: RoleTypes.User),
+            cancellationToken);
+    }
 
-        return SendActivitiesAsync([.. clonedActivities], cancellationToken);
+    /// <inheritdoc/>
+    public Task<ResourceResponse> SendTargetedActivityAsync(
+        string text,
+        ChannelAccount recipient,
+        CancellationToken cancellationToken = default)
+    {
+        return SendTargetedActivityAsync(
+            new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = text,
+                InputHint = InputHints.AcceptingInput
+            },
+            recipient,
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ResourceResponse> SendTargetedActivityAsync(
+        string text,
+        string recipientId,
+        CancellationToken cancellationToken = default)
+    {
+        return SendTargetedActivityAsync(
+            text,
+            new ChannelAccount(recipientId, role: RoleTypes.User),
+            cancellationToken);
     }
 
     private void ApplyPromptPreview(IActivity activity)

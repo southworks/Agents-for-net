@@ -43,12 +43,12 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void WithRecipient_Targeted_SetsRecipientAndAddsTargetedTreatment()
+        public void WithTargetedRecipient_SetsRecipientAndAddsTargetedTreatment()
         {
             var recipient = new ChannelAccount { Id = "user-id", Name = "User" };
             IActivity activity = new Activity { Type = ActivityTypes.Message };
 
-            var result = activity.WithRecipient(recipient, isTargeted: true);
+            var result = activity.WithTargetedRecipient(recipient);
 
             Assert.Same(activity, result);
             Assert.Same(recipient, result.Recipient);
@@ -57,11 +57,11 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void WithRecipient_IdTargeted_CreatesUserRecipientAndAddsTargetedTreatment()
+        public void WithTargetedRecipient_IdCreatesUserRecipientAndAddsTargetedTreatment()
         {
             IActivity activity = new Activity { Type = ActivityTypes.Message };
 
-            var result = activity.WithRecipient("user-id", isTargeted: true);
+            var result = activity.WithTargetedRecipient("user-id");
 
             Assert.Same(activity, result);
             Assert.Equal("user-id", result.Recipient.Id);
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void WithRecipient_IdDefaultsToNotTargeted()
+        public void WithRecipient_IdSetsUserRecipient()
         {
             IActivity activity = new Activity { Type = ActivityTypes.Message };
 
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void WithRecipient_NotTargeted_RemovesTargetedTreatment()
+        public void WithRecipient_PreservesExistingTargetedTreatment()
         {
             var recipient = new ChannelAccount { Id = "user-id" };
             IActivity activity = new Activity
@@ -97,10 +97,10 @@ namespace Microsoft.Agents.Model.Tests
                 ]
             };
 
-            activity.WithRecipient(recipient, isTargeted: false);
+            activity.WithRecipient(recipient);
 
             Assert.Same(recipient, activity.Recipient);
-            Assert.DoesNotContain(
+            Assert.Contains(
                 activity.Entities.OfType<ActivityTreatment>(),
                 treatment => treatment.Treatment == ActivityTreatmentTypes.Targeted);
             Assert.Contains(
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void WithRecipient_Targeted_CollapsesDuplicateTargetedTreatments()
+        public void WithTargetedRecipient_CollapsesDuplicateTargetedTreatments()
         {
             IActivity activity = new Activity
             {
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Model.Tests
                 ]
             };
 
-            activity.WithRecipient(new ChannelAccount { Id = "user-id" }, isTargeted: true);
+            activity.WithTargetedRecipient(new ChannelAccount { Id = "user-id" });
 
             Assert.Single(
                 activity.Entities.OfType<ActivityTreatment>(),

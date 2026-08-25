@@ -228,7 +228,22 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
-        public IActivity WithRecipient(ChannelAccount recipient, bool isTargeted = false)
+        public IActivity WithRecipient(ChannelAccount recipient)
+        {
+            AssertionHelpers.ThrowIfNull(recipient, nameof(recipient));
+
+            Recipient = recipient;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithRecipient(string id)
+        {
+            return WithRecipient(new ChannelAccount(id, role: RoleTypes.User));
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithTargetedRecipient(ChannelAccount recipient)
         {
             AssertionHelpers.ThrowIfNull(recipient, nameof(recipient));
 
@@ -241,7 +256,7 @@ namespace Microsoft.Agents.Core.Models
                     if (Entities[index] is ActivityTreatment treatment
                         && treatment.Treatment == ActivityTreatmentTypes.Targeted)
                     {
-                        if (!isTargeted || foundTargetedTreatment)
+                        if (foundTargetedTreatment)
                         {
                             Entities.RemoveAt(index);
                         }
@@ -253,7 +268,7 @@ namespace Microsoft.Agents.Core.Models
                 }
             }
 
-            if (isTargeted && !foundTargetedTreatment)
+            if (!foundTargetedTreatment)
             {
                 Entities ??= [];
                 Entities.Add(new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted });
@@ -263,9 +278,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
-        public IActivity WithRecipient(string id, bool isTargeted = false)
+        public IActivity WithTargetedRecipient(string id)
         {
-            return WithRecipient(new ChannelAccount(id, role: RoleTypes.User), isTargeted);
+            return WithTargetedRecipient(new ChannelAccount(id, role: RoleTypes.User));
         }
 
         /// <inheritdoc/>
@@ -457,7 +472,7 @@ namespace Microsoft.Agents.Core.Models
                 throw new InvalidOperationException("Cannot mark activity as targeted because both the Activity.Recipient and `user` argument are null. At least one must be provided.");
             }
 
-            return WithRecipient(user ?? Recipient, isTargeted: true);
+            return WithTargetedRecipient(user ?? Recipient);
         }
 
         /// <inheritdoc/>
