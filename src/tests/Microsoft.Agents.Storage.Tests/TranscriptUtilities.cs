@@ -22,6 +22,10 @@ namespace Microsoft.Agents.Storage.Tests
 
         private static readonly object _syncRoot = new object();
 
+        private static StringComparison PathComparison => Path.DirectorySeparatorChar == '\\'
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
         private static string TranscriptsLocalPath { get; set; } = @"../../../../../tests/Transcripts/";
 
         /// <summary>
@@ -170,9 +174,9 @@ namespace Microsoft.Agents.Storage.Tests
                     var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);
                     var destPath = Path.GetFullPath(Path.Combine(path, entryName));
 
-                    if (!destPath.StartsWith(fullExtractionRoot, StringComparison.OrdinalIgnoreCase))
+                    if (!destPath.StartsWith(fullExtractionRoot, PathComparison))
                     {
-                        throw new UnauthorizedAccessException($"Access to path '{destPath}' is denied.");
+                        throw new UnauthorizedAccessException($"Access to path '{destPath}' is denied for zip entry '{entry.FullName}'.");
                     }
 
                     // Validate the resolved destination path is within the extraction directory
@@ -245,8 +249,8 @@ namespace Microsoft.Agents.Storage.Tests
 
             // Manual relative path check for .NET Framework compatibility
             // This works for both .NET Framework and .NET Core/.NET
-            if (!fullTarget.StartsWith(fullRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(fullTarget, fullRoot, StringComparison.OrdinalIgnoreCase))
+            if (!fullTarget.StartsWith(fullRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, PathComparison)
+                && !string.Equals(fullTarget, fullRoot, PathComparison))
             {
                 throw new UnauthorizedAccessException($"Access to path '{targetPath}' is denied.");
             }
