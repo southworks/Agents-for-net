@@ -66,6 +66,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, and file consent
 - Aligns its models and public feature surface with the Teams SDK. When the Teams SDK removes a feature, MSTeams removes the corresponding feature rather than maintaining a compatibility implementation. These removals are breaking changes for MSTeams users and may occur in minor or patch releases.
 - Depends on teams.net's `Microsoft.Teams.Apps` NuGet package for Teams schema, API clients, and feature types (e.g. `Microsoft.Teams.Apps.Schema.TeamsChannelData`, `Microsoft.Teams.Apps.Clients.ApiClient`, `Microsoft.Teams.Apps.MessageExtensions.*`); it reimplements only routing on `AgentApplication`
+- Agent 365 lifecycle events are not handled by the Agents SDK or the MSTeams extension. Use the A365 Agent Extension (`Microsoft.Agents.A365.Notifications`) for these events.
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
 - Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
 - Feature areas exposed as properties on `TeamsAgentExtension` (accessed via the generated `Teams` property):
@@ -80,7 +81,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - `ITeamsTurnContext` / `TeamsTurnContext` — `SendTargetedActivityAsync()` for sending to specific recipients
 - `TeamsActivityExtensions` — activity helpers: `TeamsGetChannelId()`, `TeamsGetMeetingInfo()`, `TeamsGetTeamInfo()`, `TeamsEnableFeedbackLoop()`, etc.
 - Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
-- FeedbackLoop is handled by AgentApplication.OnFeedbackLoop
+- Feedback is the FeedbackLoop feature in `AgentApplication`; use `AgentApplication.OnFeedbackLoop()` or `[FeedbackLoopRoute]` rather than treating it as an MSTeams-specific feature.
 - Adaptive Cards support is handled by AgentApplication.AdaptiveCards
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
