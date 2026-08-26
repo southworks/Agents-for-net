@@ -161,6 +161,7 @@ namespace Microsoft.Agents.Storage.Tests
 
                 // Create extraction folder in temp folder
                 CreateDirectoryIfNotExists(path);
+                var fullExtractionRoot = Path.GetFullPath(path + Path.DirectorySeparatorChar);
 
                 // Iterate each entry in the zip file
                 foreach (var entry in zipArchive.Entries
@@ -169,8 +170,13 @@ namespace Microsoft.Agents.Storage.Tests
                     var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);
                     var destPath = Path.GetFullPath(Path.Combine(path, entryName));
 
+                    if (!destPath.StartsWith(fullExtractionRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new UnauthorizedAccessException($"Access to path '{destPath}' is denied.");
+                    }
+
                     // Validate the resolved destination path is within the extraction directory
-                    EnsurePathIsSafe(path, destPath);
+                    EnsurePathIsSafe(fullExtractionRoot, destPath);
 
                     if (string.IsNullOrEmpty(entry.Name))
                     {
