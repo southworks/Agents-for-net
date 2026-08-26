@@ -166,19 +166,20 @@ namespace Microsoft.Agents.Storage.Tests
                 foreach (var entry in zipArchive.Entries
                     .Where(e => e.FullName.StartsWith(zipFolderEntry.FullName)))
                 {
-                    var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);  // CodeQL [SM02729] This is used for test validation. Both Source and destination are controlled and safe. 
+                    var entryName = entry.FullName.Remove(0, zipFolderEntry.FullName.Length);
+                    var destPath = Path.GetFullPath(Path.Combine(path, entryName));
 
-                    // Validate entryName contains only allowed directory/file characters
-                    EnsurePathIsSafe(path, Path.Combine(path, entryName));
+                    // Validate the resolved destination path is within the extraction directory
+                    EnsurePathIsSafe(path, destPath);
 
                     if (string.IsNullOrEmpty(entry.Name))
                     {
                         // No Name, it is a folder
-                        CreateDirectoryIfNotExists(Path.Combine(path, entryName));
+                        CreateDirectoryIfNotExists(destPath);
                     }
                     else
                     {
-                        entry.ExtractToFile(Path.Combine(path, entryName), overwrite: true);
+                        entry.ExtractToFile(destPath, overwrite: true);
                     }
                 }
             }
