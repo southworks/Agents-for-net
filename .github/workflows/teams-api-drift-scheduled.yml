@@ -1,0 +1,197 @@
+name: Teams API drift (scheduled)
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: teams-api-drift-scheduled
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Compare declared version with latest stable
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACTS: artifacts/teams-api-drift
+      TOOL: scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj
+      TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
+      MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
+      CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Build drift tool
+        id: tool
+        continue-on-error: true
+        run: dotnet build "$TOOL" -c Release
+
+      - name: Resolve baseline
+        id: baseline
+        if: always() && steps.tool.outcome == 'success'
+        run: echo "version=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)" >> "$GITHUB_OUTPUT"
+
+      - name: Compare with latest listed stable release
+        id: compare
+        if: always() && steps.baseline.outcome == 'success'
+        continue-on-error: true
+        run: |
+          candidate=$(dotnet run --project "$TOOL" -c Release --no-build -- compare --from "${{ steps.baseline.outputs.version }}" --output "$ARTIFACTS")
+          echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
+
+      - name: Build MSTeams against candidate
+        id: build
+        if: always() && steps.compare.outcome == 'success'
+        continue-on-error: true
+        run: dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="${{ steps.compare.outputs.candidate }}"
+
+      - name: Run drift tool tests
+        id: drift_tests
+        if: always()
+        continue-on-error: true
+        run: dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+
+      - name: Run candidate contract and boundary tests
+        id: candidate_tests
+        if: always() && steps.compare.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          for tfm in net8.0 net10.0; do
+            dotnet test "$TESTS" -c Release -f "$tfm" -p:Microsoft_Teams_Apps_PkgVer="${{ steps.compare.outputs.candidate }}" --filter 'Category=TeamsApiContract|Category=TeamsApiBoundary'
+          done
+
+      - name: Collect usage
+        id: collect
+        if: always() && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- collect-usage
+          --assembly bin/Release/CplTeams/net8.0/Microsoft.Agents.Extensions.MSTeams.dll
+          --assembly bin/Release/CplTeams/net10.0/Microsoft.Agents.Extensions.MSTeams.dll
+          --output "$ARTIFACTS/collected-usage.json"
+
+      - name: Validate baseline manifest
+        id: manifest
+        if: always() && steps.collect.outcome == 'success' && steps.compare.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage
+          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json"
+          --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json"
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
+
+      - name: Classify drift
+        id: classify
+        if: always() && steps.compare.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- classify
+          --comparison "$ARTIFACTS/raw-api-diff.json" --manifest "$MANIFEST"
+          --capabilities "$CAPABILITIES" --output "$ARTIFACTS/findings.json"
+
+      - name: Write test summary and deterministic report
+        id: report
+        if: always() && steps.classify.outcome == 'success'
+        continue-on-error: true
+        run: |
+          dotnet run --project "$TOOL" -c Release --no-build -- write-test-summary --output "$ARTIFACTS/test-summary.json" --check tool=${{ steps.tool.outcome }} --check compare=${{ steps.compare.outcome }} --check build=${{ steps.build.outcome }} --check drift-tests=${{ steps.drift_tests.outcome }} --check candidate-tests=${{ steps.candidate_tests.outcome }} --check manifest=${{ steps.manifest.outcome }}
+          dotnet run --project "$TOOL" -c Release --no-build -- render-report --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --output "$ARTIFACTS/deterministic-report.md"
+
+      - name: Prepare bounded Copilot context
+        id: context
+        if: always() && steps.report.outcome == 'success' && github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- prepare-agent-context
+          --findings "$ARTIFACTS/findings.json" --manifest "$MANIFEST" --capabilities "$CAPABILITIES"
+          --deterministic-report "$ARTIFACTS/deterministic-report.md" --test-summary "$ARTIFACTS/test-summary.json"
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
+
+      - name: Set up Node for external Copilot CLI
+        if: steps.context.outcome == 'success'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+
+      - name: Generate Copilot advisory
+        id: copilot
+        if: steps.context.outcome == 'success'
+        continue-on-error: true
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+        run: |
+          npm install --global @github/copilot
+          copilot --no-ask-user --deny-tool '*' --log-level none -p "$(cat scripts/TeamsApiDrift/copilot-instructions.md)
+
+          $(cat "$ARTIFACTS/agent-context.json")" > "$ARTIFACTS/copilot-report.md"
+
+      - name: Validate Copilot advisory
+        id: validate_agent
+        if: always() && steps.copilot.outcome == 'success'
+        continue-on-error: true
+        run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
+
+      - name: Upload drift evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: teams-api-drift-scheduled-${{ github.run_id }}
+          path: artifacts/teams-api-drift
+          retention-days: 21
+          if-no-files-found: warn
+
+      - name: Create or update advisory issue
+        if: always() && steps.classify.outcome == 'success' && steps.report.outcome == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REPORT_PATH: ${{ steps.validate_agent.outcome == 'success' && format('{0}/copilot-report.md', env.ARTIFACTS) || format('{0}/deterministic-report.md', env.ARTIFACTS) }}
+          FINDINGS_PATH: artifacts/teams-api-drift/findings.json
+        with:
+          script: |
+            const fs = require('fs');
+            const findings = JSON.parse(fs.readFileSync(process.env.FINDINGS_PATH, 'utf8'));
+            if (findings.findings.length === 0) return;
+            const marker = '<!-- teams-api-drift-scheduled -->';
+            const body = `${marker}\n${fs.readFileSync(process.env.REPORT_PATH, 'utf8')}`;
+            const title = `Microsoft.Teams.Apps drift: ${findings.fromVersion} → ${findings.toVersion}`;
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
+            if (existing) await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body });
+            else await github.rest.issues.create({ owner, repo, title, body });
+
+      - name: Enforce final drift policy
+        if: always()
+        shell: bash
+        run: |
+          failures=()
+          [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
+          [[ "${{ steps.baseline.outcome }}" == success ]] || failures+=(baseline)
+          [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
+          [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
+          [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
+          [[ "${{ steps.candidate_tests.outcome }}" == success ]] || failures+=(candidate-tests)
+          [[ "${{ steps.collect.outcome }}" == success ]] || failures+=(usage-collection)
+          [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
+          [[ "${{ steps.classify.outcome }}" == success ]] || failures+=(classification)
+          [[ "${{ steps.report.outcome }}" == success ]] || failures+=(deterministic-report)
+          if [[ "${{ github.event_name }}" == workflow_dispatch ]]; then
+            [[ "${{ steps.context.outcome }}" == success ]] || failures+=(agent-context)
+            [[ "${{ steps.copilot.outcome }}" == success ]] || failures+=(copilot-report)
+            [[ "${{ steps.validate_agent.outcome }}" == success ]] || failures+=(agent-report-validation)
+          fi
+          if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
+          if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi
