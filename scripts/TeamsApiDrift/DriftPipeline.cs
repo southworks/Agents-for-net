@@ -273,9 +273,25 @@ public static partial class AgentReportValidator
         var missing = findings.Findings.Where(item => item.Classification is "blocking" or "required").Select(item => item.Id).Where(id => !referenced.Contains(id, StringComparer.Ordinal)).Order(StringComparer.Ordinal).ToArray();
         if (unknown.Length > 0) errors.Add($"Unknown finding ID(s): {string.Join(", ", unknown)}.");
         if (missing.Length > 0) errors.Add($"Missing mandatory finding ID(s): {string.Join(", ", missing)}.");
-        foreach (var line in normalized.Split('\n').Where(line => Regex.IsMatch(line, "^[-*+] ")))
+        var inSuggestedImplementationIssues = false;
+        foreach (var line in normalized.Split('\n'))
         {
-            if (!FindingIdRegex().IsMatch(line) && !line.StartsWith("- No ", StringComparison.OrdinalIgnoreCase)) errors.Add($"Action item is not tied to a finding ID: {line}");
+            if (line == "## Suggested implementation issues")
+            {
+                inSuggestedImplementationIssues = true;
+                continue;
+            }
+
+            if (line.StartsWith("## ", StringComparison.Ordinal))
+            {
+                inSuggestedImplementationIssues = false;
+                continue;
+            }
+
+            if (inSuggestedImplementationIssues && Regex.IsMatch(line, "^[-*+] ") && !FindingIdRegex().IsMatch(line) && !line.StartsWith("- No ", StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add($"Action item is not tied to a finding ID: {line}");
+            }
         }
         return new AgentReportValidation(1, errors.Count == 0, referenced, missing, unknown, errors);
     }

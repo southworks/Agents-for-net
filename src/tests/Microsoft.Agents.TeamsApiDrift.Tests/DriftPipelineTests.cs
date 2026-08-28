@@ -278,6 +278,14 @@ public sealed class DriftPipelineTests
         Assert.True(AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking"))).Valid);
     }
 
+    [Fact]
+    public void AgentReportValidationAllowsGenericValidationChecklistItems()
+    {
+        var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", "MTAPI-0001")
+            .Replace("## Validation checklist\nText.", "## Validation checklist\n- [ ] Build the extension against the candidate package.", StringComparison.Ordinal);
+        Assert.True(AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking"))).Valid);
+    }
+
     [Theory]
     [InlineData("MTAPI-9999", "Unknown finding")]
     [InlineData("", "Missing mandatory")]
@@ -321,6 +329,7 @@ public sealed class DriftPipelineTests
     public void AgentReportValidationRejectsDuplicateSectionsAndUnattributedActions()
     {
         var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", "MTAPI-0001")
+            .Replace("## Suggested implementation issues\nText.", "## Suggested implementation issues\n- Update the extension.", StringComparison.Ordinal)
             + "\n## Summary\n- Update the extension.\n";
         var validation = AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking")));
         Assert.False(validation.Valid);
