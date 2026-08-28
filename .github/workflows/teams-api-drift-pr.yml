@@ -21,6 +21,8 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  # Required when Copilot CLI authenticates with the workflow-scoped token.
+  copilot-requests: write
 
 concurrency:
   group: teams-api-drift-pr-${{ github.event.pull_request.number || github.ref }}
@@ -36,6 +38,10 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
+      # TEMPORARY LOCAL DRIFT FIXTURE: remove these variables and the marked
+      # workflow branches after validating the fake-package PR.
+      LOCAL_TEST_FEED: scripts/TeamsApiDrift/test-packages
+      LOCAL_TEST_CANDIDATE: 2.1.0-driftfixture.20260827.1
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,11 +78,46 @@ jobs:
           echo "from=$(cat "$RUNNER_TEMP/from.txt")" >> "$GITHUB_OUTPUT"
           echo "to=$(cat "$RUNNER_TEMP/to.txt")" >> "$GITHUB_OUTPUT"
 
+      # TEMPORARY LOCAL DRIFT FIXTURE: make the committed fake package available
+      # when this PR or a manual run selects the fixture version.
+      - name: Configure temporary local package source
+        id: local_source
+        if: >-
+          always() && steps.versions.outcome == 'success' &&
+          steps.versions.outputs.to == env.LOCAL_TEST_CANDIDATE
+        shell: bash
+        run: |
+          package="$LOCAL_TEST_FEED/Microsoft.Teams.Apps.$LOCAL_TEST_CANDIDATE.nupkg"
+          if [[ ! -f "$package" ]]; then
+            echo "Expected local drift fixture was not found: $package" >&2
+            exit 1
+          fi
+          dotnet nuget add source "$GITHUB_WORKSPACE/$LOCAL_TEST_FEED" --name teams-api-drift-local --configfile nuget.config
+
       - name: Compare normalized package metadata
         id: compare
-        if: always() && steps.versions.outcome == 'success'
+        if: >-
+          always() && steps.versions.outcome == 'success' &&
+          (steps.versions.outputs.to != env.LOCAL_TEST_CANDIDATE || steps.local_source.outcome == 'success')
         continue-on-error: true
-        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "${{ steps.versions.outputs.from }}" --to "${{ steps.versions.outputs.to }}" --output "$ARTIFACTS"
+        shell: bash
+        run: |
+          if [[ "${{ steps.versions.outputs.to }}" == "$LOCAL_TEST_CANDIDATE" ]]; then
+            # TEMPORARY LOCAL DRIFT FIXTURE: compare against the committed fake
+            # package; remove this branch when fixture testing is complete.
+            dotnet run --project "$TOOL" -c Release --no-build -- compare \
+              --from "${{ steps.versions.outputs.from }}" \
+              --to "${{ steps.versions.outputs.to }}" \
+              --source nuget \
+              --source teams-api-drift-local \
+              --config-file nuget.config \
+              --output "$ARTIFACTS"
+          else
+            dotnet run --project "$TOOL" -c Release --no-build -- compare \
+              --from "${{ steps.versions.outputs.from }}" \
+              --to "${{ steps.versions.outputs.to }}" \
+              --output "$ARTIFACTS"
+          fi
 
       - name: Build MSTeams against candidate
         id: build
@@ -181,8 +222,9 @@ jobs:
         if: steps.context.outcome == 'success'
         continue-on-error: true
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
-          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          # Requires copilot-requests: write and the southworks organization
+          # policy that allows Copilot CLI usage billed to the organization.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm install --global @github/copilot
           # The advisory receives its complete, bounded context in the prompt.
@@ -232,6 +274,9 @@ jobs:
           failures=()
           [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
           [[ "${{ steps.versions.outcome }}" == success ]] || failures+=(versions)
+          if [[ "${{ steps.versions.outputs.to }}" == "$LOCAL_TEST_CANDIDATE" ]]; then
+            [[ "${{ steps.local_source.outcome }}" == success ]] || failures+=(local-package-source)
+          fi
           [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
           [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
           [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
