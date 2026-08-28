@@ -112,6 +112,28 @@ public sealed class DriftPipelineTests
     }
 
     [Fact]
+    public async Task PackageServiceContinuesAfterASourceFailsToDownloadThePackage()
+    {
+        var root = TemporaryDirectory();
+        var first = Path.Combine(root, "first");
+        var second = Path.Combine(root, "second");
+        Directory.CreateDirectory(first);
+        Directory.CreateDirectory(second);
+        File.WriteAllText(Path.Combine(first, "Microsoft.Teams.Apps.9.9.9.nupkg"), "not a NuGet package");
+        CreateFixturePackage(second, "9.9.9", includeNet8: true);
+        try
+        {
+            var model = await new PackageApiService([first, second]).ExtractAsync("9.9.9");
+            Assert.Equal("9.9.9", model.Version);
+            Assert.All(model.Frameworks, framework => Assert.NotNull(framework.Asset));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PackageServiceReportsMissingVersionAcrossSources()
     {
         var root = TemporaryDirectory();

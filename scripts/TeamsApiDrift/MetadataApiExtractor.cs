@@ -16,26 +16,35 @@ namespace Microsoft.Agents.TeamsApiDrift;
 public sealed class PackageApiService
 {
     private static readonly string[] TargetFrameworks = ["net8.0", "net10.0"];
-    private readonly SourceRepository _repository;
+    private const string DefaultSource = "https://api.nuget.org/v3/index.json";
+    private readonly IReadOnlyList<SourceRepository> _repositories;
 
-    public PackageApiService()
+    public PackageApiService(IEnumerable<string>? sources = null, string? configFile = null)
     {
-        _repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
+        _repositories = ResolveSources(sources, configFile)
+            .Select(source => Repository.CreateSource(Repository.Provider.GetCoreV3(), source))
+            .ToArray();
     }
 
     public async Task<string> GetLatestStableVersionAsync(CancellationToken cancellationToken = default)
     {
-        var resource = await _repository.GetResourceAsync<PackageMetadataResource>(cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("NuGet metadata resource is unavailable.");
         using var cache = new SourceCacheContext();
-        var metadata = await resource.GetMetadataAsync(
-            PackageConstants.PackageId,
-            includePrerelease: false,
-            includeUnlisted: false,
-            cache,
-            NullLogger.Instance,
-            cancellationToken).ConfigureAwait(false);
-        var latest = metadata.Select(item => item.Identity.Version)
+        var versions = new List<NuGetVersion>();
+        foreach (var repository in _repositories)
+        {
+            var resource = await repository.GetResourceAsync<PackageMetadataResource>(cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException($"NuGet metadata resource is unavailable for {repository.PackageSource.Source}.");
+            var metadata = await resource.GetMetadataAsync(
+                PackageConstants.PackageId,
+                includePrerelease: false,
+                includeUnlisted: false,
+                cache,
+                NullLogger.Instance,
+                cancellationToken).ConfigureAwait(false);
+            versions.AddRange(metadata.Select(item => item.Identity.Version));
+        }
+
+        var latest = versions
             .Where(version => !version.IsPrerelease)
             .OrderBy(version => version)
             .LastOrDefault();
@@ -50,26 +59,71 @@ public sealed class PackageApiService
             throw new ArgumentException($"Invalid NuGet version: {version}", nameof(version));
         }
 
-        var resource = await _repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("NuGet package resource is unavailable.");
         using var cache = new SourceCacheContext();
-        await using var packageStream = new MemoryStream();
-        var copied = await resource.CopyNupkgToStreamAsync(
-            PackageConstants.PackageId,
-            parsedVersion,
-            packageStream,
-            cache,
-            NullLogger.Instance,
-            cancellationToken).ConfigureAwait(false);
-        if (!copied)
+        var sourceFailures = new List<string>();
+        foreach (var repository in _repositories)
         {
-            throw new InvalidOperationException($"Could not download {PackageConstants.PackageId}@{version}.");
+            try
+            {
+                var resource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken).ConfigureAwait(false)
+                    ?? throw new InvalidOperationException($"NuGet package resource is unavailable for {repository.PackageSource.Source}.");
+                await using var packageStream = new MemoryStream();
+                var copied = await resource.CopyNupkgToStreamAsync(
+                    PackageConstants.PackageId,
+                    parsedVersion,
+                    packageStream,
+                    cache,
+                    NullLogger.Instance,
+                    cancellationToken).ConfigureAwait(false);
+                if (!copied)
+                {
+                    continue;
+                }
+
+                packageStream.Position = 0;
+                using var archive = new ZipArchive(packageStream, ZipArchiveMode.Read, leaveOpen: false);
+                var frameworks = TargetFrameworks.Select(tfm => ExtractFramework(archive, tfm)).ToArray();
+                return new ApiModel(1, PackageConstants.PackageId, parsedVersion.ToNormalizedString(), frameworks);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                sourceFailures.Add($"{repository.PackageSource.Source}: {exception.Message}");
+            }
         }
 
-        packageStream.Position = 0;
-        using var archive = new ZipArchive(packageStream, ZipArchiveMode.Read, leaveOpen: false);
-        var frameworks = TargetFrameworks.Select(tfm => ExtractFramework(archive, tfm)).ToArray();
-        return new ApiModel(1, PackageConstants.PackageId, parsedVersion.ToNormalizedString(), frameworks);
+        var failures = sourceFailures.Count == 0 ? string.Empty : $" Source failures: {string.Join(" | ", sourceFailures)}.";
+        throw new InvalidOperationException(
+            $"Could not find {PackageConstants.PackageId}@{version} in: {string.Join(", ", _repositories.Select(item => item.PackageSource.Source))}.{failures}");
+    }
+
+    internal static IReadOnlyList<PackageSource> ResolveSources(IEnumerable<string>? sources, string? configFile)
+    {
+        var requested = sources?.ToArray() ?? [];
+        if (requested.Length == 0)
+        {
+            requested = [DefaultSource];
+        }
+
+        IReadOnlyList<PackageSource> configured = [];
+        if (configFile is not null)
+        {
+            var fullPath = Path.GetFullPath(configFile);
+            if (!File.Exists(fullPath))
+            {
+                throw new FileNotFoundException("NuGet configuration file was not found.", fullPath);
+            }
+
+            var settings = Settings.LoadSpecificSettings(Path.GetDirectoryName(fullPath)!, Path.GetFileName(fullPath));
+            configured = new PackageSourceProvider(settings).LoadPackageSources().ToArray();
+        }
+
+        return requested.Select(value =>
+        {
+            var match = configured.FirstOrDefault(source =>
+                string.Equals(source.Name, value, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(source.Source, value, StringComparison.OrdinalIgnoreCase));
+            return match ?? new PackageSource(value);
+        }).ToArray();
     }
 
     private static FrameworkApiModel ExtractFramework(ZipArchive archive, string targetFramework)

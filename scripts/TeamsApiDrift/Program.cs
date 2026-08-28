@@ -45,7 +45,7 @@ internal static class Program
 
     private static async Task<int> CompareAsync(Arguments options)
     {
-        var service = new PackageApiService();
+        var service = new PackageApiService(options.Many("--source"), options.Optional("--config-file"));
         var from = options.Required("--from");
         var to = options.Optional("--to") ?? await service.GetLatestStableVersionAsync().ConfigureAwait(false);
         var output = Path.GetFullPath(options.Optional("--output") ?? PackageConstants.ArtifactDirectory);
@@ -138,10 +138,19 @@ internal static class Program
         var validation = AgentReportValidator.Validate(
             File.ReadAllText(options.Required("--report")),
             ToolJson.Read<FindingsResult>(options.Required("--findings")));
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "agent-report-validation.json", ".json"), validation);
+        var output = ToolJson.OutputFile(options.Required("--output"), "agent-report-validation.json", ".json");
+        ToolJson.Write(output, validation);
+        if (!validation.Valid)
+        {
+            Console.Error.WriteLine($"TeamsApiDrift: Agent report validation failed. Details were written to '{output}'.");
+            foreach (var error in validation.Errors)
+            {
+                Console.Error.WriteLine($"TeamsApiDrift: {error}");
+            }
+        }
         return validation.Valid ? 0 : 1;
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare, collect-usage, validate-usage, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
+        "Commands: resolve-version, compare [--source <name-or-url>]... [--config-file <path>], collect-usage, validate-usage, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
 }

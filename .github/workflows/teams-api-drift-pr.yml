@@ -185,7 +185,9 @@ jobs:
           GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
         run: |
           npm install --global @github/copilot
-          copilot --no-ask-user --deny-tool '*' --log-level none -p "$(cat scripts/TeamsApiDrift/copilot-instructions.md)
+          # The advisory receives its complete, bounded context in the prompt.
+          # Deny every tool kind rather than using the unsupported '*' pattern.
+          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$(cat scripts/TeamsApiDrift/copilot-instructions.md)
 
           $(cat "$ARTIFACTS/agent-context.json")" > "$ARTIFACTS/copilot-report.md"
 
