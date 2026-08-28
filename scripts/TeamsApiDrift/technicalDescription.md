@@ -93,7 +93,7 @@ All commands write diagnostic errors to standard error. An unhandled command err
 | `write-test-summary` | Repeated `--check <name>=<status>` values and `--output` | Test-summary JSON | Converts workflow step outcomes into one normalized artifact. |
 | `render-report` | `--findings`, optional `--test-summary`, `--output` | Deterministic Markdown report | Always derives the maintainer-facing sections from machine-readable artifacts. |
 | `prepare-agent-context` | `--findings`, `--manifest`, `--capabilities`, `--deterministic-report`, optional `--test-summary` and `--repository-root`, `--output` | Bounded agent-context JSON | Includes only affected in-repository C# files, redacts secrets, and limits source text size. |
-| `validate-agent-report` | `--report`, `--findings`, `--output` | Agent-report-validation JSON and validation errors on standard error when invalid | Enforces the exact title and section order, known IDs, required IDs, advisory wording, and ID-linked action bullets. |
+| `validate-agent-report` | `--report`, `--findings`, `--output` | Agent-report-validation JSON and validation errors on standard error when invalid | Enforces the exact title and section order, known IDs, required IDs, advisory wording, and ID-linked suggested implementation actions. |
 
 Example comparison using an authenticated private feed:
 
