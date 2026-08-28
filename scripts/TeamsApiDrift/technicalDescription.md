@@ -155,9 +155,9 @@ The standard artifact directory is `artifacts/teams-api-drift`.
 | `usage-validation.json` | `validate-usage` | Workflow policy and uploaded diagnostics |
 | `findings.json` | `classify` | Deterministic report, agent context, report validation, workflow policy |
 | `test-summary.json` | `write-test-summary` | Deterministic report and agent context |
-| `deterministic-report.md` | `render-report` | Uploaded artifact and fallback PR comment or scheduled issue body |
+| `deterministic-report.md` | `render-report` | Uploaded artifact, scheduled issue body, and full evidence linked by the PR comment |
 | `agent-context.json` | `prepare-agent-context` | Copilot CLI only |
-| `copilot-report.md` | Copilot CLI in a workflow | `validate-agent-report` and, if valid, PR comment or issue body |
+| `copilot-report.md` | Copilot CLI in a workflow | `validate-agent-report`, uploaded evidence, and scheduled issue body when valid |
 | `agent-report-validation.json` | `validate-agent-report` | Workflow policy and uploaded diagnostics |
 
 The serialized JSON uses camel-case property names and stable ordering where the producer controls a collection. API changes receive deterministic IDs such as `MTAPI-0001` after normalized sorting.
@@ -194,7 +194,7 @@ Every finding carries the raw change evidence, dependency-usage evidence where a
 4. Collects and validates actual API usage.
 5. Classifies findings and renders the deterministic report.
 6. For manual runs and trusted internal pull requests, prepares bounded context, invokes Copilot CLI, and validates its report.
-7. Uploads the artifacts and upserts a marker-delimited PR comment. A valid agent report can be displayed; otherwise the deterministic report is used.
+7. Uploads the artifacts and upserts a marker-delimited PR comment containing a compact deterministic finding summary and a link to the workflow run. The full deterministic and Copilot reports remain in the artifact rather than being embedded in the comment.
 8. Fails policy when a required step failed or when blocking/required findings remain.
 
 Fork pull requests do not receive the agent context, Copilot invocation, or write access needed for comments.
