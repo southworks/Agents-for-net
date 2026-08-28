@@ -1,7 +1,10 @@
-name: Teams API drift (scheduled)
+name: Scheduled Teams API Drift Detector
 
+# Periodically compares the declared Microsoft.Teams.Apps baseline with the latest stable release.
+# When the public API changes, it publishes deterministic artifacts and upserts an advisory issue.
 on:
   schedule:
+    # Runs at 08:00 UTC every Monday (~1am PST)
     - cron: '0 8 * * 1'
   workflow_dispatch:
 
@@ -16,8 +19,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  drift:
-    name: Compare declared version with latest stable
+  detect-and-report:
+    name: Detect and report Microsoft.Teams.Apps drift
     runs-on: ubuntu-latest
     env:
       ARTIFACTS: artifacts/teams-api-drift
@@ -25,13 +28,13 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
-      # TEMPORARY LOCAL DRIFT FIXTURE: remove these variables and the marked
-      # workflow branches after validating the scheduled workflow.
-      LOCAL_TEST_FEED: scripts/TeamsApiDrift/test-packages
-      LOCAL_TEST_CANDIDATE: 2.1.0-driftfixture.20260827.1
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nerdbank.GitVersioning needs repository history to calculate the
+          # extension and its project-reference versions.
+          fetch-depth: 0
 
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -43,49 +46,17 @@ jobs:
         continue-on-error: true
         run: dotnet build "$TOOL" -c Release
 
-      - name: Resolve baseline
-        id: baseline
+      - name: Resolve declared baseline version
+        id: resolve-baseline-version
         if: always() && steps.tool.outcome == 'success'
         run: echo "version=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)" >> "$GITHUB_OUTPUT"
 
-      # TEMPORARY LOCAL DRIFT FIXTURE: this step makes the committed .nupkg
-      # available to both the detector and subsequent dotnet restore operations.
-      # It runs only for workflow_dispatch; the weekly schedule remains unchanged.
-      - name: Configure temporary local package source
-        id: local_source
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: |
-          package="$LOCAL_TEST_FEED/Microsoft.Teams.Apps.$LOCAL_TEST_CANDIDATE.nupkg"
-          if [[ ! -f "$package" ]]; then
-            echo "Expected local drift fixture was not found: $package" >&2
-            exit 1
-          fi
-          dotnet nuget add source "$GITHUB_WORKSPACE/$LOCAL_TEST_FEED" --name teams-api-drift-local --configfile nuget.config
-
-      - name: Compare baseline with candidate
+      - name: Compare with latest listed stable release
         id: compare
-        if: >-
-          always() && steps.baseline.outcome == 'success' &&
-          (github.event_name != 'workflow_dispatch' || steps.local_source.outcome == 'success')
+        if: always() && steps.resolve-baseline-version.outcome == 'success'
         continue-on-error: true
-        shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # TEMPORARY LOCAL DRIFT FIXTURE: manual runs use the committed fake
-            # package; remove this branch when fixture testing is complete.
-            candidate=$(dotnet run --project "$TOOL" -c Release --no-build -- compare \
-              --from "${{ steps.baseline.outputs.version }}" \
-              --to "$LOCAL_TEST_CANDIDATE" \
-              --source nuget \
-              --source teams-api-drift-local \
-              --config-file nuget.config \
-              --output "$ARTIFACTS")
-          else
-            candidate=$(dotnet run --project "$TOOL" -c Release --no-build -- compare \
-              --from "${{ steps.baseline.outputs.version }}" \
-              --output "$ARTIFACTS")
-          fi
+          candidate=$(dotnet run --project "$TOOL" -c Release --no-build -- compare --from "${{ steps.resolve-baseline-version.outputs.version }}" --output "$ARTIFACTS")
           echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
 
       - name: Build MSTeams against candidate
@@ -130,8 +101,8 @@ jobs:
           --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json"
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
 
-      - name: Classify drift
-        id: classify
+      - name: Classify direct compatibility impact
+        id: classify-usage-impact
         if: always() && steps.compare.outcome == 'success'
         continue-on-error: true
         run: >-
@@ -141,14 +112,14 @@ jobs:
 
       - name: Write test summary and deterministic report
         id: report
-        if: always() && steps.classify.outcome == 'success'
+        if: always() && steps.classify-usage-impact.outcome == 'success'
         continue-on-error: true
         run: |
           dotnet run --project "$TOOL" -c Release --no-build -- write-test-summary --output "$ARTIFACTS/test-summary.json" --check tool=${{ steps.tool.outcome }} --check compare=${{ steps.compare.outcome }} --check build=${{ steps.build.outcome }} --check drift-tests=${{ steps.drift_tests.outcome }} --check candidate-tests=${{ steps.candidate_tests.outcome }} --check manifest=${{ steps.manifest.outcome }}
           dotnet run --project "$TOOL" -c Release --no-build -- render-report --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --output "$ARTIFACTS/deterministic-report.md"
 
-      - name: Prepare bounded Copilot context
-        id: context
+      - name: Prepare bounded AI agent context
+        id: prepare-agent-context
         if: always() && steps.report.outcome == 'success' && github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: >-
@@ -158,18 +129,16 @@ jobs:
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
 
       - name: Set up Node for external Copilot CLI
-        if: steps.context.outcome == 'success'
+        if: steps.prepare-agent-context.outcome == 'success'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
 
-      - name: Generate Copilot advisory
-        id: copilot
-        if: steps.context.outcome == 'success'
+      - name: Generate advisory AI report
+        id: generate-advisory-report
+        if: steps.prepare-agent-context.outcome == 'success'
         continue-on-error: true
         env:
-          # Requires copilot-requests: write and the southworks organization
-          # policy that allows Copilot CLI usage billed to the organization.
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm install --global @github/copilot
@@ -179,9 +148,9 @@ jobs:
 
           $(cat "$ARTIFACTS/agent-context.json")" > "$ARTIFACTS/copilot-report.md"
 
-      - name: Validate Copilot advisory
-        id: validate_agent
-        if: always() && steps.copilot.outcome == 'success'
+      - name: Validate advisory AI report
+        id: validate-advisory-report
+        if: always() && steps.generate-advisory-report.outcome == 'success'
         continue-on-error: true
         run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
 
@@ -194,11 +163,11 @@ jobs:
           retention-days: 21
           if-no-files-found: warn
 
-      - name: Create or update advisory issue
-        if: always() && steps.classify.outcome == 'success' && steps.report.outcome == 'success'
+      - name: Create or update drift issue
+        if: always() && steps.classify-usage-impact.outcome == 'success' && steps.report.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          REPORT_PATH: ${{ steps.validate_agent.outcome == 'success' && format('{0}/copilot-report.md', env.ARTIFACTS) || format('{0}/deterministic-report.md', env.ARTIFACTS) }}
+          REPORT_PATH: ${{ steps.validate-advisory-report.outcome == 'success' && format('{0}/copilot-report.md', env.ARTIFACTS) || format('{0}/deterministic-report.md', env.ARTIFACTS) }}
           FINDINGS_PATH: artifacts/teams-api-drift/findings.json
         with:
           script: |
@@ -214,28 +183,26 @@ jobs:
             if (existing) await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body });
             else await github.rest.issues.create({ owner, repo, title, body });
 
-      - name: Enforce final drift policy
+      # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.
+      - name: Report final workflow result
         if: always()
         shell: bash
         run: |
           failures=()
           [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
-          [[ "${{ steps.baseline.outcome }}" == success ]] || failures+=(baseline)
-          if [[ "${{ github.event_name }}" == workflow_dispatch ]]; then
-            [[ "${{ steps.local_source.outcome }}" == success ]] || failures+=(local-package-source)
-          fi
+          [[ "${{ steps.resolve-baseline-version.outcome }}" == success ]] || failures+=(baseline)
           [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
           [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
           [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
           [[ "${{ steps.candidate_tests.outcome }}" == success ]] || failures+=(candidate-tests)
           [[ "${{ steps.collect.outcome }}" == success ]] || failures+=(usage-collection)
           [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
-          [[ "${{ steps.classify.outcome }}" == success ]] || failures+=(classification)
+          [[ "${{ steps.classify-usage-impact.outcome }}" == success ]] || failures+=(classification)
           [[ "${{ steps.report.outcome }}" == success ]] || failures+=(deterministic-report)
           if [[ "${{ github.event_name }}" == workflow_dispatch ]]; then
-            [[ "${{ steps.context.outcome }}" == success ]] || failures+=(agent-context)
-            [[ "${{ steps.copilot.outcome }}" == success ]] || failures+=(copilot-report)
-            [[ "${{ steps.validate_agent.outcome }}" == success ]] || failures+=(agent-report-validation)
+            [[ "${{ steps.prepare-agent-context.outcome }}" == success ]] || failures+=(agent-context)
+            [[ "${{ steps.generate-advisory-report.outcome }}" == success ]] || failures+=(copilot-report)
+            [[ "${{ steps.validate-advisory-report.outcome }}" == success ]] || failures+=(agent-report-validation)
           fi
           if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
           if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi

@@ -101,7 +101,7 @@ Example comparison using an authenticated private feed:
 dotnet run --project scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj -- `
   compare `
   --from <installed-version> `
-  --to <fake-package-version> `
+  --to <candidate-version> `
   --source <private-feed-source-name-or-url> `
   --config-file <path-to-NuGet.Config> `
   --output artifacts/teams-api-drift
@@ -204,8 +204,6 @@ Fork pull requests do not receive the agent context, Copilot invocation, or writ
 `.github/workflows/teams-api-drift-scheduled.yml` runs weekly and by manual dispatch. It compares the repository baseline with the latest stable version, performs the same deterministic build/test/collection/classification pipeline, uploads the artifacts, and creates or updates one marker-delimited advisory issue when findings exist.
 
 Scheduled runs use the deterministic report. Manual dispatch can additionally create and validate a Copilot report. Copilot CLI authenticates with the short-lived workflow `GITHUB_TOKEN`, which requires `copilot-requests: write` and the corresponding organization policy. The job still applies deterministic policy independently of the prose report.
-
-As a temporary workflow-test override, a manual dispatch uses the committed package at `scripts/TeamsApiDrift/test-packages/Microsoft.Teams.Apps.2.1.0-driftfixture.20260827.1.nupkg` as its candidate. Blocks implementing this override are marked `TEMPORARY LOCAL DRIFT FIXTURE`; weekly scheduled execution continues to select the latest stable package from NuGet.org.
 
 ## Verification layers
 

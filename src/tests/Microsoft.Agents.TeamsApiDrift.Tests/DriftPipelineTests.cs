@@ -329,6 +329,7 @@ public sealed class DriftPipelineTests
     public void AgentReportValidationRejectsDuplicateSectionsAndUnattributedActions()
     {
         var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", "MTAPI-0001")
+            .ReplaceLineEndings("\n")
             .Replace("## Suggested implementation issues\nText.", "## Suggested implementation issues\n- Update the extension.", StringComparison.Ordinal)
             + "\n## Summary\n- Update the extension.\n";
         var validation = AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking")));

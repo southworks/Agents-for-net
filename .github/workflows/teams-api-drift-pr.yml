@@ -1,5 +1,7 @@
-name: Teams API drift (PR)
+name: Teams API Drift Detector (PR)
 
+# Compares a declared Microsoft.Teams.Apps update with the extension's recorded usage.
+# It classifies compatibility impact, publishes deterministic evidence, and generates an advisory report.
 on:
   workflow_dispatch:
     inputs:
@@ -21,7 +23,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  # Required when Copilot CLI authenticates with the workflow-scoped token.
   copilot-requests: write
 
 concurrency:
@@ -29,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  drift:
+  analysis-scope:
     name: Compare, validate, and report
     runs-on: ubuntu-latest
     env:
@@ -38,10 +39,6 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
-      # TEMPORARY LOCAL DRIFT FIXTURE: remove these variables and the marked
-      # workflow branches after validating the fake-package PR.
-      LOCAL_TEST_FEED: scripts/TeamsApiDrift/test-packages
-      LOCAL_TEST_CANDIDATE: 2.1.0-driftfixture.20260827.1
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,46 +75,11 @@ jobs:
           echo "from=$(cat "$RUNNER_TEMP/from.txt")" >> "$GITHUB_OUTPUT"
           echo "to=$(cat "$RUNNER_TEMP/to.txt")" >> "$GITHUB_OUTPUT"
 
-      # TEMPORARY LOCAL DRIFT FIXTURE: make the committed fake package available
-      # when this PR or a manual run selects the fixture version.
-      - name: Configure temporary local package source
-        id: local_source
-        if: >-
-          always() && steps.versions.outcome == 'success' &&
-          steps.versions.outputs.to == env.LOCAL_TEST_CANDIDATE
-        shell: bash
-        run: |
-          package="$LOCAL_TEST_FEED/Microsoft.Teams.Apps.$LOCAL_TEST_CANDIDATE.nupkg"
-          if [[ ! -f "$package" ]]; then
-            echo "Expected local drift fixture was not found: $package" >&2
-            exit 1
-          fi
-          dotnet nuget add source "$GITHUB_WORKSPACE/$LOCAL_TEST_FEED" --name teams-api-drift-local --configfile nuget.config
-
       - name: Compare normalized package metadata
         id: compare
-        if: >-
-          always() && steps.versions.outcome == 'success' &&
-          (steps.versions.outputs.to != env.LOCAL_TEST_CANDIDATE || steps.local_source.outcome == 'success')
+        if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        shell: bash
-        run: |
-          if [[ "${{ steps.versions.outputs.to }}" == "$LOCAL_TEST_CANDIDATE" ]]; then
-            # TEMPORARY LOCAL DRIFT FIXTURE: compare against the committed fake
-            # package; remove this branch when fixture testing is complete.
-            dotnet run --project "$TOOL" -c Release --no-build -- compare \
-              --from "${{ steps.versions.outputs.from }}" \
-              --to "${{ steps.versions.outputs.to }}" \
-              --source nuget \
-              --source teams-api-drift-local \
-              --config-file nuget.config \
-              --output "$ARTIFACTS"
-          else
-            dotnet run --project "$TOOL" -c Release --no-build -- compare \
-              --from "${{ steps.versions.outputs.from }}" \
-              --to "${{ steps.versions.outputs.to }}" \
-              --output "$ARTIFACTS"
-          fi
+        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "${{ steps.versions.outputs.from }}" --to "${{ steps.versions.outputs.to }}" --output "$ARTIFACTS"
 
       - name: Build MSTeams against candidate
         id: build
@@ -175,8 +137,8 @@ jobs:
           --api-model "$ARTIFACTS/microsoft-teams-apps-after.api.json"
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
 
-      - name: Classify drift
-        id: classify
+      - name: Classify direct compatibility impact
+        id: classify-usage-impact
         if: always() && steps.compare.outcome == 'success'
         continue-on-error: true
         run: >-
@@ -194,15 +156,15 @@ jobs:
           --check boundary-net10=${{ steps.boundary_net10.outcome }} --check manifest=${{ steps.manifest.outcome }}
 
       - name: Render deterministic report
-        id: report
-        if: always() && steps.classify.outcome == 'success'
+        id: render-deterministic-report
+        if: always() && steps.classify-usage-impact.outcome == 'success'
         continue-on-error: true
         run: dotnet run --project "$TOOL" -c Release --no-build -- render-report --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --output "$ARTIFACTS/deterministic-report.md"
 
-      - name: Prepare bounded Copilot context
-        id: context
+      - name: Prepare bounded AI agent context
+        id: prepare-agent-context
         if: >-
-          always() && steps.report.outcome == 'success' &&
+          always() && steps.render-deterministic-report.outcome == 'success' &&
           (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)
         continue-on-error: true
         run: >-
@@ -212,18 +174,16 @@ jobs:
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
 
       - name: Set up Node for external Copilot CLI
-        if: steps.context.outcome == 'success'
+        if: steps.prepare-agent-context.outcome == 'success'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
 
-      - name: Generate Copilot advisory
-        id: copilot
-        if: steps.context.outcome == 'success'
+      - name: Generate advisory AI report
+        id: generate-advisory-report
+        if: steps.prepare-agent-context.outcome == 'success'
         continue-on-error: true
         env:
-          # Requires copilot-requests: write and the southworks organization
-          # policy that allows Copilot CLI usage billed to the organization.
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           npm install --global @github/copilot
@@ -233,9 +193,9 @@ jobs:
 
           $(cat "$ARTIFACTS/agent-context.json")" > "$ARTIFACTS/copilot-report.md"
 
-      - name: Validate Copilot advisory
-        id: validate_agent
-        if: always() && steps.copilot.outcome == 'success'
+      - name: Validate advisory AI report
+        id: validate-advisory-report
+        if: always() && steps.generate-advisory-report.outcome == 'success'
         continue-on-error: true
         run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
 
@@ -248,10 +208,10 @@ jobs:
           retention-days: 21
           if-no-files-found: warn
 
-      - name: Upsert PR comment
+      - name: Publish pull-request comment
         if: >-
           always() && github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository && steps.report.outcome == 'success'
+          github.event.pull_request.head.repo.full_name == github.repository && steps.render-deterministic-report.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           FINDINGS_PATH: ${{ format('{0}/findings.json', env.ARTIFACTS) }}
@@ -286,16 +246,14 @@ jobs:
             if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             else await github.rest.issues.createComment({ owner, repo, issue_number, body });
 
-      - name: Enforce final drift policy
+      # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.      
+      - name: Report final workflow result
         if: always()
         shell: bash
         run: |
           failures=()
           [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
           [[ "${{ steps.versions.outcome }}" == success ]] || failures+=(versions)
-          if [[ "${{ steps.versions.outputs.to }}" == "$LOCAL_TEST_CANDIDATE" ]]; then
-            [[ "${{ steps.local_source.outcome }}" == success ]] || failures+=(local-package-source)
-          fi
           [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
           [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
           [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
@@ -305,12 +263,12 @@ jobs:
           [[ "${{ steps.boundary_net10.outcome }}" == success ]] || failures+=(boundary-net10)
           [[ "${{ steps.collect.outcome }}" == success ]] || failures+=(usage-collection)
           [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
-          [[ "${{ steps.classify.outcome }}" == success ]] || failures+=(classification)
-          [[ "${{ steps.report.outcome }}" == success ]] || failures+=(deterministic-report)
+          [[ "${{ steps.classify-usage-impact.outcome }}" == success ]] || failures+=(classification)
+          [[ "${{ steps.render-deterministic-report.outcome }}" == success ]] || failures+=(deterministic-report)
           if [[ "${{ github.event_name }}" == workflow_dispatch || "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]; then
-            [[ "${{ steps.context.outcome }}" == success ]] || failures+=(agent-context)
-            [[ "${{ steps.copilot.outcome }}" == success ]] || failures+=(copilot-report)
-            [[ "${{ steps.validate_agent.outcome }}" == success ]] || failures+=(agent-report-validation)
+            [[ "${{ steps.prepare-agent-context.outcome }}" == success ]] || failures+=(agent-context)
+            [[ "${{ steps.generate-advisory-report.outcome }}" == success ]] || failures+=(copilot-report)
+            [[ "${{ steps.validate-advisory-report.outcome }}" == success ]] || failures+=(agent-report-validation)
           fi
           if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
           if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi
