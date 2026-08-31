@@ -152,5 +152,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare [--source <name-or-url>]... [--config-file <path>], collect-usage, validate-usage, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
+        "Commands: resolve-version, compare, collect-usage, validate-usage, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
 }
