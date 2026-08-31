@@ -1,5 +1,6 @@
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.TeamsApiDrift;
 
@@ -143,7 +144,7 @@ public static class ApiComparer
     private sealed record RawChange(string Kind, string Symbol, string? Member, string? Before, string? After, string Compatibility, string Framework);
 }
 
-public static class AssemblyUsageCollector
+public static partial class AssemblyUsageCollector
 {
     public static CollectedUsage Collect(string assemblyPath)
     {
@@ -152,9 +153,7 @@ public static class AssemblyUsageCollector
         var reader = peReader.GetMetadataReader();
         var provider = new MetadataTypeNameProvider(reader);
         var publicApi = AssemblyMetadataReader.ReadPublicApi(reader);
-        var exposedText = string.Join("\n", publicApi.SelectMany(symbol => new[] { symbol.Name, symbol.BaseType ?? string.Empty }
-            .Concat(symbol.Interfaces)
-            .Concat(symbol.Members.Select(member => member.Signature))));
+        var exposedTypeNames = BuildExposedTypeNames(publicApi);
         var entries = new Dictionary<string, MutableUsage>(StringComparer.Ordinal);
 
         foreach (var handle in reader.TypeReferences)
@@ -182,10 +181,21 @@ public static class AssemblyUsageCollector
             .Select(item => new CollectedUsageEntry(
                 item.Key,
                 item.Value.Members.Order(StringComparer.Ordinal).ToArray(),
-                exposedText.Contains(item.Key, StringComparison.Ordinal) ? "publicly-exposed" : "internal-only"))
+                exposedTypeNames.Contains(item.Key) ? "publicly-exposed" : "internal-only"))
             .ToArray();
         return new CollectedUsage(1, PackageConstants.PackageId, Path.GetFileName(assemblyPath), usages, ReadSourceFiles(assemblyPath));
     }
+
+    internal static IReadOnlySet<string> BuildExposedTypeNames(IEnumerable<ApiSymbolModel> publicApi)
+        => publicApi
+            .SelectMany(symbol => new[] { symbol.Name, symbol.BaseType ?? string.Empty }
+                .Concat(symbol.Interfaces)
+                .Concat(symbol.Members.Select(member => member.Signature)))
+            .SelectMany(value => QualifiedTypeNameRegex().Matches(value).Select(match => match.Value))
+            .ToHashSet(StringComparer.Ordinal);
+
+    [GeneratedRegex(@"(?<![A-Za-z0-9_+.])(?:[A-Za-z_][A-Za-z0-9_]*`?\d*\.)+[A-Za-z_][A-Za-z0-9_]*`?\d*(?:\+[A-Za-z_][A-Za-z0-9_]*`?\d*)*")]
+    private static partial Regex QualifiedTypeNameRegex();
 
     private static IReadOnlyList<string> ReadSourceFiles(string assemblyPath)
     {
@@ -257,7 +267,15 @@ public static class UsageValidator
         if (manifest.Package != PackageConstants.PackageId) errors.Add($"Usage manifest must describe {PackageConstants.PackageId}.");
         if (manifest.DeclaredVersion != model.Version) errors.Add($"Manifest version {manifest.DeclaredVersion} does not match API model version {model.Version}.");
 
-        var manifestBySymbol = manifest.Usages.ToDictionary(usage => usage.UpstreamSymbol, StringComparer.Ordinal);
+        var duplicates = manifest.Usages
+            .GroupBy(usage => usage.UpstreamSymbol, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .Order(StringComparer.Ordinal);
+        errors.AddRange(duplicates.Select(symbol => $"Usage manifest declares {symbol} more than once."));
+        var manifestBySymbol = manifest.Usages
+            .GroupBy(usage => usage.UpstreamSymbol, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var collectedSymbols = collected.Usages.Select(usage => usage.UpstreamSymbol).ToHashSet(StringComparer.Ordinal);
         var collectedFiles = (collected.SourceFiles ?? []).Select(Paths.Normalize).ToArray();
         foreach (var usage in collected.Usages)

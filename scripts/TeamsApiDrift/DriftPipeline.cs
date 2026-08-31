@@ -249,12 +249,15 @@ public static partial class AgentReportValidator
         var previous = -1;
         foreach (var section in RequiredSections)
         {
-            var heading = $"## {section}\n";
-            var index = normalized.IndexOf(heading, StringComparison.Ordinal);
-            if (index < 0) errors.Add($"Missing required section: {section}.");
+            var heading = $"## {section}";
+            var matches = Regex.Matches(
+                normalized,
+                $"(?m)^{Regex.Escape(heading)}$");
+            if (matches.Count == 0) errors.Add($"Missing required section: {section}.");
             else
             {
-                if (normalized.IndexOf(heading, index + heading.Length, StringComparison.Ordinal) >= 0) errors.Add($"Section must appear exactly once: {section}.");
+                if (matches.Count > 1) errors.Add($"Section must appear exactly once: {section}.");
+                var index = matches[0].Index;
                 if (index < previous) errors.Add("Sections must appear in the required order.");
                 previous = index;
             }

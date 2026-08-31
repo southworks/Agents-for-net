@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.IO.Compression;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Microsoft.Agents.TeamsApiDrift;
 using Xunit;
 
@@ -170,6 +172,47 @@ public sealed class DriftPipelineTests
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
         Assert.Equal("ref/net8.0/Microsoft.Teams.Apps.dll", PackageApiService.SelectAsset(archive.Entries, "net10.0")?.FullName);
+    }
+
+    [Fact]
+    public void ExposedTypeNamesUseExactMembership()
+    {
+        const string teamsChannel = "Microsoft.Teams.Apps.Schema.TeamsChannel";
+        const string teamsChannelData = "Microsoft.Teams.Apps.Schema.TeamsChannelData";
+        const string teamsChannelDataBase = "Microsoft.Teams.Apps.Schema.TeamsChannelDataBase";
+        const string teamsChannelDataInterface = "Microsoft.Teams.Apps.Schema.ITeamsChannelData";
+        var publicApi = new[]
+        {
+            new ApiSymbolModel(
+                teamsChannelData,
+                "class",
+                "public",
+                teamsChannelDataBase,
+                [teamsChannelDataInterface],
+                [],
+                false,
+                [new ApiMemberModel("method:Use", "Use", "method", "public", $"System.Void Use({teamsChannelData})", false)])
+        };
+
+        var exposedTypeNames = AssemblyUsageCollector.BuildExposedTypeNames(publicApi);
+
+        Assert.Contains(teamsChannelData, exposedTypeNames);
+        Assert.Contains(teamsChannelDataBase, exposedTypeNames);
+        Assert.Contains(teamsChannelDataInterface, exposedTypeNames);
+        Assert.DoesNotContain(teamsChannel, exposedTypeNames);
+    }
+
+    [Fact]
+    public void PublicApiIncludesOperatorsButExcludesOtherSpecialNameMethods()
+    {
+        using var stream = File.OpenRead(typeof(OperatorFixture).Assembly.Location);
+        using var peReader = new PEReader(stream);
+        var type = AssemblyMetadataReader.ReadPublicApi(peReader.GetMetadataReader())
+            .Single(symbol => symbol.Name == typeof(OperatorFixture).FullName);
+
+        Assert.Contains(type.Members, member => member.Name == "op_Addition");
+        Assert.Contains(type.Members, member => member.Name == "op_Implicit");
+        Assert.DoesNotContain(type.Members, member => member.Name == "get_Value");
     }
 
     [Fact]
@@ -397,4 +440,17 @@ public sealed class DriftPipelineTests
         ## Validation checklist
         Text.
         """;
+}
+
+public readonly struct OperatorFixture
+{
+    private readonly int _value;
+
+    public OperatorFixture(int value) => _value = value;
+
+    public int Value => _value;
+
+    public static OperatorFixture operator +(OperatorFixture left, OperatorFixture right) => new(left._value + right._value);
+
+    public static implicit operator int(OperatorFixture value) => value._value;
 }

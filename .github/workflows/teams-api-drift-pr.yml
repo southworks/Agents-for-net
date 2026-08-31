@@ -59,16 +59,19 @@ jobs:
         id: versions
         if: always() && steps.tool.outcome == 'success'
         shell: bash
+        env:
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+          DISPATCH_TO_VERSION: ${{ inputs.to_version }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             git show "${{ github.event.pull_request.base.sha }}:Directory.Packages.props" | dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props - > "$RUNNER_TEMP/from.txt"
-          elif [[ -n "${{ inputs.from_version }}" ]]; then
-            printf '%s\n' "${{ inputs.from_version }}" > "$RUNNER_TEMP/from.txt"
+          elif [[ -n "$DISPATCH_FROM_VERSION" ]]; then
+            printf '%s\n' "$DISPATCH_FROM_VERSION" > "$RUNNER_TEMP/from.txt"
           else
             dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props > "$RUNNER_TEMP/from.txt"
           fi
-          if [[ -n "${{ inputs.to_version }}" ]]; then
-            printf '%s\n' "${{ inputs.to_version }}" > "$RUNNER_TEMP/to.txt"
+          if [[ -n "$DISPATCH_TO_VERSION" ]]; then
+            printf '%s\n' "$DISPATCH_TO_VERSION" > "$RUNNER_TEMP/to.txt"
           else
             dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props > "$RUNNER_TEMP/to.txt"
           fi
@@ -79,13 +82,18 @@ jobs:
         id: compare
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "${{ steps.versions.outputs.from }}" --to "${{ steps.versions.outputs.to }}" --output "$ARTIFACTS"
+        env:
+          FROM_VERSION: ${{ steps.versions.outputs.from }}
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "$FROM_VERSION" --to "$TO_VERSION" --output "$ARTIFACTS"
 
       - name: Build MSTeams against candidate
         id: build
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="${{ steps.versions.outputs.to }}"
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION"
 
       - name: Run drift tool tests
         id: drift_tests
@@ -97,25 +105,33 @@ jobs:
         id: contract_net8
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="${{ steps.versions.outputs.to }}" --filter 'Category=TeamsApiContract'
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
 
       - name: Run Teams API compile-time contracts for net10.0
         id: contract_net10
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="${{ steps.versions.outputs.to }}" --filter 'Category=TeamsApiContract'
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
 
       - name: Run Teams API runtime boundary for net8.0
         id: boundary_net8
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="${{ steps.versions.outputs.to }}" --filter 'Category=TeamsApiBoundary'
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
 
       - name: Run Teams API runtime boundary for net10.0
         id: boundary_net10
         if: always() && steps.versions.outcome == 'success'
         continue-on-error: true
-        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="${{ steps.versions.outputs.to }}" --filter 'Category=TeamsApiBoundary'
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
 
       - name: Collect actual Teams API usage
         id: collect

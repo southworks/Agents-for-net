@@ -234,7 +234,10 @@ internal static class AssemblyMetadataReader
             var method = reader.GetMethodDefinition(methodHandle);
             var methodAccessibility = MethodAccessibility(method.Attributes);
             var methodName = reader.GetString(method.Name);
-            if (methodAccessibility is null || ((method.Attributes & MethodAttributes.SpecialName) != 0 && methodName is not ".ctor" and not ".cctor"))
+            if (methodAccessibility is null ||
+                ((method.Attributes & MethodAttributes.SpecialName) != 0 &&
+                 methodName is not ".ctor" and not ".cctor" &&
+                 !methodName.StartsWith("op_", StringComparison.Ordinal)))
             {
                 continue;
             }
