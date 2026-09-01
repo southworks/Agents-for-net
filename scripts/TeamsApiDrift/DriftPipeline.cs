@@ -200,6 +200,7 @@ public static partial class AgentContextBuilder
             {
                 throw new InvalidDataException($"Source path escapes the MSTeams source root: {path}");
             }
+            RejectSymlinkTraversal(sourceRoot, fullPath, path);
             if (!File.Exists(fullPath) || Path.GetExtension(fullPath) != ".cs")
             {
                 omitted.Add(path);
@@ -218,6 +219,27 @@ public static partial class AgentContextBuilder
             relevantSourceFiles = files,
             omittedSourceFiles = omitted
         };
+    }
+
+    private static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
+    {
+        var current = Path.GetFullPath(sourceRoot);
+        RejectSymlink(current, path);
+        var relative = Path.GetRelativePath(current, fullPath);
+        foreach (var component in relative.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, component);
+            RejectSymlink(current, path);
+        }
+    }
+
+    private static void RejectSymlink(string fullPath, string path)
+    {
+        FileSystemInfo entry = Directory.Exists(fullPath) ? new DirectoryInfo(fullPath) : new FileInfo(fullPath);
+        if (entry.LinkTarget is not null)
+        {
+            throw new InvalidDataException($"Source path contains a symlink: {path}");
+        }
     }
 
     internal static string Redact(string content)

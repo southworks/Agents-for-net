@@ -347,6 +347,38 @@ public sealed class DriftPipelineTests
     }
 
     [Fact]
+    public void AgentContextRejectsSymlinkedSourceDirectory()
+    {
+        var root = TemporaryDirectory();
+        var sourceRoot = Path.Combine(root, PackageConstants.SourceRoot);
+        var outside = Path.Combine(root, "outside");
+        var linkedDirectory = Path.Combine(sourceRoot, "linked");
+        var relative = Path.Combine(PackageConstants.SourceRoot, "linked", "outside.cs");
+        try
+        {
+            Directory.CreateDirectory(sourceRoot);
+            Directory.CreateDirectory(outside);
+            File.WriteAllText(Path.Combine(outside, "outside.cs"), "public class Outside { }");
+            try
+            {
+                Directory.CreateSymbolicLink(linkedDirectory, outside);
+            }
+            catch (IOException) when (OperatingSystem.IsWindows())
+            {
+                // Creating links requires a Windows privilege that is not available in every test environment.
+                return;
+            }
+
+            var finding = Finding("MTAPI-0001", "blocking") with { AffectedFiles = [relative] };
+            Assert.Throws<InvalidDataException>(() => AgentContextBuilder.Build(FindingResult(finding), Manifest(), Capabilities(), "report", null, root));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void AgentContextRedactsAndTruncatesSource()
     {
         var root = Path.Combine(Path.GetTempPath(), $"teams-api-drift-{Guid.NewGuid():N}");
