@@ -15,7 +15,7 @@
     { "upstreamSymbol": "Microsoft.Teams.Apps.InvokeNames", "members": ["FileConsent", "MessageExtensionAnonQueryLink", "MessageExtensionCardButtonClicked", "MessageExtensionFetchTask", "MessageExtensionQuery", "MessageExtensionQueryLink", "MessageExtensionQuerySettingUrl", "MessageExtensionSelectItem", "MessageExtensionSetting", "MessageExtensionSubmitAction", "TaskFetch", "TaskSubmit"], "usageKinds": ["routing"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.Meetings.MeetingParticipantJoinValue", "members": [], "usageKinds": ["handler-payload"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Meetings/Meeting.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.Meetings.MeetingParticipantLeaveValue", "members": [], "usageKinds": ["handler-payload"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Meetings/Meeting.cs"] },
-    { "upstreamSymbol": "Microsoft.Teams.Apps.MessageActivity", "members": ["Text"], "usageKinds": ["mapping"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"] },
+    { "upstreamSymbol": "Microsoft.Teams.Apps.MessageActivity", "members": ["Attachments", "Text"], "usageKinds": ["mapping"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiMetadataValidationFixture.cs", "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.MessageExtensions.BotMessagePreviewActionType", "members": [], "usageKinds": ["routing"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.MessageExtensions.BotMessagePreviewActionTypes", "members": ["Edit", "Send"], "usageKinds": ["routing"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.MessageExtensions.ComposeExtension", "members": [".ctor", "Text", "Type"], "usageKinds": ["mapping"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"] },
@@ -38,10 +38,7 @@
     { "upstreamSymbol": "Microsoft.Teams.Apps.Schema.TeamsChannelDataSettings", "members": ["SelectedChannel"], "usageKinds": ["mapping"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsActivityExtensions.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.TaskModules.TaskModuleRequest", "members": ["Data"], "usageKinds": ["handler-payload"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.TaskModules.TaskModuleResponse", "members": [], "usageKinds": ["handler-result"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"] },
-    { "upstreamSymbol": "Microsoft.Teams.Apps.Utils.StringEnum", "members": ["op_Implicit"], "usageKinds": ["conversion"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"] }
-  ],
-  "sourceReview": {
-  "outcome": "no-usage-metadata-change",
-  "reason": "Only a manual-test comment was added; Teams API usage is unchanged."
-}
+    { "upstreamSymbol": "Microsoft.Teams.Apps.Utils.StringEnum", "members": ["op_Implicit"], "usageKinds": ["conversion"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"] },
+    { "upstreamSymbol": "Microsoft.Teams.Apps.Files.FileUploadInfo", "members": [], "usageKinds": ["manual-test"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiMetadataValidationFixture.cs"] }
+  ]
 }

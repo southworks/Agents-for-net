@@ -44,5 +44,9 @@
       "upstreamTypes": ["Microsoft.Teams.Apps.MessageActivity", "Microsoft.Teams.Apps.MessageReaction"],
       "adoptionPolicy": "review-internal-additions"
     }
-  }
+  },
+  "sourceReview": {
+  "outcome": "no-capability-metadata-change",
+  "reason": "FileUploadInfo is already covered by the Microsoft.Teams.Apps.Files namespace mapping."
+}
 }
