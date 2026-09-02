@@ -202,9 +202,11 @@ public static partial class AssemblyUsageCollector
         var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
         if (!File.Exists(pdbPath)) return [];
         using var stream = File.OpenRead(pdbPath);
-        Span<byte> signature = stackalloc byte[4];
-        if (stream.Read(signature) != signature.Length || !signature.SequenceEqual("BSJB"u8)) return [];
-        stream.Position = 0;
+Span<byte> signature = stackalloc byte[4];
+try { stream.ReadExactly(signature); }
+catch (EndOfStreamException) { return []; }
+if (!signature.SequenceEqual("BSJB"u8)) return [];
+stream.Position = 0;
         using var provider = MetadataReaderProvider.FromPortablePdbStream(stream);
         var reader = provider.GetMetadataReader();
         return reader.Documents.Select(handle => Paths.Normalize(reader.GetString(reader.GetDocument(handle).Name)))
