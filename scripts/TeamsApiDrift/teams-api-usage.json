@@ -39,5 +39,9 @@
     { "upstreamSymbol": "Microsoft.Teams.Apps.TaskModules.TaskModuleRequest", "members": ["Data"], "usageKinds": ["handler-payload"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.TaskModules.TaskModuleResponse", "members": [], "usageKinds": ["handler-result"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.Utils.StringEnum", "members": ["op_Implicit"], "usageKinds": ["conversion"], "exposure": "internal-only", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"] }
-  ]
+  ],
+  "sourceReview": {
+  "outcome": "no-usage-metadata-change",
+  "reason": "Only a manual-test comment was added; Teams API usage is unchanged."
+}
 }
