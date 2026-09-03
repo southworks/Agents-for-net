@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "package": "Microsoft.Teams.Apps",
-  "declaredVersion": "2.1.0",
+  "declaredVersion": "2.1.0-driftfixture.20260827.1",
   "sourceRoot": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams",
   "usages": [
     { "upstreamSymbol": "Microsoft.Teams.Apps.Clients.ApiClient", "members": [], "usageKinds": ["extension-receiver"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiClientExtensions.cs"] },

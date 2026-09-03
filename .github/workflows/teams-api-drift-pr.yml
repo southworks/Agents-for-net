@@ -17,6 +17,7 @@ on:
     branches:
       - main
       - 'rel/**'
+      - southworks/add/teams-api-drift
     paths:
       - Directory.Packages.props
 
