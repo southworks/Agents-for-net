@@ -180,6 +180,29 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task MemoryStorageV2_SharedBackingDictionarySharesVersionsAndSynchronization()
+        {
+            var dictionary = new Dictionary<string, System.Text.Json.Nodes.JsonObject>();
+            IStorageV2 firstStorage = new MemoryStorage(dictionary: dictionary);
+            IStorageV2 secondStorage = new MemoryStorage(dictionary: dictionary);
+
+            var initialWrite = await firstStorage.WriteAsync(
+                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "initial" } });
+            var initialVersion = initialWrite["item"].Version;
+
+            var firstUpdate = await firstStorage.WriteAsync(
+                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "first" } },
+                new StorageWriteOptions { ExpectedVersion = initialVersion });
+            var staleUpdate = await secondStorage.WriteAsync(
+                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "stale" } },
+                new StorageWriteOptions { ExpectedVersion = initialVersion });
+
+            Assert.Equal(StorageOperationStatus.Succeeded, firstUpdate["item"].Status);
+            Assert.Equal(StorageOperationStatus.ConditionNotMet, staleUpdate["item"].Status);
+            Assert.Equal(firstUpdate["item"].Version, staleUpdate["item"].Version);
+        }
+
+        [Fact]
         public async Task MemoryStorageV2_WriteAsync_Replace_UsesVersionCondition()
         {
             IStorageV2 storageV2 = new MemoryStorage();

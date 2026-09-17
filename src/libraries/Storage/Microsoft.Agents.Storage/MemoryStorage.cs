@@ -7,6 +7,7 @@ using Microsoft.Agents.Storage.Telemetry.Scopes;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -21,16 +22,26 @@ namespace Microsoft.Agents.Storage
     /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.MemoryStorage"/> class.
     /// </remarks>
     /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
-    /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
-    public class MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null) : IStorageV2
+    public class MemoryStorage : IStorageV2
     {
         private const string ETagPropertyName = "ETag";
+        private static readonly ConditionalWeakTable<Dictionary<string, JsonObject>, SharedMemoryState> SharedStates = new();
 
-        // If a JsonSerializer is not provided during construction, this will be the default static JsonSerializer.
-        private readonly JsonSerializerOptions _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
-        private readonly Dictionary<string, JsonObject> _memory = dictionary ?? [];
-        private readonly object _syncroot = new();
-        private int _eTag = 0;
+        private readonly JsonSerializerOptions _stateJsonSerializer;
+        private readonly Dictionary<string, JsonObject> _memory;
+        private readonly SharedMemoryState _sharedState;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.MemoryStorage"/> class.
+        /// </summary>
+        /// <param name="jsonSerializer">Optional: JsonSerializerOptions.</param>
+        /// <param name="dictionary">Optional: A pre-existing dictionary to use. Or null to use a new one.</param>
+        public MemoryStorage(JsonSerializerOptions jsonSerializer = null, Dictionary<string, JsonObject> dictionary = null)
+        {
+            _stateJsonSerializer = jsonSerializer ?? ProtocolJsonSerializer.SerializationOptions;
+            _memory = dictionary ?? [];
+            _sharedState = SharedStates.GetValue(_memory, _ => new SharedMemoryState());
+        }
 
         /// <summary>
         /// Deletes storage items from storage.
@@ -47,11 +58,12 @@ namespace Microsoft.Agents.Storage
 
             using var telemetryScope = new ScopeDelete(keys.Length);
 
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var key in keys)
                 {
                     _memory.Remove(key);
+                    _sharedState.Versions.Remove(key);
                 }
             }
 
@@ -76,7 +88,7 @@ namespace Microsoft.Agents.Storage
             using var telemetryScope = new ScopeRead(keys.Length);
 
             var storeItems = new Dictionary<string, object>(keys.Length);
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var key in keys)
                 {
@@ -98,7 +110,7 @@ namespace Microsoft.Agents.Storage
             using var telemetryScope = new ScopeRead(keys.Count);
 
             Dictionary<string, StorageReadResult> results = new(keys.Count);
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var key in keys)
                 {
@@ -111,7 +123,7 @@ namespace Microsoft.Agents.Storage
                             Key = key,
                             Status = StorageOperationStatus.Succeeded,
                             Value = DeserializeState(state),
-                            Version = GetStateETag(state),
+                            Version = GetOrCreateVersion(key),
                         };
                     }
                     else
@@ -158,7 +170,7 @@ namespace Microsoft.Agents.Storage
 
             using var telemetryScope = new ScopeWrite(changes.Count);
 
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var change in changes)
                 {
@@ -168,6 +180,7 @@ namespace Microsoft.Agents.Storage
                         ? GetStateETag(oldState)
                         : null;
 
+                    var newVersion = NextETag();
                     string newStateETag = null;
 
                     // Set ETag if applicable
@@ -182,10 +195,11 @@ namespace Microsoft.Agents.Storage
                             throw new EtagException($"Etag conflict.\r\n\r\nOriginal: {newStoreItem.ETag}\r\nCurrent: {oldStateETag}");
                         }
 
-                        newStateETag = NextETag();
+                        newStateETag = newVersion;
                     }
 
                     _memory[change.Key] = CreateState(change.Value, newStateETag);
+                    _sharedState.Versions[change.Key] = newVersion;
                 }
             }
 
@@ -203,12 +217,12 @@ namespace Microsoft.Agents.Storage
             using var telemetryScope = new ScopeWrite(changes.Count);
 
             Dictionary<string, StorageWriteResult> results = new(changes.Count);
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var change in changes)
                 {
-                    var exists = _memory.TryGetValue(change.Key, out var oldState);
-                    var currentVersion = GetStateETag(oldState);
+                    var exists = _memory.ContainsKey(change.Key);
+                    var currentVersion = exists ? GetOrCreateVersion(change.Key) : null;
 
                     if (options.Mode == StorageWriteMode.CreateOnly && exists)
                     {
@@ -243,7 +257,9 @@ namespace Microsoft.Agents.Storage
                     }
 
                     var newVersion = NextETag();
-                    _memory[change.Key] = CreateState(change.Value, newVersion);
+                    var newStateETag = change.Value is IStoreItem ? newVersion : null;
+                    _memory[change.Key] = CreateState(change.Value, newStateETag);
+                    _sharedState.Versions[change.Key] = newVersion;
                     results[change.Key] = new StorageWriteResult()
                     {
                         Key = change.Key,
@@ -306,14 +322,14 @@ namespace Microsoft.Agents.Storage
             using var telemetryScope = new ScopeDelete(keys.Count);
 
             Dictionary<string, StorageDeleteResult> results = new(keys.Count);
-            lock (_syncroot)
+            lock (_sharedState.SyncRoot)
             {
                 foreach (var key in keys)
                 {
                     AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
 
-                    var exists = _memory.TryGetValue(key, out var existingState);
-                    var currentVersion = GetStateETag(existingState);
+                    var exists = _memory.ContainsKey(key);
+                    var currentVersion = exists ? GetOrCreateVersion(key) : null;
 
                     if (!exists)
                     {
@@ -337,6 +353,7 @@ namespace Microsoft.Agents.Storage
                     }
 
                     _memory.Remove(key);
+                    _sharedState.Versions.Remove(key);
                     results[key] = new StorageDeleteResult()
                     {
                         Key = key,
@@ -362,6 +379,17 @@ namespace Microsoft.Agents.Storage
             }
 
             return null;
+        }
+
+        private string GetOrCreateVersion(string key)
+        {
+            if (!_sharedState.Versions.TryGetValue(key, out var version))
+            {
+                version = NextETag();
+                _sharedState.Versions[key] = version;
+            }
+
+            return version;
         }
 
         private static void ValidateExpectedVersion(string expectedVersion, string parameterName)
@@ -398,19 +426,9 @@ namespace Microsoft.Agents.Storage
             if (state.GetTypeInfo(out var type))
             {
                 var hasETag = state.TryGetPropertyValue(ETagPropertyName, out var etagValue);
-                if (hasETag)
-                {
-                    state.Remove(ETagPropertyName);
-                }
-
                 var typeProps = state.RemoveTypeInfoProperties();
                 var value = state.Deserialize(type, _stateJsonSerializer);
                 state.SetTypeInfoProperties(typeProps);
-
-                if (hasETag)
-                {
-                    state[ETagPropertyName] = etagValue;
-                }
 
                 if (value is IStoreItem storeItem)
                 {
@@ -425,7 +443,16 @@ namespace Microsoft.Agents.Storage
 
         private string NextETag()
         {
-            return (_eTag++).ToString(CultureInfo.InvariantCulture);
+            return (_sharedState.ETag++).ToString(CultureInfo.InvariantCulture);
+        }
+
+        private sealed class SharedMemoryState
+        {
+            internal object SyncRoot { get; } = new();
+
+            internal Dictionary<string, string> Versions { get; } = [];
+
+            internal int ETag { get; set; }
         }
     }
 }

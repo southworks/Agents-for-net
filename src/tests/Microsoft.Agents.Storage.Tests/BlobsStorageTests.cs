@@ -217,6 +217,26 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task ReadAsyncV2_ReturnsVersionFromSameDownloadResponse()
+        {
+            InitStorage();
+
+            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes("{\"ETag\":\"*\", \"$type\": \"Microsoft.Agents.Storage.Tests.StoreItem\", \"$typeAssembly\": \"Microsoft.Agents.Storage.Tests\"}"));
+            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(
+                content: stream,
+                eTag: new ETag("\"version-1\""));
+            var response = new Mock<Response<BlobDownloadInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
+            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
+
+            var results = await ((IStorageV2)_storage).ReadAsync(new[] { "key" });
+
+            Assert.Equal("\"version-1\"", results["key"].Version);
+            Assert.Equal("\"version-1\"", Assert.IsType<StoreItem>(results["key"].Value).ETag);
+            _client.Verify(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task ReadAsyncHttpPreconditionFailure()
         {
             InitStorage();

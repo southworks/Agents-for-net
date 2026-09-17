@@ -138,7 +138,8 @@ namespace Microsoft.Agents.Storage.Blobs
                 var blobClient = _containerClient.GetBlobClient(blobName);
                 try
                 {
-                    items.Add(key, await InnerReadBlobAsync(blobClient, cancellationToken).ConfigureAwait(false));
+                    var blobState = await InnerReadBlobAsync(blobClient, cancellationToken).ConfigureAwait(false);
+                    items.Add(key, blobState.Value);
                 }
                 catch (RequestFailedException ex)
                     when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
@@ -539,12 +540,10 @@ namespace Microsoft.Agents.Storage.Blobs
 
         private async Task<(object Value, string Version)> ReadBlobStateAsync(BlobClient blobReference, CancellationToken cancellationToken)
         {
-            var item = await InnerReadBlobAsync(blobReference, cancellationToken).ConfigureAwait(false);
-            var properties = await blobReference.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            return (item, properties.Value.ETag.ToString());
+            return await InnerReadBlobAsync(blobReference, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<object> InnerReadBlobAsync(BlobClient blobReference, CancellationToken cancellationToken)
+        private async Task<(object Value, string Version)> InnerReadBlobAsync(BlobClient blobReference, CancellationToken cancellationToken)
         {
             var i = 0;
             while (true)
@@ -553,6 +552,7 @@ namespace Microsoft.Agents.Storage.Blobs
                 {
                     using BlobDownloadInfo download = await blobReference.DownloadAsync(cancellationToken).ConfigureAwait(false);
                     object item = null;
+                    var version = download.Details.ETag.ToString();
 
                     using (var sr = new StreamReader(download.Content))
                     {
@@ -579,10 +579,10 @@ namespace Microsoft.Agents.Storage.Blobs
 
                     if (item is IStoreItem storeItem)
                     {
-                        storeItem.ETag = (await blobReference.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false))?.Value?.ETag.ToString();
+                        storeItem.ETag = version;
                     }
 
-                    return item;
+                    return (item, version);
                 }
                 catch (RequestFailedException ex)
                     when ((HttpStatusCode)ex.Status == HttpStatusCode.PreconditionFailed)
