@@ -92,8 +92,14 @@ namespace Microsoft.Agents.Builder.UserAuth
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _connections = sp.GetService<IConnections>();
 
-            var configDict = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>();
-            _userAuthHandlers = new(configDict, StringComparer.OrdinalIgnoreCase);
+            var handlersSection = configuration.GetSection(configKey);
+            if (!handlersSection.Exists() || !handlersSection.GetChildren().Any())
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
+            }
+
+            var configDict = handlersSection.Get<Dictionary<string, UserAuthorizationDefinition>>();
+            _userAuthHandlers = new(configDict ?? [], StringComparer.OrdinalIgnoreCase);
 
             if (_userAuthHandlers.Count == 0)
             {
@@ -175,6 +181,34 @@ namespace Microsoft.Agents.Builder.UserAuth
             }
 
             return GetHandlerInstance(handleName.Trim());
+        }
+
+        /// <inheritdoc/>
+        public bool Contains(string handlerName)
+        {
+            return !string.IsNullOrEmpty(handlerName)
+                && _userAuthHandlers.ContainsKey(handlerName.Trim());
+        }
+
+        /// <inheritdoc/>
+        public void ValidateConfiguration()
+        {
+            foreach (var handler in _userAuthHandlers)
+            {
+                var definition = handler.Value;
+                if (definition.Constructor?.DeclaringType != typeof(AzureBotUserAuthorization))
+                {
+                    continue;
+                }
+
+                var connectionName = definition.Settings?.GetValue<string>(nameof(OAuthSettings.AzureBotOAuthConnectionName));
+                if (string.IsNullOrWhiteSpace(connectionName))
+                {
+                    throw new ArgumentException(
+                        $"User authorization handler '{handler.Key}' requires a non-empty '{nameof(OAuthSettings.AzureBotOAuthConnectionName)}' setting.",
+                        nameof(OAuthSettings.AzureBotOAuthConnectionName));
+                }
+            }
         }
 
         public bool TryGet(string handlerName, out IUserAuthorization handler)

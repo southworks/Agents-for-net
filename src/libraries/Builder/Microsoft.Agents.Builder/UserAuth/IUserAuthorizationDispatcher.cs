@@ -19,6 +19,10 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <exception cref="System.InvalidOperationException">When cannot find the class with given name</exception>
         IUserAuthorization Get(string handlerName);
 
+        bool Contains(string handlerName);
+
+        void ValidateConfiguration();
+
         bool TryGet(string handlerName, out IUserAuthorization handler);
 
         /// <summary>
