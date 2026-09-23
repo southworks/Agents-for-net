@@ -16,13 +16,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// </summary>
     internal sealed class AgentConfigurationValidationHostedService(
         IServiceProvider serviceProvider,
-        IHostEnvironment environment) : IHostedService
+        IHostEnvironment environment) : IHostedLifecycleService
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         private readonly IHostEnvironment _environment = environment ?? throw new ArgumentNullException(nameof(environment));
 
         /// <inheritdoc/>
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartingAsync(CancellationToken cancellationToken)
         {
             if (_environment.IsDevelopment())
             {
@@ -35,6 +35,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <inheritdoc/>
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task StartedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task StoppingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        /// <inheritdoc/>
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        /// <inheritdoc/>
+        public Task StoppedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

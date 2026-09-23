@@ -4,12 +4,15 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -22,7 +25,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
     public class AgentConfigurationValidationHostedServiceTests
     {
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsForUnknownDefaultHandler()
+        public async Task StartingAsync_InDevelopment_ThrowsForUnknownDefaultHandler()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -35,7 +38,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<IndexOutOfRangeException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
@@ -62,7 +65,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsWhenAzureBotUserAuthorizationConnectionNameIsMissing()
+        public async Task StartingAsync_InDevelopment_ThrowsWhenAzureBotUserAuthorizationConnectionNameIsMissing()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -74,11 +77,38 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<ArgumentException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsWhenUserAuthorizationHandlersAreMissing()
+        public async Task StartingAsync_InDevelopment_ThrowsWhenProgrammaticAzureBotUserAuthorizationConnectionNameIsMissing()
+        {
+            var storage = new MemoryStorage();
+            var connections = Mock.Of<IConnections>();
+            var options = new AgentApplicationOptions(storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    storage,
+                    connections,
+                    new AzureBotUserAuthorization("graph", storage, connections, new OAuthSettings()))
+                {
+                    DefaultHandlerName = "graph",
+                },
+            };
+            using var serviceProvider = new ServiceCollection()
+                .AddSingleton(options)
+                .BuildServiceProvider();
+            var service = new AgentConfigurationValidationHostedService(
+                serviceProvider,
+                CreateEnvironment(Environments.Development));
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => service.StartingAsync(CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task StartingAsync_InDevelopment_ThrowsWhenUserAuthorizationHandlersAreMissing()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -89,13 +119,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
 
             Assert.Equal(-50012, exception.HResult);
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsForEmptyAdaptiveCardActionSubmitFilter()
+        public async Task StartingAsync_InDevelopment_ThrowsForEmptyAdaptiveCardActionSubmitFilter()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -106,13 +136,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<ArgumentException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Theory]
         [InlineData(-1, 2000)]
         [InlineData(500, -1)]
-        public async Task StartAsync_InDevelopment_ThrowsForNegativeTypingTiming(int initialDelayMs, int intervalMs)
+        public async Task StartingAsync_InDevelopment_ThrowsForNegativeTypingTiming(int initialDelayMs, int intervalMs)
         {
             var options = new AgentApplicationOptions(new MemoryStorage())
             {
@@ -131,11 +161,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsForNegativeChannelTypingTiming()
+        public async Task StartingAsync_InDevelopment_ThrowsForNegativeChannelTypingTiming()
         {
             var options = new AgentApplicationOptions(new MemoryStorage())
             {
@@ -156,11 +186,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsForConnectionMapReferenceThatDoesNotExist()
+        public async Task StartingAsync_InDevelopment_ThrowsForConnectionMapReferenceThatDoesNotExist()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -173,11 +203,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<IndexOutOfRangeException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
-        public async Task StartAsync_InDevelopment_ThrowsForInvalidConnectionMapPattern()
+        public async Task StartingAsync_InDevelopment_ThrowsForInvalidConnectionMapPattern()
         {
             using var serviceProvider = CreateServiceProvider(new Dictionary<string, string>
             {
@@ -190,13 +220,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<RegexParseException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Theory]
         [InlineData(typeof(HostedActivityServiceOptions), "HostedActivityServiceOptions:ShutdownTimeoutSeconds")]
         [InlineData(typeof(HostedTaskServiceOptions), "HostedTaskServiceOptions:ShutdownTimeoutSeconds")]
-        public async Task StartAsync_InDevelopment_ThrowsForNegativeShutdownTimeout(Type optionsType, string configurationKey)
+        public async Task StartingAsync_InDevelopment_ThrowsForNegativeShutdownTimeout(Type optionsType, string configurationKey)
         {
             var configurationValues = new Dictionary<string, string>
             {
@@ -218,11 +248,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 CreateEnvironment(Environments.Development));
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                () => service.StartAsync(CancellationToken.None));
+                () => service.StartingAsync(CancellationToken.None));
         }
 
         [Fact]
-        public async Task StartAsync_OutsideDevelopment_DoesNotResolveAgentOptions()
+        public async Task StartingAsync_OutsideDevelopment_DoesNotResolveAgentOptions()
         {
             var services = new ServiceCollection();
             services.AddAgentApplicationOptions();
@@ -232,7 +262,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 serviceProvider,
                 CreateEnvironment(Environments.Production));
 
-            await service.StartAsync(CancellationToken.None);
+            await service.StartingAsync(CancellationToken.None);
         }
 
         [Fact]

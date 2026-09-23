@@ -196,17 +196,17 @@ namespace Microsoft.Agents.Builder.UserAuth
             foreach (var handler in _userAuthHandlers)
             {
                 var definition = handler.Value;
-                if (definition.Constructor?.DeclaringType != typeof(AzureBotUserAuthorization))
+                if (definition.Instance is AzureBotUserAuthorization azureBotUserAuthorization)
                 {
+                    azureBotUserAuthorization.ValidateConfiguration();
                     continue;
                 }
 
-                var connectionName = definition.Settings?.GetValue<string>(nameof(OAuthSettings.AzureBotOAuthConnectionName));
-                if (string.IsNullOrWhiteSpace(connectionName))
+                if (definition.Constructor?.DeclaringType == typeof(AzureBotUserAuthorization))
                 {
-                    throw new ArgumentException(
-                        $"User authorization handler '{handler.Key}' requires a non-empty '{nameof(OAuthSettings.AzureBotOAuthConnectionName)}' setting.",
-                        nameof(OAuthSettings.AzureBotOAuthConnectionName));
+                    AzureBotUserAuthorization.ValidateConfiguration(
+                        handler.Key,
+                        definition.Settings?.GetValue<string>(nameof(OAuthSettings.AzureBotOAuthConnectionName)));
                 }
             }
         }
