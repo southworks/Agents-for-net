@@ -313,7 +313,9 @@ namespace Microsoft.Agents.Builder
                 address = address.MapToIPv4();
             }
 
-            if (IPAddress.IsLoopback(address))
+            if (IPAddress.Any.Equals(address)
+                || IPAddress.IPv6Any.Equals(address)
+                || IPAddress.IsLoopback(address))
             {
                 return true;
             }

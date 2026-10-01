@@ -160,7 +160,9 @@ namespace Microsoft.Agents.Builder.Tests
         [InlineData("http://127.0.0.1/file.txt")]
         [InlineData("http://10.0.0.1/file.txt")]
         [InlineData("http://169.254.1.1/file.txt")]
+        [InlineData("http://0.0.0.0/file.txt")]
         [InlineData("http://[::1]/file.txt")]
+        [InlineData("http://[::]/file.txt")]
         [InlineData("http://[fd00::1]/file.txt")]
         public void Enabled_DeniesAllowlistedPrivateNetworkAddressByDefault(string url)
         {
@@ -196,6 +198,26 @@ namespace Microsoft.Agents.Builder.Tests
                     Hosts = new List<string> { "files.contoso.com" }
                 },
                 new StubHostAddressResolver(IPAddress.Parse("10.0.0.1")));
+
+            var result = await validator.IsAllowedAsync(
+                new Uri("https://files.contoso.com/file.txt"),
+                CancellationToken.None);
+
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData("0.0.0.0")]
+        [InlineData("::")]
+        public async Task EnabledAsync_DeniesHostResolvingToUnspecifiedAddress(string address)
+        {
+            var validator = new OutboundHostValidator(
+                new OutboundHostValidatorOptions
+                {
+                    Enabled = true,
+                    Hosts = new List<string> { "files.contoso.com" }
+                },
+                new StubHostAddressResolver(IPAddress.Parse(address)));
 
             var result = await validator.IsAllowedAsync(
                 new Uri("https://files.contoso.com/file.txt"),
