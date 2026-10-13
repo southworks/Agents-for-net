@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -180,11 +180,11 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            _client.Setup(e => e.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()));
+            _client.Setup(e => e.DeleteAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()));
 
             await _storage.DeleteAsync(new string[] { "key" });
 
-            _client.Verify(e => e.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
+            _client.Verify(e => e.DeleteAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -269,7 +269,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             // RequestFailedException => NotFound
-            var requestFailedException = new RequestFailedException((int)HttpStatusCode.NotFound, "error");
+            var requestFailedException = new RequestFailedException((int)HttpStatusCode.NotFound, "error", BlobErrorCode.BlobNotFound.ToString(), null);
             _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(requestFailedException)
                 .Callback(() =>
@@ -319,7 +319,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.NotFound, "not found"));
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.NotFound, "not found", BlobErrorCode.BlobNotFound.ToString(), null));
 
             _client.Setup(e => e.UploadAsync(
                     It.IsAny<Stream>(),

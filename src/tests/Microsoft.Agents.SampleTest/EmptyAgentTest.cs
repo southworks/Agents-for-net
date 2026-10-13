@@ -9,8 +9,11 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.Storage.Transcript;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
+using System.IO;
 using Xunit;
 
 namespace Microsoft.Agents.SampleTest
@@ -27,6 +30,136 @@ namespace Microsoft.Agents.SampleTest
     /// </summary>
     public class EmptyAgentTest
     {
+        [Fact]
+        public async Task Test_CommandLineMemorySuiteReportsAllThreeIssues()
+        {
+            using var output = new StringWriter();
+            int exitCode = await StorageIssue1046.RunScenarioAsync("all", output, provider: "memory");
+
+            Assert.Equal(0, exitCode);
+            Assert.Contains("memory/stale: NOT REPRODUCED", output.ToString());
+            Assert.Contains("memory/container: NOT APPLICABLE", output.ToString());
+            Assert.Contains("memory/deserialize: NOT REPRODUCED", output.ToString());
+            Assert.Contains("memory/null: NOT REPRODUCED", output.ToString());
+        }
+
+        [Fact]
+        public async Task Test_CommandLineCosmosMissingConfigurationIsInconclusive()
+        {
+            using var output = new StringWriter();
+            int exitCode = await StorageIssue1046.RunScenarioAsync("all", output, provider: "cosmos");
+
+            Assert.Equal(2, exitCode);
+            Assert.Contains("cosmos/stale (CompatibilityMode=False): INCONCLUSIVE", output.ToString());
+            Assert.Contains("cosmos/container (CompatibilityMode=True): INCONCLUSIVE", output.ToString());
+            Assert.Contains("cosmos/deserialize (CompatibilityMode=True): INCONCLUSIVE", output.ToString());
+            Assert.DoesNotContain("BUG REPRODUCED", output.ToString());
+            Assert.DoesNotContain("NOT REPRODUCED", output.ToString());
+        }
+
+        [Fact]
+        public async Task Test_CosmosConfigurationRequiredPreservesMemorySession()
+        {
+            var sessions = new StorageReproductionSessions();
+            await sessions.ExecuteAsync("test", "conversation", "user", "reset memory", CancellationToken.None);
+            await sessions.ExecuteAsync("test", "conversation", "user", "write saved", CancellationToken.None);
+
+            string reset = await sessions.ExecuteAsync(
+                "test", "conversation", "user", "reset cosmos", CancellationToken.None);
+            Assert.Contains("Configure StorageReproduction:CosmosDb", reset);
+            string read = await sessions.ExecuteAsync("test", "conversation", "user", "read", CancellationToken.None);
+            Assert.Contains("name=saved", read);
+        }
+
+        [Fact]
+        public async Task Test_CosmosResetSelectsProviderWithoutReadingOrCreatingContainer()
+        {
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["StorageReproduction:CosmosDb:Endpoint"] = "https://localhost:8081/",
+                ["StorageReproduction:CosmosDb:AuthKey"] = "test-key",
+                ["StorageReproduction:CosmosDb:DatabaseId"] = "test-database",
+                ["StorageReproduction:CosmosDb:ContainerId"] = "test-container"
+            }).Build();
+            var sessions = new StorageReproductionSessions(configuration);
+
+            string reset = await sessions.ExecuteAsync(
+                "test", "conversation", "user", "reset cosmos", CancellationToken.None);
+            Assert.Contains("Reset to CosmosDbPartitionedStorage", reset);
+            Assert.Contains("isolated document ID: k-issue1046-", reset);
+            string inspect = await sessions.ExecuteAsync(
+                "test", "conversation", "user", "inspect backing", CancellationToken.None);
+            Assert.Contains("available with MemoryStorage", inspect);
+        }
+
+        [Fact]
+        public async Task Test_ManualStorageStepsAcrossMessages()
+        {
+            await using var host = AgentTestHost.Create(builder =>
+            {
+                builder.Services.AddSingleton<IStorage, MemoryStorage>();
+                builder.Services.AddSingleton<StorageReproductionSessions>();
+                builder.Services.AddTransient<IAgent>(sp =>
+                    new MyAgent(new AgentApplicationOptions(sp.GetRequiredService<IStorage>()),
+                        sp.GetRequiredService<StorageReproductionSessions>()));
+            });
+
+            var steps = new (string Command, string Expected)[]
+            {
+                ("reset memory", "Reset to MemoryStorage"),
+                ("write a", "V1 write completed"),
+                ("read snapshot", "Snapshot saved: name=a"),
+                ("write b", "V1 write completed"),
+                ("write snapshot stale v1", "EtagException"),
+                ("read", "Read: name=b"),
+                ("write snapshot stale v2", "EtagException"),
+                ("read", "Read: name=b"),
+                ("reset memory", "Reset to MemoryStorage"),
+                ("write throwing-item", "V1 write completed"),
+                ("read", "JsonException: boom"),
+                ("read", "JsonException: boom"),
+                ("mutate returned-json changed", "after a read returns JsonObject"),
+                ("inspect backing", "\"name\":\"x\""),
+                ("read typed", "JsonException: boom")
+            };
+
+            foreach (var step in steps)
+            {
+                await host.CreateTestFlow()
+                    .Send($"storage {step.Command}")
+                    .AssertReplySatisfies(reply =>
+                    {
+                        Assert.Contains(step.Expected, reply.Text);
+                        return Task.CompletedTask;
+                    })
+                    .StartTestAsync();
+            }
+        }
+
+        [Theory]
+        [InlineData("repro stale", "Stored name after V2: b")]
+        [InlineData("repro deserialize", "Persisted JSON and type metadata unchanged: True")]
+        public async Task Test_StorageReproductionMessage(string command, string expectedSymptom)
+        {
+            await using var host = AgentTestHost.Create(builder =>
+            {
+                builder.Services.AddSingleton<IStorage, MemoryStorage>();
+                builder.Services.AddSingleton<StorageReproductionSessions>();
+                builder.Services.AddTransient<IAgent>(sp =>
+                    new MyAgent(new AgentApplicationOptions(sp.GetRequiredService<IStorage>()), sp.GetRequiredService<StorageReproductionSessions>()));
+            });
+
+            await host.CreateTestFlow()
+                .Send(command)
+                .AssertReplySatisfies(reply =>
+                {
+                    Assert.Contains(expectedSymptom, reply.Text);
+                    Assert.Contains("NOT REPRODUCED", reply.Text);
+                    return Task.CompletedTask;
+                })
+                .StartTestAsync();
+        }
+
         /// <summary>
         /// Verifies the full greeting + echo conversation for <c>MyAgent</c>:
         /// <list type="number">
@@ -52,13 +185,14 @@ namespace Microsoft.Agents.SampleTest
             await using var host = AgentTestHost.Create(builder =>
             {
                 builder.Services.AddSingleton<IStorage, MemoryStorage>();
+                builder.Services.AddSingleton<StorageReproductionSessions>();
 
                 // Factory registration is used instead of AddTransient<IAgent, MyAgent>() because
                 // AgentApplicationOptions must be constructed with an IStorage instance resolved
                 // from DI. If your agent has a fully DI-injected constructor, you can use
                 // builder.Services.AddTransient<IAgent, MyAgent>() instead.
                 builder.Services.AddTransient<IAgent>(sp =>
-                    new MyAgent(new AgentApplicationOptions(sp.GetRequiredService<IStorage>())));
+                    new MyAgent(new AgentApplicationOptions(sp.GetRequiredService<IStorage>()), sp.GetRequiredService<StorageReproductionSessions>()));
             });
 
             // Attach transcript middleware to the shared adapter before creating any TestFlow.
