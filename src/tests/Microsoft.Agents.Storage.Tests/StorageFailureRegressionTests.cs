@@ -338,16 +338,22 @@ namespace Microsoft.Agents.Storage.Tests
         [Fact]
         public async Task V2_NoOptionsWritePreservesLegacyEtagCheck()
         {
-            IStorageV2 storage = new MemoryStorage();
-            IStorage legacy = storage;
-            await legacy.WriteAsync(new Dictionary<string, object> { ["k"] = new StoreItem { Topic = "original", ETag = "*" } });
-            StoreItem stale = (await legacy.ReadAsync<StoreItem>(new[] { "k" }))["k"];
-            await legacy.WriteAsync(new Dictionary<string, object> { ["k"] = new StoreItem { Topic = "newer", ETag = "*" } });
+            var memory = new MemoryStorage();
+            IStorageV2 storageV2 = memory;
+            await memory.WriteAsync(new Dictionary<string, object> { ["item"] = new StoreItem { Topic = "initial", ETag = "*" } });
+            var stale = (await memory.ReadAsync<StoreItem>(["item"]))["item"];
+            await memory.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = new StoreItem { Topic = "newer", ETag = "*" } });
             stale.Topic = "stale";
 
-            await Assert.ThrowsAsync<EtagException>(() => storage.WriteAsync(new Dictionary<string, object> { ["k"] = stale }));
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storageV2.WriteAsync(new Dictionary<string, object> { ["item"] = stale }));
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storageV2.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = stale }));
+            Assert.Equal("newer", (await memory.ReadAsync<StoreItem>(["item"]))["item"].Topic);
 
-            Assert.Equal("newer", (await legacy.ReadAsync<StoreItem>(new[] { "k" }))["k"].Topic);
+            var result = await storageV2.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = stale }, new StorageWriteOptions());
+            Assert.Equal(StorageOperationStatus.Succeeded, result["item"].Status);
+            Assert.Equal("stale", (await memory.ReadAsync<StoreItem>(["item"]))["item"].Topic);
         }
 
         [Theory]
@@ -480,6 +486,8 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     await Assert.ThrowsAsync<JsonException>(() => storage.ReadAsync(new[] { "k" }));
                 }
+
+                await Assert.ThrowsAsync<JsonException>(() => storage.ReadAsync<ThrowsOnRead>(new[] { "k" }));
 
                 Assert.True(JsonNode.DeepEquals(before, backing["k"]));
             }

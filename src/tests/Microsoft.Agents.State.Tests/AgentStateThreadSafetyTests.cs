@@ -421,7 +421,7 @@ namespace Microsoft.Agents.State.Tests
                     });
             storage.Setup(s => s.WriteAsync(
                     It.IsAny<IReadOnlyDictionary<string, object>>(),
-                    It.Is<StorageWriteOptions>(options => options.ExpectedVersion == null),
+                    It.Is<StorageWriteOptions>(options => options.Mode == StorageWriteMode.Upsert && options.ExpectedVersion == null),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IReadOnlyDictionary<string, object> changes, StorageWriteOptions _, CancellationToken _) =>
                     new Dictionary<string, StorageWriteResult>
@@ -443,7 +443,7 @@ namespace Microsoft.Agents.State.Tests
 
             storage.Verify(s => s.WriteAsync(
                 It.IsAny<IReadOnlyDictionary<string, object>>(),
-                It.Is<StorageWriteOptions>(options => options.ExpectedVersion == null),
+                It.Is<StorageWriteOptions>(options => options.Mode == StorageWriteMode.Upsert && options.ExpectedVersion == null),
                 It.IsAny<CancellationToken>()), Times.Once);
             storage.Verify(s => s.WriteAsync(
                 It.IsAny<IReadOnlyDictionary<string, object>>(),
