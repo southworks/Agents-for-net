@@ -1962,8 +1962,8 @@ public class A2AAdapterTests
         var context = CreateHttpContext(JsonSerializer.Serialize(new JsonRpcRequest
         {
             Id = Guid.NewGuid().ToString(),
-            Method = InTaskAuthorizationExtension.ResumeAuthOperation,
-            Params = JsonSerializer.SerializeToElement(new ResumeAuthRequest
+            Method = InTaskAuthorizationExtension.AuthResponseOperation,
+            Params = JsonSerializer.SerializeToElement(new AuthResponseRequest
             {
                 TaskId = task.Id,
                 ContextId = task.ContextId,
