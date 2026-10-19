@@ -144,6 +144,14 @@ The compiled assembly/PDB scan is independent evidence. `validate-usage` compare
 
 The repository gate additionally checks the manifest against both built target frameworks. It verifies the centrally managed dependency version, symbols, tracked members, public exposure in both directions, safe existing source paths, and stale manifest entries. A non-impact acknowledgment cannot suppress these provable errors.
 
+### Reviewed compatibility changes
+
+When a blocking or required finding has been reviewed and the extension already handles it safely, the usage manifest can record a `compatibilityReviews` entry. Each entry specifies `fromVersion`, `toVersion`, `upstreamSymbol`, `member`, `kind`, `before`, `after`, `targetFrameworks`, and a non-empty `reason` explaining why no adaptation is needed and identifying supporting evidence.
+
+Copy the symbol, member, change kind, signatures, and complete framework set from `raw-api-diff.json`, not the generated finding ID. Classification applies the review only when both versions and every change field match exactly (framework order does not matter). Different versions, signatures, or framework sets retain their normal compatibility classification. Historical reviews may remain in the manifest but do not acknowledge future changes.
+
+A matching review changes the finding to `no-action` with category `reviewed-compatible`, adds `compatibility-review` evidence, and includes the justification in its recommended action and deterministic report. The raw comparison and finding remain available for auditing. Reviews do not bypass manifest-integrity checks, compilation, contract tests, or runtime boundary tests. Malformed review entries fail classification explicitly.
+
 ### Capability manifest
 
 `teams-capabilities.json` maps namespaces and, where necessary, specific types to product capability areas. A mapping supplies ownership and an adoption policy. The classifier uses the most specific matching mapping to distinguish additive APIs that require feature review from internal implementation opportunities.
