@@ -28,7 +28,7 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
-      REVIEW_WORKSPACE: ${{ runner.temp }}/teams-impact-review
+      REVIEW_WORKSPACE: ${{ github.workspace }}/.teams-impact-review
       CAN_REVIEW: 'true'
     steps:
       - name: Check out repository
