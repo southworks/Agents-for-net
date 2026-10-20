@@ -42,7 +42,10 @@ internal static class Program
         using TextReader reader = options.Optional("--props") is "-" or null
             ? Console.In
             : File.OpenText(options.Required("--props"));
-        Console.WriteLine(VersionResolver.Resolve(reader, options.Optional("--package") ?? PackageConstants.PackageId));
+        var package = options.Optional("--package") ?? PackageConstants.PackageId;
+        var version = VersionResolver.Resolve(reader, package);
+        StepLog.Write("Resolved package version", $"{package}: {version}", $"Source: {options.Optional("--props") ?? "standard input"}");
+        Console.WriteLine(version);
         return 0;
     }
 
@@ -58,6 +61,11 @@ internal static class Program
         ToolJson.Write(Path.Combine(output, "microsoft-teams-apps-before.api.json"), before);
         ToolJson.Write(Path.Combine(output, "microsoft-teams-apps-after.api.json"), after);
         ToolJson.Write(Path.Combine(output, "raw-api-diff.json"), comparison);
+        var affectedFrameworks = string.Join(", ", comparison.Changes.SelectMany(change => change.TargetFrameworks).Distinct().Order(StringComparer.Ordinal));
+        StepLog.Write("Compared package metadata", $"{PackageConstants.PackageId}: {from} -> {to}",
+            $"API changes: {comparison.Changes.Count}; affected frameworks: {(affectedFrameworks.Length == 0 ? "none" : affectedFrameworks)}",
+            $"Before/after API models and raw diff written to: {output}");
+        StepLog.Counts("API change types", comparison.Changes.Select(change => change.Kind));
         Console.WriteLine(to);
         return 0;
     }
@@ -67,7 +75,12 @@ internal static class Program
         var assemblies = options.Many("--assembly");
         if (assemblies.Count == 0) throw new ArgumentException("At least one --assembly is required.");
         var result = CollectUsage(assemblies);
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "collected-usage.json", ".json"), result);
+        var output = ToolJson.OutputFile(options.Required("--output"), "collected-usage.json", ".json");
+        ToolJson.Write(output, result);
+        StepLog.Write("Collected Teams API usage", $"Assemblies inspected: {assemblies.Count}",
+            $"Upstream symbols: {result.Usages.Count}; referenced members: {result.Usages.Sum(usage => usage.Members.Count)}; source files: {result.SourceFiles?.Count ?? 0}",
+            $"Usage artifact: {output}");
+        StepLog.Counts("Exposure", result.Usages.Select(usage => usage.Exposure));
         return 0;
     }
 
@@ -93,7 +106,13 @@ internal static class Program
             ToolJson.Read<CollectedUsage>(options.Required("--collected")),
             ToolJson.Read<ApiModel>(options.Required("--api-model")),
             options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "usage-validation.json", ".json"), result);
+        var output = ToolJson.OutputFile(options.Required("--output"), "usage-validation.json", ".json");
+        ToolJson.Write(output, result);
+        StepLog.Write($"Usage manifest validation {(result.Valid ? "passed" : "FAILED")}",
+            $"Errors: {result.Errors.Count}; warnings: {result.Warnings.Count}; missing symbols: {result.MissingSymbols.Count}; missing members: {result.MissingMembers.Count}",
+            $"Validation artifact: {output}");
+        foreach (var error in result.Errors) Console.Error.WriteLine($"  Error: {error}");
+        foreach (var warning in result.Warnings) Console.Error.WriteLine($"  Warning: {warning}");
         return result.Valid ? 0 : 1;
     }
 
@@ -112,6 +131,7 @@ internal static class Program
             options.Required("--manifest"),
             options.Required("--capabilities"),
             options.Optional("--base-ref"));
+        StepLog.Write($"Repository metadata validation {(result.Valid ? "passed" : "FAILED")}", $"Findings: {result.Findings.Count}");
         foreach (var finding in result.Findings)
         {
             Console.Error.WriteLine($"TeamsApiDrift: [{finding.RuleId}] {finding.Path}: {finding.Message} Fix: {finding.Fix}");
@@ -125,7 +145,9 @@ internal static class Program
             ToolJson.Read<ApiComparison>(options.Required("--comparison")),
             ToolJson.Read<UsageManifest>(options.Required("--manifest")),
             ToolJson.Read<CapabilityDocument>(options.Required("--capabilities")));
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "findings.json", ".json"), result);
+        var output = ToolJson.OutputFile(options.Required("--output"), "findings.json", ".json");
+        ToolJson.Write(output, result);
+        StepLog.Findings(result, "Classified direct compatibility impact (before AI assessment)", output);
         return options.HasFlag("--fail-on-drift") && result.Summary.Blocking + result.Summary.Required > 0 ? 1 : 0;
     }
 
@@ -133,7 +155,11 @@ internal static class Program
     {
         var checks = options.Many("--check").Select(value => value.Split('=', 2))
             .ToDictionary(parts => parts[0], parts => parts.Length == 2 ? parts[1] : "unknown", StringComparer.Ordinal);
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "test-summary.json", ".json"), new TestSummary(1, checks));
+        var output = ToolJson.OutputFile(options.Required("--output"), "test-summary.json", ".json");
+        ToolJson.Write(output, new TestSummary(1, checks));
+        StepLog.Write("Recorded build and test outcomes", $"Checks recorded: {checks.Count}", $"Check artifact: {output}");
+        StepLog.Counts("Outcomes", checks.Values);
+        foreach (var check in checks.OrderBy(check => check.Key, StringComparer.Ordinal)) Console.Error.WriteLine($"  {check.Key}: {check.Value}");
         return 0;
     }
 
@@ -146,6 +172,7 @@ internal static class Program
         var output = ToolJson.OutputFile(options.Required("--output"), "deterministic-report.md", ".md");
         Directory.CreateDirectory(Path.GetDirectoryName(output)!);
         File.WriteAllText(output, markdown);
+        StepLog.Write("Rendered deterministic impact report", $"Report: {output}", $"Lines: {markdown.Split('\n').Length}");
         return 0;
     }
 
@@ -159,7 +186,12 @@ internal static class Program
             File.ReadAllText(options.Required("--deterministic-report")),
             summaryPath is null ? null : ToolJson.Read<TestSummary>(summaryPath),
             options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "agent-context.json", ".json"), context);
+        var output = ToolJson.OutputFile(options.Required("--output"), "agent-context.json", ".json");
+        ToolJson.Write(output, context);
+        var document = System.Text.Json.JsonSerializer.SerializeToElement(context, ToolJson.Options);
+        var files = document.GetProperty("relevantSourceFiles");
+        StepLog.Write("Prepared bounded advisory context", $"Source files: {files.GetArrayLength()}; truncated: {files.EnumerateArray().Count(file => file.GetProperty("truncated").GetBoolean())}; omitted: {document.GetProperty("omittedSourceFiles").GetArrayLength()}",
+            $"Context artifact: {output}");
         return 0;
     }
 
@@ -170,6 +202,9 @@ internal static class Program
             ToolJson.Read<FindingsResult>(options.Required("--findings")));
         var output = ToolJson.OutputFile(options.Required("--output"), "agent-report-validation.json", ".json");
         ToolJson.Write(output, validation);
+        StepLog.Write($"Advisory report validation {(validation.Valid ? "passed" : "FAILED")}",
+            $"Referenced findings: {validation.ReferencedFindingIds.Count}; missing mandatory findings: {validation.MissingMandatoryFindingIds.Count}; unknown findings: {validation.UnknownFindingIds.Count}; errors: {validation.Errors.Count}",
+            $"Validation artifact: {output}");
         if (!validation.Valid)
         {
             Console.Error.WriteLine($"TeamsApiDrift: Agent report validation failed. Details were written to '{output}'.");
@@ -188,6 +223,10 @@ internal static class Program
             ToolJson.Read<TestSummary>(options.Required("--test-summary")),
             options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
         ToolJson.Write(options.Required("--output"), context);
+        StepLog.Write("Prepared nullability usage assessment", $"Eligible findings: {context.Findings.Count}",
+            $"Source/test files: {context.SourceFiles.Count}; truncated: {context.SourceFiles.Count(file => file.Truncated)}; omitted: {context.OmittedFiles.Count}",
+            context.Findings.Count == 0 ? "AI usage assessment will be skipped: no eligible internal nullability changes." : "AI will assess these findings as safe or needs-human-review.",
+            $"Context artifact: {options.Required("--output")}");
         Console.WriteLine(context.Findings.Count);
         return 0;
     }
@@ -218,6 +257,10 @@ internal static class Program
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(summaryPath))!);
                 File.WriteAllText(summaryPath, summary);
                 ToolJson.Write(gateOutput, effective);
+                StepLog.Write("Validated and applied AI usage assessments", $"Assessments: {report.Assessments.Count}",
+                    $"Findings cleared by AI: {report.Assessments.Count(assessment => assessment.Verdict == "safe")}",
+                    $"Findings needing human review: {report.Assessments.Count(assessment => assessment.Verdict == "needs-human-review")}");
+                StepLog.Findings(effective, "Effective findings after AI assessment", gateOutput);
             }
         }
         catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or ArgumentException)
@@ -225,6 +268,8 @@ internal static class Program
             validation = new(1, false, [exception.Message]);
         }
         ToolJson.Write(options.Required("--output"), validation);
+        if (!validation.Valid) StepLog.Write("AI usage assessment validation FAILED", $"Errors: {validation.Errors.Count}", "No findings were cleared; the original policy findings remain in effect.");
+        Console.Error.WriteLine($"  Assessment validation artifact: {options.Required("--output")}");
         foreach (var error in validation.Errors) Console.Error.WriteLine($"TeamsApiDrift: {error}");
         return validation.Valid ? 0 : 1;
     }

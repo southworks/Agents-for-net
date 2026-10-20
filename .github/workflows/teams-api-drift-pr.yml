@@ -40,6 +40,7 @@ jobs:
     env:
       ARTIFACTS: artifacts/teams-api-drift
       TOOL: scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj
+      STEP_RUNNER: scripts/TeamsApiDrift/run-step.sh
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
@@ -57,7 +58,7 @@ jobs:
       - name: Build drift tool
         id: tool
         continue-on-error: true
-        run: dotnet build "$TOOL" -c Release
+        run: bash "$STEP_RUNNER" "Build drift tool" dotnet build "$TOOL" -c Release
 
       - name: Resolve versions
         id: versions
@@ -81,6 +82,7 @@ jobs:
           fi
           echo "from=$(cat "$RUNNER_TEMP/from.txt")" >> "$GITHUB_OUTPUT"
           echo "to=$(cat "$RUNNER_TEMP/to.txt")" >> "$GITHUB_OUTPUT"
+          printf 'Summary: Resolved comparison: Microsoft.Teams.Apps %s -> %s\n' "$(cat "$RUNNER_TEMP/from.txt")" "$(cat "$RUNNER_TEMP/to.txt")"
 
       - name: Compare normalized package metadata
         id: compare
@@ -97,13 +99,13 @@ jobs:
         continue-on-error: true
         env:
           TO_VERSION: ${{ steps.versions.outputs.to }}
-        run: dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION"
+        run: bash "$STEP_RUNNER" "Build MSTeams against candidate" dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION"
 
       - name: Run drift tool tests
         id: drift_tests
         if: always()
         continue-on-error: true
-        run: dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+        run: bash "$STEP_RUNNER" "Run drift tool tests" dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
 
       - name: Run Teams API compile-time contracts for net8.0
         id: contract_net8
@@ -111,7 +113,7 @@ jobs:
         continue-on-error: true
         env:
           TO_VERSION: ${{ steps.versions.outputs.to }}
-        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
+        run: bash "$STEP_RUNNER" "Run Teams API compile-time contracts for net8.0" dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
 
       - name: Run Teams API compile-time contracts for net10.0
         id: contract_net10
@@ -119,7 +121,7 @@ jobs:
         continue-on-error: true
         env:
           TO_VERSION: ${{ steps.versions.outputs.to }}
-        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
+        run: bash "$STEP_RUNNER" "Run Teams API compile-time contracts for net10.0" dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
 
       - name: Run Teams API runtime boundary for net8.0
         id: boundary_net8
@@ -127,7 +129,7 @@ jobs:
         continue-on-error: true
         env:
           TO_VERSION: ${{ steps.versions.outputs.to }}
-        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
+        run: bash "$STEP_RUNNER" "Run Teams API runtime boundary for net8.0" dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
 
       - name: Run Teams API runtime boundary for net10.0
         id: boundary_net10
@@ -135,7 +137,7 @@ jobs:
         continue-on-error: true
         env:
           TO_VERSION: ${{ steps.versions.outputs.to }}
-        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
+        run: bash "$STEP_RUNNER" "Run Teams API runtime boundary for net10.0" dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
 
       - name: Collect actual Teams API usage
         id: collect
@@ -215,14 +217,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          npm install --global @github/copilot
+          bash "$STEP_RUNNER" "Copilot CLI installation" npm install --global @github/copilot
           # The advisory receives its complete, bounded context in the prompt.
           # Deny every tool kind rather than using the unsupported '*' pattern.
           instructions=$(cat .github/instructions/teams-api-drift-instructions.md)
           context=$(cat "$ARTIFACTS/agent-context.json")
-          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
+          bash "$STEP_RUNNER" "Advisory AI report generation" copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
 
           $context" > "$ARTIFACTS/copilot-report.md"
+          printf '  Output artifact: %s (%s bytes)\n' "$ARTIFACTS/copilot-report.md" "$(wc -c < "$ARTIFACTS/copilot-report.md")"
 
       - name: Validate advisory AI report
         id: validate-advisory-report
@@ -239,12 +242,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          npm install --global @github/copilot
+          bash "$STEP_RUNNER" "Copilot CLI installation" npm install --global @github/copilot
           instructions=$(cat .github/instructions/teams-api-usage-assessment-instructions.md)
           context=$(cat "$ARTIFACTS/usage-assessment-context.json")
-          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
+          bash "$STEP_RUNNER" "Nullability usage assessment generation" copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
 
           $context" > "$ARTIFACTS/usage-assessments.json"
+          printf '  Output artifact: %s (%s bytes)\n' "$ARTIFACTS/usage-assessments.json" "$(wc -c < "$ARTIFACTS/usage-assessments.json")"
 
       - name: Validate and apply AI usage assessments
         id: validate-usage-assessment
@@ -301,8 +305,10 @@ jobs:
             const issue_number = context.issue.number;
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
             const existing = comments.find(comment => comment.user.type === 'Bot' && comment.body?.includes(marker));
-            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            const response = existing
+              ? await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body })
+              : await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            console.log(`Summary: ${existing ? 'Updated' : 'Created'} PR drift comment for ${findings.findings.length} original findings: ${response.data.html_url}`);
 
       # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.      
       - name: Report final workflow result
@@ -334,8 +340,15 @@ jobs:
           fi
           gate_findings="$ARTIFACTS/findings.json"
           if [[ "${{ steps.validate-usage-assessment.outcome }}" == success ]]; then gate_findings="$ARTIFACTS/gate-findings.json"; fi
+          if [[ -f "$gate_findings" ]]; then
+            printf 'Summary: Final policy evaluation using %s\n' "$gate_findings"
+            jq -r '.summary | "  Blocking: \(.blocking) | Required: \(.required) | Review: \(.review) | No action: \(."no-action")"' "$gate_findings"
+          else
+            echo 'Summary: No findings artifact was produced; see the failed earlier steps.'
+          fi
           if [[ -f "$gate_findings" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$gate_findings")" -gt 0 ]]; then
             jq -r '.findings[] | select(.classification == "blocking" or .classification == "required") | "\(.id): \(.classification) — \(.kind): \(.upstreamSymbol).\(.member // "")"' "$gate_findings"
             failures+=(policy-drift)
           fi
-          if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi
+          if (( ${#failures[@]} )); then printf 'Summary: Workflow FAILED. Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi
+          echo 'Summary: Workflow passed. All required checks passed and no blocking or required findings remain.'
