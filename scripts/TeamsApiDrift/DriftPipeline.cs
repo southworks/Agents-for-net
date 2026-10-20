@@ -250,7 +250,7 @@ public static partial class AgentContextBuilder
         };
     }
 
-    private static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
+    internal static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
     {
         var current = Path.GetFullPath(sourceRoot);
         RejectSymlink(current, path);

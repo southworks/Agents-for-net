@@ -25,6 +25,8 @@ internal static class Program
                 "render-report" => RenderReport(options),
                 "prepare-agent-context" => PrepareAgentContext(options),
                 "validate-agent-report" => ValidateAgentReport(options),
+                "prepare-impact-review" => PrepareImpactReview(options),
+                "validate-impact-review" => ValidateImpactReview(options),
                 _ => throw new ArgumentException($"Unknown command: {args[0]}")
             };
         }
@@ -56,6 +58,9 @@ internal static class Program
         ToolJson.Write(Path.Combine(output, "microsoft-teams-apps-before.api.json"), before);
         ToolJson.Write(Path.Combine(output, "microsoft-teams-apps-after.api.json"), after);
         ToolJson.Write(Path.Combine(output, "raw-api-diff.json"), comparison);
+        Console.Error.WriteLine($"Summary: Compared {PackageConstants.PackageId} {from} -> {to}; {comparison.Changes.Count} API changes.");
+        foreach (var group in comparison.Changes.GroupBy(change => change.Kind).OrderBy(group => group.Key, StringComparer.Ordinal))
+            Console.Error.WriteLine($"  {group.Key}: {group.Count()}");
         Console.WriteLine(to);
         return 0;
     }
@@ -66,6 +71,7 @@ internal static class Program
         if (assemblies.Count == 0) throw new ArgumentException("At least one --assembly is required.");
         var result = CollectUsage(assemblies);
         ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "collected-usage.json", ".json"), result);
+        Console.Error.WriteLine($"Summary: Collected {result.Usages.Count} dependency symbols and {result.Usages.Sum(usage => usage.Members.Count)} referenced members from {assemblies.Count} assemblies.");
         return 0;
     }
 
@@ -92,6 +98,9 @@ internal static class Program
             ToolJson.Read<ApiModel>(options.Required("--api-model")),
             options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
         ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "usage-validation.json", ".json"), result);
+        Console.Error.WriteLine($"Summary: Usage manifest validation {(result.Valid ? "passed" : "FAILED")}; {result.Errors.Count} errors, {result.Warnings.Count} warnings.");
+        foreach (var error in result.Errors) Console.Error.WriteLine($"  Error: {error}");
+        foreach (var warning in result.Warnings) Console.Error.WriteLine($"  Warning: {warning}");
         return result.Valid ? 0 : 1;
     }
 
@@ -132,6 +141,8 @@ internal static class Program
         var checks = options.Many("--check").Select(value => value.Split('=', 2))
             .ToDictionary(parts => parts[0], parts => parts.Length == 2 ? parts[1] : "unknown", StringComparer.Ordinal);
         ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "test-summary.json", ".json"), new TestSummary(1, checks));
+        Console.Error.WriteLine($"Summary: Recorded {checks.Count} independent check outcomes.");
+        foreach (var check in checks.OrderBy(check => check.Key, StringComparer.Ordinal)) Console.Error.WriteLine($"  {check.Key}: {check.Value}");
         return 0;
     }
 
@@ -179,6 +190,59 @@ internal static class Program
         return validation.Valid ? 0 : 1;
     }
 
+    private static int PrepareImpactReview(Arguments options)
+    {
+        var collectedPath = options.Optional("--collected");
+        var input = ImpactReviewPipeline.Prepare(
+            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory(), options.Required("--workspace"),
+            ToolJson.Read<ApiComparison>(options.Required("--comparison")),
+            ToolJson.Read<UsageManifest>(options.Required("--manifest")),
+            ToolJson.Read<CapabilityDocument>(options.Required("--capabilities")),
+            collectedPath is not null && File.Exists(collectedPath) ? ToolJson.Read<CollectedUsage>(collectedPath) : null,
+            ToolJson.Read<TestSummary>(options.Required("--test-summary")),
+            ToolJson.Read<ApiModel>(options.Required("--before-api")), ToolJson.Read<ApiModel>(options.Required("--after-api")));
+        ToolJson.Write(options.Required("--output"), input);
+        // No package changes still produces a validated empty review without an AI call.
+        if (input.Comparison.Changes.Count == 0 || options.HasFlag("--defer"))
+        {
+            var decisions = input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, "needs-human-review", "uncertain",
+                "Automated repository review is unavailable for fork pull requests; a maintainer must review this candidate.", [])).ToArray();
+            ToolJson.Write(options.Required("--empty-review"), new ImpactReview(1, input.ReviewId, input.Comparison.FromVersion, input.Comparison.ToVersion, decisions));
+        }
+        Console.Error.WriteLine($"Summary: Prepared implementation review of {input.Comparison.Changes.Count} API changes; {input.Files.Count} full source/test/document files; commit {input.Commit}.");
+        foreach (var group in input.Comparison.Changes.GroupBy(change => change.Kind).OrderBy(group => group.Key, StringComparer.Ordinal))
+            Console.Error.WriteLine($"  {group.Key}: {group.Count()}");
+        Console.Error.WriteLine($"  Review identity: {input.ReviewId}; snapshot: {options.Required("--workspace")}");
+        Console.WriteLine(input.Comparison.Changes.Count);
+        return 0;
+    }
+
+    private static int ValidateImpactReview(Arguments options)
+    {
+        var input = ToolJson.Read<ImpactReviewInput>(options.Required("--input"));
+        ImpactValidation validation;
+        try
+        {
+            var review = ImpactReviewPipeline.Parse(File.ReadAllText(options.Required("--review")));
+            validation = ImpactReviewPipeline.Validate(review, input, options.Required("--workspace"),
+                options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or ArgumentException)
+        {
+            validation = ImpactReviewPipeline.Invalid(exception.Message);
+        }
+        ToolJson.Write(options.Required("--output"), validation);
+        var reportPath = options.Required("--report");
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath))!);
+        File.WriteAllText(reportPath, ImpactReviewPipeline.Render(input, validation));
+        Console.Error.WriteLine($"Summary: Implementation review validation {(validation.Valid ? "passed" : "FAILED")}; gate {(validation.CanProceed ? "passed" : "requires attention")}.");
+        Console.Error.WriteLine($"  Safe: {validation.Summary.Safe}; needs adaptation: {validation.Summary.NeedsAdaptation}; needs human review: {validation.Summary.NeedsHumanReview}; errors: {validation.Errors.Count}.");
+        foreach (var decision in validation.Decisions) Console.Error.WriteLine($"  {decision.ChangeId}: {decision.Verdict} ({decision.Usage}) — {decision.Reason}");
+        foreach (var error in validation.Errors) Console.Error.WriteLine($"  Error: {error}");
+        Console.Error.WriteLine($"  Review report: {reportPath}");
+        return validation.Valid ? 0 : 1;
+    }
+
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
+        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
 }

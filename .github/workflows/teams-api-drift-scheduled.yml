@@ -1,7 +1,7 @@
 name: Scheduled Teams API Drift Detector
 
 # Periodically compares the declared Microsoft.Teams.Apps baseline with the latest stable release.
-# When the public API changes, it publishes deterministic artifacts and upserts an advisory issue.
+# An agent reviews every API change against source and publishes validated implementation impact.
 on:
   schedule:
     # Runs at 08:00 UTC every Monday (~1am PST)
@@ -28,6 +28,8 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
+      REVIEW_WORKSPACE: ${{ runner.temp }}/teams-impact-review
+      CAN_REVIEW: 'true'
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,6 +37,7 @@ jobs:
           # Nerdbank.GitVersioning needs repository history to calculate the
           # extension and its project-reference versions.
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -103,62 +106,68 @@ jobs:
           --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json"
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
 
-      - name: Classify direct compatibility impact
-        id: classify-usage-impact
-        if: always() && steps.compare.outcome == 'success'
-        continue-on-error: true
+      - name: Write independent check outcomes
+        id: checks
+        if: always() && steps.tool.outcome == 'success'
         run: >-
-          dotnet run --project "$TOOL" -c Release --no-build -- classify
-          --comparison "$ARTIFACTS/raw-api-diff.json" --manifest "$MANIFEST"
-          --capabilities "$CAPABILITIES" --output "$ARTIFACTS/findings.json"
+          dotnet run --project "$TOOL" -c Release --no-build -- write-test-summary
+          --output "$ARTIFACTS/test-summary.json"
+          --check tool=${{ steps.tool.outcome }}
+          --check compare=${{ steps.compare.outcome }}
+          --check build=${{ steps.build.outcome }}
+          --check drift-tests=${{ steps.drift_tests.outcome }}
+          --check collect=${{ steps.collect.outcome }}
+          --check manifest=${{ steps.manifest.outcome }}
+          --check candidate-tests=${{ steps.candidate_tests.outcome }}
 
-      - name: Write test summary and deterministic report
-        id: report
-        if: always() && steps.classify-usage-impact.outcome == 'success'
+      - name: Prepare repository snapshot and complete API review
+        id: prepare-review
+        if: always() && steps.compare.outcome == 'success' && steps.checks.outcome == 'success'
         continue-on-error: true
+        shell: bash
         run: |
-          dotnet run --project "$TOOL" -c Release --no-build -- write-test-summary --output "$ARTIFACTS/test-summary.json" --check tool=${{ steps.tool.outcome }} --check compare=${{ steps.compare.outcome }} --check build=${{ steps.build.outcome }} --check drift-tests=${{ steps.drift_tests.outcome }} --check candidate-tests=${{ steps.candidate_tests.outcome }} --check manifest=${{ steps.manifest.outcome }}
-          dotnet run --project "$TOOL" -c Release --no-build -- render-report --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --output "$ARTIFACTS/deterministic-report.md"
+          options=()
+          if [[ "$CAN_REVIEW" != true ]]; then options+=(--defer); fi
+          count=$(dotnet run --project "$TOOL" -c Release --no-build -- prepare-impact-review --comparison "$ARTIFACTS/raw-api-diff.json" --before-api "$ARTIFACTS/microsoft-teams-apps-before.api.json" --after-api "$ARTIFACTS/microsoft-teams-apps-after.api.json" --manifest "$MANIFEST" --capabilities "$CAPABILITIES" --collected "$ARTIFACTS/collected-usage.json" --test-summary "$ARTIFACTS/test-summary.json" --repository-root "$GITHUB_WORKSPACE" --workspace "$REVIEW_WORKSPACE" --output "$ARTIFACTS/review-input.json" --empty-review "$ARTIFACTS/impact-review.raw.json" "${options[@]}")
+          echo "count=$count" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare bounded AI agent context
-        id: prepare-agent-context
-        if: always() && steps.report.outcome == 'success' && github.event_name == 'workflow_dispatch'
-        continue-on-error: true
-        run: >-
-          dotnet run --project "$TOOL" -c Release --no-build -- prepare-agent-context
-          --findings "$ARTIFACTS/findings.json" --manifest "$MANIFEST" --capabilities "$CAPABILITIES"
-          --deterministic-report "$ARTIFACTS/deterministic-report.md" --test-summary "$ARTIFACTS/test-summary.json"
-          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
-
-      - name: Set up Node for external Copilot CLI
-        if: steps.prepare-agent-context.outcome == 'success'
+      - name: Set up Node for implementation reviewer
+        if: steps.prepare-review.outcome == 'success' && steps.prepare-review.outputs.count != '0' && env.CAN_REVIEW == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Generate advisory AI report
-        id: generate-advisory-report
-        if: steps.prepare-agent-context.outcome == 'success'
+      - name: Install review agent
+        id: install-agent
+        if: steps.prepare-review.outcome == 'success' && steps.prepare-review.outputs.count != '0' && env.CAN_REVIEW == 'true'
         continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        timeout-minutes: 5
         run: |
           npm install --global @github/copilot
-          # The advisory receives its complete, bounded context in the prompt.
-          # Deny every tool kind rather than using the unsupported '*' pattern.
-          instructions=$(cat .github/instructions/teams-api-drift-instructions.md)
-          context=$(cat "$ARTIFACTS/agent-context.json")
-          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
+          echo 'Summary: Installed Copilot CLI for repository read/search review.'
 
-          $context" > "$ARTIFACTS/copilot-report.md"
-
-      - name: Validate advisory AI report
-        id: validate-advisory-report
-        if: always() && steps.generate-advisory-report.outcome == 'success'
+      - name: Review every API change against the implementation
+        id: review
+        if: steps.install-agent.outcome == 'success'
         continue-on-error: true
-        run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
+        timeout-minutes: 20
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_HOME: ${{ runner.temp }}/teams-impact-copilot
+        run: bash scripts/TeamsApiDrift/run-impact-review.sh
 
-      - name: Upload drift evidence
+      - name: Validate decisions, source evidence, and review identity
+        id: validate-review
+        if: always() && steps.prepare-review.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          status=0
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-impact-review --input "$ARTIFACTS/review-input.json" --review "$ARTIFACTS/impact-review.raw.json" --workspace "$REVIEW_WORKSPACE" --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/impact-review-validation.json" --report "$ARTIFACTS/impact-report.md" || status=$?
+          if [[ -f "$ARTIFACTS/impact-report.md" ]]; then cat "$ARTIFACTS/impact-report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          exit "$status"
+
+      - name: Upload comparison and implementation review evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -167,46 +176,67 @@ jobs:
           retention-days: 21
           if-no-files-found: warn
 
-      - name: Create or update drift issue
-        if: always() && steps.classify-usage-impact.outcome == 'success' && steps.report.outcome == 'success'
+      - name: Create or update implementation review issue
+        if: always() && steps.prepare-review.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          REPORT_PATH: ${{ steps.validate-advisory-report.outcome == 'success' && format('{0}/copilot-report.md', env.ARTIFACTS) || format('{0}/deterministic-report.md', env.ARTIFACTS) }}
-          FINDINGS_PATH: artifacts/teams-api-drift/findings.json
+          REPORT_PATH: artifacts/teams-api-drift/impact-report.md
+          INPUT_PATH: artifacts/teams-api-drift/review-input.json
         with:
           script: |
             const fs = require('fs');
-            const findings = JSON.parse(fs.readFileSync(process.env.FINDINGS_PATH, 'utf8'));
-            if (findings.findings.length === 0) return;
+            if (!fs.existsSync(process.env.REPORT_PATH)) {
+              console.log('Summary: Review report unavailable; see validation logs.');
+              return;
+            }
+            const input = JSON.parse(fs.readFileSync(process.env.INPUT_PATH, 'utf8'));
+            if (input.comparison.changes.length === 0) {
+              console.log('Summary: No API changes; no implementation review issue needed.');
+              return;
+            }
             const marker = '<!-- teams-api-drift-scheduled -->';
-            const body = `${marker}\n${fs.readFileSync(process.env.REPORT_PATH, 'utf8')}`;
-            const title = `Microsoft.Teams.Apps drift: ${findings.fromVersion} → ${findings.toVersion}`;
             const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const report = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
+            const body = `${marker}\n${report.slice(0, 55000)}\n\n[Full report and artifacts](${runUrl})`;
+            const title = `Microsoft.Teams.Apps implementation review: ${input.comparison.fromVersion} → ${input.comparison.toVersion}`;
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
             const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
-            if (existing) await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body });
-            else await github.rest.issues.create({ owner, repo, title, body });
+            const response = existing
+              ? await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body })
+              : await github.rest.issues.create({ owner, repo, title, body });
+            console.log(`Summary: Published implementation review: ${response.data.html_url}`);
 
-      # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.
       - name: Report final workflow result
         if: always()
         shell: bash
         run: |
           failures=()
-          [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
-          [[ "${{ steps.resolve-baseline-version.outcome }}" == success ]] || failures+=(baseline)
-          [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
-          [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
-          [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
-          [[ "${{ steps.candidate_tests.outcome }}" == success ]] || failures+=(candidate-tests)
-          [[ "${{ steps.collect.outcome }}" == success ]] || failures+=(usage-collection)
-          [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
-          [[ "${{ steps.classify-usage-impact.outcome }}" == success ]] || failures+=(classification)
-          [[ "${{ steps.report.outcome }}" == success ]] || failures+=(deterministic-report)
-          if [[ "${{ github.event_name }}" == workflow_dispatch ]]; then
-            [[ "${{ steps.prepare-agent-context.outcome }}" == success ]] || failures+=(agent-context)
-            [[ "${{ steps.generate-advisory-report.outcome }}" == success ]] || failures+=(copilot-report)
-            [[ "${{ steps.validate-advisory-report.outcome }}" == success ]] || failures+=(agent-report-validation)
+          check() {
+            printf '%-30s %s\n' "$1" "$2"
+            [[ "$2" == success ]] || failures+=("$1")
+          }
+          check tool "${{ steps.tool.outcome }}"
+          check compare "${{ steps.compare.outcome }}"
+          check build "${{ steps.build.outcome }}"
+          check drift-tests "${{ steps.drift_tests.outcome }}"
+          check collect "${{ steps.collect.outcome }}"
+          check manifest "${{ steps.manifest.outcome }}"
+          check candidate-tests "${{ steps.candidate_tests.outcome }}"
+          check check-summary "${{ steps.checks.outcome }}"
+          check baseline "${{ steps.resolve-baseline-version.outcome }}"
+          check snapshot "${{ steps.prepare-review.outcome }}"
+          check review-validation "${{ steps.validate-review.outcome }}"
+          if [[ "${{ steps.prepare-review.outputs.count }}" != 0 && "$CAN_REVIEW" == true ]]; then
+            check agent-install "${{ steps.install-agent.outcome }}"
+            check implementation-review "${{ steps.review.outcome }}"
           fi
-          if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
-          if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi
+          if [[ -f "$ARTIFACTS/impact-review-validation.json" ]]; then
+            jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview)"' "$ARTIFACTS/impact-review-validation.json"
+            jq -r '.decisions[] | select(.verdict != "safe") | "\(.changeId): \(.verdict) — \(.reason)"' "$ARTIFACTS/impact-review-validation.json"
+            [[ "$(jq -r '.canProceed' "$ARTIFACTS/impact-review-validation.json")" == true ]] || failures+=(impact-policy)
+          else
+            failures+=(missing-impact-review)
+          fi
+          if (( ${#failures[@]} )); then printf 'Summary: Workflow FAILED: %s\n' "${failures[*]}"; exit 1; fi
+          echo 'Summary: All API changes assessed as safe with validated evidence; independent checks passed.'
