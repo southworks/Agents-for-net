@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Teams API Drift Detector identifies API changes between two versions of `Microsoft.Teams.Apps`, determines whether the MSTeams extension uses the affected APIs, and produces deterministic findings for maintainers. CI workflows can optionally give the same bounded evidence to Copilot CLI for an advisory report, but the deterministic findings remain authoritative.
+The Teams API Drift Detector identifies API changes between two versions of `Microsoft.Teams.Apps`, determines whether the MSTeams extension uses the affected APIs, and produces deterministic findings for maintainers. CI workflows give bounded evidence to Copilot CLI for an advisory report and a separate structured usage assessment. A validated safe assessment can clear an internal nullability finding from the final gate; the original deterministic findings remain unchanged for audit.
 
 The tool is a .NET command-line application in `scripts/TeamsApiDrift`. It reads NuGet package metadata without loading package assemblies into the running process.
 
@@ -17,9 +17,11 @@ The tool is a .NET command-line application in `scripts/TeamsApiDrift`. It reads
 | `ComparisonAndUsage.cs` | Compares normalized API models, scans the compiled MSTeams assembly for dependency use, and validates collected use against the curated manifest. |
 | `MetadataValidation.cs` | Validates the repository metadata against built assemblies and requires fresh, document-specific review of relevant source changes. |
 | `DriftPipeline.cs` | Resolves centrally managed package versions, classifies changes, renders reports, creates bounded agent context, and validates an agent-authored report. |
+| `UsageAssessment.cs` | Builds bounded source/test context, validates AI nullability assessments and exact citations, and produces effective gate findings. |
 | `ToolUtilities.cs` | Supplies common argument, JSON, path-containment, hashing, and normalization helpers. |
 | `teams-api-usage.json` | Curated inventory of the `Microsoft.Teams.Apps` symbols and members intentionally used by MSTeams, including exposure and affected source files. |
 | `teams-capabilities.json` | Maps Teams namespaces and types to capability areas, owners, and additive-change adoption policies. |
+| `teams-api-usage-assessment-instructions.md` | Defines the structured safe/review verdicts and evidence required for internal nullability changes. |
 | `teams-api-drift-instructions.md` | Constrains the optional Copilot report format, accepted evidence, required finding IDs, and advisory language. |
 | `teams-api-drift-pr.yml` | Runs drift detection for package-version pull requests or manual PR-style comparisons, publishes artifacts, and updates an internal PR comment. |
 | `teams-api-drift-scheduled.yml` | Compares the repository baseline with the latest stable package on a schedule or by manual dispatch and creates or updates an advisory issue. |
@@ -71,6 +73,15 @@ flowchart TD
 
     Deterministic --> Publication["workflow artifact and PR comment or issue"]
     ValidateAgent --> Publication
+    Findings --> UsageContext["prepare-usage-assessment"]
+    AffectedSource --> UsageContext
+    BoundaryTests["related source and test files"] --> UsageContext
+    TestSummary --> UsageContext
+    UsageContext --> Assess["Copilot: safe or needs-human-review"]
+    Assess --> ValidateAssessment["validate-usage-assessment"]
+    ValidateAssessment --> GateFindings["effective gate findings"]
+    Findings --> GateFindings
+    ValidateAssessment --> Publication
 ```
 
 The package comparison is always **baseline → candidate**:
@@ -84,7 +95,7 @@ The package comparison is always **baseline → candidate**:
 
 ## CLI commands
 
-All commands write diagnostic errors to standard error. An unhandled command or configuration error returns exit code `2`. `validate-usage`, `validate-metadata`, and `validate-agent-report` return `1` for an invalid result; `classify --fail-on-drift` returns `1` for blocking or required findings. Successful commands return `0`.
+All commands write diagnostic errors to standard error. An unhandled command or configuration error returns exit code `2`. `validate-usage`, `validate-metadata`, `validate-agent-report`, and `validate-usage-assessment` return `1` for an invalid result; `classify --fail-on-drift` returns `1` for blocking or required findings. Successful commands return `0`.
 
 | Command | Primary inputs | Output | Notes |
 | --- | --- | --- | --- |
@@ -97,6 +108,8 @@ All commands write diagnostic errors to standard error. An unhandled command or 
 | `write-test-summary` | Repeated `--check <name>=<status>` values and `--output` | Test-summary JSON | Converts workflow step outcomes into one normalized artifact. |
 | `render-report` | `--findings`, optional `--test-summary`, `--output` | Deterministic Markdown report | Always derives the maintainer-facing sections from machine-readable artifacts. |
 | `prepare-agent-context` | `--findings`, `--manifest`, `--capabilities`, `--deterministic-report`, optional `--test-summary` and `--repository-root`, `--output` | Bounded agent-context JSON | Includes only affected in-repository C# files, redacts secrets, and limits source text size. |
+| `prepare-usage-assessment` | `--findings`, `--test-summary`, optional `--repository-root`, `--output` | Bounded source/test context JSON and eligible finding count on stdout | Selects internal `nullability-review` findings, related extension source, and tests. |
+| `validate-usage-assessment` | `--findings`, `--context`, `--report`, `--output`, `--gate-output`, `--summary-output` | Validation JSON, effective gate findings, and Markdown assessment summary | Only writes effective findings after the entire assessment validates; invalid/missing JSON returns `1`. |
 | `validate-agent-report` | `--report`, `--findings`, `--output` | Agent-report-validation JSON and validation errors on standard error when invalid | Enforces the exact title and section order, known IDs, required IDs, advisory wording, and ID-linked suggested implementation actions. |
 
 Example comparison using an authenticated private feed:
@@ -263,7 +276,7 @@ Fork pull requests do not receive the agent context, Copilot invocation, or writ
 
 `.github/workflows/teams-api-drift-scheduled.yml` runs weekly and by manual dispatch. It compares the repository baseline with the latest stable version, performs the same deterministic build/test/collection/classification pipeline, uploads the artifacts, and creates or updates one marker-delimited advisory issue when findings exist.
 
-Scheduled runs use the deterministic report. Manual dispatch can additionally create and validate a Copilot report. Copilot CLI authenticates with the short-lived workflow `GITHUB_TOKEN`, which requires `copilot-requests: write` and the corresponding organization policy. The job still applies deterministic policy independently of the prose report.
+Scheduled runs use the deterministic report and run the focused AI usage assessment when eligible nullability findings exist. Manual dispatch can additionally create and validate a Copilot report. Copilot CLI authenticates with the short-lived workflow `GITHUB_TOKEN`, which requires `copilot-requests: write` and the corresponding organization policy. The job applies policy independently of the prose report, using validated effective gate findings when available and the original findings otherwise.
 
 ## Verification layers
 
@@ -279,7 +292,7 @@ The feature deliberately uses multiple evidence layers:
 8. Unit tests verify deterministic comparison, classification, report, security-boundary, and validation behavior.
 9. Workflow policy combines step outcomes and finding severity into the final pass/fail result.
 
-These layers are complementary: a successful build does not replace API comparison, and an agent-authored report cannot replace deterministic validation or policy.
+These layers are complementary: a successful build does not replace API comparison, and an agent-authored prose report cannot replace deterministic validation or policy. The structured usage assessment can clear only eligible internal nullability findings after validation.
 
 ## Security and trust boundaries
 
@@ -289,3 +302,17 @@ These layers are complementary: a successful build does not replace API comparis
 - Sensitive-looking values are redacted, and included source text is length-limited.
 - The agent report is advisory and must pass structural and finding-ID validation before publication.
 - JSON artifacts, test results, and workflow exit codes are the authoritative inputs to CI policy.
+
+## AI assessment of internal nullability findings
+
+Consumed `nullability-changed` findings with `internal-only` exposure receive the `nullability-review` category. Their initial classification stays `required` (or `review` according to the existing compatibility policy). Publicly exposed contracts, removals, signature changes, and unconsumed changes are not eligible for AI clearance.
+
+Both PR and scheduled workflows prepare a separate `usage-assessment-context.json` after classification and tests. The context contains exact finding signatures and target frameworks, test-check outcomes, affected files, and related implementation/test files selected by member/type names or affected file names. This textual selection is a bounded aid, not a complete semantic reference search. The agent must return `needs-human-review` if it cannot account for a value's downstream use or public contract. Context is limited to 12,000 characters per file and 48,000 source characters total, redacts credentials, rejects source paths outside the extension/test roots and symlinks, and records missing, omitted, and truncated files.
+
+Copilot receives only this context with tools and built-in MCPs disabled. It returns one structured `safe` or `needs-human-review` assessment per eligible finding, with reasoning and exact file/line/quote evidence. A safe verdict must explain the nullability direction, all affected uses, null propagation, intended boundary behavior, and relevant tests that execute under the workflow filters. The agent is instructed to treat source text and comments as untrusted evidence and uncertainty as needing review.
+
+`validate-usage-assessment` checks schema and comparison versions, exact current finding identities/signatures/frameworks, exhaustive unique finding IDs, allowed verdicts, nonempty reasoning, and exact source citations. A safe assessment additionally requires complete supplied source context, citations for every affected implementation file and at least one test file, and passing comparison, drift tests, build, manifest, and contract/boundary checks for both frameworks. The scheduled combined `candidate-tests` check covers both frameworks. Citation validation establishes that quoted evidence exists; semantic correctness of the assessment remains an AI judgment.
+
+Only a completely valid report produces `gate-findings.json`. Safe findings become `no-action` with category `ai-assessed-safe` and evidence `ai-usage-assessment` in that separate artifact; all other findings remain unchanged. A human-review verdict retains the original severity. Malformed, missing, timed-out, or unsupported assessments cannot clear drift. Original `findings.json`, deterministic reports, structured assessments, validation results, effective findings, and the Markdown summary are uploaded together. The summary appears in the job summary and PR comment or scheduled issue. Original counts in the PR comment describe the deterministic result; the assessment section identifies the findings cleared by AI.
+
+PR assessments run only for same-repository PRs or manual dispatches. Fork PRs retain the original gate. Scheduled assessments run when eligible findings exist; no additional AI invocation is made when there are none. Build, manifest, and test failures remain independent workflow failures regardless of an AI verdict.

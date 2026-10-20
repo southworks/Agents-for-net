@@ -25,6 +25,8 @@ internal static class Program
                 "render-report" => RenderReport(options),
                 "prepare-agent-context" => PrepareAgentContext(options),
                 "validate-agent-report" => ValidateAgentReport(options),
+                "prepare-usage-assessment" => PrepareUsageAssessment(options),
+                "validate-usage-assessment" => ValidateUsageAssessment(options),
                 _ => throw new ArgumentException($"Unknown command: {args[0]}")
             };
         }
@@ -179,6 +181,54 @@ internal static class Program
         return validation.Valid ? 0 : 1;
     }
 
+    private static int PrepareUsageAssessment(Arguments options)
+    {
+        var context = UsageAssessmentPipeline.Prepare(
+            ToolJson.Read<FindingsResult>(options.Required("--findings")),
+            ToolJson.Read<TestSummary>(options.Required("--test-summary")),
+            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
+        ToolJson.Write(options.Required("--output"), context);
+        Console.WriteLine(context.Findings.Count);
+        return 0;
+    }
+
+    private static int ValidateUsageAssessment(Arguments options)
+    {
+        var gateOutput = options.Required("--gate-output");
+        File.Delete(gateOutput);
+        UsageAssessmentValidation validation;
+        try
+        {
+            var findings = ToolJson.Read<FindingsResult>(options.Required("--findings"));
+            var context = ToolJson.Read<UsageAssessmentContext>(options.Required("--context"));
+            var jsonOptions = new System.Text.Json.JsonSerializerOptions(ToolJson.Options)
+            {
+                UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow
+            };
+            var report = System.Text.Json.JsonSerializer.Deserialize<UsageAssessmentReport>(
+                File.ReadAllText(options.Required("--report")), jsonOptions)
+                ?? throw new InvalidDataException("Assessment report is empty.");
+            validation = UsageAssessmentPipeline.Validate(report, context, findings);
+            if (validation.Valid)
+            {
+                // Write the effective gate findings only after the complete report validates.
+                var effective = UsageAssessmentPipeline.Apply(report, context, findings);
+                var summary = UsageAssessmentPipeline.Render(report);
+                var summaryPath = options.Required("--summary-output");
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(summaryPath))!);
+                File.WriteAllText(summaryPath, summary);
+                ToolJson.Write(gateOutput, effective);
+            }
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or ArgumentException)
+        {
+            validation = new(1, false, [exception.Message]);
+        }
+        ToolJson.Write(options.Required("--output"), validation);
+        foreach (var error in validation.Errors) Console.Error.WriteLine($"TeamsApiDrift: {error}");
+        return validation.Valid ? 0 : 1;
+    }
+
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
+        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-usage-assessment, validate-usage-assessment");
 }

@@ -130,8 +130,17 @@ jobs:
           --deterministic-report "$ARTIFACTS/deterministic-report.md" --test-summary "$ARTIFACTS/test-summary.json"
           --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
 
+      - name: Prepare nullability usage assessment
+        id: prepare-usage-assessment
+        if: always() && steps.report.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          count=$(dotnet run --project "$TOOL" -c Release --no-build -- prepare-usage-assessment --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-assessment-context.json")
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
       - name: Set up Node for external Copilot CLI
-        if: steps.prepare-agent-context.outcome == 'success'
+        if: always() && (steps.prepare-agent-context.outcome == 'success' || (steps.prepare-usage-assessment.outcome == 'success' && steps.prepare-usage-assessment.outputs.count != '0'))
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '20'
@@ -158,6 +167,31 @@ jobs:
         continue-on-error: true
         run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
 
+      - name: Assess nullability usage with AI
+        id: assess-usage
+        if: always() && steps.prepare-usage-assessment.outcome == 'success' && steps.prepare-usage-assessment.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          npm install --global @github/copilot
+          instructions=$(cat .github/instructions/teams-api-usage-assessment-instructions.md)
+          context=$(cat "$ARTIFACTS/usage-assessment-context.json")
+          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
+
+          $context" > "$ARTIFACTS/usage-assessments.json"
+
+      - name: Validate and apply AI usage assessments
+        id: validate-usage-assessment
+        if: always() && steps.prepare-usage-assessment.outcome == 'success' && steps.prepare-usage-assessment.outputs.count != '0'
+        continue-on-error: true
+        shell: bash
+        run: |
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage-assessment --findings "$ARTIFACTS/findings.json" --context "$ARTIFACTS/usage-assessment-context.json" --report "$ARTIFACTS/usage-assessments.json" --output "$ARTIFACTS/usage-assessment-validation.json" --gate-output "$ARTIFACTS/gate-findings.json" --summary-output "$ARTIFACTS/usage-assessment-summary.md"
+          cat "$ARTIFACTS/usage-assessment-summary.md" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload drift evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -173,13 +207,15 @@ jobs:
         env:
           REPORT_PATH: ${{ steps.validate-advisory-report.outcome == 'success' && format('{0}/copilot-report.md', env.ARTIFACTS) || format('{0}/deterministic-report.md', env.ARTIFACTS) }}
           FINDINGS_PATH: artifacts/teams-api-drift/findings.json
+          USAGE_ASSESSMENT_SUMMARY: ${{ steps.validate-usage-assessment.outcome == 'success' && format('{0}/usage-assessment-summary.md', env.ARTIFACTS) || '' }}
         with:
           script: |
             const fs = require('fs');
             const findings = JSON.parse(fs.readFileSync(process.env.FINDINGS_PATH, 'utf8'));
             if (findings.findings.length === 0) return;
             const marker = '<!-- teams-api-drift-scheduled -->';
-            const body = `${marker}\n${fs.readFileSync(process.env.REPORT_PATH, 'utf8')}`;
+            const assessment = process.env.USAGE_ASSESSMENT_SUMMARY ? `\n${fs.readFileSync(process.env.USAGE_ASSESSMENT_SUMMARY, 'utf8')}` : '';
+            const body = `${marker}\n${fs.readFileSync(process.env.REPORT_PATH, 'utf8')}${assessment}`;
             const title = `Microsoft.Teams.Apps drift: ${findings.fromVersion} → ${findings.toVersion}`;
             const { owner, repo } = context.repo;
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
@@ -203,10 +239,19 @@ jobs:
           [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
           [[ "${{ steps.classify-usage-impact.outcome }}" == success ]] || failures+=(classification)
           [[ "${{ steps.report.outcome }}" == success ]] || failures+=(deterministic-report)
+          [[ "${{ steps.prepare-usage-assessment.outcome }}" == success ]] || failures+=(usage-assessment-context)
+          if [[ "${{ steps.prepare-usage-assessment.outputs.count }}" != 0 ]]; then
+            [[ "${{ steps.validate-usage-assessment.outcome }}" == success ]] || failures+=(usage-assessment-validation)
+          fi
           if [[ "${{ github.event_name }}" == workflow_dispatch ]]; then
             [[ "${{ steps.prepare-agent-context.outcome }}" == success ]] || failures+=(agent-context)
             [[ "${{ steps.generate-advisory-report.outcome }}" == success ]] || failures+=(copilot-report)
             [[ "${{ steps.validate-advisory-report.outcome }}" == success ]] || failures+=(agent-report-validation)
           fi
-          if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
+          gate_findings="$ARTIFACTS/findings.json"
+          if [[ "${{ steps.validate-usage-assessment.outcome }}" == success ]]; then gate_findings="$ARTIFACTS/gate-findings.json"; fi
+          if [[ -f "$gate_findings" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$gate_findings")" -gt 0 ]]; then
+            jq -r '.findings[] | select(.classification == "blocking" or .classification == "required") | "\(.id): \(.classification) — \(.kind): \(.upstreamSymbol).\(.member // "")"' "$gate_findings"
+            failures+=(policy-drift)
+          fi
           if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi

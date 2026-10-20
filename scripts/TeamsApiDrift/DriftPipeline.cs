@@ -93,6 +93,7 @@ public static class FindingClassifier
 
         var exposure = usages.Any(usage => usage.Exposure == "publicly-exposed") ? "publicly-exposed" :
             usages.FirstOrDefault()?.Exposure ?? "unknown";
+        if (change.Kind == "nullability-changed" && exposure == "internal-only") category = "nullability-review";
         var review = classification is "blocking" or "required"
             ? manifest.CompatibilityReviews.FirstOrDefault(item =>
                 item.FromVersion == comparison.FromVersion && item.ToVersion == comparison.ToVersion &&
@@ -180,7 +181,7 @@ public static class DeterministicReportRenderer
         AddSection(lines, "Required adaptations", findings.Findings.Where(item => item.Classification == "required"), "No required adaptations were detected.");
         AddSection(lines, "Feature-review candidates", findings.Findings.Where(item => item.Category == "feature-review"), "No feature-review candidates were identified.");
         AddSection(lines, "Internal implementation opportunities", findings.Findings.Where(item => item.Category == "internal-opportunity"), "No internal implementation opportunities were identified.");
-        AddSection(lines, "Maintainer decisions required", findings.Findings.Where(item => item.Classification == "review" && item.Category is null), "No maintainer decisions are required.");
+        AddSection(lines, "Maintainer decisions required", findings.Findings.Where(item => item.Classification == "review" && (item.Category is null or "nullability-review")), "No maintainer decisions are required.");
         AddSection(lines, "No-action upstream changes", findings.Findings.Where(item => item.Classification == "no-action"), "No no-action changes were recorded.");
         lines.AddRange(["", "## Suggested checklist", ""]);
         var actionable = findings.Findings.Where(item => item.Classification != "no-action").OrderBy(item => item.Id).ToArray();
@@ -250,7 +251,7 @@ public static partial class AgentContextBuilder
         };
     }
 
-    private static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
+    internal static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
     {
         var current = Path.GetFullPath(sourceRoot);
         RejectSymlink(current, path);
