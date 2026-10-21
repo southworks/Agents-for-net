@@ -4,28 +4,38 @@ The drift workflows compare the centrally declared Microsoft.Teams.Apps baseline
 
 The agent makes contextual impact decisions. The workflows no longer run the rule-based `classify` command or generate a separate prose advisory report.
 
-## Data flow
+## Workflow jobs and data flow
+
+Both workflows use the same four jobs:
+
+| Job | Responsibility | When it runs |
+| --- | --- | --- |
+| `versions` | Resolve baseline/candidate versions and compare NuGet package identity. | Every triggered run. |
+| `deterministic` | Extract APIs, build the candidate, run tool/contract/boundary tests, collect usage, and validate the manifest. | Only when versions differ and resolution succeeded. |
+| `assessment` | Receive deterministic evidence, prepare a fresh source snapshot, run the agent, validate decisions, and enforce the impact policy. | When versions differ and comparison/check-summary evidence was transferred successfully, even if an independent check failed. |
+| `publish` | Collect diagnostics, create/update the PR comment or scheduled issue, upload the complete artifact, and enforce the overall result. | After all dependencies finish, including failures; skipped when resolved versions are identical. |
 
 ```mermaid
 flowchart TD
-    Versions[Baseline and candidate versions] --> Compare[Extract and compare package APIs]
-    Compare --> Diff[Complete API diff and before/after models]
-    Candidate[Candidate MSTeams build] --> Tests[Contract and boundary tests on both frameworks]
-    Candidate --> Usage[Collect actual dependency usage]
-    Usage --> Manifest[Validate usage manifest]
-    Tests --> Checks[Independent check outcomes]
-    Manifest --> Checks
-    Diff --> Prepare[Prepare repository snapshot and review identity]
-    Checks --> Prepare
-    Repository[Implementation, callers, tests and documentation] --> Prepare
-    Prepare --> Agent[Agent searches and reads full snapshot]
-    Agent --> Decisions[One impact decision per API change]
-    Decisions --> Validate[Validate coverage, quotes and snapshot identity]
-    Validate --> Report[Canonical report and validation artifacts]
-    Checks --> Gate[Final workflow gate]
-    Validate --> Gate
-    Report --> Publish[Job summary and PR comment or scheduled issue]
+    Versions[versions: resolve and compare NuGet versions] --> Same{Same package version?}
+    Same -->|Yes| Skip[Skip every remaining job]
+    Same -->|No| Deterministic[deterministic: API comparison, builds, tests, usage]
+    Deterministic -->|Comparison and check summary available| Assessment[assessment: agent review and evidence validation]
+    Deterministic -->|Failure diagnostics| Publish[publish: report, comment or issue, final artifact]
+    Assessment -->|Validated decisions or failure diagnostics| Publish
+    Versions -->|Resolution failure diagnostics| Publish
+    Publish --> Gate[Preserve every failed job and enforce impact gate]
 ```
+
+PR resolution retains the base-commit declaration and manual version overrides. Scheduled resolution queries listed stable NuGet metadata without extracting package APIs. Version equality uses normalized NuGet package identity, including equivalent omitted version components and ignoring build metadata. Identical versions skip builds, tests, agent setup, comments/issues and artifact publication. Different versions with an identical API surface still run the deterministic checks and produce an empty review without an AI call.
+
+Every checkout uses the same immutable workflow commit. The assessment prepares its snapshot on its own runner, using the comparison/check summary downloaded from the deterministic job; snapshot preparation and validation happen on that same runner. Failed independent checks remain recorded in the review input and cannot be overridden by AI decisions.
+
+Jobs transfer partial evidence using intermediate artifacts. The consuming jobs download exact producer artifact IDs, so rerunning only failed jobs can reuse successful upstream evidence without guessing an attempt number or merging stale runs. Version-resolution, deterministic and assessment artifacts contain distinct sets of files.
+
+The final publication job uses `always()` and collects whichever artifacts were produced. It writes `pipeline-status.json`, builds a fallback Markdown report when assessment never completed, and preserves job/check outcomes alongside any assessment report. Comment/issue publication runs before the final upload; the upload itself also uses `always()`, so a publication error does not suppress the diagnostic artifact. The final and intermediate artifacts retain files for 21 days so failed jobs can be rerun with their upstream evidence during that period. The final gate fails if any upstream job or collection/publication step failed, or if validated `canProceed` is false/missing. A successful artifact upload does not clear a failed review.
+
+Only the assessment job has `copilot-requests: write`. Only publication has issue/PR-comment write permissions, and it does not check out or execute repository code. Fork PRs retain the deferred human-review behavior and cannot publish an authenticated PR comment.
 
 ## Review decisions
 
@@ -49,7 +59,7 @@ The full API models are copied into `baseline-api.json` and `candidate-api.json`
 
 The agent runs in this snapshot with only Copilot CLI `view`, `grep`, and `glob` tools available. Read operations are allowed; shell execution, edits, URL access, memory writes, built-in MCPs, custom instructions, and delegation are disabled. The snapshot contains no `.git` directory. Checkout credentials are not persisted. Copilot configuration/session state uses a separate fresh runner directory. Repository content, comments, package metadata, and previous acknowledgments are explicitly treated as untrusted evidence.
 
-Both workflows explicitly request `gpt-5.3-codex` via `--model`. Change the job-level `COPILOT_MODEL` value in both workflow files to select another model; no repository Actions variable is required. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
+Both assessment jobs explicitly pass their configured `COPILOT_MODEL` via `--model`. The `TEAMS_API_REVIEW_MODEL` repository Actions variable overrides the fallback configured in each workflow. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
 
 These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface, and unavailable upstream implementation bodies or other missing evidence must lead to a human-review decision.
 
@@ -77,7 +87,7 @@ The required checks are tool build, comparison, candidate build, drift-tool test
 
 A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all decisions safe, and every independent check passing. A safe AI decision cannot override a failing compiler, test, or manifest check. Final workflow evaluation also checks the actual step outcomes, including agent execution when required, independently of the JSON result.
 
-No package changes produces a deterministic empty review and skips Node/Copilot installation. Fork PRs (different head/base repositories) do not run an authenticated agent: every change gets an explicit `needs-human-review` decision. Same-repository PRs can run the agent even when the repository itself is a fork. Manual and scheduled runs can run the review agent.
+Identical package versions skip all jobs after resolution. Different versions with no API changes produce a deterministic empty review and skip Node/Copilot installation. Fork PRs (different head/base repositories) do not run an authenticated agent: every change gets an explicit `needs-human-review` decision. Same-repository PRs can run the agent even when the repository itself is a fork. Manual and scheduled runs can run the review agent.
 
 The launcher validates each agent response and allows at most three attempts (the initial review plus two corrections) within the workflow step timeout. Invalid structure or evidence is returned to the agent through `review-feedback.json` and `previous-review.txt` in the snapshot. Each correction must return the complete review. A structurally valid response stops the loop regardless of `canProceed`: adaptation/human-review verdicts and independent failures are never retried to seek approval. Agent execution failures and validator execution failures stop immediately. The separate validation step rechecks the final response, then the final workflow gate enforces all outcomes.
 
@@ -88,6 +98,7 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | Command | Inputs | Outputs |
 | --- | --- | --- |
 | `resolve-version` | `--props`, optional `--package` | Resolved version on stdout. |
+| `resolve-comparison` | `--from`, optional `--to`, `--output`, optional sources/config | Normalized baseline/candidate and `sameVersion` JSON. Omitted candidate resolves the latest listed stable release using metadata only. |
 | `compare` | `--from`, optional `--to`, `--output`, optional package sources/config | Before/after API models, complete raw diff, candidate version on stdout. |
 | `collect-usage` | Repeated `--assembly`, `--output` | Compiled dependency references and source associations. |
 | `validate-usage` | Manifest, collected usage, API model, repository root | Usage-integrity validation artifact and exit status. |
@@ -105,6 +116,8 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `microsoft-teams-apps-before.api.json`, `microsoft-teams-apps-after.api.json` | Deterministic package API models. |
 | `raw-api-diff.json` | Complete, stable-ID list of upstream API changes. |
 | `collected-usage.json`, `usage-validation.json` | Independent usage evidence and manifest validation. |
+| `versions.json`, `version-resolution.log`, `version-tool-build.log` | Resolved versions, skip decision and early resolver diagnostics. |
+| `pipeline-status.json` | Upstream job outcomes and artifact-collection results, including incomplete/failed runs. |
 | `test-summary.json` | Independent check outcomes. |
 | `review-input.json` | Bound review identity and source/model hash catalog. |
 | `impact-review.raw.json` | Latest extracted final assistant message, or deterministic empty/deferred review. |
@@ -114,10 +127,10 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `impact-review-validation.json` | Validation errors, canonical evidence, verdict counts, and final `canProceed`. |
 | `impact-report.md` | Human-readable implementation impact, evidence locations, errors and check outcomes. |
 
-Preparation logs the number and types of API changes. Validation logs verdict counts and reasons. The final workflow step prints all required step outcomes, remaining decisions, and an explicit gate result. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
+Preparation logs the number and types of API changes. Validation logs verdict counts and reasons. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and enforces the final gate. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
 
 ## Main components and unchanged repository CI
 
-`ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `review-agent-output.mjs` captures the final message and agent provenance. `tests/review-agent-output.test.mjs` checks structured capture and metadata; `tests/run-impact-review-tests.sh` checks orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
+`ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `review-agent-output.mjs` captures the final message and agent provenance. `tests/review-agent-output.test.mjs` checks structured capture and metadata; `tests/run-impact-review-tests.sh` checks orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `tests/workflow-jobs.test.mjs` checks actual workflow job conditions, fallback publication, and final-gate behavior across failure/skip scenarios. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
 
 Ordinary `.github/workflows/ci.yml` continues to run `validate-metadata` against built MSTeams assemblies. Central package/version alignment, usage inventory, source associations, capability ownership, stale metadata, and required metadata reviews are still checked independently of the AI review. This architecture does not move Teams-specific runtime behavior into SDK Core, Builder, or Hosting.

@@ -16,6 +16,7 @@ internal static class Program
             return args[0] switch
             {
                 "resolve-version" => ResolveVersion(options),
+                "resolve-comparison" => await ResolveComparisonAsync(options).ConfigureAwait(false),
                 "compare" => await CompareAsync(options).ConfigureAwait(false),
                 "collect-usage" => CollectUsage(options),
                 "validate-usage" => ValidateUsage(options),
@@ -43,6 +44,18 @@ internal static class Program
             ? Console.In
             : File.OpenText(options.Required("--props"));
         Console.WriteLine(VersionResolver.Resolve(reader, options.Optional("--package") ?? PackageConstants.PackageId));
+        return 0;
+    }
+
+    private static async Task<int> ResolveComparisonAsync(Arguments options)
+    {
+        var from = options.Required("--from");
+        var to = options.Optional("--to") ?? await new PackageApiService(options.Many("--source"), options.Optional("--config-file"))
+            .GetLatestStableVersionAsync().ConfigureAwait(false);
+        var versions = VersionResolver.Compare(from, to);
+        ToolJson.Write(options.Required("--output"), versions);
+        Console.Error.WriteLine($"Summary: Resolved {PackageConstants.PackageId} {versions.FromVersion} -> {versions.ToVersion}; " +
+            (versions.SameVersion ? "versions match, downstream jobs will be skipped." : "versions differ, deterministic checks and implementation review are required."));
         return 0;
     }
 
@@ -244,5 +257,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
+        "Commands: resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
 }
