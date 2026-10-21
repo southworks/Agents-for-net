@@ -320,7 +320,7 @@ jobs:
             check implementation-review "${{ steps.review.outcome }}"
           fi
           if [[ -f "$ARTIFACTS/impact-review-validation.json" ]]; then
-            jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview)"' "$ARTIFACTS/impact-review-validation.json"
+            jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview) | Optional adoption: \(.adoptionRecommendations // 0) (nonblocking)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.verdict != "safe") | "\(.changeId): \(.verdict) — \(.reason)"' "$ARTIFACTS/impact-review-validation.json"
             [[ "$(jq -r '.canProceed' "$ARTIFACTS/impact-review-validation.json")" == true ]] || failures+=(impact-policy)
           else

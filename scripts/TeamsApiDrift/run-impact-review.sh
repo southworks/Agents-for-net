@@ -22,10 +22,13 @@ for attempt in 1 2 3; do
   # No shell, editing, network tools, MCPs, custom instructions, or delegation.
   status=0
   : > "$artifacts_dir/impact-review.raw.json"
-  copilot -C "$workspace_dir" --model "$COPILOT_MODEL" --output-format json --stream off --silent --no-ask-user --no-custom-instructions \
-    --available-tools='view,grep,glob' --allow-tool=read \
-    --deny-tool='shell,write,url,memory' --disable-builtin-mcps --disallow-temp-dir \
-    --log-level none -p "$prompt" > "$artifacts_dir/impact-review.attempt-$attempt.events.jsonl" \
+  (
+    cd "$workspace_dir"
+    copilot -C "$workspace_dir" --model "$COPILOT_MODEL" --output-format json --stream off --silent --no-ask-user --no-custom-instructions \
+      --available-tools='view,grep,glob' --allow-tool=read \
+      --deny-tool='shell,write,url,memory' --disable-builtin-mcps --disallow-temp-dir \
+      --log-level none -p "$prompt"
+  ) > "$artifacts_dir/impact-review.attempt-$attempt.events.jsonl" \
     2> "$artifacts_dir/impact-review.attempt-$attempt.stderr.log" || status=$?
   if (( status != 0 )); then
     printf 'Summary: AI implementation review FAILED (attempt %s, exit %s); see impact-review.attempt-%s.stderr.log.\n' "$attempt" "$status" "$attempt" >&2

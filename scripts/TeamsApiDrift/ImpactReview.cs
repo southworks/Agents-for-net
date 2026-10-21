@@ -11,11 +11,11 @@ public sealed record ReviewFile(string Path, string ContentHash, string Reposito
 public sealed record ReviewArtifact(string Path, string ContentHash);
 public sealed record ImpactReviewInput(int SchemaVersion, string ReviewId, string Commit, ApiComparison Comparison,
     UsageManifest UsageManifest, CapabilityDocument Capabilities, CollectedUsage? CollectedUsage,
-    TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts);
+    TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts, int UnmappedSourceFileCount = 0);
 public sealed record ReviewCitation(string Path, string? Quote = null, int? StartLine = null, int? EndLine = null);
-public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence);
+public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence, string? AdoptionRecommendation = null);
 public sealed record ImpactReview(int SchemaVersion, string ReviewId, string FromVersion, string ToVersion, IReadOnlyList<ImpactDecision> Decisions);
-public sealed record ImpactCounts(int Safe, int NeedsAdaptation, int NeedsHumanReview);
+public sealed record ImpactCounts(int Safe, int NeedsAdaptation, int NeedsHumanReview, int AdoptionRecommendations = 0);
 public sealed record ImpactValidation(int SchemaVersion, bool Valid, bool CanProceed, ImpactCounts Summary,
     IReadOnlyList<string> Errors, IReadOnlyList<ImpactDecision> Decisions);
 
@@ -56,6 +56,25 @@ public static class ImpactReviewPipeline
         return full;
     }
 
+    internal static (CollectedUsage? Usage, int Unmapped) SnapshotUsage(CollectedUsage? collected, IReadOnlyList<ReviewFile> files)
+    {
+        if (collected is null) return (null, 0);
+        var sources = new HashSet<string>(StringComparer.Ordinal);
+        var unmapped = 0;
+        foreach (var source in collected.SourceFiles ?? [])
+        {
+            // Portable PDBs can reference a different runner, OS, or SourceLink root.
+            // Resolve hints against inventoried paths, never read the original path.
+            var normalized = source?.Replace('\\', '/');
+            var matches = files.Where(file => file.Path.EndsWith(".cs", StringComparison.Ordinal) &&
+                (string.Equals(normalized, file.Path, StringComparison.OrdinalIgnoreCase) ||
+                 normalized?.EndsWith("/" + file.Path, StringComparison.OrdinalIgnoreCase) == true)).ToArray();
+            if (matches.Length == 1) sources.Add(matches[0].Path);
+            else unmapped++;
+        }
+        return (collected with { SourceFiles = sources.Order(StringComparer.Ordinal).ToArray() }, unmapped);
+    }
+
     public static ImpactReviewInput Prepare(string repositoryRoot, string workspace, ApiComparison comparison,
         UsageManifest manifest, CapabilityDocument capabilities, CollectedUsage? collected, TestSummary checks, ApiModel before, ApiModel after)
     {
@@ -94,7 +113,9 @@ public static class ImpactReviewPipeline
             File.WriteAllText(Resolve(destination, path), text, new UTF8Encoding(false));
             artifacts.Add(new(path, Hash(text)));
         }
-        var input = new ImpactReviewInput(1, "", Git(root, "rev-parse", "HEAD").Trim(), comparison, manifest, capabilities, collected, checks, files, artifacts);
+        var navigation = SnapshotUsage(collected, files);
+        var input = new ImpactReviewInput(1, "", Git(root, "rev-parse", "HEAD").Trim(), comparison, manifest, capabilities,
+            navigation.Usage, checks, files, artifacts, navigation.Unmapped);
         input = input with { ReviewId = Id(input) };
         ToolJson.Write(System.IO.Path.Combine(destination, "review-input.json"), input);
         return input;
@@ -161,6 +182,8 @@ public static class ImpactReviewPipeline
             if (decision.Verdict is not ("safe" or "needs-adaptation" or "needs-human-review")) errors.Add($"Invalid verdict: {change.Id}.");
             if (decision.Usage is not ("used" or "unused" or "uncertain")) errors.Add($"Invalid usage: {change.Id}.");
             if (string.IsNullOrWhiteSpace(decision.Reason)) errors.Add($"Missing reasoning: {change.Id}.");
+            if (decision.AdoptionRecommendation is not null && string.IsNullOrWhiteSpace(decision.AdoptionRecommendation))
+                errors.Add($"Optional adoption recommendation must be nonempty when supplied: {change.Id}.");
             var citations = new List<ReviewCitation>();
             if (decision.Evidence is null) errors.Add($"Evidence must be an array: {change.Id}.");
             foreach (var citation in decision.Evidence ?? [])
@@ -186,7 +209,8 @@ public static class ImpactReviewPipeline
             }
             resolved.Add(decision with { Evidence = citations });
         }
-        var summary = new ImpactCounts(resolved.Count(decision => decision.Verdict == "safe"), resolved.Count(decision => decision.Verdict == "needs-adaptation"), resolved.Count(decision => decision.Verdict == "needs-human-review"));
+        var summary = new ImpactCounts(resolved.Count(decision => decision.Verdict == "safe"), resolved.Count(decision => decision.Verdict == "needs-adaptation"),
+            resolved.Count(decision => decision.Verdict == "needs-human-review"), resolved.Count(decision => !string.IsNullOrWhiteSpace(decision.AdoptionRecommendation)));
         return new(1, errors.Count == 0, errors.Count == 0 && summary.NeedsAdaptation == 0 && summary.NeedsHumanReview == 0 && ChecksPassed(input.Checks), summary, errors, resolved);
     }
 
@@ -234,13 +258,17 @@ public static class ImpactReviewPipeline
             $"Compared `{input.Comparison.FromVersion}` -> `{input.Comparison.ToVersion}`; review `{input.ReviewId}`.", "",
             $"Safe: **{validation.Summary.Safe}** | Needs adaptation: **{validation.Summary.NeedsAdaptation}** | Needs human review: **{validation.Summary.NeedsHumanReview}**.", "",
             $"Evidence validation: **{(validation.Valid ? "passed" : "FAILED")}**. Independent checks: **{(ChecksPassed(input.Checks) ? "passed" : "FAILED")}**. Gate: **{(validation.CanProceed ? "passed" : "requires attention")}**.", "",
-            "| Change | API change type | Verdict | Usage | Impact |", "| --- | --- | --- | --- | --- |" };
+            $"Optional adoption recommendations: **{validation.Summary.AdoptionRecommendations}** (do not block compatibility).", "",
+            "| Change | API change type | Compatibility verdict | Usage | Impact on existing behavior |", "| --- | --- | --- | --- | --- |" };
         foreach (var decision in validation.Decisions)
         {
             var change = input.Comparison.Changes.Single(change => change.Id == decision.ChangeId);
             lines.Add($"| {decision.ChangeId} | {Cell(change.Kind)} | {decision.Verdict} | {decision.Usage} | {Cell(decision.Reason ?? "Missing reasoning")} |");
             foreach (var citation in decision.Evidence) lines.Add($"| | | | Evidence | `{Cell(citation.Path)}:{citation.StartLine}-{citation.EndLine}` |");
         }
+        lines.AddRange(["", "## Optional adoption recommendations (nonblocking)", ""]);
+        var recommendations = validation.Decisions.Where(decision => !string.IsNullOrWhiteSpace(decision.AdoptionRecommendation)).ToArray();
+        lines.AddRange(recommendations.Length == 0 ? ["None."] : recommendations.Select(decision => $"- {decision.ChangeId}: {Cell(decision.AdoptionRecommendation!)}"));
         lines.AddRange(["", "## Validation errors", ""]);
         lines.AddRange(validation.Errors.Count == 0 ? ["None."] : validation.Errors.Select(error => $"- {Cell(error)}"));
         lines.AddRange(["", "## Independent check outcomes", ""]);

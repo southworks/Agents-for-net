@@ -27,7 +27,7 @@ flowchart TD
     Publish --> Gate[Preserve every failed job and enforce impact gate]
 ```
 
-PR resolution retains the base-commit declaration and manual version overrides. Scheduled resolution queries listed stable NuGet metadata without extracting package APIs. Version equality uses normalized NuGet package identity, including equivalent omitted version components and ignoring build metadata. Identical versions skip builds, tests, agent setup, comments/issues and artifact publication. Different versions with an identical API surface still run the deterministic checks and produce an empty review without an AI call.
+The PR trigger watches only `Directory.Packages.props`, which declares the Teams API package version. Changes to extension code, tests, prompts, or workflow/tool files alone do not trigger this workflow. Changes to other dependencies in the shared props file run only version resolution when the Teams version is unchanged. Manual dispatch remains available. PR resolution retains the base-commit declaration and manual version overrides. Scheduled resolution queries listed stable NuGet metadata without extracting package APIs. Version equality uses normalized NuGet package identity, including equivalent omitted version components and ignoring build metadata. Identical versions skip builds, tests, agent setup, comments/issues and artifact publication. Different versions with an identical API surface still run the deterministic checks and produce an empty review without an AI call.
 
 Every checkout uses the same immutable workflow commit. The assessment prepares its snapshot on its own runner, using the comparison/check summary downloaded from the deterministic job; snapshot preparation and validation happen on that same runner. Failed independent checks remain recorded in the review input and cannot be overridden by AI decisions.
 
@@ -39,29 +39,33 @@ Only the assessment job has `copilot-requests: write`. Only publication has issu
 
 ## Review decisions
 
-Each original `MTAPI-####` change receives one decision:
+Each original `MTAPI-####` change receives one compatibility decision about existing extension behavior and public contracts:
 
 | Verdict | Meaning | Gate behavior |
 | --- | --- | --- |
 | `safe` | Existing behavior accommodates the candidate, or the change is established to be irrelevant. | May pass after complete evidence validation and independent checks. |
 | `needs-adaptation` | A concrete implementation or public-contract change is required. | Blocks adoption. |
-| `needs-human-review` | Usage, behavior, coverage, upstream semantics, or a capability decision remains uncertain. | Blocks adoption until reviewed. |
+| `needs-human-review` | Current usage, behavior, compatibility coverage, or relevant upstream semantics remain uncertain. | Blocks adoption until reviewed. |
 
 The agent also records `used`, `unused`, or `uncertain` usage. The usage manifest and collected assembly references help navigate the implementation; they do not supply automatic compatibility decisions. A recorded use contradicts an `unused` claim. Existing `compatibilityReviews` entries are evidence for the agent to re-evaluate, rather than automatic approval in the active workflows.
 
-The review prompt requires investigating helpers, callers, public exposure, routing, mappings, serialization, and relevant tests. Additive/unconsumed changes are included. Related changes can be investigated together, but none may be omitted from the response. Safe consumed changes require test citations. Uncertain usage cannot be marked safe.
+The review prompt requires investigating helpers, callers, public exposure, routing, mappings, serialization, and relevant tests. Additive/unconsumed changes are included, but absence of a wrapper or dedicated test for a future feature is not itself an upgrade blocker. Bounded searches of the inventoried repository and a relevant implementation boundary can establish irrelevance; hypothetical future integrations do not require proof of non-use. Related changes can be investigated together, but none may be omitted from the response. Safe consumed changes require test citations. Uncertain usage cannot be marked safe.
+
+Optional feature adoption is recorded separately in a decision's nullable `adoptionRecommendation` string. Recommendations such as exposing a new upstream Files or streaming API appear in their own report section and in step output with a count. They do not affect `canProceed`. Every change still requires its compatibility verdict and reasoning; recommendations cannot replace required source/test evidence or clear a non-safe verdict or failed independent check. Empty recommendation strings are rejected. Capability hints such as `adoptionPolicy: review-new-members` guide optional recommendations, rather than automatically blocking every upstream addition.
 
 ## Repository snapshot and tool access
 
 `prepare-impact-review` creates a new, empty `.teams-impact-review` workspace under the checkout, outside the source tree. It copies complete supported text files from `src/`, `docs/`, and the repository root. Supported extensions are `.cs`, `.csproj`, `.props`, `.targets`, `.md`, `.json`, `.slnx`, and `.xml`. Git-listed tracked and nonignored untracked files are included; build outputs and ignored local files are excluded. Repository instruction files are excluded from this inventory. Code assignments and credential-like JSON values are redacted. Redactions are a heuristic; the snapshot is not a general secret scanner.
 
+Before writing the agent input, PDB source-file hints are mapped to unique canonical paths in the source inventory, accepting relative paths and Windows/Linux/SourceLink build prefixes from other runners. The agent receives only snapshot-relative hints. Unknown or ambiguous hints are omitted and counted in `unmappedSourceFileCount`, which is bound into the review identity; omission is not proof of no usage. The original `collected-usage.json` artifact retains the unmodified PDB paths for audit. No original PDB path is followed to read a file.
+
 The full API models are copied into `baseline-api.json` and `candidate-api.json`. `review-input.json` contains the raw comparison, usage/capability hints, checks, commit, source-file inventory, model hashes, and a SHA-256 review identity. That identity binds the entire prepared input, including normalized original-source hashes and redacted snapshot hashes. Preparation verifies that the full API models reproduce the supplied diff. Files are not truncated to prompt-sized excerpts; the agent can find and read them as needed.
 
-The agent runs in this snapshot with only Copilot CLI `view`, `grep`, and `glob` tools available. Read operations are allowed; shell execution, edits, URL access, memory writes, built-in MCPs, custom instructions, and delegation are disabled. The snapshot contains no `.git` directory. Checkout credentials are not persisted. Copilot configuration/session state uses a separate fresh runner directory. Repository content, comments, package metadata, and previous acknowledgments are explicitly treated as untrusted evidence.
+The launcher changes its process working directory to the snapshot and also supplies it to Copilot CLI with `-C`. The prompt requires snapshot-relative tool paths and instructs the agent to retry denied checkout paths using the inventory. Access outside the snapshot is not added. The agent runs with only Copilot CLI `view`, `grep`, and `glob` tools available. Read operations are allowed; shell execution, edits, URL access, memory writes, built-in MCPs, custom instructions, and delegation are disabled. The snapshot contains no `.git` directory. Checkout credentials are not persisted. Copilot configuration/session state uses a separate fresh runner directory. Repository content, comments, package metadata, and previous acknowledgments are explicitly treated as untrusted evidence.
 
 Both assessment jobs explicitly pass their configured `COPILOT_MODEL` via `--model`. The `TEAMS_API_REVIEW_MODEL` repository Actions variable overrides the fallback configured in each workflow. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
 
-These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface, and unavailable upstream implementation bodies or other missing evidence must lead to a human-review decision.
+These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface. Missing upstream behavior or other evidence that prevents assessing affected existing behavior/contracts must lead to a human-review compatibility decision; uncertainty about hypothetical future adoption belongs in an optional recommendation.
 
 ## Evidence validation
 
@@ -70,7 +74,7 @@ These controls constrain available tools; they are not an operating-system sandb
 - Schema, package versions, and exact review identity.
 - Repository commit, source inventory, source contents, and copied package models remain unchanged.
 - Exactly one decision for every change, with no unknown or duplicate IDs.
-- Recognized verdicts and usage values, nonempty reasoning, and well-formed evidence arrays.
+- Recognized compatibility verdicts and usage values, nonempty reasoning, well-formed evidence arrays, and an optional nonempty adoption-recommendation string.
 - `safe` and `needs-adaptation` decisions cite an MSTeams implementation `.cs` file.
 - Safe consumed changes cite MSTeams test `.cs` files, and recorded dependency usage is not dismissed as unused.
 - Every citation quotes exact complete source lines from an inventoried snapshot file.
@@ -85,7 +89,7 @@ Citation checks establish that evidence exists. They do not prove the semantic r
 
 The required checks are tool build, comparison, candidate build, drift-tool tests, usage collection, and manifest validation. PR workflows also require contract and runtime-boundary checks for `net8.0` and `net10.0`. Scheduled workflows use a combined candidate-test step that runs both categories on both frameworks. All recorded independent checks must succeed.
 
-A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all decisions safe, and every independent check passing. A safe AI decision cannot override a failing compiler, test, or manifest check. Final workflow evaluation also checks the actual step outcomes, including agent execution when required, independently of the JSON result.
+A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all compatibility decisions safe, and every independent check passing. Optional adoption recommendations are counted separately and do not enter that policy. A safe AI decision cannot override a failing compiler, test, or manifest check. Final workflow evaluation also checks the actual step outcomes, including agent execution when required, independently of the JSON result.
 
 Identical package versions skip all jobs after resolution. Different versions with no API changes produce a deterministic empty review and skip Node/Copilot installation. Fork PRs (different head/base repositories) do not run an authenticated agent: every change gets an explicit `needs-human-review` decision. Same-repository PRs can run the agent even when the repository itself is a fork. Manual and scheduled runs can run the review agent.
 
@@ -119,15 +123,15 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `versions.json`, `version-resolution.log`, `version-tool-build.log` | Resolved versions, skip decision and early resolver diagnostics. |
 | `pipeline-status.json` | Upstream job outcomes and artifact-collection results, including incomplete/failed runs. |
 | `test-summary.json` | Independent check outcomes. |
-| `review-input.json` | Bound review identity and source/model hash catalog. |
+| `review-input.json` | Bound review identity, canonical snapshot-relative source hints, unmapped-hint count, and source/model hash catalog. |
 | `impact-review.raw.json` | Latest extracted final assistant message, or deterministic empty/deferred review. |
 | `impact-review-agent.json` | Explicitly requested model and installed CLI version. |
 | `impact-review.attempt-N.events.jsonl`, `.raw.json.metadata.json` | Complete structured event stream and final-response session/model metadata. |
 | `impact-review.attempt-N.raw.json`, `.stderr.log`, `.validation.json`, `.report.md` | Preserved response, execution diagnostics, validation and report for each attempt. |
-| `impact-review-validation.json` | Validation errors, canonical evidence, verdict counts, and final `canProceed`. |
+| `impact-review-validation.json` | Validation errors, canonical evidence, compatibility verdict counts, optional adoption recommendations/count, and final `canProceed`. |
 | `impact-report.md` | Human-readable implementation impact, evidence locations, errors and check outcomes. |
 
-Preparation logs the number and types of API changes. Validation logs verdict counts and reasons. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and enforces the final gate. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
+Preparation logs the number and types of API changes. Validation logs compatibility verdict counts/reasons and separately labels optional adoption recommendations as nonblocking. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and enforces the final gate. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
 
 ## Main components and unchanged repository CI
 

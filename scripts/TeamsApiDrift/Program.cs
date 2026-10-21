@@ -225,6 +225,7 @@ internal static class Program
         Console.Error.WriteLine($"Summary: Prepared implementation review of {input.Comparison.Changes.Count} API changes; {input.Files.Count} full source/test/document files; commit {input.Commit}.");
         foreach (var group in input.Comparison.Changes.GroupBy(change => change.Kind).OrderBy(group => group.Key, StringComparer.Ordinal))
             Console.Error.WriteLine($"  {group.Key}: {group.Count()}");
+        Console.Error.WriteLine($"  Source navigation: {input.CollectedUsage?.SourceFiles?.Count ?? 0} inventoried relative PDB paths; {input.UnmappedSourceFileCount} unmapped hints omitted.");
         Console.Error.WriteLine($"  Review identity: {input.ReviewId}; snapshot: {options.Required("--workspace")}");
         Console.WriteLine(input.Comparison.Changes.Count);
         return 0;
@@ -249,8 +250,13 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath))!);
         File.WriteAllText(reportPath, ImpactReviewPipeline.Render(input, validation));
         Console.Error.WriteLine($"Summary: Implementation review validation {(validation.Valid ? "passed" : "FAILED")}; gate {(validation.CanProceed ? "passed" : "requires attention")}.");
-        Console.Error.WriteLine($"  Safe: {validation.Summary.Safe}; needs adaptation: {validation.Summary.NeedsAdaptation}; needs human review: {validation.Summary.NeedsHumanReview}; errors: {validation.Errors.Count}.");
-        foreach (var decision in validation.Decisions) Console.Error.WriteLine($"  {decision.ChangeId}: {decision.Verdict} ({decision.Usage}) — {decision.Reason}");
+        Console.Error.WriteLine($"  Safe: {validation.Summary.Safe}; needs adaptation: {validation.Summary.NeedsAdaptation}; needs human review: {validation.Summary.NeedsHumanReview}; optional adoption recommendations: {validation.Summary.AdoptionRecommendations}; errors: {validation.Errors.Count}.");
+        foreach (var decision in validation.Decisions)
+        {
+            Console.Error.WriteLine($"  {decision.ChangeId}: {decision.Verdict} ({decision.Usage}) — {decision.Reason}");
+            if (!string.IsNullOrWhiteSpace(decision.AdoptionRecommendation))
+                Console.Error.WriteLine($"    Optional adoption (nonblocking): {decision.AdoptionRecommendation}");
+        }
         foreach (var error in validation.Errors) Console.Error.WriteLine($"  Error: {error}");
         Console.Error.WriteLine($"  Review report: {reportPath}");
         return validation.Valid ? 0 : 1;

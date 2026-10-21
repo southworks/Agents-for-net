@@ -68,6 +68,47 @@ public sealed class ImpactReviewTests
     }
 
     [Fact]
+    public void OptionalAdoptionIsReportedSeparatelyAndDoesNotBlockSafeCompatibility()
+    {
+        using var fixture = new Fixture(unused: true);
+        var review = fixture.Review("safe", "unused");
+        var decision = review.Decisions[0] with { Evidence = [new(Source, Implementation)], AdoptionRecommendation = "Consider exposing the new feature separately." };
+        var parsed = ImpactReviewPipeline.Parse(JsonSerializer.Serialize(review with { Decisions = [decision] }, ToolJson.Options));
+        var result = fixture.Validate(parsed);
+        Assert.True(result.CanProceed, string.Join(" ", result.Errors));
+        Assert.Equal(1, result.Summary.AdoptionRecommendations);
+        var report = ImpactReviewPipeline.Render(fixture.Input, result);
+        Assert.Contains("Optional adoption recommendations (nonblocking)", report);
+        Assert.Contains(decision.AdoptionRecommendation, report);
+    }
+
+    [Theory]
+    [InlineData("needs-human-review", "uncertain", false)]
+    [InlineData("needs-adaptation", "used", false)]
+    [InlineData("safe", "used", true)]
+    public void AdoptionCannotClearCompatibilityOrIndependentFailures(string verdict, string usage, bool failedCheck)
+    {
+        using var fixture = new Fixture(failedCheck: failedCheck ? "build" : null);
+        var review = fixture.Review(verdict, usage);
+        review = review with { Decisions = [review.Decisions[0] with { AdoptionRecommendation = "Optional future feature work." }] };
+        var result = fixture.Validate(review);
+        Assert.True(result.Valid, string.Join(" ", result.Errors));
+        Assert.Equal(1, result.Summary.AdoptionRecommendations);
+        Assert.False(result.CanProceed);
+    }
+
+    [Fact]
+    public void AdoptionCannotReplaceRequiredDecisionsOrEvidence()
+    {
+        using var fixture = new Fixture();
+        var review = fixture.Review();
+        var decision = review.Decisions[0] with { AdoptionRecommendation = "Optional future feature work.", Evidence = [] };
+        Assert.False(fixture.Validate(review with { Decisions = [decision] }).CanProceed);
+        Assert.False(fixture.Validate(review with { Decisions = [] }).CanProceed);
+        Assert.False(fixture.Validate(review with { Decisions = [review.Decisions[0] with { AdoptionRecommendation = " " }] }).Valid);
+    }
+
+    [Fact]
     public void CoverageRequiresExactlyOneKnownDecisionPerChange()
     {
         using var fixture = new Fixture();
@@ -277,6 +318,34 @@ public sealed class ImpactReviewTests
     }
 
     [Fact]
+    public void PdbNavigationMapsOriginalAndForeignRunnerPathsIntoSnapshot()
+    {
+        using var fixture = new Fixture(sourceHints: true);
+        Assert.Equal(new[] { Source }, fixture.Input.CollectedUsage!.SourceFiles);
+        Assert.Equal(2, fixture.Input.UnmappedSourceFileCount);
+        Assert.Equal(6, fixture.OriginalCollected!.SourceFiles!.Count);
+        Assert.Contains(fixture.OriginalCollected.SourceFiles, path => path.Contains("/home/runner/", StringComparison.Ordinal));
+        foreach (var path in fixture.Input.CollectedUsage.SourceFiles!)
+        {
+            Assert.Contains(fixture.Input.Files, file => file.Path == path);
+            Assert.True(File.Exists(ImpactReviewPipeline.Resolve(fixture.Workspace, path)));
+        }
+        Assert.True(fixture.Validate(fixture.Review()).CanProceed);
+        var altered = fixture.Input with { UnmappedSourceFileCount = 0 };
+        Assert.False(ImpactReviewPipeline.Validate(fixture.Review(), altered, fixture.Workspace, fixture.Repository).Valid);
+    }
+
+    [Fact]
+    public void AmbiguousOrUnknownPdbPathsAreNotUsableNavigationHints()
+    {
+        var collected = new CollectedUsage(1, PackageConstants.PackageId, "fixture.dll", [], ["/build/" + Source, "/outside/Secret.cs"]);
+        var navigation = ImpactReviewPipeline.SnapshotUsage(collected, [new(Source, "hash", "hash"), new("Mapper.cs", "hash", "hash")]);
+        Assert.Empty(navigation.Usage!.SourceFiles!);
+        Assert.Equal(2, navigation.Unmapped);
+        Assert.Equal(2, collected.SourceFiles!.Count);
+    }
+
+    [Fact]
     public void PathsCannotEscapeSnapshotOrTraverseLinks()
     {
         using var fixture = new Fixture();
@@ -295,11 +364,12 @@ public sealed class ImpactReviewTests
         private readonly ApiModel _after;
         private readonly UsageManifest _manifest;
         private readonly TestSummary _checks;
+        public CollectedUsage? OriginalCollected { get; }
         public string Repository => Path.Combine(_root, "repo");
         public string Workspace => Path.Combine(_root, "snapshot");
         public ImpactReviewInput Input { get; }
 
-        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null)
+        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null, bool sourceHints = false)
         {
             Directory.CreateDirectory(Repository);
             Write(Source, "// fixture\n" + Implementation + "\n// repeated\n// repeated\n");
@@ -319,10 +389,13 @@ public sealed class ImpactReviewTests
             var checks = new[] { "tool", "compare", "build", "drift-tests", "collect", "manifest", "contract-net8", "contract-net10", "boundary-net8", "boundary-net10" }.ToDictionary(name => name, _ => "success");
             if (failedCheck is not null) checks[failedCheck] = "failure";
             _checks = new(1, checks);
+            if (sourceHints) OriginalCollected = new(1, PackageConstants.PackageId, "fixture.dll", [],
+                [Path.Combine(Repository, Source), "/home/runner/work/original/checkout/" + Source,
+                 "D:\\a\\old-checkout\\" + Source.Replace('/', '\\'), Source, "/generated/AssemblyInfo.cs", "../outside.cs"]);
             Input = Prepare();
         }
 
-        public ImpactReviewInput Prepare() => ImpactReviewPipeline.Prepare(Repository, Workspace, ApiComparer.Compare(_before, _after), _manifest, new(), null, _checks, _before, _after);
+        public ImpactReviewInput Prepare() => ImpactReviewPipeline.Prepare(Repository, Workspace, ApiComparer.Compare(_before, _after), _manifest, new(), OriginalCollected, _checks, _before, _after);
         public ImpactReview Review(string verdict = "safe", string usage = "used") => new(1, Input.ReviewId, "1.0.0", "2.0.0",
             Input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, verdict, usage, "Specific implementation and test reasoning.", [new(Source, Implementation), new(Test, Assertion)])).ToArray());
         public ImpactValidation Validate(ImpactReview review) => ImpactReviewPipeline.Validate(review, Input, Workspace, Repository);

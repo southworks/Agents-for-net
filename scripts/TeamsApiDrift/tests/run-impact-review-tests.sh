@@ -15,6 +15,7 @@ trap cleanup EXIT
 copilot() {
   if [[ "${1:-}" == --version ]]; then printf 'GitHub Copilot CLI mock-version\n'; return 0; fi
   local count=0 arg
+  [[ "$(pwd -P)" == "$(cd "$REVIEW_WORKSPACE" && pwd -P)" ]] || return 94
   [[ ! -f "$MOCK_STATE/calls" ]] || count=$(cat "$MOCK_STATE/calls")
   count=$((count + 1))
   printf '%s' "$count" > "$MOCK_STATE/calls"
