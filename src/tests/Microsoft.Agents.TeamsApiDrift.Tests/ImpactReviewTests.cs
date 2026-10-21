@@ -67,19 +67,100 @@ public sealed class ImpactReviewTests
         Assert.Equal(0, result.Summary.Safe);
     }
 
-    [Fact]
-    public void OptionalAdoptionIsReportedSeparatelyAndDoesNotBlockSafeCompatibility()
+    [Theory]
+    [InlineData("recommend-adoption", 1, 0, 0)]
+    [InlineData("no-adoption-needed", 0, 1, 0)]
+    [InlineData("needs-product-decision", 0, 0, 1)]
+    public void CompletedAdoptionOutcomesAreReportedAndNeverBlockSafeCompatibility(string outcome, int recommend, int notNeeded, int productDecision)
     {
-        using var fixture = new Fixture(unused: true);
+        using var fixture = new Fixture(unused: true, additionKind: "member-added");
         var review = fixture.Review("safe", "unused");
-        var decision = review.Decisions[0] with { Evidence = [new(Source, Implementation)], AdoptionRecommendation = "Consider exposing the new feature separately." };
+        var decision = review.Decisions[0] with { Evidence = [new(Source, Implementation)], Adoption = new(outcome, "Feature-specific adoption reasoning.") };
         var parsed = ImpactReviewPipeline.Parse(JsonSerializer.Serialize(review with { Decisions = [decision] }, ToolJson.Options));
         var result = fixture.Validate(parsed);
         Assert.True(result.CanProceed, string.Join(" ", result.Errors));
-        Assert.Equal(1, result.Summary.AdoptionRecommendations);
+        Assert.Equal(recommend, result.Summary.AdoptionRecommendations);
+        Assert.Equal(notNeeded, result.Summary.AdoptionNotNeeded);
+        Assert.Equal(productDecision, result.Summary.AdoptionNeedsProductDecision);
         var report = ImpactReviewPipeline.Render(fixture.Input, result);
-        Assert.Contains("Optional adoption recommendations (nonblocking)", report);
-        Assert.Contains(decision.AdoptionRecommendation, report);
+        Assert.Contains("Feature adoption assessments (nonblocking)", report);
+        Assert.Contains("Additions assessed: **1/1**", report);
+        Assert.Contains(outcome, report);
+        Assert.Contains(decision.Adoption.Reason, report);
+    }
+
+    [Theory]
+    [InlineData("symbol-added", false)]
+    [InlineData("symbol-added", true)]
+    [InlineData("member-added", false)]
+    [InlineData("member-added", true)]
+    [InlineData("framework-asset-added", false)]
+    [InlineData("framework-asset-added", true)]
+    public void EveryAdditionRejectsOmittedOrNullAdoption(string kind, bool explicitNull)
+    {
+        using var fixture = new Fixture(additionKind: kind);
+        Assert.Equal(kind, Assert.Single(fixture.Input.Comparison.Changes).Kind);
+        var json = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(fixture.Review(), ToolJson.Options))!;
+        var decision = json["decisions"]![0]!.AsObject();
+        if (explicitNull) decision["adoption"] = null;
+        else decision.Remove("adoption");
+        var result = fixture.Validate(ImpactReviewPipeline.Parse(json.ToJsonString()));
+        Assert.False(result.Valid);
+        Assert.False(result.CanProceed);
+        Assert.Contains(result.Errors, error => error.Contains("Missing adoption assessment for addition", StringComparison.Ordinal));
+        Assert.Contains("Additions assessed: **0/1**", ImpactReviewPipeline.Render(fixture.Input, result));
+    }
+
+    [Theory]
+    [InlineData(null, "Reason")]
+    [InlineData("", "Reason")]
+    [InlineData("safe", "Reason")]
+    [InlineData("recommend-adoption", null)]
+    [InlineData("no-adoption-needed", " ")]
+    [InlineData("needs-product-decision", "")]
+    public void InvalidAdoptionCannotCountAsCompletedAssessment(string? outcome, string? reason)
+    {
+        using var fixture = new Fixture(additionKind: "member-added");
+        var review = fixture.Review();
+        var decision = review.Decisions[0] with { Adoption = new(outcome!, reason!) };
+        var result = fixture.Validate(review with { Decisions = [decision] });
+        Assert.False(result.Valid);
+        Assert.False(result.CanProceed);
+        Assert.Contains("Additions assessed: **0/1**", ImpactReviewPipeline.Render(fixture.Input, result));
+        Assert.Equal(0, result.Summary.AdoptionRecommendations + result.Summary.AdoptionNotNeeded + result.Summary.AdoptionNeedsProductDecision);
+    }
+
+    [Fact]
+    public void EveryAdditionNeedsAssessmentEvenWhenRelatedChangesShareARecommendation()
+    {
+        using var fixture = new Fixture(additionKind: "mixed");
+        var review = fixture.Review();
+        Assert.Equal(3, review.Decisions.Count);
+        var adoption = new AdoptionAssessment("recommend-adoption", "Expose the related capability through one feature change.");
+        review = review with { Decisions = review.Decisions.Select(decision => decision with { Adoption = adoption }).ToArray() };
+        var result = fixture.Validate(review);
+        Assert.True(result.CanProceed, string.Join(" ", result.Errors));
+        Assert.Equal(3, result.Summary.AdoptionRecommendations);
+        var report = ImpactReviewPipeline.Render(fixture.Input, result);
+        Assert.Contains("Additions assessed: **3/3**", report);
+        Assert.Contains(string.Join(", ", review.Decisions.Select(decision => decision.ChangeId)), report);
+        Assert.Equal(1, report.Split(adoption.Reason, StringSplitOptions.None).Length - 1);
+        var incomplete = fixture.Validate(review with { Decisions = review.Decisions.Select((decision, index) => index == 1 ? decision with { Adoption = null } : decision).ToArray() });
+        Assert.False(incomplete.Valid);
+        Assert.Contains("Additions assessed: **2/3**", ImpactReviewPipeline.Render(fixture.Input, incomplete));
+    }
+
+    [Fact]
+    public void NonAdditiveChangesDoNotRequireAnAdoptionAssessment()
+    {
+        using var fixture = new Fixture();
+        Assert.Equal("nullability-changed", Assert.Single(fixture.Input.Comparison.Changes).Kind);
+        var result = fixture.Validate(fixture.Review());
+        Assert.True(result.CanProceed);
+        Assert.Equal(0, result.Summary.AdoptionRecommendations);
+        Assert.Equal(0, result.Summary.AdoptionNotNeeded);
+        Assert.Equal(0, result.Summary.AdoptionNeedsProductDecision);
+        Assert.Contains("Additions assessed: **0/0**", ImpactReviewPipeline.Render(fixture.Input, result));
     }
 
     [Theory]
@@ -88,9 +169,9 @@ public sealed class ImpactReviewTests
     [InlineData("safe", "used", true)]
     public void AdoptionCannotClearCompatibilityOrIndependentFailures(string verdict, string usage, bool failedCheck)
     {
-        using var fixture = new Fixture(failedCheck: failedCheck ? "build" : null);
+        using var fixture = new Fixture(failedCheck: failedCheck ? "build" : null, additionKind: "member-added");
         var review = fixture.Review(verdict, usage);
-        review = review with { Decisions = [review.Decisions[0] with { AdoptionRecommendation = "Optional future feature work." }] };
+        review = review with { Decisions = [review.Decisions[0] with { Adoption = new("recommend-adoption", "Optional future feature work.") }] };
         var result = fixture.Validate(review);
         Assert.True(result.Valid, string.Join(" ", result.Errors));
         Assert.Equal(1, result.Summary.AdoptionRecommendations);
@@ -102,10 +183,10 @@ public sealed class ImpactReviewTests
     {
         using var fixture = new Fixture();
         var review = fixture.Review();
-        var decision = review.Decisions[0] with { AdoptionRecommendation = "Optional future feature work.", Evidence = [] };
+        var decision = review.Decisions[0] with { Adoption = new("recommend-adoption", "Optional future feature work."), Evidence = [] };
         Assert.False(fixture.Validate(review with { Decisions = [decision] }).CanProceed);
         Assert.False(fixture.Validate(review with { Decisions = [] }).CanProceed);
-        Assert.False(fixture.Validate(review with { Decisions = [review.Decisions[0] with { AdoptionRecommendation = " " }] }).Valid);
+        Assert.False(fixture.Validate(review with { Decisions = [review.Decisions[0] with { Adoption = new("no-adoption-needed", " ") }] }).Valid);
     }
 
     [Fact]
@@ -369,7 +450,7 @@ public sealed class ImpactReviewTests
         public string Workspace => Path.Combine(_root, "snapshot");
         public ImpactReviewInput Input { get; }
 
-        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null, bool sourceHints = false)
+        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null, bool sourceHints = false, string? additionKind = null)
         {
             Directory.CreateDirectory(Repository);
             Write(Source, "// fixture\n" + Implementation + "\n// repeated\n// repeated\n");
@@ -385,6 +466,22 @@ public sealed class ImpactReviewTests
                 new[] { "net8.0", "net10.0" }.Select(tfm => new FrameworkApiModel(tfm, "fixture.dll", [new("Contoso.Settings", "class", "public", null, [], [], false, [member])])).ToArray());
             _before = Model("1.0.0", before);
             _after = Model("2.0.0", noChanges ? before : after);
+            if (additionKind is not null)
+            {
+                var baseline = Model("2.0.0", before);
+                _after = baseline with
+                {
+                    Frameworks = baseline.Frameworks.Select(framework => framework with
+                    {
+                        Symbols = (additionKind is "symbol-added" or "mixed"
+                            ? framework.Symbols.Append(new("Contoso.NewFeature", "class", "public", null, [], [], false, []))
+                            : framework.Symbols).Select(symbol => symbol.Name == "Contoso.Settings" && (additionKind is "member-added" or "mixed")
+                                ? symbol with { Members = [before, new("property:Extra", "Extra", "property", "public", "System.Int32 Extra", false)] }
+                                : symbol).ToArray()
+                    }).Concat(additionKind is "framework-asset-added" or "mixed"
+                        ? [new FrameworkApiModel("net9.0", "fixture.dll", [])] : []).ToArray()
+                };
+            }
             _manifest = new() { DeclaredVersion = "2.0.0", Usages = unused ? [] : [new() { UpstreamSymbol = "Contoso.Settings", Members = ["Name"], Files = [Source], Exposure = publicExposure ? "publicly-exposed" : "internal-only" }] };
             var checks = new[] { "tool", "compare", "build", "drift-tests", "collect", "manifest", "contract-net8", "contract-net10", "boundary-net8", "boundary-net10" }.ToDictionary(name => name, _ => "success");
             if (failedCheck is not null) checks[failedCheck] = "failure";

@@ -51,7 +51,7 @@ The agent also records `used`, `unused`, or `uncertain` usage. The usage manifes
 
 The review prompt requires investigating helpers, callers, public exposure, routing, mappings, serialization, and relevant tests. Additive/unconsumed changes are included, but absence of a wrapper or dedicated test for a future feature is not itself an upgrade blocker. Bounded searches of the inventoried repository and a relevant implementation boundary can establish irrelevance; hypothetical future integrations do not require proof of non-use. Related changes can be investigated together, but none may be omitted from the response. Safe consumed changes require test citations. Uncertain usage cannot be marked safe.
 
-Optional feature adoption is recorded separately in a decision's nullable `adoptionRecommendation` string. Recommendations such as exposing a new upstream Files or streaming API appear in their own report section and in step output with a count. They do not affect `canProceed`. Every change still requires its compatibility verdict and reasoning; recommendations cannot replace required source/test evidence or clear a non-safe verdict or failed independent check. Empty recommendation strings are rejected. Capability hints such as `adoptionPolicy: review-new-members` guide optional recommendations, rather than automatically blocking every upstream addition.
+Feature adoption is evaluated separately in a decision's `adoption` object (`outcome` and nonempty `reason`). Every `symbol-added`, `member-added`, and `framework-asset-added` change requires an explicit assessment: `recommend-adoption` explains the user benefit and extension changes; `no-adoption-needed` explains why the existing surface is sufficient, already exposes the addition, or excludes it by responsibility; `needs-product-decision` explains the opportunity and maintainer choice. Other changes may omit the object or use null. All three outcomes remain nonblocking for compatibility. Missing assessments and malformed objects invalidate the response and use the existing correction attempts, but a complete assessment never requires implementing the feature or resolving a product choice before upgrading. Compatibility reasoning and source/test evidence remain mandatory. Capability hints such as `adoptionPolicy: review-new-members` guide adoption evaluation rather than automatically blocking upstream additions. Related changes may reuse identical assessments; the report groups them by outcome/reason while counts remain per change.
 
 ## Repository snapshot and tool access
 
@@ -65,7 +65,7 @@ The launcher changes its process working directory to the snapshot and also supp
 
 Both assessment jobs explicitly pass their configured `COPILOT_MODEL` via `--model`. The `TEAMS_API_REVIEW_MODEL` repository Actions variable overrides the fallback configured in each workflow. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
 
-These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface. Missing upstream behavior or other evidence that prevents assessing affected existing behavior/contracts must lead to a human-review compatibility decision; uncertainty about hypothetical future adoption belongs in an optional recommendation.
+These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface. Missing upstream behavior or other evidence that prevents assessing affected existing behavior/contracts must lead to a human-review compatibility decision; uncertainty about future adoption belongs in a nonblocking `needs-product-decision` assessment.
 
 ## Evidence validation
 
@@ -74,7 +74,8 @@ These controls constrain available tools; they are not an operating-system sandb
 - Schema, package versions, and exact review identity.
 - Repository commit, source inventory, source contents, and copied package models remain unchanged.
 - Exactly one decision for every change, with no unknown or duplicate IDs.
-- Recognized compatibility verdicts and usage values, nonempty reasoning, well-formed evidence arrays, and an optional nonempty adoption-recommendation string.
+- Recognized compatibility verdicts and usage values, nonempty reasoning, and well-formed evidence arrays.
+- A recognized adoption outcome with nonempty reasoning for every addition (and for any adoption object supplied on another change).
 - `safe` and `needs-adaptation` decisions cite an MSTeams implementation `.cs` file.
 - Safe consumed changes cite MSTeams test `.cs` files, and recorded dependency usage is not dismissed as unused.
 - Every citation quotes exact complete source lines from an inventoried snapshot file.
@@ -89,7 +90,7 @@ Citation checks establish that evidence exists. They do not prove the semantic r
 
 The required checks are tool build, comparison, candidate build, drift-tool tests, usage collection, and manifest validation. PR workflows also require contract and runtime-boundary checks for `net8.0` and `net10.0`. Scheduled workflows use a combined candidate-test step that runs both categories on both frameworks. All recorded independent checks must succeed.
 
-A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all compatibility decisions safe, and every independent check passing. Optional adoption recommendations are counted separately and do not enter that policy. A safe AI decision cannot override a failing compiler, test, or manifest check. Final workflow evaluation also checks the actual step outcomes, including agent execution when required, independently of the JSON result.
+A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all compatibility decisions safe, and every independent check passing. The three adoption outcomes are counted separately and do not enter the compatibility policy; coverage and well-formedness of the adoption assessment are required for a valid review. A safe AI decision cannot override a failing compiler, test, or manifest check. Final workflow evaluation also checks the actual step outcomes, including agent execution when required, independently of the JSON result.
 
 Identical package versions skip all jobs after resolution. Different versions with no API changes produce a deterministic empty review and skip Node/Copilot installation. Fork PRs (different head/base repositories) do not run an authenticated agent: every change gets an explicit `needs-human-review` decision. Same-repository PRs can run the agent even when the repository itself is a fork. Manual and scheduled runs can run the review agent.
 
@@ -128,10 +129,10 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `impact-review-agent.json` | Explicitly requested model and installed CLI version. |
 | `impact-review.attempt-N.events.jsonl`, `.raw.json.metadata.json` | Complete structured event stream and final-response session/model metadata. |
 | `impact-review.attempt-N.raw.json`, `.stderr.log`, `.validation.json`, `.report.md` | Preserved response, execution diagnostics, validation and report for each attempt. |
-| `impact-review-validation.json` | Validation errors, canonical evidence, compatibility verdict counts, optional adoption recommendations/count, and final `canProceed`. |
+| `impact-review-validation.json` | Validation errors, canonical evidence, compatibility verdict counts, adoption assessments and per-outcome counts, and final `canProceed`. |
 | `impact-report.md` | Human-readable implementation impact, evidence locations, errors and check outcomes. |
 
-Preparation logs the number and types of API changes. Validation logs compatibility verdict counts/reasons and separately labels optional adoption recommendations as nonblocking. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and enforces the final gate. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
+Preparation logs the number and types of API changes. Validation logs compatibility verdict counts/reasons and separately labels every adoption outcome/reason as nonblocking, with counts for recommendations, no adoption needed, and product decisions. The report shows assessed/total additions and groups related assessments. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and enforces the final gate. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
 
 ## Main components and unchanged repository CI
 

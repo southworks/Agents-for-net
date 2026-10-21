@@ -219,7 +219,9 @@ internal static class Program
         if (input.Comparison.Changes.Count == 0 || options.HasFlag("--defer"))
         {
             var decisions = input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, "needs-human-review", "uncertain",
-                "Automated repository review is unavailable for fork pull requests; a maintainer must review this candidate.", [])).ToArray();
+                "Automated repository review is unavailable for fork pull requests; a maintainer must review this candidate.", [],
+                ImpactReviewPipeline.RequiresAdoptionAssessment(change) ? new("needs-product-decision",
+                    "Automated adoption assessment is unavailable for fork pull requests; a maintainer must evaluate this addition.") : null)).ToArray();
             ToolJson.Write(options.Required("--empty-review"), new ImpactReview(1, input.ReviewId, input.Comparison.FromVersion, input.Comparison.ToVersion, decisions));
         }
         Console.Error.WriteLine($"Summary: Prepared implementation review of {input.Comparison.Changes.Count} API changes; {input.Files.Count} full source/test/document files; commit {input.Commit}.");
@@ -250,12 +252,12 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath))!);
         File.WriteAllText(reportPath, ImpactReviewPipeline.Render(input, validation));
         Console.Error.WriteLine($"Summary: Implementation review validation {(validation.Valid ? "passed" : "FAILED")}; gate {(validation.CanProceed ? "passed" : "requires attention")}.");
-        Console.Error.WriteLine($"  Safe: {validation.Summary.Safe}; needs adaptation: {validation.Summary.NeedsAdaptation}; needs human review: {validation.Summary.NeedsHumanReview}; optional adoption recommendations: {validation.Summary.AdoptionRecommendations}; errors: {validation.Errors.Count}.");
+        Console.Error.WriteLine($"  Safe: {validation.Summary.Safe}; needs adaptation: {validation.Summary.NeedsAdaptation}; needs human review: {validation.Summary.NeedsHumanReview}; recommend adoption: {validation.Summary.AdoptionRecommendations}; no adoption needed: {validation.Summary.AdoptionNotNeeded}; needs product decision: {validation.Summary.AdoptionNeedsProductDecision} (nonblocking); errors: {validation.Errors.Count}.");
         foreach (var decision in validation.Decisions)
         {
             Console.Error.WriteLine($"  {decision.ChangeId}: {decision.Verdict} ({decision.Usage}) — {decision.Reason}");
-            if (!string.IsNullOrWhiteSpace(decision.AdoptionRecommendation))
-                Console.Error.WriteLine($"    Optional adoption (nonblocking): {decision.AdoptionRecommendation}");
+            if (decision.Adoption is { } adoption)
+                Console.Error.WriteLine($"    Feature adoption (nonblocking): {adoption.Outcome} — {adoption.Reason}");
         }
         foreach (var error in validation.Errors) Console.Error.WriteLine($"  Error: {error}");
         Console.Error.WriteLine($"  Review report: {reportPath}");

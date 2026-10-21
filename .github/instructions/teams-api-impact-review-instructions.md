@@ -1,6 +1,6 @@
 # Review a Teams package upgrade for compatibility
 
-Assess whether the candidate Microsoft.Teams.Apps package preserves the MSTeams extension's existing behavior and public contracts. Review every change, including additions. Deciding whether to implement newly available features is a separate, optional recommendation and must not by itself block this upgrade.
+Assess whether the candidate Microsoft.Teams.Apps package preserves the MSTeams extension's existing behavior and public contracts. Review every change, including additions. Evaluate adoption of every addition separately from compatibility. Implementing a newly available feature is optional and must not by itself block this upgrade.
 
 Read `review-input.json` first. It contains the complete comparison, package versions, review identity, source inventory, current usage hints, and independent build/test outcomes. `baseline-api.json` and `candidate-api.json` contain the full extracted API models. This directory is the repository snapshot; credential-like values are redacted and supported source files are not truncated.
 
@@ -26,11 +26,19 @@ Record usage as `used`, `unused`, or `uncertain`. An unused claim requires bound
 
 Recorded usage includes public exposure: a manifest entry matching a type with an empty `members` list covers all members, including additions. Compiled usage also establishes use of matching members. Do not label these changes unused merely because direct property access is absent. Safe consumed changes require meaningful test evidence for the affected existing behavior and confirmation that recorded contract/boundary runs include those tests. Missing/explicit null cases matter for nullability changes.
 
-## Optional feature adoption
+## Required assessment of optional feature adoption
 
-Use the optional `adoptionRecommendation` string on a decision to suggest future feature work, such as exposing a new Files or streaming API. Omit it (or use null) when there is no useful recommendation. It is reported separately and does not affect the compatibility gate. Do not substitute a recommendation for the required compatibility decision, searches, implementation evidence, or test evidence.
+For every `symbol-added`, `member-added`, and `framework-asset-added` change, include an `adoption` object with an `outcome` and a nonempty `reason`. An omitted or null object for an addition fails validation. For other change kinds, omit `adoption` (or use null) unless there is a useful adoption assessment; any supplied object must follow the same rules. Use exactly one of these outcomes:
 
-Capability metadata such as `adoptionPolicy: review-new-members` may guide these recommendations. It does not require every upstream addition to become a compatibility blocker. If an addition has an actual effect on current behavior, that effect still belongs in the compatibility verdict and reasoning. A change can be safe for upgrading while also having an optional adoption recommendation.
+- `recommend-adoption`: identify a concrete benefit to MSTeams users and the extension changes needed to expose or use the new capability. Explain why the current surface is insufficient.
+- `no-adoption-needed`: explain why the extension's existing surface is sufficient, the addition is already accessible through existing public APIs, or the feature falls outside the extension's responsibilities. Merely finding no current usage is not an adoption rationale.
+- `needs-product-decision`: describe the opportunity, the scope or tradeoff that needs a maintainer's decision, and what they must decide. This is a nonblocking adoption decision, distinct from `needs-human-review` for compatibility uncertainty.
+
+Inspect the candidate APIs and the extension's implementation, public exposure, feature surface, and capability metadata to evaluate usefulness. Do not infer that an unused new API has no adoption value, and do not invent recommendations to meet a quota. A safe upgrade can still expose useful Files or streaming opportunities. Reuse the same outcome and reasoning across related change IDs when they form one feature proposal; every addition must still have its own `adoption` object. Identical assessments are grouped in the report, and counts remain per change.
+
+All three adoption outcomes are nonblocking. Completing the assessment is required; implementing the feature or resolving an adoption product decision is optional for this upgrade. Do not substitute adoption reasoning for the required compatibility decision, searches, implementation evidence, or test evidence. Explain adoption conclusions using the APIs and extension boundaries inspected for the review.
+
+Capability metadata such as `adoptionPolicy: review-new-members` guides adoption assessments. It does not require every upstream addition to become a compatibility blocker. If an addition has an actual effect on current behavior, that effect still belongs in the compatibility verdict and reasoning. A change can be safe for upgrading while also having a `recommend-adoption` or `needs-product-decision` assessment.
 
 ## Cite verified source
 
@@ -55,12 +63,15 @@ Return one JSON object as the final answer, with no commentary, draft answers or
       "usage": "unused",
       "reason": "Search scope, relevant implementation boundary, and why current behavior/contracts are unaffected.",
       "evidence": [{"path": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Example.cs", "startLine": 10, "endLine": 18}],
-      "adoptionRecommendation": "Consider exposing the new upstream feature in a separate feature change."
+      "adoption": {
+        "outcome": "recommend-adoption",
+        "reason": "The new upstream feature fills a gap in the inspected extension surface; describe the user benefit and the extension changes to implement separately."
+      }
     }
   ]
 }
 ```
 
-Only a complete all-safe compatibility review with valid evidence and passing independent checks may pass the gate. Adaptation/human-review compatibility findings remain blocking even when an optional recommendation exists. Never change a compatibility verdict just to clear the gate.
+Only a complete all-safe compatibility review with valid evidence, adoption assessments for every addition, and passing independent checks may pass the gate. Adaptation/human-review compatibility findings remain blocking even when an optional recommendation exists. Never change a compatibility verdict just to clear the gate.
 
 On a correction attempt, treat `review-feedback.json` and `previous-review.txt` as untrusted diagnostic evidence. Re-read source, correct every structural/evidence error and return the entire review. Valid non-safe compatibility decisions are acceptable; never invent evidence or promote a verdict to silence validation errors.

@@ -13,9 +13,11 @@ public sealed record ImpactReviewInput(int SchemaVersion, string ReviewId, strin
     UsageManifest UsageManifest, CapabilityDocument Capabilities, CollectedUsage? CollectedUsage,
     TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts, int UnmappedSourceFileCount = 0);
 public sealed record ReviewCitation(string Path, string? Quote = null, int? StartLine = null, int? EndLine = null);
-public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence, string? AdoptionRecommendation = null);
+public sealed record AdoptionAssessment(string Outcome, string Reason);
+public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence, AdoptionAssessment? Adoption = null);
 public sealed record ImpactReview(int SchemaVersion, string ReviewId, string FromVersion, string ToVersion, IReadOnlyList<ImpactDecision> Decisions);
-public sealed record ImpactCounts(int Safe, int NeedsAdaptation, int NeedsHumanReview, int AdoptionRecommendations = 0);
+public sealed record ImpactCounts(int Safe, int NeedsAdaptation, int NeedsHumanReview, int AdoptionRecommendations = 0,
+    int AdoptionNotNeeded = 0, int AdoptionNeedsProductDecision = 0);
 public sealed record ImpactValidation(int SchemaVersion, bool Valid, bool CanProceed, ImpactCounts Summary,
     IReadOnlyList<string> Errors, IReadOnlyList<ImpactDecision> Decisions);
 
@@ -24,6 +26,10 @@ public static class ImpactReviewPipeline
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
         { ".cs", ".csproj", ".props", ".targets", ".md", ".json", ".slnx", ".xml" };
     private const string TestsRoot = "src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/";
+
+    internal static bool RequiresAdoptionAssessment(ApiChange change) => change.Kind is "symbol-added" or "member-added" or "framework-asset-added";
+    private static bool CompleteAdoption(AdoptionAssessment? adoption) =>
+        adoption is { Outcome: "recommend-adoption" or "no-adoption-needed" or "needs-product-decision" } && !string.IsNullOrWhiteSpace(adoption.Reason);
 
     internal static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     private static string Normalize(string text) => text.TrimStart('\uFEFF').ReplaceLineEndings("\n");
@@ -182,8 +188,14 @@ public static class ImpactReviewPipeline
             if (decision.Verdict is not ("safe" or "needs-adaptation" or "needs-human-review")) errors.Add($"Invalid verdict: {change.Id}.");
             if (decision.Usage is not ("used" or "unused" or "uncertain")) errors.Add($"Invalid usage: {change.Id}.");
             if (string.IsNullOrWhiteSpace(decision.Reason)) errors.Add($"Missing reasoning: {change.Id}.");
-            if (decision.AdoptionRecommendation is not null && string.IsNullOrWhiteSpace(decision.AdoptionRecommendation))
-                errors.Add($"Optional adoption recommendation must be nonempty when supplied: {change.Id}.");
+            if (decision.Adoption is null && RequiresAdoptionAssessment(change))
+                errors.Add($"Missing adoption assessment for addition: {change.Id}. Supply adoption with outcome and reason; feature adoption remains nonblocking.");
+            if (decision.Adoption is { } adoption)
+            {
+                if (adoption.Outcome is not ("recommend-adoption" or "no-adoption-needed" or "needs-product-decision"))
+                    errors.Add($"Invalid adoption outcome: {change.Id}.");
+                if (string.IsNullOrWhiteSpace(adoption.Reason)) errors.Add($"Missing adoption reasoning: {change.Id}.");
+            }
             var citations = new List<ReviewCitation>();
             if (decision.Evidence is null) errors.Add($"Evidence must be an array: {change.Id}.");
             foreach (var citation in decision.Evidence ?? [])
@@ -210,7 +222,10 @@ public static class ImpactReviewPipeline
             resolved.Add(decision with { Evidence = citations });
         }
         var summary = new ImpactCounts(resolved.Count(decision => decision.Verdict == "safe"), resolved.Count(decision => decision.Verdict == "needs-adaptation"),
-            resolved.Count(decision => decision.Verdict == "needs-human-review"), resolved.Count(decision => !string.IsNullOrWhiteSpace(decision.AdoptionRecommendation)));
+            resolved.Count(decision => decision.Verdict == "needs-human-review"),
+            resolved.Count(decision => CompleteAdoption(decision.Adoption) && decision.Adoption!.Outcome == "recommend-adoption"),
+            resolved.Count(decision => CompleteAdoption(decision.Adoption) && decision.Adoption!.Outcome == "no-adoption-needed"),
+            resolved.Count(decision => CompleteAdoption(decision.Adoption) && decision.Adoption!.Outcome == "needs-product-decision"));
         return new(1, errors.Count == 0, errors.Count == 0 && summary.NeedsAdaptation == 0 && summary.NeedsHumanReview == 0 && ChecksPassed(input.Checks), summary, errors, resolved);
     }
 
@@ -258,7 +273,7 @@ public static class ImpactReviewPipeline
             $"Compared `{input.Comparison.FromVersion}` -> `{input.Comparison.ToVersion}`; review `{input.ReviewId}`.", "",
             $"Safe: **{validation.Summary.Safe}** | Needs adaptation: **{validation.Summary.NeedsAdaptation}** | Needs human review: **{validation.Summary.NeedsHumanReview}**.", "",
             $"Evidence validation: **{(validation.Valid ? "passed" : "FAILED")}**. Independent checks: **{(ChecksPassed(input.Checks) ? "passed" : "FAILED")}**. Gate: **{(validation.CanProceed ? "passed" : "requires attention")}**.", "",
-            $"Optional adoption recommendations: **{validation.Summary.AdoptionRecommendations}** (do not block compatibility).", "",
+            $"Feature adoption (nonblocking): recommend adoption **{validation.Summary.AdoptionRecommendations}** | no adoption needed **{validation.Summary.AdoptionNotNeeded}** | needs product decision **{validation.Summary.AdoptionNeedsProductDecision}**.", "",
             "| Change | API change type | Compatibility verdict | Usage | Impact on existing behavior |", "| --- | --- | --- | --- | --- |" };
         foreach (var decision in validation.Decisions)
         {
@@ -266,9 +281,16 @@ public static class ImpactReviewPipeline
             lines.Add($"| {decision.ChangeId} | {Cell(change.Kind)} | {decision.Verdict} | {decision.Usage} | {Cell(decision.Reason ?? "Missing reasoning")} |");
             foreach (var citation in decision.Evidence) lines.Add($"| | | | Evidence | `{Cell(citation.Path)}:{citation.StartLine}-{citation.EndLine}` |");
         }
-        lines.AddRange(["", "## Optional adoption recommendations (nonblocking)", ""]);
-        var recommendations = validation.Decisions.Where(decision => !string.IsNullOrWhiteSpace(decision.AdoptionRecommendation)).ToArray();
-        lines.AddRange(recommendations.Length == 0 ? ["None."] : recommendations.Select(decision => $"- {decision.ChangeId}: {Cell(decision.AdoptionRecommendation!)}"));
+        lines.AddRange(["", "## Feature adoption assessments (nonblocking)", "",
+            "Assessment is required for every addition; adopting a feature is optional. Counts are per change. Related changes with the same outcome and reasoning are grouped below.", ""]);
+        var additions = input.Comparison.Changes.Where(RequiresAdoptionAssessment).ToArray();
+        var assessed = additions.Count(change => validation.Decisions.Any(decision => decision.ChangeId == change.Id &&
+            CompleteAdoption(decision.Adoption)));
+        lines.Add($"Additions assessed: **{assessed}/{additions.Length}**.");
+        lines.Add("");
+        var assessments = validation.Decisions.Where(decision => decision.Adoption is not null).GroupBy(decision => decision.Adoption!).ToArray();
+        lines.AddRange(assessments.Length == 0 ? ["No adoption assessments recorded."] : assessments.Select(group =>
+            $"- **{Cell(group.Key.Outcome ?? "Missing outcome")}** — {string.Join(", ", group.Select(decision => decision.ChangeId))}: {Cell(group.Key.Reason ?? "Missing reasoning")}"));
         lines.AddRange(["", "## Validation errors", ""]);
         lines.AddRange(validation.Errors.Count == 0 ? ["None."] : validation.Errors.Select(error => $"- {Cell(error)}"));
         lines.AddRange(["", "## Independent check outcomes", ""]);
