@@ -15,6 +15,8 @@ internal static class Program
             var options = new Arguments(args.Skip(1));
             return args[0] switch
             {
+                "write-agent-metadata" => WriteAgentMetadata(options),
+                "extract-agent-response" => ExtractAgentResponse(options),
                 "resolve-version" => ResolveVersion(options),
                 "resolve-comparison" => await ResolveComparisonAsync(options).ConfigureAwait(false),
                 "compare" => await CompareAsync(options).ConfigureAwait(false),
@@ -36,6 +38,18 @@ internal static class Program
             Console.Error.WriteLine($"TeamsApiDrift: {exception.Message}");
             return 2;
         }
+    }
+
+    private static int WriteAgentMetadata(Arguments options)
+    {
+        ReviewAgentOutput.WriteMetadata(options.Required("--output"), options.Required("--model"), options.Required("--cli-version"), Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY"));
+        return 0;
+    }
+
+    private static int ExtractAgentResponse(Arguments options)
+    {
+        ReviewAgentOutput.WriteResponse(options.Required("--input"), options.Required("--output"), Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY"));
+        return 0;
     }
 
     private static int ResolveVersion(Arguments options)
@@ -265,5 +279,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
+        "Commands: write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
 }

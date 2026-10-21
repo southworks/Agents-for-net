@@ -3,6 +3,9 @@
 set -euo pipefail
 repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 cd "$repo_dir"
+# Reuse the output parser built by the preceding drift-tool tests.
+export OUTPUT_TOOL_DLL="$repo_dir/bin/Release/Microsoft.Agents.TeamsApiDrift/Release/net10.0/Microsoft.Agents.TeamsApiDrift.dll"
+[[ -s "$OUTPUT_TOOL_DLL" ]] || { echo 'Build the drift tool in Release before running these tests.' >&2; exit 1; }
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/teams-review-tests.XXXXXX")
 cleanup() {
   # Only remove the directory created by mktemp for this test invocation.
@@ -32,6 +35,12 @@ copilot() {
   printf '{"type":"result","sessionId":"test-session","exitCode":0}\n'
 }
 dotnet() {
+  while [[ "$1" != -- ]]; do shift; done
+  shift
+  if [[ "$1" == write-agent-metadata || "$1" == extract-agent-response ]]; then
+    command dotnet "$OUTPUT_TOOL_DLL" "$@"
+    return
+  fi
   local output='' report='' count
   count=$(cat "$MOCK_STATE/calls")
   printf '%s\n' "$count" >> "$MOCK_STATE/validations"

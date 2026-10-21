@@ -10,7 +10,8 @@ workspace_dir=$(cd "$REVIEW_WORKSPACE" && pwd)
 repository_dir=${GITHUB_WORKSPACE:-$PWD}
 instructions=$(cat .github/instructions/teams-api-impact-review-instructions.md)
 cli_version=$(copilot --version)
-node scripts/TeamsApiDrift/review-agent-output.mjs metadata "$artifacts_dir/impact-review-agent.json" "$COPILOT_MODEL" "$cli_version"
+dotnet run --project "$TOOL" -c Release --no-build -- write-agent-metadata \
+  --output "$artifacts_dir/impact-review-agent.json" --model "$COPILOT_MODEL" --cli-version "$cli_version"
 # Prevent a failed invocation from leaving an earlier response as the current result.
 : > "$artifacts_dir/impact-review.raw.json"
 for attempt in 1 2 3; do
@@ -36,9 +37,9 @@ for attempt in 1 2 3; do
   fi
   # Treat malformed/incomplete event streams as execution failures. Never fall back
   # to a draft, tool result, or earlier attempt when there is no final response.
-  if ! node scripts/TeamsApiDrift/review-agent-output.mjs extract \
-    "$artifacts_dir/impact-review.attempt-$attempt.events.jsonl" \
-    "$artifacts_dir/impact-review.attempt-$attempt.raw.json"; then
+  if ! dotnet run --project "$TOOL" -c Release --no-build -- extract-agent-response \
+    --input "$artifacts_dir/impact-review.attempt-$attempt.events.jsonl" \
+    --output "$artifacts_dir/impact-review.attempt-$attempt.raw.json"; then
     printf 'Summary: AI implementation review FAILED to capture a completed response; see attempt %s events/diagnostics.\n' "$attempt" >&2
     exit 1
   fi

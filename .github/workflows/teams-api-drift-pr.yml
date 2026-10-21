@@ -145,7 +145,7 @@ jobs:
         continue-on-error: true
         run: |
           dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
-          node --test scripts/TeamsApiDrift/tests/*.test.mjs
+          bash scripts/TeamsApiDrift/tests/workflow-jobs-tests.sh
           bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
 
       - name: Run Teams API compile-time contracts for net8.0
@@ -410,54 +410,55 @@ jobs:
       - name: Prepare final report and pipeline diagnostics
         id: report
         if: always()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        shell: bash
         env:
           JOB_RESULTS: ${{ toJSON(needs) }}
           DOWNLOAD_RESULTS: ${{ toJSON(steps) }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const dir = process.env.ARTIFACTS;
-            fs.mkdirSync(dir, { recursive: true });
-            const jobs = JSON.parse(process.env.JOB_RESULTS);
-            const downloads = JSON.parse(process.env.DOWNLOAD_RESULTS);
-            const errors = [];
-            const read = name => {
-              const p = path.join(dir, name);
-              if (!fs.existsSync(p)) return null;
-              try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
-              catch { errors.push(`Invalid JSON artifact: ${name}`); return null; }
-            };
-            const versions = read('versions.json');
-            const comparison = read('raw-api-diff.json');
-            const from = versions?.fromVersion || jobs.versions.outputs.from || 'unresolved';
-            const to = versions?.toVersion || jobs.versions.outputs.to || 'unresolved';
-            const checks = read('test-summary.json');
-            const status = { schemaVersion: 1, jobs, downloads, errors };
-            fs.writeFileSync(path.join(dir, 'pipeline-status.json'), JSON.stringify(status, null, 2) + '\n');
-            const reportPath = path.join(dir, 'impact-report.md');
-            let report = fs.existsSync(reportPath) ? fs.readFileSync(reportPath, 'utf8')
-              : `# Microsoft.Teams.Apps implementation review\n\nCompared \`${from}\` -> \`${to}\`.\n\nThe pipeline did not produce a validated implementation report. See the job outcomes below and the workflow logs.\n`;
-            report += '\n## Workflow job outcomes\n\n';
-            for (const [name, job] of Object.entries(jobs)) report += `- ${name}: ${job.result}\n`;
-            for (const [name, download] of Object.entries(downloads)) {
-              if (name.startsWith('download_') && download.outcome === 'failure') report += `- Evidence download failed: ${name}\n`;
-            }
-            for (const error of errors) report += `- ${error}\n`;
-            if (checks) {
-              report += '\n## Recorded independent checks\n\n';
-              for (const [name, outcome] of Object.entries(checks.checks)) report += `- ${name}: ${outcome}\n`;
-            }
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            report += `\n[Workflow logs and complete artifacts](${runUrl})\n`;
-            fs.writeFileSync(reportPath, report);
-            await core.summary.addRaw(report).write();
-            const failed = Object.values(jobs).some(job => job.result !== 'success');
-            core.setOutput('publish_issue', failed || !comparison || comparison.changes.length > 0 ? 'true' : 'false');
-            core.setOutput('from', from);
-            core.setOutput('to', to);
-            console.log(`Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: ${from} -> ${to}.`);
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          mkdir -p "$ARTIFACTS"
+          errors=()
+          # Keep publication independent of checkout, compilation, and upstream success.
+          load_artifact() {
+            local target=$1 name=$2 shape=$3
+            printf -v "$target" '%s' null
+            if [[ -f "$ARTIFACTS/$name" ]]; then
+              if jq -e "$shape" "$ARTIFACTS/$name" > /dev/null 2>&1; then
+                printf -v "$target" '%s' "$(cat "$ARTIFACTS/$name")"
+              else
+                errors+=("Invalid JSON artifact: $name")
+              fi
+            fi
+          }
+          load_artifact versions versions.json 'type == "object" and (.fromVersion | type == "string") and (.toVersion | type == "string")'
+          load_artifact comparison raw-api-diff.json 'type == "object" and (.changes | type == "array")'
+          load_artifact checks test-summary.json 'type == "object" and (.checks | type == "object")'
+          from=$(jq -nr --argjson versions "$versions" --argjson jobs "$JOB_RESULTS" '[$versions.fromVersion, $jobs.versions.outputs.from, "unresolved"] | map(select(type == "string" and length > 0)) | first')
+          to=$(jq -nr --argjson versions "$versions" --argjson jobs "$JOB_RESULTS" '[$versions.toVersion, $jobs.versions.outputs.to, "unresolved"] | map(select(type == "string" and length > 0)) | first')
+          jq -n --argjson jobs "$JOB_RESULTS" --argjson downloads "$DOWNLOAD_RESULTS" \
+            --argjson errors "$(jq -cn --args '$ARGS.positional' "${errors[@]}")" \
+            '{schemaVersion: 1, jobs: $jobs, downloads: $downloads, errors: $errors}' > "$ARTIFACTS/pipeline-status.json"
+          report_path="$ARTIFACTS/impact-report.md"
+          if [[ ! -f "$report_path" ]]; then
+            printf '# Microsoft.Teams.Apps implementation review\n\nCompared `%s` -> `%s`.\n\n' "$from" "$to" > "$report_path"
+            printf 'The pipeline did not produce a validated implementation report. See the job outcomes below and the workflow logs.\n' >> "$report_path"
+          fi
+          {
+            printf '\n## Workflow job outcomes\n\n'
+            jq -r 'to_entries[] | "- \(.key): \(.value.result)"' <<< "$JOB_RESULTS"
+            jq -r 'to_entries[] | select((.key | startswith("download_")) and .value.outcome == "failure") | "- Evidence download failed: \(.key)"' <<< "$DOWNLOAD_RESULTS"
+            for error in "${errors[@]}"; do printf -- '- %s\n' "$error"; done
+            if [[ "$checks" != null ]]; then
+              printf '\n## Recorded independent checks\n\n'
+              jq -r '.checks | to_entries[] | "- \(.key): \(.value)"' <<< "$checks"
+            fi
+            printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
+          } >> "$report_path"
+          cat "$report_path" >> "$GITHUB_STEP_SUMMARY"
+          publish_issue=$(jq -nr --argjson jobs "$JOB_RESULTS" --argjson comparison "$comparison" \
+            'any($jobs[]; .result != "success") or $comparison == null or ($comparison.changes | length) > 0')
+          printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
+          printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
 
       - name: Publish implementation review comment
         if: always() && steps.report.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -496,20 +497,23 @@ jobs:
 
       - name: Enforce final workflow result
         if: always()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        shell: bash
         env:
           JOB_RESULTS: ${{ toJSON(needs) }}
           STEP_RESULTS: ${{ toJSON(steps) }}
-        with:
-          script: |
-            const fs = require('fs');
-            const jobs = JSON.parse(process.env.JOB_RESULTS);
-            const steps = JSON.parse(process.env.STEP_RESULTS);
-            const failures = Object.entries(jobs).filter(([, job]) => job.result !== 'success').map(([name]) => name);
-            for (const [name, step] of Object.entries(steps)) if (step.outcome === 'failure') failures.push(name);
-            const validationPath = `${process.env.ARTIFACTS}/impact-review-validation.json`;
-            let validation;
-            try { validation = JSON.parse(fs.readFileSync(validationPath, 'utf8')); } catch { failures.push('missing-or-invalid-review'); }
-            if (validation?.valid !== true || validation?.canProceed !== true) failures.push('impact-policy');
-            if (failures.length) core.setFailed(`Workflow requires attention: ${[...new Set(failures)].join(', ')}`);
-            else console.log('Summary: All deterministic checks, implementation review, publication, and final artifacts passed.');
+        run: |
+          mapfile -t failures < <(jq -nr --argjson jobs "$JOB_RESULTS" --argjson steps "$STEP_RESULTS" '
+            ($jobs | to_entries[] | select(.value.result != "success") | .key),
+            ($steps | to_entries[] | select(.value.outcome == "failure") | .key)')
+          validation_path="$ARTIFACTS/impact-review-validation.json"
+          if ! jq -e 'type == "object"' "$validation_path" > /dev/null 2>&1; then
+            failures+=(missing-or-invalid-review)
+          fi
+          if ! jq -e '.valid == true and .canProceed == true' "$validation_path" > /dev/null 2>&1; then
+            failures+=(impact-policy)
+          fi
+          if (( ${#failures[@]} )); then
+            printf 'Workflow requires attention: %s\n' "${failures[*]}" >&2
+            exit 1
+          fi
+          echo 'Summary: All deterministic checks, implementation review, publication, and final artifacts passed.'
