@@ -103,11 +103,19 @@ public static class ImpactReviewPipeline
     public static ImpactReview Parse(string text)
     {
         var json = Normalize(text).Trim();
-        // Accept one enclosing JSON fence, never extract JSON from arbitrary commentary.
-        if (json.StartsWith("```json\n", StringComparison.Ordinal) || json.StartsWith("```\n", StringComparison.Ordinal))
+        // Copilot's text mode includes progress messages even with --silent. Accept a
+        // single, terminal fenced response; never guess among multiple JSON answers.
+        var fences = Regex.Matches(json, @"(?m)^```[^\n]*$");
+        if (fences.Count > 0)
         {
-            if (!json.EndsWith("\n```", StringComparison.Ordinal)) throw new InvalidDataException("Unclosed JSON fence.");
-            json = json[(json.IndexOf('\n') + 1)..^4].Trim();
+            if (fences.Count != 2 || fences[0].Value is not ("```json" or "```") ||
+                fences[1].Value != "```" || fences[1].Index + fences[1].Length != json.Length)
+                throw new InvalidDataException("Expected one complete terminal JSON fence with no trailing content.");
+            var prefix = json[..fences[0].Index].Trim();
+            if (prefix.StartsWith('{') || prefix.StartsWith('['))
+                throw new InvalidDataException("Multiple response payloads are not allowed.");
+            var bodyStart = fences[0].Index + fences[0].Length + 1;
+            json = json[bodyStart..fences[1].Index].Trim();
         }
         var options = new JsonSerializerOptions(ToolJson.Options)
         {
@@ -185,7 +193,7 @@ public static class ImpactReviewPipeline
     private static ReviewCitation ResolveCitation(ReviewCitation citation, ImpactReviewInput input, string workspace)
     {
         if (citation is null || string.IsNullOrWhiteSpace(citation.Quote) || !input.Files.Any(file => file.Path == citation.Path))
-            throw new InvalidDataException("Citation must identify a snapshot file and a nonempty exact quote.");
+            throw new InvalidDataException($"Citation must identify an inventoried source file and a nonempty exact quote: {citation?.Path ?? "<null>"}. Review input and API models are not source evidence.");
         var content = Normalize(File.ReadAllText(Resolve(workspace, citation.Path)));
         var lines = content.Split('\n');
         var quote = Normalize(citation.Quote);

@@ -74,7 +74,9 @@ jobs:
         id: drift_tests
         if: always()
         continue-on-error: true
-        run: dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+        run: |
+          dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+          bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
 
       - name: Run candidate contract and boundary tests
         id: candidate_tests

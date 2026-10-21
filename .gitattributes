@@ -26,3 +26,5 @@ scripts/TeamsApiDrift/run-impact-review.sh text eol=lf
 *.dll -text
 *.exe -text
 *.so -text
+
+scripts/TeamsApiDrift/tests/*.sh text eol=lf

@@ -179,14 +179,50 @@ public sealed class ImpactReviewTests
     }
 
     [Fact]
-    public void ParserAcceptsOnlyPlainJsonOrOneWholeJsonFence()
+    public void ParserAcceptsPlainJsonOrOneTerminalJsonFenceAfterProgress()
     {
         using var fixture = new Fixture();
         var json = JsonSerializer.Serialize(fixture.Review(), ToolJson.Options);
         Assert.Equal(fixture.Input.ReviewId, ImpactReviewPipeline.Parse(json).ReviewId);
         Assert.Equal(fixture.Input.ReviewId, ImpactReviewPipeline.Parse("```json\r\n" + json + "\r\n```\n").ReviewId);
+        Assert.Equal(fixture.Input.ReviewId, ImpactReviewPipeline.Parse("I'll review the candidate.\n\nLet me read the source.\n\n```json\n" + json + "\n```\n").ReviewId);
+        Assert.Equal(fixture.Input.ReviewId, ImpactReviewPipeline.Parse("Progress\n```\n" + json + "\n```").ReviewId);
         foreach (var invalid in new[] { "Introduction\n" + json, "```json\n" + json, json + "\nExtra commentary", "{}", json.Replace("\"schemaVersion\": 1", "\"extra\": true, \"schemaVersion\": 1", StringComparison.Ordinal) })
             Assert.ThrowsAny<Exception>(() => ImpactReviewPipeline.Parse(invalid));
+    }
+
+    [Fact]
+    public void ParserRejectsAmbiguousAndIncompleteFencedResponses()
+    {
+        using var fixture = new Fixture();
+        var json = JsonSerializer.Serialize(fixture.Review(), ToolJson.Options);
+        var fenced = "```json\n" + json + "\n```";
+        foreach (var invalid in new[]
+        {
+            fenced + "\n" + fenced, "Progress\n" + fenced + "\nTrailing commentary",
+            "Progress\n```json\n" + json, json + "\n" + fenced,
+            "```text\nProgress\n```\n" + fenced, "Progress\n```javascript\n" + json + "\n```",
+            "Progress\n```json\n{}\n```"
+        }) Assert.ThrowsAny<Exception>(() => ImpactReviewPipeline.Parse(invalid));
+    }
+
+    [Fact]
+    public void ProgressWrapperDoesNotBypassEvidenceOrIdentityValidation()
+    {
+        using var fixture = new Fixture();
+        var review = fixture.Review();
+        var decision = review.Decisions[0] with { Evidence = [new("review-input.json", "fabricated metadata")] };
+        foreach (var invalid in new[]
+        {
+            review with { ReviewId = "stale" }, review with { Decisions = [decision] },
+            review with { Decisions = [review.Decisions[0] with { Evidence = [new(Source, Implementation.Trim()), new(Test, Assertion)] }] }
+        })
+        {
+            var response = "I'll review the candidate.\n\n```json\n" + JsonSerializer.Serialize(invalid, ToolJson.Options) + "\n```\n";
+            var result = fixture.Validate(ImpactReviewPipeline.Parse(response));
+            Assert.False(result.Valid);
+            Assert.False(result.CanProceed);
+        }
     }
 
     [Fact]
