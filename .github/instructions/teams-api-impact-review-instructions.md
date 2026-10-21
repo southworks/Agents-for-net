@@ -14,9 +14,11 @@ For each change choose:
 
 Also identify usage as `used`, `unused`, or `uncertain`. An unused claim must account for searches and indirect/public exposure, not merely absence from the manifest. All `safe` and `needs-adaptation` decisions require an exact citation from a `.cs` file under `src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`, including changes assessed as unused or additive. For unused changes, cite the relevant implementation boundary and explain the searches establishing irrelevance. If you cannot establish that boundary, choose `needs-human-review`. Safe consumed changes require test citations. Explain relevant redactions or unavailable evidence as uncertainty.
 
-Never cite `review-input.json`, `baseline-api.json`, or `candidate-api.json` as source evidence. They are review metadata and are not in the `files` inventory. Do not paraphrase or compact JSON as a quote. Cite exact complete source lines, including indentation and trailing whitespace, as `quote` in each evidence item. Copy short, distinctive lines directly from `view`; do not reconstruct or re-indent methods or tests. Prefer quote-only citations: the validator derives the location when the quote matches uniquely. Use a sufficiently specific multiline quote if a short line repeats. Optional `startLine` and `endLine` must both be accurate if supplied; the validator will not repair inaccurate line numbers, alter quotes, or match approximately. File paths are relative to this working directory and must occur in `files` in review-input.json. Cite test assertions and their filter/category context. Do not fabricate passing results, source lines, caller behavior, or evidence.
+Never cite `review-input.json`, `baseline-api.json`, or `candidate-api.json` as source evidence. They are review metadata, outside the source inventory. Prefer evidence with `path`, `startLine`, and `endLine` only: use the actual 1-based line numbers shown by `view` after reading that source. The validator extracts the exact complete lines from the pinned snapshot into the canonical review. Do not guess line numbers. Select the relevant complete method/assertions and include their category/filter context. If you also provide `quote`, it must exactly match those lines, including whitespace; omit it to avoid transcription/escaping errors. Quote-only citations remain supported when a nonempty complete quote matches uniquely. Never copy display line-number prefixes into a quote. Paths must occur in `files` in review-input.json. Do not fabricate results, source locations, or caller behavior.
 
-Return the complete final JSON object in exactly one terminal `json` Markdown fence, as shown below, with no text after it and no other fenced blocks in your response. This explicit boundary separates the final answer from progress messages emitted by the CLI. Do not include commentary inside the fence. Copy reviewId and versions exactly from review-input.json:
+Recorded usage includes public exposure: a manifest entry with the matching upstream symbol and an empty `members` list covers every member of that type, including newly added members. The compiled usage inventory also establishes use of matching members. Do not dismiss these changes as `unused` merely because a direct property access is absent. Use `used` when recorded, or `uncertain` if the impact cannot be established, and provide test evidence for any safe consumed change.
+
+Return ONLY one complete JSON object as your final answer, with no commentary, draft answers, or Markdown fences. The workflow captures the final assistant message separately from progress/tool events. Keep `reason` concise (one paragraph per change). Escape newlines and double quotes inside JSON strings; do not include literal newlines inside a string. Use range-only evidence to avoid reproducing large code snippets. Copy reviewId and versions exactly from review-input.json:
 
 ```json
 {
@@ -30,7 +32,7 @@ Return the complete final JSON object in exactly one terminal `json` Markdown fe
       "verdict": "safe",
       "usage": "used",
       "reason": "Specific behavioral reasoning, searches, public-contract analysis and test coverage.",
-      "evidence": [{"path": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Example.cs", "quote": "exact complete source lines"}]
+      "evidence": [{"path": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Example.cs", "startLine": 10, "endLine": 18}]
     }
   ]
 }

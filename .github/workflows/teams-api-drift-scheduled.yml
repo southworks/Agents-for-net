@@ -28,6 +28,9 @@ jobs:
       TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
       MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
       CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
+      COPILOT_MODEL: ${{ vars.TEAMS_API_REVIEW_MODEL || 'gpt-5.6-terra' }}
+      COPILOT_CLI_VERSION: '1.0.101'
+      COPILOT_AUTO_UPDATE: 'false'
       REVIEW_WORKSPACE: ${{ github.workspace }}/.teams-impact-review
       CAN_REVIEW: 'true'
     steps:
@@ -76,6 +79,7 @@ jobs:
         continue-on-error: true
         run: |
           dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+          node --test scripts/TeamsApiDrift/tests/review-agent-output.test.mjs
           bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
 
       - name: Run candidate contract and boundary tests
@@ -145,7 +149,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: |
-          npm install --global @github/copilot
+          npm install --global "@github/copilot@$COPILOT_CLI_VERSION"
           echo 'Summary: Installed Copilot CLI for repository read/search review.'
 
       - name: Review every API change against the implementation

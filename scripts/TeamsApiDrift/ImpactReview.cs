@@ -12,7 +12,7 @@ public sealed record ReviewArtifact(string Path, string ContentHash);
 public sealed record ImpactReviewInput(int SchemaVersion, string ReviewId, string Commit, ApiComparison Comparison,
     UsageManifest UsageManifest, CapabilityDocument Capabilities, CollectedUsage? CollectedUsage,
     TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts);
-public sealed record ReviewCitation(string Path, string Quote, int? StartLine = null, int? EndLine = null);
+public sealed record ReviewCitation(string Path, string? Quote = null, int? StartLine = null, int? EndLine = null);
 public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence);
 public sealed record ImpactReview(int SchemaVersion, string ReviewId, string FromVersion, string ToVersion, IReadOnlyList<ImpactDecision> Decisions);
 public sealed record ImpactCounts(int Safe, int NeedsAdaptation, int NeedsHumanReview);
@@ -192,18 +192,24 @@ public static class ImpactReviewPipeline
 
     private static ReviewCitation ResolveCitation(ReviewCitation citation, ImpactReviewInput input, string workspace)
     {
-        if (citation is null || string.IsNullOrWhiteSpace(citation.Quote) || !input.Files.Any(file => file.Path == citation.Path))
-            throw new InvalidDataException($"Citation must identify an inventoried source file and a nonempty exact quote: {citation?.Path ?? "<null>"}. Review input and API models are not source evidence.");
+        if (citation is null || !input.Files.Any(file => file.Path == citation.Path))
+            throw new InvalidDataException($"Citation must identify an inventoried source file: {citation?.Path ?? "<null>"}. Review input and API models are not source evidence.");
         var content = Normalize(File.ReadAllText(Resolve(workspace, citation.Path)));
         var lines = content.Split('\n');
-        var quote = Normalize(citation.Quote);
+        var quote = citation.Quote is null ? null : Normalize(citation.Quote);
         if (citation.StartLine.HasValue || citation.EndLine.HasValue)
         {
-            if (citation.StartLine is not >= 1 || citation.EndLine is null || citation.EndLine < citation.StartLine || citation.EndLine > lines.Length ||
-                string.Join("\n", lines.Skip(citation.StartLine.Value - 1).Take(citation.EndLine.Value - citation.StartLine.Value + 1)) != quote)
-                throw new InvalidDataException($"Source range does not match quote: {citation.Path}.");
-            return citation with { Quote = quote };
+            if (citation.StartLine is not >= 1 || citation.EndLine is null || citation.EndLine < citation.StartLine || citation.EndLine > lines.Length)
+                throw new InvalidDataException($"Invalid source range: {citation.Path}.");
+            var actual = string.Join("\n", lines.Skip(citation.StartLine.Value - 1).Take(citation.EndLine.Value - citation.StartLine.Value + 1));
+            if (string.IsNullOrWhiteSpace(actual) || (quote is not null && quote != actual))
+                throw new InvalidDataException($"Source range does not match quote or is empty: {citation.Path}.");
+            // Materialize exact evidence from the verified snapshot; the model only
+            // needs to select the lines it inspected, rather than retype source text.
+            return citation with { Quote = actual };
         }
+        if (string.IsNullOrWhiteSpace(quote))
+            throw new InvalidDataException($"Citation requires a source range or a nonempty exact quote: {citation.Path}.");
         var matches = new List<int>();
         var quotedLines = quote.Split('\n');
         for (var start = 0; start <= lines.Length - quotedLines.Length; start++)

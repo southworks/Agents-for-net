@@ -49,6 +49,8 @@ The full API models are copied into `baseline-api.json` and `candidate-api.json`
 
 The agent runs in this snapshot with only Copilot CLI `view`, `grep`, and `glob` tools available. Read operations are allowed; shell execution, edits, URL access, memory writes, built-in MCPs, custom instructions, and delegation are disabled. The snapshot contains no `.git` directory. Checkout credentials are not persisted. Copilot configuration/session state uses a separate fresh runner directory. Repository content, comments, package metadata, and previous acknowledgments are explicitly treated as untrusted evidence.
 
+Both workflows explicitly request `gpt-5.3-codex` via `--model`. Change the job-level `COPILOT_MODEL` value in both workflow files to select another model; no repository Actions variable is required. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
+
 These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface, and unavailable upstream implementation bodies or other missing evidence must lead to a human-review decision.
 
 ## Evidence validation
@@ -63,9 +65,9 @@ These controls constrain available tools; they are not an operating-system sandb
 - Safe consumed changes cite MSTeams test `.cs` files, and recorded dependency usage is not dismissed as unused.
 - Every citation quotes exact complete source lines from an inventoried snapshot file.
 
-Quote-only citations are preferred. When a quote occurs exactly once, the validator derives canonical start/end lines. Ambiguous quotes must be expanded or given an exact range. If an explicit range is supplied, its lines must match exactly; incorrect ranges and altered quotes are rejected. Only line-ending/BOM normalization is performed, with no fuzzy matching or guessed repairs.
+Range-only citations are preferred: the agent supplies a source path and 1-based `startLine`/`endLine` after reading the numbered source. The validator checks bounds and extracts the exact complete source lines from the verified snapshot into the canonical evidence. This avoids transcription, indentation and JSON-escaping errors from retyping methods/tests. Empty ranges are rejected. A provided `quote` must still match the selected lines exactly. Quote-only citations also remain supported when they match uniquely; only line-ending/BOM normalization is performed, with no fuzzy matching or guessed repairs. Existence of a valid range does not establish semantic relevance; the agent must justify the chosen evidence.
 
-The response parser accepts plain JSON or a single terminal JSON/untagged Markdown fence. Copilot text output can include progress commentary even with `--silent`; progress preceding that one final fenced payload is tolerated. Multiple fences/answers, a preceding JSON payload, trailing content, unknown properties, missing required fields, and malformed JSON are rejected. The extracted object must still pass every identity, coverage, source and evidence check.
+The launcher requests Copilot CLI JSONL events (`--output-format json --stream off`). `review-agent-output.mjs` requires one successful terminal `result` record and extracts only the last completed main-agent `assistant.message`, excluding deltas, progress phases, tool requests/results and child-agent messages. Missing/incomplete/failed streams stop the review without falling back to a draft or earlier response. The complete event stream is retained for diagnosis and can include source excerpts returned by read/search tools from the redacted snapshot. The final message is expected to contain one plain JSON object. The response parser also accepts a single terminal JSON/untagged fence for compatibility with older responses. Multiple payloads/fences, trailing content, unknown properties, missing required fields and malformed JSON are rejected. Invalid JSON is returned for correction rather than silently repaired; every identity, coverage, source and evidence check still applies.
 
 Citation checks establish that evidence exists. They do not prove the semantic reasoning or that quoted tests adequately cover every runtime path; the agent must explain those claims. Independent checks provide a separate gate.
 
@@ -79,7 +81,7 @@ No package changes produces a deterministic empty review and skips Node/Copilot 
 
 The launcher validates each agent response and allows at most three attempts (the initial review plus two corrections) within the workflow step timeout. Invalid structure or evidence is returned to the agent through `review-feedback.json` and `previous-review.txt` in the snapshot. Each correction must return the complete review. A structurally valid response stops the loop regardless of `canProceed`: adaptation/human-review verdicts and independent failures are never retried to seek approval. Agent execution failures and validator execution failures stop immediately. The separate validation step rechecks the final response, then the final workflow gate enforces all outcomes.
 
-An unavailable agent, timeout, missing response, invalid evidence, changed snapshot, or omitted API change cannot pass the gate. Every attempt retains its raw response, diagnostics, validation and report for diagnosis. The prompt explicitly prohibits review-input/API-model citations and requires real implementation evidence even for safe unused/additive changes; exact quote validation is unchanged.
+An unavailable agent, timeout, missing response, invalid evidence, changed snapshot, or omitted API change cannot pass the gate. Every attempt retains its event stream, extracted final response (when available), diagnostics, validation and report for diagnosis. The prompt explicitly prohibits review-input/API-model citations and requires real implementation evidence even for safe unused/additive changes; exact quote validation is unchanged.
 
 ## CLI commands
 
@@ -105,7 +107,9 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `collected-usage.json`, `usage-validation.json` | Independent usage evidence and manifest validation. |
 | `test-summary.json` | Independent check outcomes. |
 | `review-input.json` | Bound review identity and source/model hash catalog. |
-| `impact-review.raw.json` | Latest unmodified agent response, or deterministic empty/deferred review. |
+| `impact-review.raw.json` | Latest extracted final assistant message, or deterministic empty/deferred review. |
+| `impact-review-agent.json` | Explicitly requested model and installed CLI version. |
+| `impact-review.attempt-N.events.jsonl`, `.raw.json.metadata.json` | Complete structured event stream and final-response session/model metadata. |
 | `impact-review.attempt-N.raw.json`, `.stderr.log`, `.validation.json`, `.report.md` | Preserved response, execution diagnostics, validation and report for each attempt. |
 | `impact-review-validation.json` | Validation errors, canonical evidence, verdict counts, and final `canProceed`. |
 | `impact-report.md` | Human-readable implementation impact, evidence locations, errors and check outcomes. |
@@ -114,6 +118,6 @@ Preparation logs the number and types of API changes. Validation logs verdict co
 
 ## Main components and unchanged repository CI
 
-`ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `tests/run-impact-review-tests.sh` checks that orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
+`ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `review-agent-output.mjs` captures the final message and agent provenance. `tests/review-agent-output.test.mjs` checks structured capture and metadata; `tests/run-impact-review-tests.sh` checks orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
 
 Ordinary `.github/workflows/ci.yml` continues to run `validate-metadata` against built MSTeams assemblies. Central package/version alignment, usage inventory, source associations, capability ownership, stale metadata, and required metadata reviews are still checked independently of the AI review. This architecture does not move Teams-specific runtime behavior into SDK Core, Builder, or Hosting.

@@ -23,6 +23,37 @@ public sealed class ImpactReviewTests
         Assert.Contains("Mapper.cs:2-2", ImpactReviewPipeline.Render(fixture.Input, result));
     }
 
+    [Fact]
+    public void RangeOnlyEvidenceIsMaterializedFromVerifiedSource()
+    {
+        using var fixture = new Fixture();
+        var review = fixture.Review();
+        var decision = review.Decisions[0] with { Evidence = [new(Source, StartLine: 2, EndLine: 2), new(Test, StartLine: 1, EndLine: 2)] };
+        // Exercise optional quote deserialization as supplied by the agent.
+        var parsed = ImpactReviewPipeline.Parse(JsonSerializer.Serialize(review with { Decisions = [decision] }, ToolJson.Options));
+        var result = fixture.Validate(parsed);
+        Assert.True(result.CanProceed, string.Join(" ", result.Errors));
+        Assert.Equal(Implementation, result.Decisions[0].Evidence[0].Quote);
+        Assert.EndsWith(Assertion, result.Decisions[0].Evidence[1].Quote, StringComparison.Ordinal);
+        Assert.Contains("MapperTests.cs:1-2", ImpactReviewPipeline.Render(fixture.Input, result));
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(2, null)]
+    [InlineData(null, 2)]
+    [InlineData(0, 2)]
+    [InlineData(3, 2)]
+    [InlineData(1, 999)]
+    [InlineData(5, 5)]
+    public void InvalidOrEmptyRangesCannotSupplyEvidence(int? start, int? end)
+    {
+        using var fixture = new Fixture();
+        var review = fixture.Review();
+        var decision = review.Decisions[0] with { Evidence = [new(Source, StartLine: start, EndLine: end), new(Test, Assertion)] };
+        Assert.False(fixture.Validate(review with { Decisions = [decision] }).CanProceed);
+    }
+
     [Theory]
     [InlineData("needs-adaptation", "used")]
     [InlineData("needs-human-review", "uncertain")]
