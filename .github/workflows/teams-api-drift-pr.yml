@@ -131,7 +131,12 @@ jobs:
         id: compare
         if: always() && steps.tool.outcome == 'success'
         continue-on-error: true
-        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "$FROM_VERSION" --to "$TO_VERSION" --output "$ARTIFACTS"
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- compare
+          --from "$FROM_VERSION" --to "$TO_VERSION"
+          --source "$GITHUB_WORKSPACE/artifacts/teams-api-fixture/feed"
+          --source https://api.nuget.org/v3/index.json
+          --output "$ARTIFACTS"
 
       - name: Build MSTeams against candidate
         id: build

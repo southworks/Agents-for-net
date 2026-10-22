@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "package": "Microsoft.Teams.Apps",
-  "declaredVersion": "2.1.2",
+  "declaredVersion": "2.1.3-driftfixture.20261022.2",
   "sourceRoot": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams",
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Microsoft.Teams.Apps is updated to 2.1.2, which supplies the cryptography fixes transitively, so the direct MSTeams cryptography overrides are removed. Consumed Teams API symbols, members, exposure, and source associations are unchanged."
+    "reason": "Temporary comparison of Microsoft.Teams.Apps 2.1.2 against 2.1.3-driftfixture.20261022.2. Existing extension source and recorded usages are unchanged; the candidate deliberately removes FileConsentValue.Action and includes additional contract, feature, and safe changes for drift testing."
   },
   "compatibilityReviews": [
     {
