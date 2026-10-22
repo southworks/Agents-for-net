@@ -178,7 +178,7 @@ For `teams-capabilities.json`, use:
 }
 ```
 
-Use an acknowledgment only after reviewing the corresponding source change. The reason must be non-empty and must differ from the review at the Git base. A usage review cannot satisfy capability review, or vice versa. For committed changes, the metadata update must be in the same commit as the relevant source change or a later commit. For staged, unstaged, or untracked source changes, the corresponding metadata file must also change in the working tree.
+Before submitting, review the full source diff and confirm that each acknowledgment still describes it accurately. The reason must be non-empty and must differ from the review at the Git base. A usage review cannot satisfy capability review, or vice versa. The corresponding metadata file must differ from the Git base somewhere in the branch, including staged or unstaged changes. It need not be updated again after every later source commit. Current-state metadata validation still runs against the built extension.
 
 Usage review applies to changed C# files that currently or previously reference `Microsoft.Teams.Apps`, files listed in the current or base usage manifest, new C# files, and the MSTeams project file. A substantive change to the `usages` array satisfies the review. When the set of consumed upstream symbols changes, the capability document must receive either a targeted change to the matching capability or its own fresh non-impact acknowledgment.
 
