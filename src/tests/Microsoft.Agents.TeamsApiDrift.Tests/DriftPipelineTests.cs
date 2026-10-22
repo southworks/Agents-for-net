@@ -159,6 +159,28 @@ public sealed class DriftPipelineTests
         Assert.Equal("2.1.0", VersionResolver.Resolve(new StringReader(xml)));
     }
 
+    [Theory]
+    [InlineData("2.1.0", "2.1.0", true)]
+    [InlineData("2.1", "2.1.0.0", true)]
+    [InlineData("2.1.0+baseline", "2.1.0+candidate", true)]
+    [InlineData("2.1.0", "2.1.2", false)]
+    [InlineData("2.1.0-beta.1", "2.1.0", false)]
+    public void VersionComparisonUsesNuGetPackageIdentity(string from, string to, bool same)
+    {
+        var versions = VersionResolver.Compare(from, to);
+        Assert.Equal(same, versions.SameVersion);
+        Assert.Equal(1, versions.SchemaVersion);
+    }
+
+    [Theory]
+    [InlineData("invalid", "2.1.0")]
+    [InlineData("2.1.0", "invalid")]
+    [InlineData("", "2.1.0")]
+    public void InvalidVersionsCannotSilentlySkipReview(string from, string to)
+    {
+        Assert.Throws<ArgumentException>(() => VersionResolver.Compare(from, to));
+    }
+
     [Fact]
     public void FrameworkAssetSelectionPrefersNearestReferenceAsset()
     {

@@ -1,10 +1,21 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using NuGet.Versioning;
 
 namespace Microsoft.Agents.TeamsApiDrift;
 
+public sealed record ComparisonVersions(int SchemaVersion, string FromVersion, string ToVersion, bool SameVersion);
+
 public static class VersionResolver
 {
+    public static ComparisonVersions Compare(string from, string to)
+    {
+        if (!NuGetVersion.TryParse(from, out var baseline)) throw new ArgumentException($"Invalid baseline NuGet version: {from}");
+        if (!NuGetVersion.TryParse(to, out var candidate)) throw new ArgumentException($"Invalid candidate NuGet version: {to}");
+        // NuGet package identity ignores build metadata and normalizes missing parts.
+        return new(1, baseline.ToNormalizedString(), candidate.ToNormalizedString(), VersionComparer.VersionRelease.Equals(baseline, candidate));
+    }
+
     public static string Resolve(TextReader reader, string packageId = PackageConstants.PackageId)
     {
         var document = XDocument.Load(reader);
@@ -250,7 +261,7 @@ public static partial class AgentContextBuilder
         };
     }
 
-    private static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
+    internal static void RejectSymlinkTraversal(string sourceRoot, string fullPath, string path)
     {
         var current = Path.GetFullPath(sourceRoot);
         RejectSymlink(current, path);
