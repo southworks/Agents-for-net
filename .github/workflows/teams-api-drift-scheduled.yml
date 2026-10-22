@@ -463,25 +463,15 @@ jobs:
           retention-days: 21
           if-no-files-found: error
 
-      - name: Enforce final workflow result
+      - name: Enforce publication result
         if: always()
         shell: bash
         env:
-          JOB_RESULTS: ${{ toJSON(needs) }}
           STEP_RESULTS: ${{ toJSON(steps) }}
         run: |
-          mapfile -t failures < <(jq -nr --argjson jobs "$JOB_RESULTS" --argjson steps "$STEP_RESULTS" '
-            ($jobs | to_entries[] | select(.value.result != "success") | .key),
-            ($steps | to_entries[] | select(.value.outcome == "failure") | .key)')
-          validation_path="$ARTIFACTS/impact-review-validation.json"
-          if ! jq -e 'type == "object"' "$validation_path" > /dev/null 2>&1; then
-            failures+=(missing-or-invalid-review)
-          fi
-          if ! jq -e '.valid == true and .canProceed == true' "$validation_path" > /dev/null 2>&1; then
-            failures+=(impact-policy)
-          fi
+          mapfile -t failures < <(jq -r 'to_entries[] | select(.value.outcome == "failure") | .key' <<< "$STEP_RESULTS")
           if (( ${#failures[@]} )); then
-            printf 'Workflow requires attention: %s\n' "${failures[*]}" >&2
+            printf 'Publication requires attention: %s\n' "${failures[*]}" >&2
             exit 1
           fi
-          echo 'Summary: All deterministic checks, implementation review, publication, and final artifacts passed.'
+          echo 'Summary: Report publication and final artifacts completed; comparison and compatibility results remain in their originating jobs.'

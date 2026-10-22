@@ -67,7 +67,7 @@ for kind in pr scheduled; do
   workflow=".github/workflows/teams-api-drift-$kind.yml"
   case_index=0
   step 'Prepare final report and pipeline diagnostics' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-report.sh"
-  step 'Enforce final workflow result' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-gate.sh"
+  step 'Enforce publication result' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-gate.sh"
   [[ -s "$test_root/$kind-report.sh" && -s "$test_root/$kind-gate.sh" ]] || fail 'Missing publication shell scripts'
 
   jobs true success skipped skipped
@@ -136,25 +136,22 @@ for kind in pr scheduled; do
   pass 'no-change issue suppression requires successful jobs'
 
   new_case
-  printf '{"valid":true,"canProceed":true}' > "$ARTIFACTS/impact-review-validation.json"
-  jobs false success failure
-  expect_gate 1 deterministic
-  jobs
-  STEP_RESULTS='{"download_assessment":{"outcome":"failure"}}'
-  expect_gate 1 download_assessment
-  STEP_RESULTS='{"publish_comment":{"outcome":"failure"}}'
-  expect_gate 1 publish_comment
-  STEP_RESULTS='{"final_artifact":{"outcome":"failure"}}'
-  expect_gate 1 final_artifact
+  for failed_step in download_assessment report publish_comment publish_issue final_artifact; do
+    STEP_RESULTS=$(jq -cn --arg name "$failed_step" '{($name): {outcome: "failure"}}')
+    expect_gate 1 "$failed_step"
+  done
   STEP_RESULTS='{}'
-  expect_gate 0 'All deterministic checks'
-  pass 'safe review cannot override failed jobs, publication, downloads, or artifacts'
+  expect_gate 0 'Report publication and final artifacts completed'
+  pass 'publication fails for its own downloads, reporting, comments/issues, or artifacts'
 
   new_case
-  expect_gate 1 missing-or-invalid-review
+  jobs false success failure failure
+  expect_gate 0 'Report publication and final artifacts completed'
   for validation in '{broken' 'null' '{"valid":true,"canProceed":false}' '{"valid":"true","canProceed":"false"}'; do
     printf '%s' "$validation" > "$ARTIFACTS/impact-review-validation.json"
-    expect_gate 1 impact-policy
+    expect_gate 0 'Report publication and final artifacts completed'
   done
-  pass 'incomplete, malformed, non-safe, and string-valued verdicts remain blocking'
+  jobs unresolved failure skipped skipped
+  expect_gate 0 'Report publication and final artifacts completed'
+  pass 'upstream job failures and compatibility decisions do not turn successful publication red'
 done
