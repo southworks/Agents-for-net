@@ -460,8 +460,8 @@ jobs:
             printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
           } >> "$report_path"
           cat "$report_path" >> "$GITHUB_STEP_SUMMARY"
-          publish_issue=$(jq -nr --argjson jobs "$JOB_RESULTS" --argjson comparison "$comparison" \
-            'any($jobs[]; .result != "success") or $comparison == null or ($comparison.changes | length) > 0')
+          publish_issue=$(jq -r --argjson jobs "$JOB_RESULTS" \
+            'any($jobs[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
           printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
           printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
 

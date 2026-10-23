@@ -204,6 +204,22 @@ for kind in pr scheduled; do
     pass 'no-change issue suppression requires successful jobs'
 
     new_case
+    jq -n '{changes: [range(0; 400) | {
+        id: ("MTAPI-" + tostring), kind: "member-signature-changed",
+        symbol: "Microsoft.Teams.Apps.Meetings.MeetingDetails", member: "Title",
+        before: ("x" * 256), after: ("y" * 256)
+    }]}' > "$ARTIFACTS/raw-api-diff.json"
+    [[ "$(wc -c < "$ARTIFACTS/raw-api-diff.json")" -gt 131072 ]] || fail 'Comparison fixture must exceed the Linux per-argument limit'
+    run_report
+
+    contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
+    contains "$(cat "$GITHUB_OUTPUT")" 'from=2.1.0'
+    contains "$(cat "$GITHUB_OUTPUT")" 'to=2.1.2'
+    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Workflow job outcomes'
+    [[ "$(jq '.errors | length' "$ARTIFACTS/pipeline-status.json")" == 0 ]] || fail 'Large comparison produced publication errors'
+    pass 'large comparisons still produce publication outputs, summary, and diagnostics'
+
+    new_case
 
     for failed_step in download_assessment report publish_comment publish_issue final_artifact; do
         STEP_RESULTS=$(jq -cn --arg name "$failed_step" '{($name): {outcome: "failure"}}')
