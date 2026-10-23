@@ -160,6 +160,37 @@ for kind in pr scheduled; do
     should_run publish || fail 'Failed assessment skipped publication'
     pass 'assessment failure still publishes'
 
+    if [[ "$kind" == scheduled ]]; then
+        jobs true success skipped skipped
+        if should_run behavior_analysis; then fail 'Matching versions ran behavior analysis'; fi
+        jobs false success failure failure
+        should_run behavior_analysis || fail 'API failures skipped behavior analysis'
+        contains "$(job behavior_analysis)" 'needs: versions'
+        contains "$(step 'Collect behavior diagnostics')" 'needs.behavior_analysis.outputs.artifact_id'
+        jobs unresolved failure skipped skipped
+        if should_run behavior_analysis; then fail 'Version resolution failure ran behavior analysis'; fi
+        pass 'behavior analysis depends only on changed resolved versions'
+
+        new_case
+        printf '{"changes":[]}' > "$ARTIFACTS/raw-api-diff.json"
+        mkdir -p "$ARTIFACTS/behavior"
+        printf '## Teams wire-behavior analysis\nAdvisory difference.\n' > "$ARTIFACTS/behavior/behavior-report.md"
+        printf '{"schemaVersion":1,"valid":true,"hasFindings":true}' > "$ARTIFACTS/behavior/behavior-review-validation.json"
+        run_report
+        contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
+        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Advisory difference'
+        pass 'behavior findings publish with an empty API diff'
+
+        new_case
+        JOB_RESULTS=$(jq '. + {behavior_analysis: {result: "failure"}}' <<< "$JOB_RESULTS")
+        should_run publish || fail 'Behavior failure skipped publication'
+        run_report
+        contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
+        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'behavior_analysis: failure'
+        pass 'behavior failure preserves publication diagnostics'
+    fi
+
+
     new_case
     jobs unresolved failure skipped skipped
     run_report
