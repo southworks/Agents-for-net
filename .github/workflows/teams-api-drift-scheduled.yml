@@ -7,6 +7,15 @@ on:
     # Runs at 08:00 UTC every Monday (~1am PST)
     - cron: '0 8 * * 1'
   workflow_dispatch:
+    inputs:
+      from_version:
+        description: Baseline Microsoft.Teams.Apps version (defaults to the SDK declaration)
+        required: false
+        type: string
+      to_version:
+        description: Candidate Microsoft.Teams.Apps version (defaults to the latest listed stable release)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -55,11 +64,21 @@ jobs:
       - name: Resolve baseline and candidate
         id: resolve
         shell: bash
+        env:
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+          DISPATCH_TO_VERSION: ${{ inputs.to_version }}
         run: |
           mkdir -p "$ARTIFACTS"
-          from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
-          # Resolve listed stable package metadata only; no API extraction or candidate build.
-          dotnet run --project "$TOOL" -c Release --no-build -- resolve-comparison --from "$from" --output "$ARTIFACTS/versions.json" 2> >(tee "$ARTIFACTS/version-resolution.log" >&2)
+          from=$DISPATCH_FROM_VERSION
+          if [[ -z "$from" ]]; then
+            from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
+          fi
+          options=()
+          if [[ -n "$DISPATCH_TO_VERSION" ]]; then
+            options+=(--to "$DISPATCH_TO_VERSION")
+          fi
+          # An omitted candidate resolves listed stable package metadata only.
+          dotnet run --project "$TOOL" -c Release --no-build -- resolve-comparison --from "$from" "${options[@]}" --output "$ARTIFACTS/versions.json" 2> >(tee "$ARTIFACTS/version-resolution.log" >&2)
           echo "from=$(jq -r '.fromVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "to=$(jq -r '.toVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "same=$(jq -r '.sameVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"

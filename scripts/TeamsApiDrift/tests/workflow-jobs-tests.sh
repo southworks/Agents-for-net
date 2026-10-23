@@ -115,6 +115,77 @@ for kind in pr scheduled; do
     step 'Enforce publication result' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-gate.sh"
     [[ -s "$test_root/$kind-report.sh" && -s "$test_root/$kind-gate.sh" ]] || fail 'Missing publication shell scripts'
 
+    if [[ "$kind" == scheduled ]]; then
+        contains "$(step 'Resolve baseline and candidate')" 'DISPATCH_FROM_VERSION: ${{ inputs.from_version }}'
+        contains "$(step 'Resolve baseline and candidate')" 'DISPATCH_TO_VERSION: ${{ inputs.to_version }}'
+        step 'Resolve baseline and candidate' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/scheduled-versions.sh"
+        (
+            # Exercise the actual workflow resolver without network or package downloads.
+            dotnet() {
+                while [[ "${1:-}" != -- ]]; do
+                    (( $# )) || return 92
+                    shift
+                done
+                shift
+                case "$1" in
+                    resolve-version)
+                        printf 'declared\n' >> "$ARTIFACTS/resolver-calls"
+                        printf '2.1.2\n'
+                        ;;
+                    resolve-comparison)
+                        shift
+                        local from='' to='' output=''
+                        while (( $# )); do
+                            case "$1" in
+                                --from) from=$2 ;;
+                                --to) to=$2 ;;
+                                --output) output=$2 ;;
+                                *) return 93 ;;
+                            esac
+                            shift 2
+                        done
+                        if [[ -z "$to" ]]; then
+                            printf 'latest\n' >> "$ARTIFACTS/resolver-calls"
+                            to=2.3.0
+                        fi
+                        jq -n --arg from "$from" --arg to "$to"                             '{fromVersion: $from, toVersion: $to, sameVersion: ($from == $to)}' > "$output"
+                        ;;
+                    *) return 94 ;;
+                esac
+            }
+            export -f dotnet
+            export TOOL=mock-project
+            for pair in '|' '2.0.0|' '|2.2.0' '2.0.0|2.2.0' '2.2.0|2.2.0'; do
+                new_case
+                IFS='|' read -r DISPATCH_FROM_VERSION DISPATCH_TO_VERSION <<< "$pair"
+                export DISPATCH_FROM_VERSION DISPATCH_TO_VERSION
+                bash -e -o pipefail "$test_root/scheduled-versions.sh"
+                expected_from=${DISPATCH_FROM_VERSION:-2.1.2}
+                expected_to=${DISPATCH_TO_VERSION:-2.3.0}
+                contains "$(cat "$GITHUB_OUTPUT")" "from=$expected_from"
+                contains "$(cat "$GITHUB_OUTPUT")" "to=$expected_to"
+                expected_same=false
+                [[ "$expected_from" != "$expected_to" ]] || expected_same=true
+                contains "$(cat "$GITHUB_OUTPUT")" "same=$expected_same"
+                if [[ -n "$DISPATCH_FROM_VERSION" && -n "$DISPATCH_TO_VERSION" ]]; then
+                    [[ ! -f "$ARTIFACTS/resolver-calls" ]] || fail 'Explicit versions queried defaults'
+                else
+                    expected_calls=0
+                    if [[ -z "$DISPATCH_FROM_VERSION" ]]; then
+                        contains "$(cat "$ARTIFACTS/resolver-calls")" declared
+                        expected_calls=$((expected_calls + 1))
+                    fi
+                    if [[ -z "$DISPATCH_TO_VERSION" ]]; then
+                        contains "$(cat "$ARTIFACTS/resolver-calls")" latest
+                        expected_calls=$((expected_calls + 1))
+                    fi
+                    [[ "$(wc -l < "$ARTIFACTS/resolver-calls" | tr -d ' ')" == "$expected_calls" ]] || fail 'Unexpected default resolution'
+                fi
+            done
+        )
+        pass 'dispatch versions independently override defaults and preserve equality'
+    fi
+
     jobs true success skipped skipped
 
     for name in deterministic assessment publish; do
