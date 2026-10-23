@@ -10,11 +10,11 @@ public sealed class BehaviorReviewTests : IDisposable
     private readonly string _root = Path.Combine(Path.GetTempPath(), "behavior-tests-" + Guid.NewGuid().ToString("N"));
     private static readonly BehaviorCatalog Catalog = new(1, [new("streaming", "Wire behavior", ["StreamingResponse"], [new("text", "Text lifecycle")])]);
     private BehaviorInput Prepare() => BehaviorReviewPipeline.Prepare(_root, Catalog,
-        new[] { "agents", "teams-baseline", "teams-candidate" }.Select(role =>
+        new[] { "agents", "teams-candidate" }.Select(role =>
             (new BehaviorSource(role, "2.1.0", "fixture", new string('a', 40)),
             new Dictionary<string, string> { ["moved/src/Stream.cs"] = "first line\nsecond line\n" })).ToArray());
-    private static BehaviorReview Review(BehaviorInput input, string outcome = "equivalent", string upstream = "unchanged") =>
-        new(1, input.ReviewId, [new("streaming", "text", outcome, "Compared serialized requests.", upstream,
+    private static BehaviorReview Review(BehaviorInput input, string outcome = "equivalent") =>
+        new(1, input.ReviewId, [new("streaming", "text", outcome, "Compared serialized requests.",
             outcome == "different" ? "Different final entity." : null, outcome == "different" ? "Potential service compatibility." : null,
             outcome == "different" ? "Verify final payload." : null,
             input.Files.Select(f => new ReviewCitation(f.Path, StartLine: 1, EndLine: 2)).ToArray())]);
@@ -29,6 +29,8 @@ public sealed class BehaviorReviewTests : IDisposable
         var result = BehaviorReviewPipeline.Validate(input, Review(input, outcome), _root);
         Assert.True(result.Valid, string.Join("\n", result.Errors));
         Assert.Equal(findings, result.HasFindings);
+        Assert.Equal(new[] { "agents", "teams-candidate" }, input.Sources.Select(s => s.Role));
+        Assert.Contains("Teams specific behavior analysis", BehaviorReviewPipeline.Render(input, result));
         Assert.All(result.Decisions[0].Evidence, c => Assert.Equal("first line\nsecond line", c.Quote));
         Assert.Contains("Source-based analysis", BehaviorReviewPipeline.Render(input, result));
     }
@@ -64,23 +66,23 @@ public sealed class BehaviorReviewTests : IDisposable
         Assert.False(BehaviorReviewPipeline.Validate(input, review with { Decisions = [decision] }, _root).Valid);
     }
 
-    [Fact]
-    public void ConclusionsRequireBothSdksAndUpstreamClaimsRequireBaseline()
+    [Theory]
+    [InlineData("agents/")]
+    [InlineData("teams-candidate/")]
+    public void ConclusionsRequireBothSdks(string omittedRole)
     {
         var input = Prepare();
         var review = Review(input);
         var decision = review.Decisions[0];
-        var noBaseline = decision.Evidence.Where(c => !c.Path.StartsWith("teams-baseline/")).ToArray();
-        Assert.False(BehaviorReviewPipeline.Validate(input, review with { Decisions = [decision with { Evidence = noBaseline }] }, _root).Valid);
-        Assert.True(BehaviorReviewPipeline.Validate(input, review with { Decisions = [decision with { Evidence = noBaseline, UpstreamChange = "unknown" }] }, _root).Valid);
-        Assert.False(BehaviorReviewPipeline.Validate(input, review with { Decisions = [decision with { Evidence = [] }] }, _root).Valid);
+        var evidence = decision.Evidence.Where(c => !c.Path.StartsWith(omittedRole)).ToArray();
+        Assert.False(BehaviorReviewPipeline.Validate(input, review with { Decisions = [decision with { Evidence = evidence }] }, _root).Valid);
     }
 
     [Fact]
     public void InconclusiveCanDescribeMissingEvidenceWithoutFabricatedCitations()
     {
         var input = Prepare();
-        var review = Review(input, "inconclusive", "unknown");
+        var review = Review(input, "inconclusive");
         Assert.True(BehaviorReviewPipeline.Validate(input, review with { Decisions = [review.Decisions[0] with { Evidence = [] }] }, _root).Valid);
     }
 
@@ -134,7 +136,7 @@ public sealed class BehaviorReviewTests : IDisposable
     [Fact]
     public void UnavailableSourceFailsPreparation()
     {
-        var sources = new[] { "agents", "teams-baseline", "teams-candidate" }.Select(role =>
+        var sources = new[] { "agents", "teams-candidate" }.Select(role =>
             (new BehaviorSource(role, "2.1.0", "fixture", new string('a', 40)), new Dictionary<string, string>())).ToArray();
         Assert.Throws<InvalidDataException>(() => BehaviorReviewPipeline.Prepare(_root, Catalog, sources));
     }

@@ -245,9 +245,19 @@ for kind in pr scheduled; do
         new_case
         printf '{"changes":[]}' > "$ARTIFACTS/raw-api-diff.json"
         mkdir -p "$ARTIFACTS/behavior"
-        printf '## Teams wire-behavior analysis\nAdvisory difference.\n' > "$ARTIFACTS/behavior/behavior-report.md"
+        printf '## Teams specific behavior analysis\nAdvisory difference.\n' > "$ARTIFACTS/behavior/behavior-report.md"
         printf '{"schemaVersion":1,"valid":true,"hasFindings":true}' > "$ARTIFACTS/behavior/behavior-review-validation.json"
+        printf '# Implementation impact review\nAPI findings.\n\n## Independent check outcomes\nCheck details.\n' > "$ARTIFACTS/impact-report.md"
         run_report
+        issue_report=$(cat "$ARTIFACTS/issue-report.md")
+        contains "$issue_report" 'API findings.'
+        contains "$issue_report" 'Teams specific behavior analysis'
+        contains "$issue_report" 'Advisory difference'
+        for removed in 'Teams wire-behavior summary' 'Independent check outcomes' 'Workflow job outcomes' 'Recorded independent checks'; do
+            [[ "$issue_report" != *"$removed"* ]] || fail "Issue retained $removed"
+        done
+        [[ "$issue_report" == '# Implementation impact review'* ]] || fail 'Issue must start with implementation review'
+        contains "$(step 'Create or update implementation review issue')" 'REPORT_PATH: artifacts/teams-api-drift/issue-report.md'
         contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
         contains "$(cat "$ARTIFACTS/impact-report.md")" 'Advisory difference'
         contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Report publication'
@@ -286,10 +296,14 @@ for kind in pr scheduled; do
 
     contains "$(cat "$ARTIFACTS/impact-report.md")" 'Needs adaptation'
     contains "$(cat "$ARTIFACTS/impact-report.md")" 'build: failure'
+    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Report publication'
     contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Evidence download failed: download_assessment'
-    if [[ "$kind" == scheduled ]]; then
-        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'Needs adaptation'* ]] || fail 'Publication duplicated API analysis'
-        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'build: failure'* ]] || fail 'Publication duplicated deterministic checks'
+    [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'Needs adaptation'* ]] || fail 'Publication duplicated API analysis'
+    [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'build: failure'* ]] || fail 'Publication duplicated deterministic checks'
+    contains "$(step 'Enforce deterministic checks')" 'Deterministic API checks'
+    if [[ "$kind" == pr ]]; then
+        contains "$(step 'Publish implementation review comment')" 'Published review comment'
+        contains "$(job publish)" 'id: publish_comment'
     fi
     pass 'existing report and failed independent/download outcomes survive publication'
 

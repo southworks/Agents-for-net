@@ -15,7 +15,7 @@ public sealed record BehaviorDefinition(string Id, string Description, IReadOnly
 public sealed record BehaviorCheck(string Id, string Description);
 public sealed record BehaviorSource(string Role, string Version, string Repository, string Commit);
 public sealed record BehaviorInput(int SchemaVersion, string ReviewId, BehaviorCatalog Catalog, IReadOnlyList<BehaviorSource> Sources, IReadOnlyList<ReviewArtifact> Files);
-public sealed record BehaviorDecision(string BehaviorId, string CheckId, string Outcome, string Reason, string UpstreamChange,
+public sealed record BehaviorDecision(string BehaviorId, string CheckId, string Outcome, string Reason,
     string? WireEffect, string? CompatibilityImpact, string? FollowUp, IReadOnlyList<ReviewCitation> Evidence);
 public sealed record BehaviorReview(int SchemaVersion, string ReviewId, IReadOnlyList<BehaviorDecision> Decisions);
 public sealed record BehaviorValidation(int SchemaVersion, bool Valid, bool HasFindings, IReadOnlyList<string> Errors, IReadOnlyList<BehaviorDecision> Decisions);
@@ -93,7 +93,7 @@ public static class BehaviorReviewPipeline
     private static bool Supported(string path) => Extensions.Contains(Path.GetExtension(path)) &&
         Path.GetFileName(path) is not ("AGENTS.md" or "CLAUDE.md" or "SKILL.md");
 
-    public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string from, string to)
+    public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string to)
     {
         ValidateCatalog(catalog);
         if (Paths.IsContainedBy(Path.Combine(repositoryRoot, "src"), workspace) ||
@@ -113,18 +113,17 @@ public static class BehaviorReviewPipeline
         {
             if (File.Exists(archivePath)) File.Delete(archivePath);
         }
-        var baseline = await DownloadAsync(from, "teams-baseline").ConfigureAwait(false);
         var candidate = await DownloadAsync(to, "teams-candidate").ConfigureAwait(false);
         return Prepare(workspace, catalog, [
-            (new BehaviorSource("agents", commit, "Agents SDK checkout", commit), agents), baseline, candidate]);
+            (new BehaviorSource("agents", commit, "Agents SDK checkout", commit), agents), candidate]);
     }
 
     internal static BehaviorInput Prepare(string workspace, BehaviorCatalog catalog,
         IReadOnlyList<(BehaviorSource Source, Dictionary<string, string> Files)> sources)
     {
         ValidateCatalog(catalog);
-        if (sources.Count != 3 || !sources.Select(s => s.Source.Role).Order().SequenceEqual(new[] { "agents", "teams-baseline", "teams-candidate" }.Order()))
-            throw new InvalidDataException("Three distinct source roles are required.");
+        if (sources.Count != 2 || !sources.Select(s => s.Source.Role).Order().SequenceEqual(new[] { "agents", "teams-candidate" }.Order()))
+            throw new InvalidDataException("Agents and candidate Teams source roles are required.");
         var destination = Path.GetFullPath(workspace);
         AgentContextBuilder.RejectSymlinkTraversal(Path.GetPathRoot(destination)!, destination, destination);
         if (Directory.Exists(destination) && Directory.EnumerateFileSystemEntries(destination).Any())
@@ -166,6 +165,9 @@ public static class BehaviorReviewPipeline
         var errors = new List<string>();
         var resolved = new List<BehaviorDecision>();
         ValidateCatalog(input.Catalog);
+        if (input.Sources.Count != 2 || !input.Sources.Select(s => s.Role).Order().SequenceEqual(new[] { "agents", "teams-candidate" }.Order()) ||
+            input.Files.Any(f => !f.Path.StartsWith("agents/", StringComparison.Ordinal) && !f.Path.StartsWith("teams-candidate/", StringComparison.Ordinal)))
+            errors.Add("Only Agents and candidate Teams source inventories are supported.");
         if (input.SchemaVersion != 1 || review.SchemaVersion != 1 || input.ReviewId != Identity(input) || review.ReviewId != input.ReviewId)
             errors.Add("Review identity or schema mismatch.");
         var snapshotInput = ToolJson.Read<BehaviorInput>(Path.Combine(workspace, "behavior-input.json"));
@@ -182,8 +184,8 @@ public static class BehaviorReviewPipeline
         {
             var key = (decision.BehaviorId, decision.CheckId);
             if (!required.Contains(key) || !seen.Add(key)) errors.Add($"Unknown or duplicate check: {key}.");
-            if (decision.Outcome is not ("equivalent" or "different" or "inconclusive") || string.IsNullOrWhiteSpace(decision.Reason) ||
-                decision.UpstreamChange is not ("changed" or "unchanged" or "unknown")) errors.Add($"Invalid decision: {key}.");
+            if (decision.Outcome is not ("equivalent" or "different" or "inconclusive") || string.IsNullOrWhiteSpace(decision.Reason))
+                errors.Add($"Invalid decision: {key}.");
             if (decision.Outcome == "different" && (string.IsNullOrWhiteSpace(decision.WireEffect) || string.IsNullOrWhiteSpace(decision.CompatibilityImpact) || string.IsNullOrWhiteSpace(decision.FollowUp)))
                 errors.Add($"Difference requires wire effect, compatibility impact, and follow-up: {key}.");
             var citations = new List<ReviewCitation>();
@@ -200,8 +202,8 @@ public static class BehaviorReviewPipeline
                 citations.Add(citation with { Quote = quote });
             }
             bool Cites(string role) => citations.Any(c => c.Path.StartsWith(role + "/", StringComparison.Ordinal));
-            if (decision.Evidence is null || (decision.Outcome != "inconclusive" && (!Cites("agents") || !Cites("teams-candidate"))) ||
-                (decision.UpstreamChange != "unknown" && (!Cites("teams-baseline") || !Cites("teams-candidate")))) errors.Add($"Missing SDK evidence: {key}.");
+            if (decision.Evidence is null || (decision.Outcome != "inconclusive" && (!Cites("agents") || !Cites("teams-candidate"))))
+                errors.Add($"Missing SDK evidence: {key}.");
             resolved.Add(decision with { Evidence = citations });
         }
         if (!required.SetEquals(seen)) errors.Add("Every catalog check must have exactly one decision.");
@@ -210,13 +212,13 @@ public static class BehaviorReviewPipeline
 
     public static string Render(BehaviorInput input, BehaviorValidation validation)
     {
-        var text = new StringBuilder("## Teams wire-behavior analysis\n\nSource-based analysis; no traffic was captured. Findings are advisory.\n\n");
+        var text = new StringBuilder("## Teams specific behavior analysis\n\nSource-based analysis; no traffic was captured. Findings are advisory.\n\n");
         text.AppendLine($"Evidence validation: **{(validation.Valid ? "passed" : "FAILED")}**. Review: `{input.ReviewId}`.\n");
         foreach (var source in input.Sources) text.AppendLine($"- {source.Role}: `{source.Version}` at `{source.Commit}`");
         foreach (var error in validation.Errors) text.AppendLine($"\nValidation error: {error}");
         foreach (var decision in validation.Decisions)
         {
-            text.AppendLine($"\n### {decision.BehaviorId} / {decision.CheckId}: {decision.Outcome}\n\n{decision.Reason}\n\nUpstream behavior: {decision.UpstreamChange}.");
+            text.AppendLine($"\n### {decision.BehaviorId} / {decision.CheckId}: {decision.Outcome}\n\n{decision.Reason}");
             if (decision.WireEffect is not null) text.AppendLine($"\nWire effect: {decision.WireEffect}\n\nCompatibility impact: {decision.CompatibilityImpact}\n\nFollow-up: {decision.FollowUp}");
             foreach (var citation in decision.Evidence) text.AppendLine($"\nEvidence: `{citation.Path}:{citation.StartLine}-{citation.EndLine}`\n\n```csharp\n{citation.Quote}\n```");
         }
