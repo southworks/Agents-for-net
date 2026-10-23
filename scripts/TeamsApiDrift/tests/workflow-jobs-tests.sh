@@ -249,7 +249,12 @@ for kind in pr scheduled; do
         printf '{"schemaVersion":1,"valid":true,"hasFindings":true}' > "$ARTIFACTS/behavior/behavior-review-validation.json"
         run_report
         contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
-        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Advisory difference'
+        contains "$(cat "$ARTIFACTS/impact-report.md")" 'Advisory difference'
+        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Report publication'
+        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'Advisory difference'* ]] || fail 'Publication duplicated behavior analysis'
+        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'Workflow job outcomes'* ]] || fail 'Publication duplicated upstream job outcomes'
+        contains "$(step 'Validate and render advisory behavior report')" 'cat "$ARTIFACTS/behavior-report.md" >> "$GITHUB_STEP_SUMMARY"'
+        contains "$(step 'Enforce deterministic checks')" 'Deterministic API checks'
         pass 'behavior findings publish with an empty API diff'
 
         new_case
@@ -257,7 +262,7 @@ for kind in pr scheduled; do
         should_run publish || fail 'Behavior failure skipped publication'
         run_report
         contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
-        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'behavior_analysis: failure'
+        contains "$(cat "$ARTIFACTS/impact-report.md")" 'behavior_analysis: failure'
         pass 'behavior failure preserves publication diagnostics'
     fi
 
@@ -268,7 +273,7 @@ for kind in pr scheduled; do
 
     [[ -s "$ARTIFACTS/pipeline-status.json" ]] || fail 'Missing pipeline diagnostics'
     contains "$(cat "$ARTIFACTS/impact-report.md")" 'versions: failure'
-    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'did not produce a validated implementation report'
+    contains "$(cat "$ARTIFACTS/impact-report.md")" 'did not produce a validated implementation report'
     contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
     pass 'missing evidence produces fallback report, summary, and pipeline diagnostics'
 
@@ -279,9 +284,13 @@ for kind in pr scheduled; do
     DOWNLOAD_RESULTS='{"download_assessment":{"outcome":"failure"}}'
     run_report
 
-    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Needs adaptation'
-    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'build: failure'
+    contains "$(cat "$ARTIFACTS/impact-report.md")" 'Needs adaptation'
+    contains "$(cat "$ARTIFACTS/impact-report.md")" 'build: failure'
     contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Evidence download failed: download_assessment'
+    if [[ "$kind" == scheduled ]]; then
+        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'Needs adaptation'* ]] || fail 'Publication duplicated API analysis'
+        [[ "$(cat "$GITHUB_STEP_SUMMARY")" != *'build: failure'* ]] || fail 'Publication duplicated deterministic checks'
+    fi
     pass 'existing report and failed independent/download outcomes survive publication'
 
     new_case
@@ -317,7 +326,7 @@ for kind in pr scheduled; do
     contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=true'
     contains "$(cat "$GITHUB_OUTPUT")" 'from=2.1.0'
     contains "$(cat "$GITHUB_OUTPUT")" 'to=2.1.2'
-    contains "$(cat "$GITHUB_STEP_SUMMARY")" 'Workflow job outcomes'
+    contains "$(cat "$ARTIFACTS/impact-report.md")" 'Workflow job outcomes'
     [[ "$(jq '.errors | length' "$ARTIFACTS/pipeline-status.json")" == 0 ]] || fail 'Large comparison produced publication errors'
     pass 'large comparisons still produce publication outputs, summary, and diagnostics'
 
