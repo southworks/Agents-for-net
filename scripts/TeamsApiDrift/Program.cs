@@ -23,11 +23,7 @@ internal static class Program
                 "collect-usage" => CollectUsage(options),
                 "validate-usage" => ValidateUsage(options),
                 "validate-metadata" => ValidateMetadata(options),
-                "classify" => Classify(options),
                 "write-test-summary" => WriteTestSummary(options),
-                "render-report" => RenderReport(options),
-                "prepare-agent-context" => PrepareAgentContext(options),
-                "validate-agent-report" => ValidateAgentReport(options),
                 "prepare-impact-review" => PrepareImpactReview(options),
                 "validate-impact-review" => ValidateImpactReview(options),
                 _ => throw new ArgumentException($"Unknown command: {args[0]}")
@@ -191,17 +187,6 @@ internal static class Program
         return result.Valid ? 0 : 1;
     }
 
-    private static int Classify(Arguments options)
-    {
-        var result = FindingClassifier.Classify(
-            ToolJson.Read<ApiComparison>(options.Required("--comparison")),
-            ToolJson.Read<UsageManifest>(options.Required("--manifest")),
-            ToolJson.Read<CapabilityDocument>(options.Required("--capabilities")));
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "findings.json", ".json"), result);
-
-        return options.HasFlag("--fail-on-drift") && result.Summary.Blocking + result.Summary.Required > 0 ? 1 : 0;
-    }
-
     private static int WriteTestSummary(Arguments options)
     {
         var checks = options.Many("--check").Select(value => value.Split('=', 2))
@@ -216,55 +201,6 @@ internal static class Program
         }
 
         return 0;
-    }
-
-    private static int RenderReport(Arguments options)
-    {
-        var summaryPath = options.Optional("--test-summary");
-        var markdown = DeterministicReportRenderer.Render(
-            ToolJson.Read<FindingsResult>(options.Required("--findings")),
-            summaryPath is null ? null : ToolJson.Read<TestSummary>(summaryPath));
-        var output = ToolJson.OutputFile(options.Required("--output"), "deterministic-report.md", ".md");
-
-        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
-
-        File.WriteAllText(output, markdown);
-
-        return 0;
-    }
-
-    private static int PrepareAgentContext(Arguments options)
-    {
-        var summaryPath = options.Optional("--test-summary");
-        var context = AgentContextBuilder.Build(
-            ToolJson.Read<FindingsResult>(options.Required("--findings")),
-            ToolJson.Read<UsageManifest>(options.Required("--manifest")),
-            ToolJson.Read<CapabilityDocument>(options.Required("--capabilities")),
-            File.ReadAllText(options.Required("--deterministic-report")),
-            summaryPath is null ? null : ToolJson.Read<TestSummary>(summaryPath),
-            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "agent-context.json", ".json"), context);
-
-        return 0;
-    }
-
-    private static int ValidateAgentReport(Arguments options)
-    {
-        var validation = AgentReportValidator.Validate(
-            File.ReadAllText(options.Required("--report")),
-            ToolJson.Read<FindingsResult>(options.Required("--findings")));
-        var output = ToolJson.OutputFile(options.Required("--output"), "agent-report-validation.json", ".json");
-        ToolJson.Write(output, validation);
-
-        if (!validation.Valid)
-        {
-            Console.Error.WriteLine($"TeamsApiDrift: Agent report validation failed. Details were written to '{output}'.");
-            foreach (var error in validation.Errors)
-            {
-                Console.Error.WriteLine($"TeamsApiDrift: {error}");
-            }
-        }
-        return validation.Valid ? 0 : 1;
     }
 
     private static int PrepareImpactReview(Arguments options)
@@ -349,5 +285,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report, prepare-impact-review, validate-impact-review");
+        "Commands: write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
 }

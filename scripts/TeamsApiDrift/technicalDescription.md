@@ -2,8 +2,6 @@
 
 The drift workflows compare the centrally declared Microsoft.Teams.Apps baseline with a candidate package, then ask a repository review agent to assess **every API change** against the MSTeams implementation. API discovery, build/test execution, snapshot integrity, decision coverage, citation checks, and compatibility enforcement remain deterministic.
 
-The agent makes contextual impact decisions. The workflows no longer run the rule-based `classify` command or generate a separate prose advisory report.
-
 ## Workflow jobs and data flow
 
 Both workflows use the same four jobs:
@@ -106,6 +104,8 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 
 | Command | Inputs | Outputs |
 | --- | --- | --- |
+| `write-agent-metadata` | `--output`, `--model`, `--cli-version` | Requested model and CLI version JSON, console summary, and optional GitHub step summary. |
+| `extract-agent-response` | `--input`, `--output` | Final assistant response and session/model metadata; incomplete or failed event streams are rejected. |
 | `resolve-version` | `--props`, optional `--package` | Resolved version on stdout. |
 | `resolve-comparison` | `--from`, optional `--to`, `--output`, optional sources/config | Normalized baseline/candidate and `sameVersion` JSON. Omitted candidate resolves the latest listed stable release using metadata only. |
 | `compare` | `--from`, optional `--to`, `--output`, optional package sources/config | Before/after API models, complete raw diff, candidate version on stdout. |
@@ -115,8 +115,6 @@ An unavailable agent, timeout, missing response, invalid evidence, changed snaps
 | `prepare-impact-review` | `--comparison`, `--before-api`, `--after-api`, `--manifest`, `--capabilities`, optional `--collected`, `--test-summary`, `--repository-root`, `--workspace`, `--output`, `--empty-review`, optional `--defer` | Full snapshot, trusted review input, change count on stdout, and an empty/deferred review when appropriate. |
 | `validate-impact-review` | `--input`, `--review`, `--workspace`, `--repository-root`, `--output`, `--report` | Validation/gate decision, canonical citations and Markdown report. Returns 1 for invalid evidence, 0 for a structurally valid review; the workflow separately enforces `canProceed`. |
 | `validate-metadata` | Built assemblies, manifests, props, optional base ref | Existing offline repository metadata checks used by normal CI. |
-
-`classify`, `render-report`, `prepare-agent-context`, and `validate-agent-report` remain available as legacy/offline helpers for existing consumers and tests. They do not decide the active drift workflow's gate.
 
 ## Artifacts and workflow output
 
@@ -141,5 +139,7 @@ Preparation logs the number and types of API changes. Validation logs compatibil
 ## Main components and unchanged repository CI
 
 `ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `ReviewAgentOutput.cs` captures the final message and agent provenance through the `extract-agent-response` and `write-agent-metadata` tool commands. `ReviewAgentOutputTests.cs` checks structured capture and metadata with xUnit; `tests/run-impact-review-tests.sh` checks orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `tests/workflow-jobs-tests.sh` checks actual workflow job conditions and executes the embedded Bash report/publication-result steps across failure/skip scenarios using `jq`. Report preparation and publication-result evaluation require no checkout, Node setup, or drift-tool compilation in the publication job; comment/issue publication retains GitHub Script for GitHub API access. Node setup in the assessment job is retained for installing Copilot CLI through npm, rather than for repository scripts or tests. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
+
+`DriftPipeline.cs` retains the shared version resolver, capability matching, snapshot redaction and symlink-traversal checks used by the active workflows and metadata validation. The implementation-review and metadata-validation tests retain coverage of these active behaviors.
 
 Ordinary `.github/workflows/ci.yml` continues to run `validate-metadata` against built MSTeams assemblies. Central package/version alignment, usage inventory, source associations, capability ownership, stale metadata, and required metadata reviews are still checked independently of the AI review. This architecture does not move Teams-specific runtime behavior into SDK Core, Builder, or Hosting.
