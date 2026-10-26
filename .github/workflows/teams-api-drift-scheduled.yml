@@ -16,6 +16,11 @@ on:
         description: Candidate Microsoft.Teams.Apps version (defaults to the latest listed stable release)
         required: false
         type: string
+      behavior_source_fixture:
+        description: Review patched Teams 2.1.2 source; skips package checks and issue publication
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -67,26 +72,42 @@ jobs:
         env:
           DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
           DISPATCH_TO_VERSION: ${{ inputs.to_version }}
+          BEHAVIOR_SOURCE_FIXTURE: ${{ inputs.behavior_source_fixture }}
         run: |
           mkdir -p "$ARTIFACTS"
-          from=$DISPATCH_FROM_VERSION
-          if [[ -z "$from" ]]; then
-            from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
-          fi
           options=()
-          if [[ -n "$DISPATCH_TO_VERSION" ]]; then
-            options+=(--to "$DISPATCH_TO_VERSION")
+          if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+            fixture_version=$(jq -er '.baseVersion' scripts/TeamsApiDriftFixtures/streaming-source-patch.json)
+            if [[ -n "$DISPATCH_FROM_VERSION" && "$DISPATCH_FROM_VERSION" != "$fixture_version" ]] ||
+               [[ -n "$DISPATCH_TO_VERSION" && "$DISPATCH_TO_VERSION" != "$fixture_version" ]]; then
+              echo "Source fixture uses $fixture_version; leave both version inputs blank or set both to $fixture_version." >&2
+              exit 2
+            fi
+            from=$fixture_version
+            options+=(--to "$fixture_version")
+          else
+            from=$DISPATCH_FROM_VERSION
+            if [[ -z "$from" ]]; then
+              from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
+            fi
+            if [[ -n "$DISPATCH_TO_VERSION" ]]; then
+              options+=(--to "$DISPATCH_TO_VERSION")
+            fi
           fi
-          # An omitted candidate resolves listed stable package metadata only.
+          # In normal mode, an omitted candidate resolves listed stable package metadata.
           dotnet run --project "$TOOL" -c Release --no-build -- resolve-comparison --from "$from" "${options[@]}" --output "$ARTIFACTS/versions.json" 2> >(tee "$ARTIFACTS/version-resolution.log" >&2)
           echo "from=$(jq -r '.fromVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "to=$(jq -r '.toVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "same=$(jq -r '.sameVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
-          jq -r '"Compared versions: `\(.fromVersion)` -> `\(.toVersion)`.\n\nVersions match: **\(.sameVersion)**. Matching versions skip all remaining jobs."' "$ARTIFACTS/versions.json" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+            printf 'Local Teams source fixture: pinned `%s` with streaming edits. Only behavior analysis and artifact publication run.\n' "$fixture_version" >> "$GITHUB_STEP_SUMMARY"
+          else
+            jq -r '"Compared versions: `\(.fromVersion)` -> `\(.toVersion)`.\n\nVersions match: **\(.sameVersion)**. Matching versions skip all remaining jobs."' "$ARTIFACTS/versions.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Transfer version-resolution diagnostics
         id: stage_artifact
-        if: always() && steps.resolve.outputs.same != 'true'
+        if: always() && (steps.resolve.outputs.same != 'true' || inputs.behavior_source_fixture == true)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: teams-api-drift-intermediate-${{ github.run_id }}-${{ github.run_attempt }}-versions
@@ -97,7 +118,7 @@ jobs:
   deterministic:
     name: Deterministic API checks
     needs: versions
-    if: needs.versions.outputs.same == 'false'
+    if: needs.versions.outputs.same == 'false' && inputs.behavior_source_fixture != true
     runs-on: ubuntu-latest
     env:
       FROM_VERSION: ${{ needs.versions.outputs.from }}
@@ -132,7 +153,6 @@ jobs:
         run: >-
           dotnet run --project "$TOOL" -c Release --no-build -- compare
           --from "$FROM_VERSION" --to "$TO_VERSION"
-          --source "$GITHUB_WORKSPACE/artifacts/teams-api-fixture/feed"
           --source https://api.nuget.org/v3/index.json
           --output "$ARTIFACTS"
 
@@ -366,7 +386,7 @@ jobs:
   behavior_analysis:
     name: Analyze outbound Teams behaviors
     needs: versions
-    if: needs.versions.outputs.same == 'false'
+    if: needs.versions.outputs.same == 'false' || inputs.behavior_source_fixture == true
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
@@ -399,11 +419,18 @@ jobs:
       - name: Prepare release-matched behavior sources
         env:
           TO_VERSION: ${{ needs.versions.outputs.to }}
+          BEHAVIOR_SOURCE_FIXTURE: ${{ inputs.behavior_source_fixture }}
         shell: bash
         run: |
           mkdir -p "$ARTIFACTS"
+          candidate_version=$TO_VERSION
+          source_args=()
+          if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+            candidate_version=2.1.2-local-streaming-source
+            source_args=(--source-patch scripts/TeamsApiDriftFixtures/streaming-source-patch.json)
+          fi
           dotnet run --project "$TOOL" -c Release --no-build -- prepare-behavior-review \
-            --to "$TO_VERSION" \
+            --to "$candidate_version" "${source_args[@]}" \
             --catalog scripts/TeamsApiDrift/behaviors.json \
             --repository-root "$GITHUB_WORKSPACE" --workspace "$REVIEW_WORKSPACE" \
             --output "$ARTIFACTS/behavior-input.json" 2>&1 | tee "$ARTIFACTS/preparation.log"
@@ -455,7 +482,7 @@ jobs:
     name: Publish report and final artifacts
     needs: [versions, deterministic, assessment, behavior_analysis]
     # Still publish diagnostics if version resolution or any later job failed.
-    if: always() && needs.versions.outputs.same != 'true'
+    if: always() && (needs.versions.outputs.same != 'true' || inputs.behavior_source_fixture == true)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -506,6 +533,7 @@ jobs:
           JOB_RESULTS: ${{ toJSON(needs) }}
           DOWNLOAD_RESULTS: ${{ toJSON(steps) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BEHAVIOR_SOURCE_FIXTURE: ${{ inputs.behavior_source_fixture }}
         run: |
           mkdir -p "$ARTIFACTS"
           errors=()
@@ -531,8 +559,12 @@ jobs:
             '{schemaVersion: 1, jobs: $jobs, downloads: $downloads, errors: $errors}' > "$ARTIFACTS/pipeline-status.json"
           report_path="$ARTIFACTS/impact-report.md"
           if [[ ! -f "$report_path" ]]; then
-            printf '# Microsoft.Teams.Apps implementation review\n\nCompared `%s` -> `%s`.\n\n' "$from" "$to" > "$report_path"
-            printf 'The pipeline did not produce a validated implementation report. See the job outcomes below and the workflow logs.\n' >> "$report_path"
+            if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+              printf '# Teams source fixture behavior review\n\nPatched Teams `%s` source; API and package checks intentionally skipped.\n' "$to" > "$report_path"
+            else
+              printf '# Microsoft.Teams.Apps implementation review\n\nCompared `%s` -> `%s`.\n\n' "$from" "$to" > "$report_path"
+              printf 'The pipeline did not produce a validated implementation report. See the job outcomes below and the workflow logs.\n' >> "$report_path"
+            fi
           fi
           {
             printf '\n## Workflow job outcomes\n\n'
@@ -574,7 +606,11 @@ jobs:
             !omit { print }
           ' "$report_path" > "$ARTIFACTS/issue-report.md"
           {
-            printf '## Report publication\n\nThe combined report is included in the final artifact and the review issue when publication succeeds.\n\n'
+            if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+              printf '## Report publication\n\nThe source fixture report is included in the final artifact; the standing issue is unchanged.\n\n'
+            else
+              printf '## Report publication\n\nThe combined report is included in the final artifact and the review issue when publication succeeds.\n\n'
+            fi
             jq -r 'to_entries[] | select((.key | startswith("download_")) and .value.outcome == "failure") | "- Evidence download failed: \(.key)"' <<< "$DOWNLOAD_RESULTS"
             for error in "${errors[@]}"; do printf -- '- %s\n' "$error"; done
             printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
@@ -582,6 +618,10 @@ jobs:
           publish_issue=$(jq -r --argjson jobs "$JOB_RESULTS" \
             'any($jobs[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
           [[ "$behavior_findings" == true ]] && publish_issue=true
+          if [[ "$BEHAVIOR_SOURCE_FIXTURE" == true ]]; then
+            publish_issue=false
+            printf '\n_Local source fixture run: findings are retained in artifacts; no issue is published._\n' >> "$report_path"
+          fi
           printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
           printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
 

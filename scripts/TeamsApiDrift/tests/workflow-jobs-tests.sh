@@ -72,6 +72,7 @@ should_run() {
         condition=${condition//"$token"/\"$value\"}
     done
 
+    condition=${condition//inputs.behavior_source_fixture/${FIXTURE_MODE:-false}}
     condition=${condition//'always()'/true}
     [[ "$condition" =~ ^[\ a-zA-Z0-9\"\'=\!\&\|\(\)]+$ ]] || fail "Unsupported condition: $condition"
     eval "[[ $condition ]]"
@@ -83,6 +84,7 @@ new_case() {
     mkdir -p "$ARTIFACTS"
 
     export ARTIFACTS GITHUB_OUTPUT="$ARTIFACTS/outputs" GITHUB_STEP_SUMMARY="$ARTIFACTS/summary"
+    export BEHAVIOR_SOURCE_FIXTURE=${FIXTURE_MODE:-false}
     export RUN_URL='https://github.com/southworks/Agents-for-net/actions/runs/123'
     export DOWNLOAD_RESULTS='{}' STEP_RESULTS='{}'
     jobs
@@ -109,6 +111,7 @@ expect_gate() {
 
 for kind in pr scheduled; do
     workflow=".github/workflows/teams-api-drift-$kind.yml"
+    [[ "$(cat "$workflow")" != *"artifacts/teams-api-fixture/feed"* ]] || fail "Removed fake package feed remains in $workflow"
     case_index=0
 
     step 'Prepare final report and pipeline diagnostics' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-report.sh"
@@ -182,8 +185,51 @@ for kind in pr scheduled; do
                     [[ "$(wc -l < "$ARTIFACTS/resolver-calls" | tr -d ' ')" == "$expected_calls" ]] || fail 'Unexpected default resolution'
                 fi
             done
-        )
         pass 'dispatch versions independently override defaults and preserve equality'
+
+        new_case
+        BEHAVIOR_SOURCE_FIXTURE=true
+        DISPATCH_FROM_VERSION=''
+        DISPATCH_TO_VERSION=''
+        export BEHAVIOR_SOURCE_FIXTURE DISPATCH_FROM_VERSION DISPATCH_TO_VERSION
+        bash -e -o pipefail "$test_root/scheduled-versions.sh"
+        contains "$(cat "$GITHUB_OUTPUT")" 'from=2.1.2'
+        contains "$(cat "$GITHUB_OUTPUT")" 'to=2.1.2'
+        contains "$(cat "$GITHUB_OUTPUT")" 'same=true'
+        [[ ! -f "$ARTIFACTS/resolver-calls" ]] || fail 'Source fixture queried release defaults'
+
+        new_case
+        BEHAVIOR_SOURCE_FIXTURE=true
+        DISPATCH_TO_VERSION='2.1.3-streamfixture.20261026.1'
+        export BEHAVIOR_SOURCE_FIXTURE DISPATCH_TO_VERSION
+        fixture_status=0
+        bash -e -o pipefail "$test_root/scheduled-versions.sh" > "$ARTIFACTS/fixture-error.log" 2>&1 || fixture_status=$?
+        [[ "$fixture_status" == 2 ]] || fail 'Removed fake package version was not rejected'
+        contains "$(cat "$ARTIFACTS/fixture-error.log")" 'leave both version inputs blank'
+        pass 'source fixture resolves pinned versions and rejects fake package dispatch'
+        )
+
+        step 'Prepare release-matched behavior sources' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/scheduled-behavior-prep.sh"
+        for mode in false true; do
+            new_case
+            BEHAVIOR_SOURCE_FIXTURE=$mode
+            export BEHAVIOR_SOURCE_FIXTURE TO_VERSION=2.1.2 REVIEW_WORKSPACE="$test_root/snapshot" TOOL=mock-project GITHUB_WORKSPACE="$repo_dir"
+            (
+                dotnet() { printf '%s\n' "$@"; }
+                export -f dotnet
+                bash -e -o pipefail "$test_root/scheduled-behavior-prep.sh" > "$ARTIFACTS/prep-stdout"
+            )
+            prep=$(cat "$ARTIFACTS/preparation.log")
+            if [[ "$mode" == true ]]; then
+                contains "$prep" '--source-patch'
+                contains "$prep" 'streaming-source-patch.json'
+                contains "$prep" '2.1.2-local-streaming-source'
+            else
+                [[ "$prep" != *'--source-patch'* ]] || fail 'Release review received a fixture patch'
+                contains "$prep" '2.1.2'
+            fi
+        done
+        pass 'behavior preparation selects source patch only in fixture mode'
     fi
 
     jobs true success skipped skipped
@@ -242,6 +288,15 @@ for kind in pr scheduled; do
         if should_run behavior_analysis; then fail 'Version resolution failure ran behavior analysis'; fi
         pass 'behavior analysis depends only on changed resolved versions'
 
+        FIXTURE_MODE=true
+        jobs true success skipped skipped
+        should_run behavior_analysis || fail 'Source fixture skipped behavior analysis on matching versions'
+        should_run publish || fail 'Source fixture skipped artifact publication'
+        if should_run deterministic || should_run assessment; then fail 'Source fixture ran package/API checks'; fi
+        contains "$(step 'Prepare release-matched behavior sources')" '--source-patch scripts/TeamsApiDriftFixtures/streaming-source-patch.json'
+        FIXTURE_MODE=false
+        pass 'manual source fixture runs only behavior analysis and artifact publication'
+
         new_case
         printf '{"changes":[]}' > "$ARTIFACTS/raw-api-diff.json"
         mkdir -p "$ARTIFACTS/behavior"
@@ -266,6 +321,15 @@ for kind in pr scheduled; do
         contains "$(step 'Validate and render advisory behavior report')" 'cat "$ARTIFACTS/behavior-report.md" >> "$GITHUB_STEP_SUMMARY"'
         contains "$(step 'Enforce deterministic checks')" 'Deterministic API checks'
         pass 'behavior findings publish with an empty API diff'
+
+        new_case
+        BEHAVIOR_SOURCE_FIXTURE=true
+        export BEHAVIOR_SOURCE_FIXTURE
+        run_report
+        contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=false'
+        contains "$(cat "$ARTIFACTS/impact-report.md")" 'Local source fixture run'
+        contains "$(cat "$GITHUB_STEP_SUMMARY")" 'standing issue is unchanged'
+        pass 'source fixture keeps findings in artifacts without updating the issue'
 
         new_case
         JOB_RESULTS=$(jq '. + {behavior_analysis: {result: "failure"}}' <<< "$JOB_RESULTS")

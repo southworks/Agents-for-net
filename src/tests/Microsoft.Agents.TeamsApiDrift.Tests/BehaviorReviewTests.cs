@@ -19,6 +19,30 @@ public sealed class BehaviorReviewTests : IDisposable
             outcome == "different" ? "Verify final payload." : null,
             input.Files.Select(f => new ReviewCitation(f.Path, StartLine: 1, EndLine: 2)).ToArray())]);
 
+    [Fact]
+    public void SourcePatchRequiresPinnedProvenanceAndExactContext()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Directory.Packages.props"))) root = root.Parent;
+        Assert.NotNull(root);
+        var patch = ToolJson.Read<BehaviorSourcePatch>(Path.Combine(root.FullName, "scripts", "TeamsApiDriftFixtures", "streaming-source-patch.json"));
+        var baseline = new BehaviorSource("teams-candidate", patch.BaseVersion, "https://github.com/microsoft/teams.net", patch.BaseCommit);
+        var original = "BuildActivity(text, StreamTypes.Informative, textFormat)\n" +
+            "StreamType = StreamTypes.Final\n.WithStreamInfo(streamType, _streamId, _sequence);";
+        var path = "src/Microsoft.Teams.Apps/TeamsStreamingWriter.cs";
+        var files = new Dictionary<string, string> { [path] = original };
+
+        BehaviorReviewPipeline.ApplySourcePatch(baseline, files, patch);
+        Assert.Contains("BuildActivity(text, StreamTypes.Streaming, textFormat)", files[path]);
+        Assert.Contains("StreamType = StreamTypes.Streaming", files[path]);
+        Assert.Contains(".WithStreamInfo(streamType, _streamId, _sequence + 1);", files[path]);
+        Assert.Throws<InvalidDataException>(() => BehaviorReviewPipeline.ApplySourcePatch(baseline with { Commit = new string('a', 40) },
+            new Dictionary<string, string> { [path] = original }, patch));
+        Assert.Throws<InvalidDataException>(() => BehaviorReviewPipeline.ApplySourcePatch(baseline,
+            new Dictionary<string, string> { [path] = original + original }, patch));
+        Assert.Throws<InvalidDataException>(() => BehaviorReviewPipeline.ApplySourcePatch(baseline,
+            new Dictionary<string, string> { [path] = "unrelated source" }, patch));
+    }
     [Theory]
     [InlineData("equivalent", false)]
     [InlineData("different", true)]

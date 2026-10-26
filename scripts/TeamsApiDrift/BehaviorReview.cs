@@ -19,6 +19,8 @@ public sealed record BehaviorDecision(string BehaviorId, string CheckId, string 
     string? WireEffect, string? CompatibilityImpact, string? FollowUp, IReadOnlyList<ReviewCitation> Evidence);
 public sealed record BehaviorReview(int SchemaVersion, string ReviewId, IReadOnlyList<BehaviorDecision> Decisions);
 public sealed record BehaviorValidation(int SchemaVersion, bool Valid, bool HasFindings, IReadOnlyList<string> Errors, IReadOnlyList<BehaviorDecision> Decisions);
+public sealed record BehaviorSourcePatch(int SchemaVersion, string BaseVersion, string BaseCommit, IReadOnlyList<BehaviorSourceEdit> Edits);
+public sealed record BehaviorSourceEdit(string Path, string Before, string After);
 
 public static class BehaviorReviewPipeline
 {
@@ -93,7 +95,7 @@ public static class BehaviorReviewPipeline
     private static bool Supported(string path) => Extensions.Contains(Path.GetExtension(path)) &&
         Path.GetFileName(path) is not ("AGENTS.md" or "CLAUDE.md" or "SKILL.md");
 
-    public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string to)
+    public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string to, string? sourcePatch = null)
     {
         ValidateCatalog(catalog);
         if (Paths.IsContainedBy(Path.Combine(repositoryRoot, "src"), workspace) ||
@@ -113,9 +115,44 @@ public static class BehaviorReviewPipeline
         {
             if (File.Exists(archivePath)) File.Delete(archivePath);
         }
-        var candidate = await DownloadAsync(to, "teams-candidate").ConfigureAwait(false);
+        var candidate = sourcePatch is null
+            ? await DownloadAsync(to, "teams-candidate").ConfigureAwait(false)
+            : await PreparePatchedSourceAsync(to, sourcePatch).ConfigureAwait(false);
         return Prepare(workspace, catalog, [
             (new BehaviorSource("agents", commit, "Agents SDK checkout", commit), agents), candidate]);
+    }
+
+    private static async Task<(BehaviorSource Source, Dictionary<string, string> Files)> PreparePatchedSourceAsync(string version, string patchPath)
+    {
+        var patchText = File.ReadAllText(patchPath);
+        var patch = JsonSerializer.Deserialize<BehaviorSourcePatch>(patchText, ToolJson.Options)
+            ?? throw new InvalidDataException("Source patch is empty.");
+        var baseline = await DownloadAsync(patch.BaseVersion, "teams-candidate").ConfigureAwait(false);
+        ApplySourcePatch(baseline.Source, baseline.Files, patch);
+        var patchHash = ImpactReviewPipeline.Hash(patchText);
+        return (new BehaviorSource("teams-candidate", version,
+            $"LOCAL TEST FIXTURE based on {TeamsRepository}@{baseline.Source.Commit}",
+            $"source-patch-sha256:{patchHash}"), baseline.Files);
+    }
+
+    internal static void ApplySourcePatch(BehaviorSource baseline, Dictionary<string, string> files, BehaviorSourcePatch patch)
+    {
+        if (patch.SchemaVersion != 1 || patch.BaseVersion != baseline.Version ||
+            patch.BaseCommit != baseline.Commit || baseline.Repository != TeamsRepository ||
+            patch.Edits is null || patch.Edits.Count == 0)
+            throw new InvalidDataException("Source patch base provenance is invalid.");
+        foreach (var edit in patch.Edits)
+        {
+            if (string.IsNullOrWhiteSpace(edit.Path) || edit.Path.Contains('\\') ||
+                edit.Path.Split('/').Any(p => p is "" or "." or "..") ||
+                string.IsNullOrEmpty(edit.Before) || string.IsNullOrEmpty(edit.After) ||
+                !files.TryGetValue(edit.Path, out var source))
+                throw new InvalidDataException("Source patch path or edit is invalid.");
+            var index = source.IndexOf(edit.Before, StringComparison.Ordinal);
+            if (index < 0 || source.IndexOf(edit.Before, index + edit.Before.Length, StringComparison.Ordinal) >= 0)
+                throw new InvalidDataException($"Source patch context is missing or ambiguous: {edit.Path}.");
+            files[edit.Path] = source[..index] + edit.After + source[(index + edit.Before.Length)..];
+        }
     }
 
     internal static BehaviorInput Prepare(string workspace, BehaviorCatalog catalog,

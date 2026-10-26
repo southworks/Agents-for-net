@@ -41,7 +41,8 @@ internal static class Program
     private static async Task<int> PrepareBehaviorReviewAsync(Arguments options)
     {
         var input = await BehaviorReviewPipeline.PrepareAsync(options.Required("--repository-root"), options.Required("--workspace"),
-            ToolJson.Read<BehaviorCatalog>(options.Required("--catalog")), options.Required("--to")).ConfigureAwait(false);
+            ToolJson.Read<BehaviorCatalog>(options.Required("--catalog")), options.Required("--to"),
+            options.Optional("--source-patch")).ConfigureAwait(false);
         ToolJson.Write(options.Required("--output"), input);
 
         Console.WriteLine($"Prepared behavior review {input.ReviewId}: {input.Files.Count} source files.");

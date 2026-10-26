@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "baseVersion": "2.1.2",
+  "baseCommit": "9ee84cac51fae20ec5fba41ca8485b11b35f115c",
+  "edits": [
+    {
+      "path": "src/Microsoft.Teams.Apps/TeamsStreamingWriter.cs",
+      "before": "BuildActivity(text, StreamTypes.Informative, textFormat)",
+      "after": "BuildActivity(text, StreamTypes.Streaming, textFormat)"
+    },
+    {
+      "path": "src/Microsoft.Teams.Apps/TeamsStreamingWriter.cs",
+      "before": "StreamType = StreamTypes.Final",
+      "after": "StreamType = StreamTypes.Streaming"
+    },
+    {
+      "path": "src/Microsoft.Teams.Apps/TeamsStreamingWriter.cs",
+      "before": ".WithStreamInfo(streamType, _streamId, _sequence);",
+      "after": ".WithStreamInfo(streamType, _streamId, _sequence + 1);"
+    }
+  ]
+}
