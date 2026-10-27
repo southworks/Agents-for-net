@@ -48,7 +48,7 @@ public sealed class BehaviorReviewTests : IDisposable
     public void FixtureSourceReferencesDoNotInventUpstreamLinks()
     {
         var input = Prepare();
-        var validation = BehaviorReviewPipeline.Validate(input, Review(input), _root);
+        var validation = BehaviorReviewPipeline.Validate(input, Review(input, "different"), _root);
         var report = BehaviorReviewPipeline.Render(input, validation);
         Assert.Contains("Agents SDK snapshot: `moved/src/Stream.cs:1-2`", report);
         Assert.Contains("Teams SDK snapshot: `moved/src/Stream.cs:1-2`", report);
@@ -70,6 +70,33 @@ public sealed class BehaviorReviewTests : IDisposable
         Assert.Contains("Teams specific behavior analysis", BehaviorReviewPipeline.Render(input, result));
         Assert.All(result.Decisions[0].Evidence, c => Assert.Equal("first line\nsecond line", c.Quote));
         Assert.Contains("Source-based analysis", BehaviorReviewPipeline.Render(input, result));
+    }
+
+    [Theory]
+    [InlineData("equivalent")]
+    [InlineData("different")]
+    [InlineData("inconclusive")]
+    public void ReportShowsOnlyFindingsWhileValidationRetainsAllDecisions(string outcome)
+    {
+        var input = Prepare();
+        var result = BehaviorReviewPipeline.Validate(input, Review(input, outcome), _root);
+        var report = BehaviorReviewPipeline.Render(input, result);
+
+        Assert.True(result.Valid);
+        Assert.Equal(outcome, Assert.Single(result.Decisions).Outcome);
+        if (outcome == "equivalent")
+        {
+            Assert.DoesNotContain("### ", report);
+            Assert.DoesNotContain("Compared serialized requests.", report);
+            Assert.DoesNotContain("**Sources:**", report);
+            Assert.Contains("No behavior differences or inconclusive results found.", report);
+        }
+        else
+        {
+            Assert.Contains($"### streaming / text: {outcome}", report);
+            Assert.Contains("**Sources:**", report);
+            Assert.DoesNotContain("No behavior differences or inconclusive results found.", report);
+        }
     }
 
     [Fact]

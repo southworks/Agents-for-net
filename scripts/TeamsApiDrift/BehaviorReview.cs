@@ -353,7 +353,12 @@ public static class BehaviorReviewPipeline
             text.AppendLine($"\nValidation error: {error}");
         }
 
-        foreach (var decision in validation.Decisions)
+        if (validation.Valid && !validation.HasFindings)
+        {
+            text.AppendLine("\nNo behavior differences or inconclusive results found.");
+        }
+
+        foreach (var decision in validation.Decisions.Where(decision => decision.Outcome != "equivalent"))
         {
             var title = string.IsNullOrWhiteSpace(decision.Title) ? $"{decision.BehaviorId} / {decision.CheckId}: {decision.Outcome}" : decision.Title;
             var summary = decision.Outcome == "different" ? decision.WireEffect ?? decision.Reason : decision.Reason;
