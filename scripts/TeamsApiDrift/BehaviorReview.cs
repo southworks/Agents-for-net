@@ -16,7 +16,7 @@ public sealed record BehaviorCheck(string Id, string Description);
 public sealed record BehaviorSource(string Role, string Version, string Repository, string Commit);
 public sealed record BehaviorInput(int SchemaVersion, string ReviewId, BehaviorCatalog Catalog, IReadOnlyList<BehaviorSource> Sources, IReadOnlyList<ReviewArtifact> Files);
 public sealed record BehaviorDecision(string BehaviorId, string CheckId, string Outcome, string Reason,
-    string? WireEffect, string? CompatibilityImpact, string? FollowUp, IReadOnlyList<ReviewCitation> Evidence);
+    string? WireEffect, string? CompatibilityImpact, string? FollowUp, IReadOnlyList<ReviewCitation> Evidence, string? Title = null);
 public sealed record BehaviorReview(int SchemaVersion, string ReviewId, IReadOnlyList<BehaviorDecision> Decisions);
 public sealed record BehaviorValidation(int SchemaVersion, bool Valid, bool HasFindings, IReadOnlyList<string> Errors, IReadOnlyList<BehaviorDecision> Decisions);
 public sealed record BehaviorSourcePatch(int SchemaVersion, string BaseVersion, string BaseCommit, IReadOnlyList<BehaviorSourceEdit> Edits);
@@ -119,7 +119,14 @@ public static class BehaviorReviewPipeline
             ? await DownloadAsync(to, "teams-candidate").ConfigureAwait(false)
             : await PreparePatchedSourceAsync(to, sourcePatch).ConfigureAwait(false);
         return Prepare(workspace, catalog, [
-            (new BehaviorSource("agents", commit, "Agents SDK checkout", commit), agents), candidate]);
+            (new BehaviorSource("agents", commit, ResolveAgentsRepository(repositoryRoot), commit), agents), candidate]);
+    }
+
+    private static string ResolveAgentsRepository(string repositoryRoot)
+    {
+        var remotes = ImpactReviewPipeline.Git(repositoryRoot, "remote", "-v");
+        var match = Regex.Match(remotes, @"^origin\s+(?:https://github\.com/|git@github\.com:)([\w.-]+/[\w.-]+?)(?:\.git)?\s+\(fetch\)\r?$", RegexOptions.Multiline);
+        return match.Success ? "https://github.com/" + match.Groups[1].Value : "Agents SDK checkout";
     }
 
     private static async Task<(BehaviorSource Source, Dictionary<string, string> Files)> PreparePatchedSourceAsync(string version, string patchPath)
@@ -251,14 +258,41 @@ public static class BehaviorReviewPipeline
     {
         var text = new StringBuilder("## Teams specific behavior analysis\n\nSource-based analysis; no traffic was captured. Findings are advisory.\n\n");
         text.AppendLine($"Evidence validation: **{(validation.Valid ? "passed" : "FAILED")}**. Review: `{input.ReviewId}`.\n");
-        foreach (var source in input.Sources) text.AppendLine($"- {source.Role}: `{source.Version}` at `{source.Commit}`");
+        foreach (var source in input.Sources)
+        {
+            text.AppendLine($"- {source.Role}: `{source.Version}` at `{source.Commit}`");
+            if (source.Repository.StartsWith("LOCAL TEST FIXTURE", StringComparison.Ordinal))
+                text.AppendLine($"  {source.Repository}. Patched snapshot references have no upstream permalink.");
+        }
         foreach (var error in validation.Errors) text.AppendLine($"\nValidation error: {error}");
         foreach (var decision in validation.Decisions)
         {
-            text.AppendLine($"\n### {decision.BehaviorId} / {decision.CheckId}: {decision.Outcome}\n\n{decision.Reason}");
-            if (decision.WireEffect is not null) text.AppendLine($"\nWire effect: {decision.WireEffect}\n\nCompatibility impact: {decision.CompatibilityImpact}\n\nFollow-up: {decision.FollowUp}");
-            foreach (var citation in decision.Evidence) text.AppendLine($"\nEvidence: `{citation.Path}:{citation.StartLine}-{citation.EndLine}`\n\n```csharp\n{citation.Quote}\n```");
+            var title = string.IsNullOrWhiteSpace(decision.Title) ? $"{decision.BehaviorId} / {decision.CheckId}: {decision.Outcome}" : decision.Title;
+            var summary = decision.Outcome == "different" ? decision.WireEffect ?? decision.Reason : decision.Reason;
+            text.AppendLine($"\n### {title}\n\n{summary}");
+            if (decision.CompatibilityImpact is not null) text.AppendLine($"\n**Potential impact:** {decision.CompatibilityImpact}");
+            if (decision.FollowUp is not null) text.AppendLine($"\n**Next step:** {decision.FollowUp}");
+            if (decision.Evidence.Count > 0)
+                text.AppendLine($"\n**Sources:** {string.Join(" · ", decision.Evidence.DistinctBy(c => (c.Path, c.StartLine, c.EndLine)).Select(c => RenderSource(input, c)))}");
         }
         return text.ToString();
+    }
+
+    private static string RenderSource(BehaviorInput input, ReviewCitation citation)
+    {
+        var separator = citation.Path.IndexOf('/');
+        if (separator < 1) return $"Source snapshot: `{citation.Path}:{citation.StartLine}-{citation.EndLine}`";
+        var role = citation.Path[..separator];
+        var path = citation.Path[(separator + 1)..];
+        var source = input.Sources.FirstOrDefault(s => s.Role == role);
+        var sdk = role == "agents" ? "Agents SDK" : "Teams SDK";
+        var label = $"{sdk}: {Path.GetFileName(path)} ({citation.StartLine}–{citation.EndLine})";
+        if (source is not null && Regex.IsMatch(source.Repository, @"\Ahttps://github\.com/[\w.-]+/[\w.-]+\z") &&
+            Regex.IsMatch(source.Commit, @"\A[0-9a-fA-F]{40}\z"))
+        {
+            var escapedPath = string.Join("/", path.Split('/').Select(Uri.EscapeDataString));
+            return $"[{label}]({source.Repository}/blob/{source.Commit}/{escapedPath}#L{citation.StartLine}-L{citation.EndLine})";
+        }
+        return $"{sdk} snapshot: `{path}:{citation.StartLine}-{citation.EndLine}`";
     }
 }

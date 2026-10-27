@@ -43,6 +43,43 @@ public sealed class BehaviorReviewTests : IDisposable
         Assert.Throws<InvalidDataException>(() => BehaviorReviewPipeline.ApplySourcePatch(baseline,
             new Dictionary<string, string> { [path] = "unrelated source" }, patch));
     }
+    [Fact]
+    public void ReportUsesConciseSummaryAndPinnedSourceLinksWithoutCodeBlocks()
+    {
+        var commit = new string('a', 40);
+        var input = BehaviorReviewPipeline.Prepare(_root, Catalog,
+            new[] { "agents", "teams-candidate" }.Select(role =>
+                (new BehaviorSource(role, "2.1.2", role == "agents" ? "https://github.com/southworks/Agents-for-net" : "https://github.com/microsoft/teams.net", commit),
+                new Dictionary<string, string> { ["src/Stream.cs"] = "first line\nsecond line\n" })).ToArray());
+        var review = Review(input, "different");
+        review = review with { Decisions = [review.Decisions[0] with { Title = "Streaming responses: request format differs" }] };
+        var validation = BehaviorReviewPipeline.Validate(input, review, _root);
+        Assert.True(validation.Valid);
+        var report = BehaviorReviewPipeline.Render(input, validation);
+        Assert.Contains("### Streaming responses: request format differs", report);
+        Assert.Contains("Different final entity.", report);
+        Assert.Contains("**Potential impact:** Potential service compatibility.", report);
+        Assert.Contains("**Next step:** Verify final payload.", report);
+        Assert.Contains($"https://github.com/southworks/Agents-for-net/blob/{commit}/src/Stream.cs#L1-L2", report);
+        Assert.Contains($"https://github.com/microsoft/teams.net/blob/{commit}/src/Stream.cs#L1-L2", report);
+        Assert.DoesNotContain("Compared serialized requests.", report);
+        Assert.DoesNotContain("```", report);
+        Assert.DoesNotContain("first line", report);
+        Assert.Equal("first line\nsecond line", validation.Decisions[0].Evidence[0].Quote);
+    }
+
+    [Fact]
+    public void FixtureSourceReferencesDoNotInventUpstreamLinks()
+    {
+        var input = Prepare();
+        var validation = BehaviorReviewPipeline.Validate(input, Review(input), _root);
+        var report = BehaviorReviewPipeline.Render(input, validation);
+        Assert.Contains("Agents SDK snapshot: `moved/src/Stream.cs:1-2`", report);
+        Assert.Contains("Teams SDK snapshot: `moved/src/Stream.cs:1-2`", report);
+        Assert.DoesNotContain("https://github.com", report);
+        Assert.DoesNotContain("```", report);
+    }
+
     [Theory]
     [InlineData("equivalent", false)]
     [InlineData("different", true)]

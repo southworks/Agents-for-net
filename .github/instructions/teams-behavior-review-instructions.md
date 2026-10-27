@@ -18,6 +18,7 @@ Return ONLY a JSON object with this shape:
     "behaviorId": "<catalog behavior id>",
     "checkId": "<catalog check id>",
     "outcome": "equivalent|different|inconclusive",
+    "title": "<short plain-language heading describing the result, for example Streaming responses: request format differs>",
     "reason": "<comparison and reasoning; identify uncertainty precisely>",
     "wireEffect": "<required for different: concrete payload/request difference>",
     "compatibilityImpact": "<required for different: potential impact, including harmless divergence when justified>",
@@ -25,6 +26,16 @@ Return ONLY a JSON object with this shape:
     "evidence": [{"path":"agents/src/...", "startLine":1, "endLine":5}]
   }]
 }
+
+Write for a reader who wants to understand the practical difference without reading SDK implementation details. Use this report format:
+
+- Title: a short, descriptive heading; avoid catalog IDs and method names.
+- Summary (wireEffect for differences, reason otherwise): one or two short sentences stating what differs or what is equivalent. Explain the requests Teams receives, rather than listing the calls used to build them.
+- Potential impact (compatibilityImpact): one short sentence explaining the possible effect. Do not present an unverified difference as a defect.
+- Next step (followUp): one concrete verification or action in one sentence.
+- Sources (evidence): the smallest set of exact source ranges that supports every claim, including both SDKs for equivalent/different results. The report renderer builds links from these citations; do not invent URLs or put links in prose.
+
+Avoid code snippets, long API names, repeated explanations, and speculative lists of affected systems in the reader-facing fields. Mention a protocol field only when its name is needed to understand the difference. Keep detailed reasoning in reason; the report displays wireEffect as the summary for differences. Keep fixture/source-analysis qualifications brief; provenance is reported once for the review.
 
 Provide exactly one decision per check, with actual enum values rather than the alternatives shown. Equivalent/different conclusions require citations from agents and teams-candidate. Cite exact nonempty 1-based inclusive source ranges after reading numbered lines; quotes are optional. Inconclusive findings should cite the available evidence and explain what is missing. A missing feature or unmatched equivalent operation may be inconclusive; never invent a matching API.
 
