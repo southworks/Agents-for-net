@@ -184,6 +184,29 @@ for kind in pr scheduled; do
             done
         )
         pass 'dispatch versions independently override defaults and preserve equality'
+
+        contains "$(step 'Validate baseline manifest')" 'EVENT_NAME: ${{ github.event_name }}'
+        contains "$(step 'Validate baseline manifest')" 'DISPATCH_FROM_VERSION: ${{ inputs.from_version }}'
+        step 'Validate baseline manifest' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/scheduled-manifest.sh"
+        (
+            dotnet() { printf '%s\n' "$@" > "$ARTIFACTS/manifest-arguments"; }
+            export -f dotnet
+            export TOOL=mock-project MANIFEST=mock-manifest GITHUB_WORKSPACE=mock-root
+            for pair in 'schedule|' 'schedule|2.0.0' 'workflow_dispatch|' 'workflow_dispatch|2.0.0'; do
+                new_case
+                IFS='|' read -r EVENT_NAME DISPATCH_FROM_VERSION <<< "$pair"
+                export EVENT_NAME DISPATCH_FROM_VERSION
+                bash -e -o pipefail "$test_root/scheduled-manifest.sh"
+                arguments=$(cat "$ARTIFACTS/manifest-arguments")
+                contains "$arguments" validate-usage
+                if [[ "$pair" == 'workflow_dispatch|2.0.0' ]]; then
+                    contains "$arguments" --skip-manifest-version-check
+                else
+                    [[ "$arguments" != *--skip-manifest-version-check* ]] || fail 'Default run skipped manifest version validation'
+                fi
+            done
+        )
+        pass 'only dispatch with an explicit baseline skips manifest version validation'
     fi
 
     jobs true success skipped skipped

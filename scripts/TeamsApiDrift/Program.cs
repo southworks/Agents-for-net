@@ -176,7 +176,8 @@ internal static class Program
             ToolJson.Read<UsageManifest>(options.Required("--manifest")),
             ToolJson.Read<CollectedUsage>(options.Required("--collected")),
             ToolJson.Read<ApiModel>(options.Required("--api-model")),
-            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
+            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory(),
+            options.HasFlag("--skip-manifest-version-check"));
         ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "usage-validation.json", ".json"), result);
 
         Console.Error.WriteLine($"Summary: Usage manifest validation {(result.Valid ? "passed" : "FAILED")}; {result.Errors.Count} errors, {result.Warnings.Count} warnings.");

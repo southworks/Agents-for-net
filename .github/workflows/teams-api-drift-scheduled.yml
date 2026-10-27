@@ -175,11 +175,19 @@ jobs:
         id: manifest
         if: always() && steps.collect.outcome == 'success' && steps.compare.outcome == 'success'
         continue-on-error: true
-        run: >-
-          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage
-          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json"
-          --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json"
-          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+        run: |
+          options=()
+          if [[ "$EVENT_NAME" == workflow_dispatch && -n "$DISPATCH_FROM_VERSION" ]]; then
+            options+=(--skip-manifest-version-check)
+          fi
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage \
+          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json" \
+          --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json" \
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json" \
+          "${options[@]}"
 
       - name: Write independent check outcomes
         id: checks
