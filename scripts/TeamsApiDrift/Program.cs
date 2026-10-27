@@ -15,6 +15,8 @@ internal static class Program
             var options = new Arguments(args.Skip(1));
             return args[0] switch
             {
+                "prepare-behavior-review" => await PrepareBehaviorReviewAsync(options).ConfigureAwait(false),
+                "validate-behavior-review" => ValidateBehaviorReview(options),
                 "write-agent-metadata" => WriteAgentMetadata(options),
                 "extract-agent-response" => ExtractAgentResponse(options),
                 "resolve-version" => ResolveVersion(options),
@@ -34,6 +36,42 @@ internal static class Program
             Console.Error.WriteLine($"TeamsApiDrift: {exception.Message}");
             return 2;
         }
+    }
+
+    private static async Task<int> PrepareBehaviorReviewAsync(Arguments options)
+    {
+        var input = await BehaviorReviewPipeline.PrepareAsync(options.Required("--repository-root"), options.Required("--workspace"),
+            ToolJson.Read<BehaviorCatalog>(options.Required("--catalog")), options.Required("--to")).ConfigureAwait(false);
+        ToolJson.Write(options.Required("--output"), input);
+
+        Console.WriteLine($"Prepared behavior review {input.ReviewId}: {input.Files.Count} source files.");
+
+        return 0;
+    }
+
+    private static int ValidateBehaviorReview(Arguments options)
+    {
+        var input = ToolJson.Read<BehaviorInput>(options.Required("--input"));
+        BehaviorValidation validation;
+
+        try
+        {
+            validation = BehaviorReviewPipeline.Validate(input, ToolJson.Read<BehaviorReview>(options.Required("--review")), options.Required("--workspace"));
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or ArgumentException or NullReferenceException)
+        {
+            validation = new(1, false, false, [exception.Message], []);
+        }
+
+        ToolJson.Write(options.Required("--output"), validation);
+        File.WriteAllText(options.Required("--report"), BehaviorReviewPipeline.Render(input, validation));
+
+        foreach (var error in validation.Errors)
+        {
+            Console.Error.WriteLine(error);
+        }
+
+        return validation.Valid ? 0 : 1;
     }
 
     private static int WriteAgentMetadata(Arguments options)
@@ -285,5 +323,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
+        "Commands: prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
 }
