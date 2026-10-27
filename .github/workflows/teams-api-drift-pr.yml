@@ -372,7 +372,7 @@ jobs:
             jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview) | Feature adoption (nonblocking): recommend \(.adoptionRecommendations // 0) | not needed \(.adoptionNotNeeded // 0) | product decision \(.adoptionNeedsProductDecision // 0)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.verdict != "safe") | "\(.changeId): \(.verdict) — \(.reason)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.adoption != null) | "\(.changeId): adoption \(.adoption.outcome) (nonblocking) — \(.adoption.reason)"' "$ARTIFACTS/impact-review-validation.json"
-            [[ "$(jq -r '.canProceed' "$ARTIFACTS/impact-review-validation.json")" == true ]] || failures+=(impact-policy)
+            # canProceed includes upstream checks and review findings; job status reflects only this job's steps.
           else
             failures+=(missing-impact-review)
           fi

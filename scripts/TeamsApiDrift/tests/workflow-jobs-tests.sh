@@ -115,6 +115,44 @@ for kind in pr scheduled; do
     step 'Enforce publication result' | awk '/^        run: \|$/ { run=1; next } run { sub(/^          /, ""); print }' > "$test_root/$kind-gate.sh"
     [[ -s "$test_root/$kind-report.sh" && -s "$test_root/$kind-gate.sh" ]] || fail 'Missing publication shell scripts'
 
+    assessment_gate=$(step 'Enforce implementation review' | awk '/^        run: \|$/ { run=1; next } run && /^  [a-z_]+:$/ { exit } run { sub(/^          /, ""); print }' |
+        sed -E 's/\$\{\{ steps\.[^}]+\.outcome \}\}/success/g; s/\$\{\{ steps\.prepare-review\.outputs\.count \}\}/1/g')
+    [[ -n "$assessment_gate" && "$assessment_gate" != *'${{'* ]] || fail 'Missing or unsupported assessment gate'
+    export CAN_REVIEW=true
+    for scenario in safe upstream-failure findings; do
+        new_case
+        case "$scenario" in
+            safe) printf '{"canProceed":true,"summary":{"safe":1,"needsAdaptation":0,"needsHumanReview":0},"decisions":[]}' ;;
+            upstream-failure) printf '{"canProceed":false,"summary":{"safe":1,"needsAdaptation":0,"needsHumanReview":0},"decisions":[]}' ;;
+            findings) printf '{"canProceed":false,"summary":{"safe":0,"needsAdaptation":1,"needsHumanReview":1},"decisions":[{"changeId":"change-1","verdict":"needs-adaptation","reason":"Adapt the integration."}]}' ;;
+        esac > "$ARTIFACTS/impact-review-validation.json"
+        printf '%s\n' "$assessment_gate" > "$test_root/$kind-assessment.sh"
+        bash -e -o pipefail "$test_root/$kind-assessment.sh" > "$ARTIFACTS/assessment.log" 2>&1 || {
+            cat "$ARTIFACTS/assessment.log"
+            fail "Assessment inherited $scenario as a job failure"
+        }
+        if [[ "$scenario" == findings ]]; then
+            contains "$(cat "$ARTIFACTS/assessment.log")" 'change-1: needs-adaptation'
+        fi
+    done
+    pass 'assessment reports findings and upstream failures without inheriting them'
+
+    for failed_check in review-tool evidence snapshot review-validation assessment-transfer agent-install implementation-review; do
+        failing_gate=${assessment_gate//"check $failed_check \"success\""/"check $failed_check \"failure\""}
+        printf '%s\n' "$failing_gate" > "$test_root/$kind-assessment.sh"
+        if bash -e -o pipefail "$test_root/$kind-assessment.sh" > "$ARTIFACTS/assessment.log" 2>&1; then
+            fail "Assessment ignored its own failed $failed_check step"
+        fi
+        contains "$(cat "$ARTIFACTS/assessment.log")" "Implementation review FAILED: $failed_check"
+    done
+    printf '%s\n' "$assessment_gate" > "$test_root/$kind-assessment.sh"
+    mv "$ARTIFACTS/impact-review-validation.json" "$ARTIFACTS/impact-review-validation.saved.json"
+    if bash -e -o pipefail "$test_root/$kind-assessment.sh" > "$ARTIFACTS/assessment.log" 2>&1; then
+        fail 'Assessment ignored missing review output'
+    fi
+    contains "$(cat "$ARTIFACTS/assessment.log")" 'missing-impact-review'
+    pass 'assessment fails for each required local step and missing review output'
+
     if [[ "$kind" == scheduled ]]; then
         contains "$(step 'Resolve baseline and candidate')" 'DISPATCH_FROM_VERSION: ${{ inputs.from_version }}'
         contains "$(step 'Resolve baseline and candidate')" 'DISPATCH_TO_VERSION: ${{ inputs.to_version }}'
