@@ -1,7 +1,7 @@
 name: Scheduled Teams API Drift Detector
 
 # Periodically compares the declared Microsoft.Teams.Apps baseline with the latest stable release.
-# An agent reviews every API change against source and publishes validated implementation impact.
+# Agents review API changes, outbound behavior, and compatible API ergonomics improvements.
 on:
   schedule:
     # Runs at 08:00 UTC every Monday (~1am PST)
@@ -82,11 +82,11 @@ jobs:
           echo "from=$(jq -r '.fromVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "to=$(jq -r '.toVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "same=$(jq -r '.sameVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
-          jq -r '"Compared versions: `\(.fromVersion)` -> `\(.toVersion)`.\n\nVersions match: **\(.sameVersion)**. Matching versions skip all remaining jobs."' "$ARTIFACTS/versions.json" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '"Compared versions: `\(.fromVersion)` -> `\(.toVersion)`.\n\nVersions match: **\(.sameVersion)**. Matching versions skip API drift and behavior checks; ergonomics review still runs."' "$ARTIFACTS/versions.json" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Transfer version-resolution diagnostics
         id: stage_artifact
-        if: always() && steps.resolve.outputs.same != 'true'
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: teams-api-drift-intermediate-${{ github.run_id }}-${{ github.run_attempt }}-versions
@@ -150,6 +150,7 @@ jobs:
           dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
           bash scripts/TeamsApiDrift/tests/workflow-jobs-tests.sh
           bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
+          bash scripts/TeamsApiDrift/tests/ergonomics-publication-tests.sh
 
       - name: Run candidate contract and boundary tests
         id: candidate_tests
@@ -455,11 +456,98 @@ jobs:
           retention-days: 21
           if-no-files-found: error
 
+  ergonomics_analysis:
+    name: Analyze MSTeams API ergonomics
+    needs: versions
+    if: needs.versions.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      copilot-requests: write
+    env:
+      ARTIFACTS: artifacts/teams-api-drift/ergonomics
+      REVIEW_WORKSPACE: ${{ github.workspace }}/.teams-ergonomics-review
+      COPILOT_MODEL: ${{ vars.TEAMS_API_REVIEW_MODEL || 'gpt-5.3-codex' }}
+      COPILOT_CLI_VERSION: '1.0.101'
+      COPILOT_AUTO_UPDATE: 'false'
+    outputs:
+      artifact_id: ${{ steps.stage_artifact.outputs.artifact-id }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Build ergonomics review tool
+        run: dotnet build "$TOOL" -c Release
+
+      - name: Prepare declared baseline and candidate ergonomics sources
+        env:
+          TO_VERSION: ${{ needs.versions.outputs.to }}
+        shell: bash
+        run: |
+          mkdir -p "$ARTIFACTS"
+          dotnet run --project "$TOOL" -c Release --no-build -- prepare-ergonomics-review \
+            --to "$TO_VERSION" --catalog scripts/TeamsApiDrift/ergonomics.json \
+            --repository-root "$GITHUB_WORKSPACE" --workspace "$REVIEW_WORKSPACE" \
+            --output "$ARTIFACTS/ergonomics-input.json" 2>&1 | tee "$ARTIFACTS/preparation.log"
+
+      - name: Set up Node for ergonomics reviewer
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install ergonomics review agent
+        timeout-minutes: 5
+        run: npm install --global "@github/copilot@$COPILOT_CLI_VERSION"
+
+      - name: Review API ergonomics and compatible improvements
+        timeout-minutes: 20
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_HOME: ${{ runner.temp }}/teams-ergonomics-copilot
+        run: bash scripts/TeamsApiDrift/run-ergonomics-review.sh
+
+      - name: Validate and render advisory ergonomics report
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$ARTIFACTS/ergonomics-input.json" ]]; then
+            status=0
+            dotnet run --project "$TOOL" -c Release --no-build -- validate-ergonomics-review \
+              --input "$ARTIFACTS/ergonomics-input.json" --review "$ARTIFACTS/ergonomics-review.raw.json" \
+              --workspace "$REVIEW_WORKSPACE" --output "$ARTIFACTS/ergonomics-review-validation.json" \
+              --report "$ARTIFACTS/ergonomics-report.md" || status=$?
+            if [[ -f "$ARTIFACTS/ergonomics-report.md" ]]; then cat "$ARTIFACTS/ergonomics-report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+            exit "$status"
+          else
+            echo 'Ergonomics preparation did not complete; see preparation diagnostics.' >&2
+            exit 1
+          fi
+
+      - name: Transfer ergonomics diagnostics
+        id: stage_artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: teams-api-drift-intermediate-${{ github.run_id }}-${{ github.run_attempt }}-ergonomics
+          path: artifacts/teams-api-drift/ergonomics
+          retention-days: 21
+          if-no-files-found: error
+
   publish:
     name: Publish report and final artifacts
-    needs: [versions, deterministic, assessment, behavior_analysis]
+    needs: [versions, deterministic, assessment, behavior_analysis, ergonomics_analysis]
     # Still publish diagnostics if version resolution or any later job failed.
-    if: always() && needs.versions.outputs.same != 'true'
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -502,6 +590,15 @@ jobs:
           artifact-ids: ${{ needs.behavior_analysis.outputs.artifact_id }}
           path: artifacts/teams-api-drift/behavior
 
+      - name: Collect ergonomics diagnostics
+        id: download_ergonomics
+        if: always() && needs.ergonomics_analysis.outputs.artifact_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.ergonomics_analysis.outputs.artifact_id }}
+          path: artifacts/teams-api-drift/ergonomics
+
       - name: Prepare final report and pipeline diagnostics
         id: report
         if: always()
@@ -533,6 +630,11 @@ jobs:
           jq -n --argjson jobs "$JOB_RESULTS" --argjson downloads "$DOWNLOAD_RESULTS" \
             --argjson errors "$(jq -cn --args '$ARGS.positional' "${errors[@]}")" \
             '{schemaVersion: 1, jobs: $jobs, downloads: $downloads, errors: $errors}' > "$ARTIFACTS/pipeline-status.json"
+          if [[ "$(jq -r '.versions.outputs.same' <<< "$JOB_RESULTS")" == true ]]; then
+            printf 'publish_issue=false\nfrom=%s\nto=%s\n' "$from" "$to" >> "$GITHUB_OUTPUT"
+            printf '## Report publication\n\nMatching versions skip the drift report. Ergonomics results are published separately.\n\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           report_path="$ARTIFACTS/impact-report.md"
           if [[ ! -f "$report_path" ]]; then
             printf '# Microsoft.Teams.Apps implementation review\n\nCompared `%s` -> `%s`.\n\n' "$from" "$to" > "$report_path"
@@ -584,7 +686,7 @@ jobs:
             printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
           } >> "$GITHUB_STEP_SUMMARY"
           publish_issue=$(jq -r --argjson jobs "$JOB_RESULTS" \
-            'any($jobs[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
+            'any($jobs | del(.ergonomics_analysis) | .[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
           [[ "$behavior_findings" == true ]] && publish_issue=true
           printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
           printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
@@ -636,6 +738,52 @@ jobs:
               : await github.rest.issues.create({ owner, repo, title, body });
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Published review issue](${response.data.html_url})\n`);
             console.log(`Summary: Published implementation review: ${response.data.html_url}`);
+
+      - name: Create or update ergonomics review issue
+        id: publish_ergonomics_issue
+        if: always() && needs.ergonomics_analysis.result == 'success' && steps.download_ergonomics.outcome == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REPORT_PATH: artifacts/teams-api-drift/ergonomics/ergonomics-report.md
+          VALIDATION_PATH: artifacts/teams-api-drift/ergonomics/ergonomics-review-validation.json
+        with:
+          script: |
+            const fs = require('fs');
+            const validation = JSON.parse(fs.readFileSync(process.env.VALIDATION_PATH, 'utf8'));
+            if (validation.schemaVersion !== 1 || validation.valid !== true ||
+                typeof validation.hasRecommendations !== 'boolean' || !Array.isArray(validation.decisions)) {
+              throw new Error('A valid ergonomics review is required for issue publication.');
+            }
+            const report = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
+            const marker = '<!-- teams-api-ergonomics-scheduled -->';
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
+            if (!existing && !validation.hasRecommendations) {
+              console.log('Summary: No ergonomics recommendations; no issue created.');
+              return;
+            }
+            let excerpt = report;
+            if (excerpt.length > 55000) {
+              excerpt = excerpt.slice(0, 55000);
+              excerpt = excerpt.slice(0, excerpt.lastIndexOf('\n'));
+              let fence = '';
+              for (const line of excerpt.split('\n')) {
+                const match = line.match(/^(`{3,})/);
+                if (match && !fence) fence = match[1];
+                else if (match && match[1] === fence) fence = '';
+              }
+              if (fence) excerpt += `\n${fence}`;
+              excerpt += '\n\n_Report excerpt; see the complete artifact for remaining proposals._';
+            }
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\n${excerpt}\n\n[Full report and artifacts](${runUrl})`;
+            const title = 'MSTeams API ergonomics review';
+            const response = existing
+              ? await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body })
+              : await github.rest.issues.create({ owner, repo, title, body });
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Published ergonomics issue](${response.data.html_url})\n`);
+            console.log(`Summary: Published ergonomics review: ${response.data.html_url}`);
 
       - name: Publish complete comparison and review artifacts
         id: final_artifact

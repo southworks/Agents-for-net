@@ -67,7 +67,7 @@ should_run() {
 
     # Interpret the workflow's restricted string comparisons and status function.
     # Reject unknown syntax rather than pretending to implement all GitHub expressions.
-    for token in needs.versions.outputs.same needs.deterministic.outputs.evidence_ready; do
+    for token in needs.versions.outputs.same needs.versions.result needs.deterministic.outputs.evidence_ready; do
         value=$(jq -r "${token#needs}" <<< "$JOB_RESULTS")
         condition=${condition//"$token"/\"$value\"}
     done
@@ -249,13 +249,25 @@ for kind in pr scheduled; do
 
     jobs true success skipped skipped
 
-    for name in deterministic assessment publish; do
+    for name in deterministic assessment; do
         if should_run "$name"; then
             fail "Matching versions ran $name"
         fi
     done
 
-    pass 'matching versions skip all later jobs'
+    if [[ "$kind" == scheduled ]]; then
+        should_run ergonomics_analysis || fail 'Matching versions skipped ergonomics analysis'
+        should_run publish || fail 'Matching versions skipped ergonomics publication'
+        new_case
+        jobs true success skipped skipped
+        run_report
+        contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=false'
+        [[ ! -f "$ARTIFACTS/impact-report.md" ]] || fail 'Matching versions generated a drift report'
+    elif should_run publish; then
+        fail 'Matching PR versions ran publication'
+    fi
+
+    pass 'matching versions preserve drift skips and scheduled ergonomics publication'
 
     jobs false
 
@@ -297,11 +309,27 @@ for kind in pr scheduled; do
         if should_run behavior_analysis; then fail 'Matching versions ran behavior analysis'; fi
         jobs false success failure failure
         should_run behavior_analysis || fail 'API failures skipped behavior analysis'
+        should_run ergonomics_analysis || fail 'API failures skipped ergonomics analysis'
+        contains "$(job ergonomics_analysis)" 'needs: versions'
+        contains "$(step 'Collect ergonomics diagnostics')" 'needs.ergonomics_analysis.outputs.artifact_id'
+        contains "$(step 'Create or update ergonomics review issue')" "needs.ergonomics_analysis.result == 'success'"
+        contains "$(step 'Create or update ergonomics review issue')" "steps.download_ergonomics.outcome == 'success'"
+        [[ "$(step 'Prepare declared baseline and candidate ergonomics sources')" != *'--from'* ]] || fail 'Ergonomics used the drift baseline override'
         contains "$(job behavior_analysis)" 'needs: versions'
         contains "$(step 'Collect behavior diagnostics')" 'needs.behavior_analysis.outputs.artifact_id'
         jobs unresolved failure skipped skipped
         if should_run behavior_analysis; then fail 'Version resolution failure ran behavior analysis'; fi
+        if should_run ergonomics_analysis; then fail 'Version resolution failure ran ergonomics analysis'; fi
         pass 'behavior analysis depends only on changed resolved versions'
+
+        new_case
+        printf '{"changes":[]}' > "$ARTIFACTS/raw-api-diff.json"
+        JOB_RESULTS=$(jq '. + {ergonomics_analysis: {result: "failure"}}' <<< "$JOB_RESULTS")
+        run_report
+        contains "$(cat "$GITHUB_OUTPUT")" 'publish_issue=false'
+        contains "$(cat "$ARTIFACTS/pipeline-status.json")" 'ergonomics_analysis'
+        [[ "$(cat "$ARTIFACTS/issue-report.md")" != *'API ergonomics'* ]] || fail 'Drift issue contains ergonomics proposals'
+        pass 'ergonomics failure preserves diagnostics without triggering a drift issue'
 
         new_case
         printf '{"changes":[]}' > "$ARTIFACTS/raw-api-diff.json"

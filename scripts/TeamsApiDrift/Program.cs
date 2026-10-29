@@ -15,6 +15,8 @@ internal static class Program
             var options = new Arguments(args.Skip(1));
             return args[0] switch
             {
+                "prepare-ergonomics-review" => await PrepareErgonomicsReviewAsync(options).ConfigureAwait(false),
+                "validate-ergonomics-review" => ValidateErgonomicsReview(options),
                 "prepare-behavior-review" => await PrepareBehaviorReviewAsync(options).ConfigureAwait(false),
                 "validate-behavior-review" => ValidateBehaviorReview(options),
                 "write-agent-metadata" => WriteAgentMetadata(options),
@@ -36,6 +38,43 @@ internal static class Program
             Console.Error.WriteLine($"TeamsApiDrift: {exception.Message}");
             return 2;
         }
+    }
+
+    private static async Task<int> PrepareErgonomicsReviewAsync(Arguments options)
+    {
+        var input = await ErgonomicsReviewPipeline.PrepareAsync(options.Required("--repository-root"), options.Required("--workspace"),
+            ToolJson.Read<ErgonomicsCatalog>(options.Required("--catalog")), options.Required("--to")).ConfigureAwait(false);
+        ToolJson.Write(options.Required("--output"), input);
+        Console.WriteLine($"Prepared ergonomics review {input.ReviewId}: {input.Files.Count} source files.");
+
+        return 0;
+    }
+
+    private static int ValidateErgonomicsReview(Arguments options)
+    {
+        var input = ToolJson.Read<ErgonomicsInput>(options.Required("--input"));
+        ErgonomicsValidation validation;
+
+        try
+        {
+            validation = ErgonomicsReviewPipeline.Validate(input,
+                ErgonomicsReviewPipeline.Parse(File.ReadAllText(options.Required("--review"))), options.Required("--workspace"));
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or
+            ArgumentException or NullReferenceException or InvalidOperationException or KeyNotFoundException)
+        {
+            validation = new(1, false, false, [exception.Message], []);
+        }
+
+        ToolJson.Write(options.Required("--output"), validation);
+        File.WriteAllText(options.Required("--report"), ErgonomicsReviewPipeline.Render(input, validation));
+
+        foreach (var error in validation.Errors)
+        {
+            Console.Error.WriteLine(error);
+        }
+
+        return validation.Valid ? 0 : 1;
     }
 
     private static async Task<int> PrepareBehaviorReviewAsync(Arguments options)
@@ -105,7 +144,7 @@ internal static class Program
         ToolJson.Write(options.Required("--output"), versions);
 
         Console.Error.WriteLine($"Summary: Resolved {PackageConstants.PackageId} {versions.FromVersion} -> {versions.ToVersion}; " +
-            (versions.SameVersion ? "versions match, downstream jobs will be skipped." : "versions differ, deterministic checks and implementation review are required."));
+            (versions.SameVersion ? "versions match, API drift checks will be skipped." : "versions differ, deterministic checks and implementation review are required."));
 
         return 0;
     }
@@ -324,5 +363,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
+        "Commands: prepare-ergonomics-review, validate-ergonomics-review, prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
 }

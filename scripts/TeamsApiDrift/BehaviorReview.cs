@@ -52,7 +52,7 @@ public static class BehaviorReviewPipeline
         return new(role, version, TeamsRepository, commit.ToLowerInvariant());
     }
 
-    private static async Task<(BehaviorSource Source, Dictionary<string, string> Files)> DownloadAsync(string version, string role)
+    internal static async Task<(BehaviorSource Source, Dictionary<string, string> Files)> DownloadAsync(string version, string role)
     {
         Console.Error.WriteLine($"Preparing {role}: {PackageConstants.PackageId}@{version}.");
 
@@ -125,7 +125,14 @@ public static class BehaviorReviewPipeline
     public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string to)
     {
         ValidateCatalog(catalog);
+        var agents = CaptureAgents(repositoryRoot, workspace);
+        var candidate = await DownloadAsync(to, "teams-candidate").ConfigureAwait(false);
 
+        return Prepare(workspace, catalog, [agents, candidate]);
+    }
+
+    internal static (BehaviorSource Source, Dictionary<string, string> Files) CaptureAgents(string repositoryRoot, string workspace)
+    {
         if (Paths.IsContainedBy(Path.Combine(repositoryRoot, "src"), workspace) ||
             Paths.IsContainedBy(Path.Combine(repositoryRoot, ".git"), workspace))
         {
@@ -151,10 +158,7 @@ public static class BehaviorReviewPipeline
             }
         }
 
-        var candidate = await DownloadAsync(to, "teams-candidate").ConfigureAwait(false);
-
-        return Prepare(workspace, catalog, [
-            (new BehaviorSource("agents", commit, ResolveAgentsRepository(repositoryRoot), commit), agents), candidate]);
+        return (new BehaviorSource("agents", commit, ResolveAgentsRepository(repositoryRoot), commit), agents);
     }
 
     private static string ResolveAgentsRepository(string repositoryRoot)
@@ -175,6 +179,17 @@ public static class BehaviorReviewPipeline
             throw new InvalidDataException("Agents and candidate Teams source roles are required.");
         }
 
+        var inventory = WriteSnapshot(workspace, sources);
+        var input = new BehaviorInput(1, "", catalog, sources.Select(s => s.Source).ToArray(), inventory);
+        input = input with { ReviewId = Identity(input) };
+        ToolJson.Write(Path.Combine(workspace, "behavior-input.json"), input);
+
+        return input;
+    }
+
+    internal static IReadOnlyList<ReviewArtifact> WriteSnapshot(string workspace,
+        IReadOnlyList<(BehaviorSource Source, Dictionary<string, string> Files)> sources)
+    {
         var destination = Path.GetFullPath(workspace);
         AgentContextBuilder.RejectSymlinkTraversal(Path.GetPathRoot(destination)!, destination, destination);
 
@@ -205,11 +220,7 @@ public static class BehaviorReviewPipeline
             }
         }
 
-        var input = new BehaviorInput(1, "", catalog, sources.Select(s => s.Source).ToArray(), inventory);
-        input = input with { ReviewId = Identity(input) };
-        ToolJson.Write(Path.Combine(destination, "behavior-input.json"), input);
-
-        return input;
+        return inventory;
     }
 
     private static void ValidateCatalog(BehaviorCatalog catalog)

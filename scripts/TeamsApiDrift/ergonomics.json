@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "checks": [
+    {
+      "id": "discoverability",
+      "description": "Discovering supported operations, feature entry points, and known values through IntelliSense and documentation. Inspect existing ActivityTypes constants alongside string-valued activity APIs before considering additive typed helpers."
+    },
+    {
+      "id": "readability",
+      "description": "Readability of typical caller code, descriptive names, parameter ordering, return values, and repeated setup. Propose concrete reductions in caller effort with before/after examples."
+    },
+    {
+      "id": "consistency",
+      "description": "Consistency across MSTeams feature areas, async naming, cancellation, overloads, fluent builders and declarative attributes. Preserve existing signatures, overload resolution, and attribute usage."
+    },
+    {
+      "id": "typed-values",
+      "description": "Known string values, optional data, typed access and conversions. Improve discoverability while preserving custom/unknown values, null handling, existing property types and exact serialized values."
+    },
+    {
+      "id": "routing-and-helpers",
+      "description": "Routing, generated entry points, contexts, model helpers and Teams client access. Inspect source generators and existing extension points. Avoid introducing competing entry points or Teams-specific behavior in shared projects."
+    },
+    {
+      "id": "documentation-and-examples",
+      "description": "XML documentation, examples and onboarding paths for existing APIs. Identify specific gaps or misleading patterns and give a concrete compatible documentation or example improvement."
+    }
+  ]
+}

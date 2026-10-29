@@ -112,7 +112,7 @@ dotnet() {
 
 export -f copilot dotnet
 
-for review_kind in impact behavior; do
+for review_kind in impact behavior ergonomics; do
 export REVIEW_PREFIX="$review_kind-review"
 export REVIEW_INPUT="$review_kind-input.json"
 [[ "$review_kind" != impact ]] || export REVIEW_INPUT=review-input.json
