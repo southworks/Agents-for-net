@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Agents.TeamsApiDrift;
 using Xunit;
 
@@ -30,7 +31,12 @@ public sealed class ErgonomicsReviewTests : IDisposable
 
     private static ErgonomicsReview Review(ErgonomicsInput input, string outcome = "recommendations") =>
         new(1, input.ReviewId, [new("discoverability", outcome, "Inspected the entry point and known values.",
-            outcome == "recommendations" ? [Proposal()] : [], [Cite("agents")])]);
+            outcome == "recommendations" ? [Proposal()] : [], [Cite("agents")], [Scenario()])]);
+
+    private static ErgonomicsScenario Scenario() => new("Find a known activity type while composing a message.",
+        "The caller assigns a string and needs to find the existing named constants.",
+        "Link the existing constants from the caller's entry point rather than adding another value type.",
+        "A documentation improvement can aid discovery while retaining custom strings.", [Cite("agents")]);
 
     [Theory]
     [InlineData("2.1.2")]
@@ -44,6 +50,7 @@ public sealed class ErgonomicsReviewTests : IDisposable
         Assert.True(result.Valid, string.Join("\n", result.Errors));
         Assert.True(result.HasRecommendations);
         Assert.Equal("public string Type { get; set; }\n// Known values", result.Decisions[0].Proposals[0].Evidence[0].Quote);
+        Assert.Equal("public string Type { get; set; }\n// Known values", result.Decisions[0].Scenarios[0].Evidence[0].Quote);
         var report = ErgonomicsReviewPipeline.Render(input, result);
         Assert.Contains("Discover known activity types", report);
         Assert.Contains("unimplemented", report);
@@ -94,6 +101,80 @@ public sealed class ErgonomicsReviewTests : IDisposable
         {
             Assert.False(ErgonomicsReviewPipeline.Validate(input, review with { Decisions = [decision] }, _root).Valid);
         }
+    }
+
+    [Theory]
+    [InlineData("recommendations")]
+    [InlineData("no-improvement")]
+    [InlineData("inconclusive")]
+    public void EveryOutcomeRequiresCallerScenarios(string outcome)
+    {
+        var input = Prepare();
+        var review = Review(input, outcome);
+        var result = ErgonomicsReviewPipeline.Validate(input,
+            review with { Decisions = [review.Decisions[0] with { Scenarios = [] }] }, _root);
+        Assert.False(result.Valid);
+        Assert.Contains(result.Errors, error => error.Contains("concrete caller scenarios"));
+    }
+
+    [Fact]
+    public void NoImprovementMustRecordTheAlternativeConsideredAndSupportingEvidence()
+    {
+        var input = Prepare();
+        var review = Review(input, "no-improvement");
+        var adequate = Scenario() with
+        {
+            CurrentExperience = "The caller finds the named constants through the documented entry point.",
+            Assessment = "The alternative duplicates the existing documented path without reducing caller effort."
+        };
+        foreach (var scenario in new[]
+        {
+            adequate with { CallerTask = "" },
+            adequate with { CurrentExperience = "" },
+            adequate with { ImprovementConsidered = "" },
+            adequate with { Assessment = "" },
+            adequate with { Evidence = [] },
+            adequate with { Evidence = [Cite("teams-baseline")] },
+            adequate with { Evidence = [new("agents/src/Activity.cs", StartLine: 1, EndLine: 99)] }
+        })
+        {
+            var result = ErgonomicsReviewPipeline.Validate(input,
+                review with { Decisions = [review.Decisions[0] with { Scenarios = [scenario] }] }, _root);
+            Assert.False(result.Valid);
+        }
+        Assert.True(ErgonomicsReviewPipeline.Validate(input,
+            review with { Decisions = [review.Decisions[0] with { Scenarios = [adequate] }] }, _root).Valid);
+    }
+
+    [Fact]
+    public void InconclusiveScenarioCanExplainUnavailableEvidence()
+    {
+        var input = Prepare();
+        var review = Review(input, "inconclusive");
+        var scenario = Scenario() with { Assessment = "Required implementation evidence is unavailable.", Evidence = [] };
+        var result = ErgonomicsReviewPipeline.Validate(input,
+            review with { Decisions = [review.Decisions[0] with { Scenarios = [scenario] }] }, _root);
+        Assert.True(result.Valid);
+        Assert.False(result.HasRecommendations);
+    }
+
+    [Fact]
+    public void SingleLineEvidenceIsAllowedForSpecificDeclarationClaims()
+    {
+        var input = Prepare();
+        var review = Review(input, "no-improvement");
+        var scenario = Scenario() with
+        {
+            CallerTask = "Assign a custom activity type.",
+            CurrentExperience = "The public Type property accepts a string.",
+            ImprovementConsidered = "Keep the existing property instead of replacing its type.",
+            Assessment = "The existing string signature supports this caller task.",
+            Evidence = [new("agents/src/Activity.cs", StartLine: 1, EndLine: 1)]
+        };
+        var result = ErgonomicsReviewPipeline.Validate(input,
+            review with { Decisions = [review.Decisions[0] with { Scenarios = [scenario] }] }, _root);
+        Assert.True(result.Valid);
+        Assert.Equal("public string Type { get; set; }", result.Decisions[0].Scenarios[0].Evidence[0].Quote);
     }
 
     [Fact]
@@ -152,6 +233,9 @@ public sealed class ErgonomicsReviewTests : IDisposable
         Assert.Equal(input.ReviewId, ErgonomicsReviewPipeline.Parse(json).ReviewId);
         Assert.Throws<JsonException>(() => ErgonomicsReviewPipeline.Parse(json.Replace("\"problem\":", "\"unknown\":")));
         Assert.Throws<JsonException>(() => ErgonomicsReviewPipeline.Parse("{\"schemaVersion\":1}"));
+        var legacyReview = JsonNode.Parse(json)!;
+        legacyReview["decisions"]![0]!.AsObject().Remove("scenarios");
+        Assert.Throws<JsonException>(() => ErgonomicsReviewPipeline.Parse(legacyReview.ToJsonString()));
     }
 
     public void Dispose()

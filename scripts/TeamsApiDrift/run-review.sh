@@ -31,7 +31,7 @@ for attempt in 1 2 3; do
     prompt="$instructions"
 
     if (( attempt > 1 )); then
-        prompt+=$'\nCorrection attempt: read review-feedback.json and previous-review.txt in the snapshot. Correct the validation errors against actual source, and return the complete review. Preserve supported findings; correct only structure and evidence.'
+        prompt+=$'\nCorrection attempt: read review-feedback.json and previous-review.txt in the snapshot. Re-read the affected source with line numbers, correct the specific validation errors, and return the complete review. Preserve supported findings and unaffected evidence ranges. Do not replace useful excerpts with declarations or test names merely to pass validation. Correct only affected structure/evidence; explain any claim that source cannot support.'
     fi
 
     printf 'Starting review attempt %s/3 with read/search tools in %s\n' "$attempt" "$workspace_dir"

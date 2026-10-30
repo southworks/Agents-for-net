@@ -19,8 +19,12 @@ public sealed record ErgonomicsProposal(string Title, string AffectedApi, string
     ErgonomicsCompatibility Compatibility, string ImplementationTests, IReadOnlyList<ReviewCitation> Evidence,
     string? SharedApiRationale = null);
 
+public sealed record ErgonomicsScenario(string CallerTask, string CurrentExperience, string ImprovementConsidered,
+    string Assessment, IReadOnlyList<ReviewCitation> Evidence);
+
 public sealed record ErgonomicsDecision(string CheckId, string Outcome, string Reason,
-    IReadOnlyList<ErgonomicsProposal> Proposals, IReadOnlyList<ReviewCitation> Evidence);
+    IReadOnlyList<ErgonomicsProposal> Proposals, IReadOnlyList<ReviewCitation> Evidence,
+    IReadOnlyList<ErgonomicsScenario> Scenarios);
 
 public sealed record ErgonomicsReview(int SchemaVersion, string ReviewId, IReadOnlyList<ErgonomicsDecision> Decisions);
 
@@ -207,6 +211,31 @@ public static class ErgonomicsReviewPipeline
                 errors.Add($"No-improvement conclusion requires Agents evidence: {decision.CheckId}.");
             }
 
+            var scenarios = new List<ErgonomicsScenario>();
+
+            if (decision.Scenarios is null || decision.Scenarios.Count == 0)
+            {
+                errors.Add($"Every check requires concrete caller scenarios and considered improvements: {decision.CheckId}.");
+            }
+
+            foreach (var scenario in decision.Scenarios ?? [])
+            {
+                if (new[] { scenario.CallerTask, scenario.CurrentExperience, scenario.ImprovementConsidered,
+                    scenario.Assessment }.Any(string.IsNullOrWhiteSpace) || scenario.Evidence is null)
+                {
+                    errors.Add($"Incomplete caller scenario: {decision.CheckId}.");
+                }
+
+                var scenarioEvidence = Citations(scenario.Evidence);
+
+                if (decision.Outcome != "inconclusive" && !Cites(scenarioEvidence, "agents"))
+                {
+                    errors.Add($"Caller scenario requires Agents evidence: {decision.CheckId}.");
+                }
+
+                scenarios.Add(scenario with { Evidence = scenarioEvidence });
+            }
+
             var proposals = new List<ErgonomicsProposal>();
 
             foreach (var proposal in decision.Proposals ?? [])
@@ -241,7 +270,7 @@ public static class ErgonomicsReviewPipeline
 
                 proposals.Add(proposal with { Evidence = proposalEvidence });
             }
-            decisions.Add(decision with { Evidence = evidence, Proposals = proposals });
+            decisions.Add(decision with { Evidence = evidence, Proposals = proposals, Scenarios = scenarios });
         }
 
         if (!required.SetEquals(seen))

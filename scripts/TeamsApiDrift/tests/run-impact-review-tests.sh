@@ -49,6 +49,9 @@ copilot() {
     if (( count > 1 )); then
         [[ -s "$REVIEW_WORKSPACE/review-feedback.json" && -s "$REVIEW_WORKSPACE/previous-review.txt" ]] || return 97
         [[ " $* " == *'Correction attempt: read review-feedback.json and previous-review.txt'* ]] || return 96
+        [[ " $* " == *'Re-read the affected source with line numbers'* ]] || return 96
+        [[ " $* " == *'Preserve supported findings and unaffected evidence ranges.'* ]] || return 96
+        [[ " $* " == *'Do not replace useful excerpts with declarations or test names merely to pass validation.'* ]] || return 96
     fi
 
     if [[ "$MOCK_CASE" == invalid-stream ]]; then
