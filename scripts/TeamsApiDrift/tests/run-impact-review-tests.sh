@@ -48,6 +48,9 @@ copilot() {
 
     if (( count > 1 )); then
         [[ -s "$REVIEW_WORKSPACE/review-feedback.json" && -s "$REVIEW_WORKSPACE/previous-review.txt" ]] || return 97
+        local feedback
+        feedback=$(cat "$REVIEW_WORKSPACE/review-feedback.json")
+        [[ "$feedback" == *'Invalid source quote'* && "$feedback" != *'decisions'* && "$feedback" != *'canProceed'* && ${#feedback} -lt 1000 ]] || return 97
         [[ " $* " == *'Correction attempt: read review-feedback.json and previous-review.txt'* ]] || return 96
         [[ " $* " == *'Re-read the affected source with line numbers'* ]] || return 96
         [[ " $* " == *'Preserve supported findings and unaffected evidence ranges.'* ]] || return 96
@@ -75,7 +78,7 @@ dotnet() {
 
     shift
 
-    if [[ "$1" == write-agent-metadata || "$1" == extract-agent-response ]]; then
+    if [[ "$1" == write-agent-metadata || "$1" == extract-agent-response || "$1" == write-review-feedback ]]; then
         command dotnet "$OUTPUT_TOOL_DLL" "$@"
         return
     fi
@@ -105,7 +108,7 @@ dotnet() {
     printf 'attempt %s report' "$count" > "$report"
 
     if [[ "$MOCK_CASE" == always-invalid || ( "$MOCK_CASE" == correction && "$count" == 1 ) ]]; then
-        printf '{"valid":false,"canProceed":false,"errors":["Invalid source quote"]}' > "$output"
+        printf '{"valid":false,"canProceed":false,"errors":["Invalid source quote"],"decisions":[{"evidence":"canonical evidence stays in artifacts"}]}' > "$output"
         return 1
     fi
 

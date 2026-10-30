@@ -17,12 +17,12 @@ public sealed class ErgonomicsReviewTests : IDisposable
              Surface("local-handler", "agents/src/Handlers.cs", "QueryHandler"), Surface("dispatcher", "agents/src/Dispatcher.cs", "Dispatcher.Dispatch")], ResponseChain: true)]);
     private const string Props = "<Project><ItemGroup><PackageVersion Include=\"Microsoft.Teams.Apps\" Version=\"2.1.2\" /></ItemGroup></Project>";
 
-    private ErgonomicsInput Prepare(string candidate = "2.3.0", ErgonomicsCatalog? catalog = null) => ErgonomicsReviewPipeline.Prepare(_root, catalog ?? Catalog,
+    private ErgonomicsInput Prepare(string candidate = "2.3.0", ErgonomicsCatalog? catalog = null, string? activitySource = null) => ErgonomicsReviewPipeline.Prepare(_root, catalog ?? Catalog,
         new[] { "agents", "teams-baseline", "teams-candidate" }.Select(role =>
             (new BehaviorSource(role, role == "teams-candidate" ? candidate : "2.1.2", "https://github.com/microsoft/teams.net", new string('a', 40)),
             new Dictionary<string, string>
             {
-                ["src/Activity.cs"] = "public class Activity { public string Type { get; set; } }\n// Known values\n",
+                ["src/Activity.cs"] = activitySource ?? "public class Activity { public string Type { get; set; } }\n// Known values\n",
                 ["src/Response.cs"] = "public class ResponseFactory { public InvokeResponse<MessageExtensionResponse> Build() => new(200, response); }\n// Factory returns an envelope\n",
                 ["src/Handlers.cs"] = role == "agents"
                     ? "public delegate Task<MessageExtensionResponse> QueryHandler();\n// Local handler returns a body\n"
@@ -474,6 +474,103 @@ public sealed class ErgonomicsReviewTests : IDisposable
         var priority = Assert.Single(catalog.Operations, o => o.Id == "priority-and-authentication");
         Assert.Contains(priority.Surfaces, s => s.PathHints.Any(path => path.EndsWith("/App/TeamsAppExtensions.cs", StringComparison.Ordinal)));
         Assert.Contains(priority.Surfaces, s => s.PathHints.Any(path => path.EndsWith("/MessageExtensions/MessageExtension.cs", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void IndexedReferencesResolveToVerifiedCanonicalCitationsThroughoutTheReview()
+    {
+        var input = Prepare(catalog: ResponseCatalog);
+        var original = Review(input);
+        var json = JsonNode.Parse(JsonSerializer.Serialize(original, ToolJson.Options))!;
+        var referenceByRange = input.Navigation.IndexedCitations.ToDictionary(i =>
+            (i.Citation.Path, i.Citation.StartLine, i.Citation.EndLine), i => i.Id);
+        JsonArray Ref(string id) => new(new JsonObject { ["reference"] = id });
+        for (var i = 0; i < original.Coverage[0].Surfaces.Count; i++)
+        {
+            var surfaceId = original.Coverage[0].Surfaces[i].SurfaceId;
+            var candidate = input.Navigation.Surfaces.Single(s => s.SurfaceId == surfaceId).Candidates[0];
+            Assert.NotNull(candidate.Reference);
+            json["coverage"]![0]!["surfaces"]![i]!["evidence"] = Ref(candidate.Reference);
+            json["coverage"]![0]!["responseChain"]![i]!["evidence"] = Ref(candidate.Reference);
+        }
+        var agent = input.Navigation.IndexedCitations.First(c => c.Citation.Path.StartsWith("agents/", StringComparison.Ordinal));
+        json["decisions"]![0]!["evidence"] = Ref(agent.Id);
+        json["decisions"]![0]!["scenarios"]![0]!["evidence"] = Ref(agent.Id);
+        // Keep upstream inspiration evidence while resolving the Agents proposal citation by ID.
+        json["decisions"]![0]!["proposals"]![0]!["evidence"]![0] = new JsonObject { ["reference"] = agent.Id };
+        var parsed = ErgonomicsReviewPipeline.Parse(json.ToJsonString());
+        var result = ErgonomicsReviewPipeline.Validate(input, parsed, _root);
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+        Assert.All(result.Coverage[0].Surfaces, s => Assert.All(s.Evidence, c => Assert.False(c.Path.StartsWith("@indexed/", StringComparison.Ordinal))));
+        var lines = File.ReadAllText(Path.Combine(_root, agent.Citation.Path)).Split('\n');
+        Assert.Equal(string.Join("\n", lines[(agent.Citation.StartLine!.Value - 1)..agent.Citation.EndLine!.Value]),
+            result.Decisions[0].Evidence[0].Quote);
+        Assert.Equal(agent.Citation.Path, result.Decisions[0].Scenarios[0].Evidence[0].Path);
+        Assert.Equal(agent.Citation.Path, result.Decisions[0].Proposals[0].Evidence[0].Path);
+        Assert.Equal(input.Navigation.IndexedCitations.Count, referenceByRange.Count);
+    }
+
+    [Fact]
+    public void IndexedCitationIdsAreDeterministicAndRemainInTheirSourceRole()
+    {
+        var input = Prepare();
+        var index = ErgonomicsSourceIndex.Create(_root, input.Files);
+        var navigation = index.Navigate(input.Catalog.Operations);
+        Assert.Equal(JsonSerializer.Serialize(input.Navigation, ToolJson.Options), JsonSerializer.Serialize(navigation, ToolJson.Options));
+        var baseline = input.Navigation.Surfaces.Single(s => s.SurfaceId == "upstream").Candidates[0];
+        var json = JsonNode.Parse(JsonSerializer.Serialize(Review(input), ToolJson.Options))!;
+        json["coverage"]![0]!["surfaces"]![0]!["evidence"] = new JsonArray(new JsonObject { ["reference"] = baseline.Reference });
+        Assert.False(ErgonomicsReviewPipeline.Validate(input, ErgonomicsReviewPipeline.Parse(json.ToJsonString()), _root).Valid);
+    }
+
+    [Fact]
+    public void UnknownAndMixedIndexedCitationsAreRejected()
+    {
+        var input = Prepare();
+        var json = JsonNode.Parse(JsonSerializer.Serialize(Review(input), ToolJson.Options))!;
+        json["decisions"]![0]!["evidence"] = new JsonArray(new JsonObject { ["reference"] = "ev-does-not-exist" });
+        var result = ErgonomicsReviewPipeline.Validate(input, ErgonomicsReviewPipeline.Parse(json.ToJsonString()), _root);
+        Assert.False(result.Valid);
+        Assert.Contains(result.Errors, e => e.Contains("Unknown indexed citation at decisions[discoverability].evidence[0]"));
+        foreach (var citation in new[]
+        {
+            "{\"reference\":\"ev0001\",\"endLine\":165}", "{\"reference\":\"\"}",
+            "{\"reference\":null}", "{\"path\":\"@indexed/ev0001\"}",
+            "{\"path\":\"agents/src/Activity.cs\",\"unknown\":true}"
+        })
+        {
+            json["decisions"]![0]!["evidence"] = new JsonArray(JsonNode.Parse(citation));
+            Assert.Throws<JsonException>(() => ErgonomicsReviewPipeline.Parse(json.ToJsonString()));
+        }
+    }
+
+    [Fact]
+    public void FailedRunRangeReportsBothLocationsAndExactFileBoundsWithoutClamping()
+    {
+        // Reproduce the failed run: 163 content lines plus the trailing empty split entry.
+        var source = string.Join("\n", Enumerable.Repeat("// source", 162).Append("public class Activity { }")) + "\n";
+        var input = Prepare(activitySource: source);
+        var review = Review(input, "inconclusive");
+        review = review with
+        {
+            Coverage = [review.Coverage[0] with
+            {
+                Surfaces = [review.Coverage[0].Surfaces[1] with
+                {
+                    Evidence = [new("teams-baseline/src/Activity.cs", StartLine: 14, EndLine: 165)]
+                }]
+            }],
+            Decisions = [review.Decisions[0] with { Scenarios = [review.Decisions[0].Scenarios[0] with
+            {
+                Evidence = [new("teams-baseline/src/Activity.cs", StartLine: 79, EndLine: 165)]
+            }] }]
+        };
+        var result = ErgonomicsReviewPipeline.Validate(input, review, _root);
+        Assert.False(result.Valid);
+        Assert.Contains(result.Errors, e => e.Contains("coverage[known-values].surfaces[upstream].evidence[0]") &&
+            e.Contains("requested 14..165") && e.Contains("valid bounds 1..164") && e.Contains("last content line 163"));
+        Assert.Contains(result.Errors, e => e.Contains("scenarios[known-values].evidence[0]") && e.Contains("requested 79..165"));
+        Assert.Empty(result.Coverage[0].Surfaces[0].Evidence);
     }
 
     public void Dispose()

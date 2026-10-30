@@ -85,7 +85,9 @@ for attempt in 1 2 3; do
 
     if (( attempt < 3 )); then
         cp "$artifacts_dir/$review_prefix.raw.json" "$workspace_dir/previous-review.txt"
-        cp "$artifacts_dir/$review_prefix.attempt-$attempt.validation.json" "$workspace_dir/review-feedback.json"
+        dotnet run --project "$TOOL" -c Release --no-build -- write-review-feedback \
+            --input "$artifacts_dir/$review_prefix.attempt-$attempt.validation.json" \
+            --output "$workspace_dir/review-feedback.json"
         printf 'Summary: Attempt %s failed validation; requesting evidence/format corrections.\n' "$attempt"
     fi
 done

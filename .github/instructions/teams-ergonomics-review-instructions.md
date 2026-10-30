@@ -27,7 +27,11 @@ In particular, inspect these caller tasks where applicable; these are investigat
 - Converting between Teams SDK and Agents SDK models. Inspect receiver types and generic constraints, discoverability on unrelated types, return types, ambiguous short type names and caller setup. Do not tighten an existing generic constraint as a fix.
 - Following the package onboarding path from imports and configuration to a working handler. Examples must define their variables and explain where registration occurs; show existing and proposed APIs accurately without claiming compilation.
 
-Evidence must support the specific claim being made. Cite implementation guards, return expressions and relevant test assertions for behavior claims; cite documentation AND implementation for contract mismatches; cite comparable signatures for parameter-order claims. A class declaration or a test name only establishes existence, not behavior, usability, test results or coverage. A single line is sufficient when it actually establishes the claim, such as a constant value or a complete signature; there is no minimum citation length. Read numbered source and retain enough surrounding conditions to justify the conclusion.
+Evidence must support the specific claim being made. Cite implementation guards, return expressions and relevant test assertions for behavior claims; cite documentation AND implementation for contract mismatches; cite comparable signatures for parameter-order claims. A class declaration or a test name only establishes existence, not behavior, usability, test results or coverage. A single line is sufficient when it actually establishes the claim; there is no minimum citation length.
+
+Prefer indexed citations wherever their declaration ranges support the claim: {"reference":"ev0001"}. Copy the exact reference from a navigation surface candidate's reference field or a discovered operation's evidenceReferences. navigation.indexedCitations binds IDs to source paths/ranges for this review. This compact form works in EVERY evidence array, including proposals, scenarios and response stages; the validator expands it to verified paths, ranges and exact quotes. Do not combine reference with path/quote/startLine/endLine, invent IDs, or reuse IDs from another review. Discovery presence/version claims can reuse the supplied declaration references; they do not need manually reconstructed line numbers. Copy resolvedSymbols exactly as indexed, rather than adding generic argument notation such as <TBuilder>.
+
+When the indexed range does not establish a claim, inspect and cite an explicit path/startLine/endLine range. Use grep/rg with -n to obtain numbered source; view output is not guaranteed to contain line numbers. Never estimate an endpoint from display length or a requested view range. Range errors identify the evidence field, requested bounds, actual file bounds and last content line. Re-read or use an appropriate indexed reference; do not blindly decrement or clamp an endpoint. Source inspection is still required when using a reference; an ID is not evidence that a behavior claim is true.
 
 Compatibility is mandatory for every proposal, including additive APIs. Preserve source/binary compatibility, behavior, serialization, null/default handling, accepted custom/unknown string values, overload resolution (including null literals, lambdas and optional parameters), interface implementers and existing consumer subclasses. Adding an overload or implicit conversion is not automatically compatible. Do not replace public property types, rename/remove APIs, tighten accepted inputs, change defaults or require new dependencies/upgrades. Do not propose required members on existing interfaces. Do not claim a design has compiled or passed tests.
 
@@ -52,7 +56,7 @@ Return ONLY a JSON object with this shape (each alternative below must be replac
     "disposition": "cataloged|additional|not-applicable|inconclusive",
     "operationIds": ["<mapped seeded/additional operation id>"],
     "reason": "<why this mapping/exclusion/limitation is justified>",
-    "evidence": [{"path": "<declaration path for each present source role>", "startLine": 1, "endLine": 5}]
+    "evidence": [{"reference": "<indexed declaration reference for each present source role>"}]
   }],
   "coverage": [{
     "operationId": "<seeded or additional operation id>",
@@ -63,13 +67,13 @@ Return ONLY a JSON object with this shape (each alternative below must be replac
       "status": "inspected|not-applicable",
       "resolution": "<why these version-specific declarations/files serve this role, including any renaming or replacement>",
       "resolvedSymbols": ["<fully qualified symbol actually declared in this role; or file:role/path for documentation>"],
-      "evidence": [{"path": "<actual version-specific snapshot path>", "startLine": 1, "endLine": 5}]
+      "evidence": [{"reference": "<navigation candidate reference supporting this surface>"}]
     }],
     "responseChain": [{
       "stage": "response-construction|upstream-handler|local-handler|dispatcher",
       "status": "inspected|not-applicable",
       "description": "<actual construction/handler/dispatch contract, or evidence-backed reason this stage does not apply>",
-      "evidence": [{"path": "<actual path of the corresponding resolved surface>", "startLine": 1, "endLine": 5}]
+      "evidence": [{"reference": "<reference supporting the matching stage/surface>"}]
     }]
   }],
   "decisions": [{
@@ -128,5 +132,7 @@ Provide exactly one decision per catalog check, one discovery reconciliation per
 The renderer labels all proposals as advisory unimplemented designs, with uncompiled caller examples. Keep prose concise and usable as an implementation starting point. Make compatibility reasoning specific to the change, rather than merely asserting it is additive. Reject alternatives that require breaking changes; use inconclusive when missing evidence prevents a compatibility assessment. Rejection of one alternative does not establish that the current caller experience has no compatible improvement. The deterministic validator checks structure, identity and source citations, not the semantic truth of the compatibility assessment. Valid findings never fail the job; corrections repair evidence and structure only, without fishing for a favorable outcome.
 
 On a correction attempt, inspect the specific validation errors and re-read the affected source with line numbers. Preserve unaffected scenarios, supported findings and useful evidence ranges. Repair invalid endpoints or quotes using actual source; do not replace unrelated valid excerpts with class declarations, test names or shorter ranges merely to pass validation. If a cited claim is unsupported after reinspection, explain that limitation and correct the affected conclusion rather than inventing evidence. Recheck claim relevance after every correction; structurally valid citations do not establish semantic support.
+
+review-feedback.json contains only actionable validation errors; canonical evidence and decisions remain in artifacts. Repair the named evidence fields using indexed references or verified explicit ranges. Preserve the full response and all unaffected findings, and check JSON syntax before returning it.
 
 Coverage corrections must preserve honest inspection limits. Do not relabel an incomplete operation inspected, invent response-stage descriptions or mark a breaking alternative compatible merely to pass validation. Inspect the missing comparisons or retain uninspected/inconclusive coverage and revise the affected no-improvement decision to inconclusive. Preserve supported recommendations in partially reviewed areas.

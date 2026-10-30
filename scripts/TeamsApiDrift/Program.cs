@@ -21,6 +21,7 @@ internal static class Program
                 "validate-behavior-review" => ValidateBehaviorReview(options),
                 "write-agent-metadata" => WriteAgentMetadata(options),
                 "extract-agent-response" => ExtractAgentResponse(options),
+                "write-review-feedback" => WriteReviewFeedback(options),
                 "resolve-version" => ResolveVersion(options),
                 "resolve-comparison" => await ResolveComparisonAsync(options).ConfigureAwait(false),
                 "compare" => await CompareAsync(options).ConfigureAwait(false),
@@ -38,6 +39,15 @@ internal static class Program
             Console.Error.WriteLine($"TeamsApiDrift: {exception.Message}");
             return 2;
         }
+    }
+
+    private static int WriteReviewFeedback(Arguments options)
+    {
+        var feedback = ReviewFeedback.Create(File.ReadAllText(options.Required("--input")));
+        var output = options.Required("--output");
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+        File.WriteAllText(output, feedback + Environment.NewLine);
+        return 0;
     }
 
     private static async Task<int> PrepareErgonomicsReviewAsync(Arguments options)
@@ -363,5 +373,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: prepare-ergonomics-review, validate-ergonomics-review, prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
+        "Commands: prepare-ergonomics-review, validate-ergonomics-review, prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, write-review-feedback, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
 }

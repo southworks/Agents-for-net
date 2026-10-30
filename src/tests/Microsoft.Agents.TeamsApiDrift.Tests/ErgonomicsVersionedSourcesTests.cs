@@ -162,6 +162,25 @@ public sealed class ErgonomicsVersionedSourcesTests : IDisposable
     }
 
     [Fact]
+    public void DiscoveryCanReuseIndexedReferencesForEveryPresentVersion()
+    {
+        var input = Prepare();
+        var review = Review(input);
+        review = review with { Discovery = review.Discovery.Select(d => d with
+        {
+            Evidence = input.Navigation.DiscoveredOperations.Single(found => found.Id == d.DiscoveryId).EvidenceReferences!
+                .Select(id => new ReviewCitation(ErgonomicsCitationConverter.ReferencePrefix + id)).ToArray()
+        }).ToArray() };
+        var result = ErgonomicsReviewPipeline.Validate(input, review, _root);
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+        Assert.All(result.Discovery, d => Assert.All(d.Evidence, c =>
+        {
+            Assert.NotNull(c.Quote);
+            Assert.False(c.Path.StartsWith("@indexed/", StringComparison.Ordinal));
+        }));
+    }
+
+    [Fact]
     public void NewOperationsExtendRequiredCoverageAndCannotBeHiddenByNoImprovement()
     {
         var input = Prepare();

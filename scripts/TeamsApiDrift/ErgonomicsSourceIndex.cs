@@ -5,16 +5,19 @@ using System.Xml.Linq;
 
 namespace Microsoft.Agents.TeamsApiDrift;
 
-public sealed record ErgonomicsSymbolLocation(string Symbol, ReviewCitation Evidence);
+public sealed record ErgonomicsSymbolLocation(string Symbol, ReviewCitation Evidence, string? Reference = null);
+
+public sealed record ErgonomicsIndexedCitation(string Id, ReviewCitation Citation);
 
 public sealed record ErgonomicsSurfaceLocation(string OperationId, string SurfaceId,
     IReadOnlyList<ErgonomicsSymbolLocation> Candidates);
 
 public sealed record ErgonomicsDiscoveredOperation(string Id, string Symbol, string Availability,
-    IReadOnlyList<ReviewCitation> Evidence);
+    IReadOnlyList<ReviewCitation> Evidence, IReadOnlyList<string>? EvidenceReferences = null);
 
 public sealed record ErgonomicsNavigation(IReadOnlyList<ErgonomicsSurfaceLocation> Surfaces,
-    IReadOnlyList<ErgonomicsDiscoveredOperation> DiscoveredOperations, IReadOnlyList<string> Limitations);
+    IReadOnlyList<ErgonomicsDiscoveredOperation> DiscoveredOperations, IReadOnlyList<string> Limitations,
+    IReadOnlyList<ErgonomicsIndexedCitation> IndexedCitations);
 
 // A syntax-only navigation index. It does not compile snapshots or prove API/service availability.
 internal sealed class ErgonomicsSourceIndex
@@ -209,7 +212,20 @@ internal sealed class ErgonomicsSourceIndex
                 group.Select(d => d.Evidence).OrderBy(c => c.Path, StringComparer.Ordinal).ThenBy(c => c.StartLine).ToArray()))
             .OrderBy(d => d.Id, StringComparer.Ordinal).ToArray();
 
-        return new(operations.SelectMany(o => o.Surfaces.Select(s => new ErgonomicsSurfaceLocation(o.Id, s.Id, Candidates(s)))).ToArray(),
-            discovery, ["Registration discovery indexes public On* declarations in MSTeams and Microsoft.Teams.Apps; other registration conventions require source inspection.", .. _limitations]);
+        var surfaces = operations.SelectMany(o => o.Surfaces.Select(s => new ErgonomicsSurfaceLocation(o.Id, s.Id, Candidates(s)))).ToArray();
+        var indexed = surfaces.SelectMany(s => s.Candidates.Select(c => c.Evidence)).Concat(discovery.SelectMany(d => d.Evidence))
+            .DistinctBy(c => (c.Path, c.StartLine, c.EndLine))
+            .OrderBy(c => c.Path, StringComparer.Ordinal).ThenBy(c => c.StartLine).ThenBy(c => c.EndLine)
+            .Select((citation, i) => new ErgonomicsIndexedCitation($"ev{i + 1:D4}", citation)).ToArray();
+        var references = indexed.ToDictionary(c => (c.Citation.Path, c.Citation.StartLine, c.Citation.EndLine), c => c.Id);
+        return new(surfaces.Select(s => s with
+            {
+                Candidates = s.Candidates.Select(c => c with { Reference = references[(c.Evidence.Path, c.Evidence.StartLine, c.Evidence.EndLine)] }).ToArray()
+            }).ToArray(),
+            discovery.Select(d => d with
+            {
+                EvidenceReferences = d.Evidence.Select(c => references[(c.Path, c.StartLine, c.EndLine)]).ToArray()
+            }).ToArray(),
+            ["Registration discovery indexes public On* declarations in MSTeams and Microsoft.Teams.Apps; other registration conventions require source inspection.", .. _limitations], indexed);
     }
 }

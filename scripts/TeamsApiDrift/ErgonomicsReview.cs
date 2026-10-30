@@ -155,7 +155,8 @@ public static class ErgonomicsReviewPipeline
         new JsonSerializerOptions(ToolJson.Options)
         {
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-            RespectRequiredConstructorParameters = true
+            RespectRequiredConstructorParameters = true,
+            Converters = { new ErgonomicsCitationConverter() }
         }) ?? throw new InvalidDataException("Empty ergonomics review.");
 
     public static ErgonomicsValidation Validate(ErgonomicsInput input, ErgonomicsReview review, string workspace)
@@ -204,15 +205,29 @@ public static class ErgonomicsReviewPipeline
             errors.Add("Baseline does not match the declared dependency.");
         }
 
-        IReadOnlyList<ReviewCitation> Citations(IReadOnlyList<ReviewCitation>? evidence)
+        var references = input.Navigation.IndexedCitations.ToDictionary(c => c.Id, c => c.Citation, StringComparer.Ordinal);
+        var sourceLines = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+        IReadOnlyList<ReviewCitation> Citations(IReadOnlyList<ReviewCitation>? evidence, string location)
         {
             var resolved = new List<ReviewCitation>();
 
-            foreach (var citation in evidence ?? [])
+            foreach (var (submitted, index) in (evidence ?? []).Select((c, i) => (c, i)))
             {
+                var citation = submitted;
+                var context = $"{location}[{index}]";
+                if (citation.Path.StartsWith(ErgonomicsCitationConverter.ReferencePrefix, StringComparison.Ordinal))
+                {
+                    var id = citation.Path[ErgonomicsCitationConverter.ReferencePrefix.Length..];
+                    if (!references.TryGetValue(id, out citation))
+                    {
+                        errors.Add($"Unknown indexed citation at {context}: {id}. Use a reference ID from navigation.indexedCitations for this review.");
+                        continue;
+                    }
+                }
                 if (!inventory.ContainsKey(citation.Path))
                 {
-                    errors.Add($"Unknown citation: {citation.Path}.");
+                    errors.Add($"Unknown citation at {context}: {citation.Path}. Use a snapshot-relative path from the inventory.");
                     continue;
                 }
 
@@ -220,15 +235,19 @@ public static class ErgonomicsReviewPipeline
 
                 if (!File.Exists(path))
                 {
-                    errors.Add($"Missing citation source: {citation.Path}.");
+                    errors.Add($"Missing citation source at {context}: {citation.Path}.");
                     continue;
                 }
 
-                var lines = File.ReadAllText(path).Split('\n');
+                if (!sourceLines.TryGetValue(citation.Path, out var lines))
+                    sourceLines[citation.Path] = lines = File.ReadAllText(path).Split('\n');
 
                 if (citation.StartLine is not int start || citation.EndLine is not int end || start < 1 || end < start || end > lines.Length)
                 {
-                    errors.Add($"Invalid citation range: {citation.Path}.");
+                    var lastContent = Array.FindLastIndex(lines, line => !string.IsNullOrWhiteSpace(line)) + 1;
+                    errors.Add($"Invalid citation range at {context}: {citation.Path}; requested {citation.StartLine?.ToString() ?? "missing"}..{citation.EndLine?.ToString() ?? "missing"}; " +
+                        $"valid bounds 1..{lines.Length} ({lines.Length} lines including a trailing empty line when present; last content line {lastContent}). " +
+                        "Use an indexed reference or verify the exact range with numbered source; do not guess or clamp the endpoint.");
                     continue;
                 }
 
@@ -236,7 +255,7 @@ public static class ErgonomicsReviewPipeline
 
                 if (string.IsNullOrWhiteSpace(quote) || (citation.Quote is not null && citation.Quote != quote))
                 {
-                    errors.Add($"Invalid citation quote: {citation.Path}.");
+                    errors.Add($"Invalid citation quote at {context}: {citation.Path}:{start}..{end}; quote must match complete source lines exactly.");
                     continue;
                 }
 
@@ -279,7 +298,7 @@ public static class ErgonomicsReviewPipeline
             foreach (var surface in item.Surfaces ?? [])
             {
                 var expected = operation.Surfaces.SingleOrDefault(s => s.Id == surface.SurfaceId);
-                var evidence = Citations(surface.Evidence);
+                var evidence = Citations(surface.Evidence, $"coverage[{item.OperationId}].surfaces[{surface.SurfaceId}].evidence");
                 if (expected is null || !surfaceIds.Add(surface.SurfaceId) || evidence.Count == 0 ||
                     string.IsNullOrWhiteSpace(surface.Resolution) || surface.Status is not ("inspected" or "not-applicable") ||
                     !Cites(evidence, expected.Role) ||
@@ -305,7 +324,7 @@ public static class ErgonomicsReviewPipeline
             var stages = new HashSet<string>(StringComparer.Ordinal);
             foreach (var step in item.ResponseChain ?? [])
             {
-                var evidence = Citations(step.Evidence);
+                var evidence = Citations(step.Evidence, $"coverage[{item.OperationId}].responseChain[{step.Stage}].evidence");
                 var expected = operation.Surfaces.SingleOrDefault(s => s.Id == step.Stage);
                 if (!operation.ResponseChain || !ResponseStages.Contains(step.Stage, StringComparer.Ordinal) ||
                     !stages.Add(step.Stage) || string.IsNullOrWhiteSpace(step.Description) || expected is null ||
@@ -336,7 +355,7 @@ public static class ErgonomicsReviewPipeline
         foreach (var assessment in review.Discovery ?? [])
         {
             var found = input.Navigation.DiscoveredOperations.SingleOrDefault(d => d.Id == assessment.DiscoveryId);
-            var evidence = Citations(assessment.Evidence);
+            var evidence = Citations(assessment.Evidence, $"discovery[{assessment.DiscoveryId}].evidence");
             var mapped = assessment.OperationIds ?? [];
             if (found is null || !discoveredIds.Add(assessment.DiscoveryId) ||
                 !input.Catalog.Checks.Any(c => c.Id == assessment.CheckId) || string.IsNullOrWhiteSpace(assessment.Reason) ||
@@ -378,7 +397,7 @@ public static class ErgonomicsReviewPipeline
                 errors.Add($"Invalid decision: {decision.CheckId}.");
             }
 
-            var evidence = Citations(decision.Evidence);
+            var evidence = Citations(decision.Evidence, $"decisions[{decision.CheckId}].evidence");
 
             if (decision.Outcome == "no-improvement" && !Cites(evidence, "agents"))
             {
@@ -412,7 +431,7 @@ public static class ErgonomicsReviewPipeline
                     errors.Add($"Incomplete caller scenario: {decision.CheckId}.");
                 }
 
-                var scenarioEvidence = Citations(scenario.Evidence);
+                var scenarioEvidence = Citations(scenario.Evidence, $"decisions[{decision.CheckId}].scenarios[{scenario.OperationId}].evidence");
 
                 if (decision.Outcome != "inconclusive" && !Cites(scenarioEvidence, "agents"))
                 {
@@ -461,7 +480,7 @@ public static class ErgonomicsReviewPipeline
                     errors.Add($"Shared API proposal requires an extension-boundary rationale: {proposal.Title}.");
                 }
 
-                var proposalEvidence = Citations(proposal.Evidence);
+                var proposalEvidence = Citations(proposal.Evidence, $"decisions[{decision.CheckId}].proposals[{proposal.Title}].evidence");
 
                 if (!Cites(proposalEvidence, "agents") ||
                     (proposal.Inspiration == "baseline" && !Cites(proposalEvidence, "teams-baseline")) ||
