@@ -63,7 +63,7 @@ internal static class Program
         catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or
             ArgumentException or NullReferenceException or InvalidOperationException or KeyNotFoundException)
         {
-            validation = new(1, false, false, [exception.Message], []);
+            validation = new(ErgonomicsReviewPipeline.SchemaVersion, false, false, [exception.Message], [], [], [], []);
         }
 
         ToolJson.Write(options.Required("--output"), validation);

@@ -25,5 +25,1149 @@
       "id": "documentation-and-examples",
       "description": "Follow onboarding from imports/configuration to a handler, checking variable definitions, registration location and sample links. Compare XML return/error contracts and defaults with implementation and relevant test assertions, including absent optional data. Review specific API documentation beyond the package README. Documentation corrections must preserve existing runtime behavior."
     }
+  ],
+  "operations": [
+    {
+      "id": "feature-entry-points",
+      "checkId": "discoverability",
+      "description": "Discover generated feature entry points and equivalent registration styles, including configured channel propagation.",
+      "surfaces": [
+        {
+          "id": "extension",
+          "role": "agents",
+          "description": "Resolve the extension comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        },
+        {
+          "id": "message-extensions",
+          "role": "agents",
+          "description": "Resolve the message extensions comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CreateTaskData"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"
+          ]
+        },
+        {
+          "id": "task-modules",
+          "role": "agents",
+          "description": "Resolve the task modules comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "builder-discovery",
+      "checkId": "discoverability",
+      "description": "Move from a discovered feature method to advanced builder configuration; assess factories and command naming without assuming new APIs are needed.",
+      "surfaces": [
+        {
+          "id": "feature",
+          "role": "agents",
+          "description": "Resolve the feature comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CreateTaskData"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"
+          ]
+        },
+        {
+          "id": "builder",
+          "role": "agents",
+          "description": "Resolve the builder comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/QueryRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "command",
+          "role": "agents",
+          "description": "Resolve the command comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CommandRouteBuilderBase"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/CommandRouteBuilderBase.cs"
+          ]
+        },
+        {
+          "id": "task-feature",
+          "role": "agents",
+          "description": "Resolve the task feature comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"
+          ]
+        },
+        {
+          "id": "task-builder",
+          "role": "agents",
+          "description": "Resolve the task builder comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskFetchRouteBuilder.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "known-values",
+      "checkId": "discoverability",
+      "description": "Compare discoverability of actual string properties, constants and extensible typed values beyond IActivity.Type; preserve custom values.",
+      "surfaces": [
+        {
+          "id": "core-activity",
+          "role": "agents",
+          "description": "Resolve the core activity comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Core.Models.IActivity"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Core/Microsoft.Agents.Core/Models/IActivity.cs"
+          ]
+        },
+        {
+          "id": "event-builder",
+          "role": "agents",
+          "description": "Resolve the event builder comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.App.TeamsEventRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/App/TeamsEventRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "event-values",
+          "role": "teams-baseline",
+          "description": "Resolve the event values comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.EventActivity",
+            "Microsoft.Teams.Apps.EventName"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/EventHandler.Activity.cs"
+          ]
+        },
+        {
+          "id": "conversation-values",
+          "role": "teams-baseline",
+          "description": "Resolve the conversation values comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.ConversationUpdateActivity",
+            "Microsoft.Teams.Apps.ConversationEventType"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/ConversationUpdateHandlers.Activity.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "model-conversion",
+      "checkId": "readability",
+      "description": "Convert between models; assess unconstrained receivers, repeated deserialization, mutation ownership and ambiguity.",
+      "surfaces": [
+        {
+          "id": "conversions",
+          "role": "agents",
+          "description": "Resolve the conversions comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsModelExtensions"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"
+          ]
+        },
+        {
+          "id": "context",
+          "role": "agents",
+          "description": "Resolve the context comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsTurnContext"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsTurnContext.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client-access",
+      "checkId": "readability",
+      "description": "Access Teams and Graph clients with typed/untyped contexts; compare existing paths and delegated/application authentication guidance.",
+      "surfaces": [
+        {
+          "id": "typed-context",
+          "role": "agents",
+          "description": "Resolve the typed context comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.ITeamsTurnContext"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/ITeamsTurnContext.cs"
+          ]
+        },
+        {
+          "id": "client-helpers",
+          "role": "agents",
+          "description": "Resolve the client helpers comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiClientExtensions.cs"
+          ]
+        },
+        {
+          "id": "extension",
+          "role": "agents",
+          "description": "Resolve the extension comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "priority-and-authentication",
+      "checkId": "consistency",
+      "description": "Compare priority/authentication together across app methods, feature methods, builders and attributes. Evaluate compatible guidance or distinct additions, not parameter reordering.",
+      "surfaces": [
+        {
+          "id": "app-methods",
+          "role": "agents",
+          "description": "Resolve the app methods comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.App.TeamsAppExtensions"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/App/TeamsAppExtensions.cs"
+          ]
+        },
+        {
+          "id": "message-methods",
+          "role": "agents",
+          "description": "Resolve the message methods comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CreateTaskData"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"
+          ]
+        },
+        {
+          "id": "task-methods",
+          "role": "agents",
+          "description": "Resolve the task methods comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"
+          ]
+        },
+        {
+          "id": "channel-methods",
+          "role": "agents",
+          "description": "Resolve the channel methods comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Channels/TeamsChannel.cs"
+          ]
+        },
+        {
+          "id": "attributes",
+          "role": "agents",
+          "description": "Resolve the attributes comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryLinkRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsAnonQueryLinkRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQuerySettingUrlRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsFetchActionRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewEditRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewSendRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSettingRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSubmitActionRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.ProductSummary",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSelectItemRouteAttribute",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.ApprovalAction",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsCardButtonClickedRouteAttribute"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionAttributes.cs"
+          ]
+        },
+        {
+          "id": "builder-options",
+          "role": "agents",
+          "description": "Resolve the builder options comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Builder.App.RouteBuilder",
+            "Microsoft.Agents.Builder.App.RouteBuilderBase"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Builder/Microsoft.Agents.Builder/App/RouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "builder",
+          "role": "agents",
+          "description": "Resolve the builder comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/QueryRouteBuilder.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "typed-data-handlers",
+      "checkId": "consistency",
+      "description": "Compare typed-data convenience across select-item, card-button, task and action handlers while retaining request metadata.",
+      "surfaces": [
+        {
+          "id": "message-handlers",
+          "role": "agents",
+          "description": "Resolve the message handlers comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "task-handlers",
+          "role": "agents",
+          "description": "Resolve the task handlers comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler",
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModulesHandlers.cs"
+          ]
+        },
+        {
+          "id": "select-item",
+          "role": "agents",
+          "description": "Resolve the select item comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/SelectItemRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "card-button",
+          "role": "agents",
+          "description": "Resolve the card button comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/CardButtonClickedRouteBuilder.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-action-data",
+      "checkId": "typed-values",
+      "description": "Read missing/null/empty/non-string task/action payloads, including JSON, dictionary and POCO representations; assess required and Try access contracts.",
+      "surfaces": [
+        {
+          "id": "helpers",
+          "role": "agents",
+          "description": "Resolve the helpers comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsModelExtensions"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsModelExtensions.cs"
+          ]
+        },
+        {
+          "id": "task-request",
+          "role": "teams-baseline",
+          "description": "Resolve the task request comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleRequest"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskModuleRequest.cs"
+          ]
+        },
+        {
+          "id": "action-request",
+          "role": "teams-baseline",
+          "description": "Resolve the action request comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionAction.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "query-parameters",
+      "checkId": "typed-values",
+      "description": "Read query parameters using their actual declared value type, with explicit absence, duplicate and case-matching behavior.",
+      "surfaces": [
+        {
+          "id": "query",
+          "role": "teams-baseline",
+          "description": "Resolve the query comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionQuery.cs"
+          ]
+        },
+        {
+          "id": "query-route",
+          "role": "agents",
+          "description": "Resolve the query route comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/QueryRouteBuilder.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-dimensions",
+      "checkId": "typed-values",
+      "description": "Configure task dimensions with pixels/presets; inspect accepted upstream types and evaluate compatible typed conveniences.",
+      "surfaces": [
+        {
+          "id": "response-builder",
+          "role": "teams-baseline",
+          "description": "Resolve the response builder comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskModuleResponse.cs"
+          ]
+        },
+        {
+          "id": "task-feature",
+          "role": "agents",
+          "description": "Resolve the task feature comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "query-response",
+      "checkId": "routing-and-helpers",
+      "description": "Return search results using the upstream response construction API. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQueryHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionHandlers.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/QueryRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "fetch-action-response",
+      "checkId": "routing-and-helpers",
+      "description": "Return a fetch-action response including supported branches. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionActionResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionFetchTaskHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionHandlers.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/FetchActionRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "submit-action-response",
+      "checkId": "routing-and-helpers",
+      "description": "Return a submit-action response including task/compose branches. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionActionResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionSubmitActionHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionHandlers.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/SubmitActionRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "task-fetch-response",
+      "checkId": "routing-and-helpers",
+      "description": "Return a task-fetch response using the upstream response construction API. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskModuleResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskHandler.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModulesHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskFetchRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "task-submit-response",
+      "checkId": "routing-and-helpers",
+      "description": "Return a task-submit response using the upstream response construction API. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskModuleResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.TaskModules.TaskModuleHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/TaskModules/TaskHandler.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModulesHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskSubmitRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "settings-url-response",
+      "checkId": "routing-and-helpers",
+      "description": "Read the settings-URL request and return its response. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionResponse.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuerySettingUrlHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionHandlers.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/QuerySettingUrlRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "settings-submit-response",
+      "checkId": "routing-and-helpers",
+      "description": "Acknowledge a settings submission; compare body and envelope contracts. Trace exact return types, direct response-construction usability, response status/body mapping and response ownership.",
+      "surfaces": [
+        {
+          "id": "response-construction",
+          "role": "teams-baseline",
+          "description": "Resolve the response construction comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.InvokeResponse"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/InvokeHandler.Response.cs"
+          ]
+        },
+        {
+          "id": "upstream-handler",
+          "role": "teams-baseline",
+          "description": "Resolve the upstream handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.MessageExtensions.MessageExtensionSettingsHandler"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Handlers/MessageExtensions/MessageExtensionHandlers.cs"
+          ]
+        },
+        {
+          "id": "local-handler",
+          "role": "agents",
+          "description": "Resolve the local handler comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "route-adapter",
+          "role": "agents",
+          "description": "Resolve the route adapter comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingRouteBuilder"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/SettingRouteBuilder.cs"
+          ]
+        },
+        {
+          "id": "dispatcher",
+          "role": "agents",
+          "description": "Resolve the dispatcher comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.SetResponse"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsAgentExtension.cs"
+          ]
+        }
+      ],
+      "responseChain": true
+    },
+    {
+      "id": "feedback-composition",
+      "checkId": "routing-and-helpers",
+      "description": "Configure outgoing feedback alongside existing channel metadata and extension properties; inspect conflicting representations without changing old behavior.",
+      "surfaces": [
+        {
+          "id": "activity-helper",
+          "role": "agents",
+          "description": "Resolve the activity helper comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsActivityExtensions"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsActivityExtensions.cs"
+          ]
+        },
+        {
+          "id": "channel-model",
+          "role": "teams-baseline",
+          "description": "Resolve the channel model comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Teams.Apps.Schema.TeamsChannelData"
+          ],
+          "pathHints": [
+            "teams-baseline/src/Microsoft.Teams.Apps/Schema/TeamsChannelData.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-file-routes",
+      "checkId": "routing-and-helpers",
+      "description": "Discover/register channel, team, meeting and file-consent operations; assess request metadata, setup and existing extension points.",
+      "surfaces": [
+        {
+          "id": "channels",
+          "role": "agents",
+          "description": "Resolve the channels comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Channels/TeamsChannel.cs"
+          ]
+        },
+        {
+          "id": "teams",
+          "role": "agents",
+          "description": "Resolve the teams comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.Teams.TeamsTeam"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Teams/TeamsTeam.cs"
+          ]
+        },
+        {
+          "id": "meetings",
+          "role": "agents",
+          "description": "Resolve the meetings comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.Meetings.Meeting"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Meetings/Meeting.cs"
+          ]
+        },
+        {
+          "id": "file-consent",
+          "role": "agents",
+          "description": "Resolve the file consent comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.FileConsents.MyAgent",
+            "Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsent"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/FileConsents/FileConsent.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "onboarding",
+      "checkId": "documentation-and-examples",
+      "description": "Follow imports/configuration through generated extension setup and a handler; verify property naming, initialization and registration location.",
+      "surfaces": [
+        {
+          "id": "readme",
+          "role": "agents",
+          "description": "Resolve the readme comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/README.md"
+          ]
+        },
+        {
+          "id": "attribute",
+          "role": "agents",
+          "description": "Resolve the attribute comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MyAgent",
+            "Microsoft.Agents.Extensions.MSTeams.TeamsExtensionAttribute"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsExtensionAttribute.cs"
+          ]
+        },
+        {
+          "id": "generator",
+          "role": "agents",
+          "description": "Resolve the generator comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Core.Analyzers.AgentExtensionSourceGenerator"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Core/Microsoft.Agents.Core.Analyzers/AgentExtensionSourceGenerator.cs"
+          ]
+        },
+        {
+          "id": "startup",
+          "role": "agents",
+          "description": "Resolve the startup comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [],
+          "pathHints": [
+            "agents/src/samples/Teams/MessageExtensions/Program.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "handler-examples",
+      "checkId": "documentation-and-examples",
+      "description": "Compare XML examples against actual types, generic arity, lambda parameters and response shapes in both feature families; do not claim compilation.",
+      "surfaces": [
+        {
+          "id": "message-examples",
+          "role": "agents",
+          "description": "Resolve the message examples comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CreateTaskData"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtension.cs"
+          ]
+        },
+        {
+          "id": "message-signatures",
+          "role": "agents",
+          "description": "Resolve the message signatures comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler",
+            "Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/MessageExtensions/MessageExtensionsHandlers.cs"
+          ]
+        },
+        {
+          "id": "task-examples",
+          "role": "agents",
+          "description": "Resolve the task examples comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModule.cs"
+          ]
+        },
+        {
+          "id": "task-signatures",
+          "role": "agents",
+          "description": "Resolve the task signatures comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler",
+            "Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TaskModules/TaskModulesHandlers.cs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "optional-data-contracts",
+      "checkId": "documentation-and-examples",
+      "description": "Compare documented fallback/error contracts with implementation and relevant test assertions for absent optional channel data.",
+      "surfaces": [
+        {
+          "id": "helpers",
+          "role": "agents",
+          "description": "Resolve the helpers comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.TeamsActivityExtensions"
+          ],
+          "pathHints": [
+            "agents/src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsActivityExtensions.cs"
+          ]
+        },
+        {
+          "id": "tests",
+          "role": "agents",
+          "description": "Resolve the tests comparison surface in this source version; explain renamed or replaced APIs.",
+          "symbols": [
+            "Microsoft.Agents.Extensions.MSTeams.Tests.TeamsActivityExtensionsTests"
+          ],
+          "pathHints": [
+            "agents/src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/TeamsActivityExtensionsTests.cs"
+          ]
+        }
+      ]
+    }
   ]
 }

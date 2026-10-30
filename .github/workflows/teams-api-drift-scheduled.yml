@@ -751,7 +751,9 @@ jobs:
             const fs = require('fs');
             const validation = JSON.parse(fs.readFileSync(process.env.VALIDATION_PATH, 'utf8'));
             if (validation.schemaVersion !== 1 || validation.valid !== true ||
-                typeof validation.hasRecommendations !== 'boolean' || !Array.isArray(validation.decisions)) {
+                typeof validation.hasRecommendations !== 'boolean' || !Array.isArray(validation.decisions) ||
+                !Array.isArray(validation.coverage) || !Array.isArray(validation.additionalOperations) ||
+                !Array.isArray(validation.discovery)) {
               throw new Error('A valid ergonomics review is required for issue publication.');
             }
             const report = fs.readFileSync(process.env.REPORT_PATH, 'utf8');

@@ -16,5 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\scripts\TeamsApiDrift\Microsoft.Agents.TeamsApiDrift.csproj" />
+    <None Include="..\..\..\scripts\TeamsApiDrift\ergonomics.json" Link="ergonomics.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

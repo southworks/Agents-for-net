@@ -60,7 +60,7 @@ new_case() {
     case_dir="$test_root/case-$case_index"
     mkdir -p "$case_dir"
     jq -n --argjson recommendations "$recommendations" \
-        '{schemaVersion: 1, valid: true, hasRecommendations: $recommendations, decisions: []}' > "$case_dir/validation.json"
+        '{schemaVersion: 1, valid: true, hasRecommendations: $recommendations, decisions: [], coverage: [], additionalOperations: [], discovery: []}' > "$case_dir/validation.json"
     jq -n --arg marker "$marker" --argjson existing "$existing" '
         [{number: 10, body: "<!-- teams-api-drift-scheduled --> Existing drift issue."},
          {number: 11, body: $marker, pull_request: {}}] +
@@ -151,6 +151,29 @@ printf '{broken' > "$case_dir/validation.json"
 expect_publication 1
 jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Malformed review changed the issue'
 pass 'malformed validation preserves the existing issue'
+
+new_case true true
+jq '.schemaVersion = 99' "$case_dir/validation.json" > "$case_dir/unsupported.json"
+mv "$case_dir/unsupported.json" "$case_dir/validation.json"
+expect_publication 1
+jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Unsupported schema changed the issue'
+pass 'unsupported schema versions cannot publish'
+
+new_case true true
+jq 'del(.coverage)' "$case_dir/validation.json" > "$case_dir/incomplete.json"
+mv "$case_dir/incomplete.json" "$case_dir/validation.json"
+expect_publication 1
+jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Report without coverage changed the issue'
+pass 'missing operation coverage prevents publication'
+
+for field in additionalOperations discovery; do
+    new_case true true
+    jq --arg field "$field" 'del(.[$field])' "$case_dir/validation.json" > "$case_dir/incomplete.json"
+    mv "$case_dir/incomplete.json" "$case_dir/validation.json"
+    expect_publication 1
+    jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail "Report without $field changed the issue"
+    pass "missing $field prevents publication"
+done
 
 new_case
 awk 'BEGIN {
