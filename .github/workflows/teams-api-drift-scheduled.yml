@@ -315,7 +315,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 20
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
           COPILOT_HOME: ${{ runner.temp }}/teams-impact-copilot
         run: bash scripts/TeamsApiDrift/run-impact-review.sh
 
@@ -425,7 +425,7 @@ jobs:
       - name: Review outbound wire behaviors
         timeout-minutes: 20
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
           COPILOT_HOME: ${{ runner.temp }}/teams-behavior-copilot
         run: bash scripts/TeamsApiDrift/run-behavior-review.sh
 
@@ -512,7 +512,7 @@ jobs:
       - name: Review API ergonomics and compatible improvements
         timeout-minutes: 20
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
           COPILOT_HOME: ${{ runner.temp }}/teams-ergonomics-copilot
         run: bash scripts/TeamsApiDrift/run-ergonomics-review.sh
 
