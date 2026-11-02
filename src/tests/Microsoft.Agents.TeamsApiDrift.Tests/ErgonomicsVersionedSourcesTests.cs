@@ -135,6 +135,7 @@ public sealed class ErgonomicsVersionedSourcesTests : IDisposable
         review = review with { Coverage = [review.Coverage[0], entry] };
         var valid = ErgonomicsReviewPipeline.Validate(input, review, _root);
         Assert.True(valid.Valid, string.Join("\n", valid.Errors));
+        Assert.True(valid.AnalysisComplete);
         Assert.Contains("1 not applicable with source evidence", ErgonomicsReviewPipeline.Render(input, valid));
         Assert.False(ErgonomicsReviewPipeline.Validate(input,
             review with { Coverage = [review.Coverage[0], entry with { Surfaces = [] }] }, _root).Valid);
@@ -199,7 +200,30 @@ public sealed class ErgonomicsVersionedSourcesTests : IDisposable
         review = review with { Decisions = [review.Decisions[0] with { Outcome = "inconclusive" }] };
         var result = ErgonomicsReviewPipeline.Validate(input, review, _root);
         Assert.True(result.Valid, string.Join("\n", result.Errors));
+        Assert.False(result.AnalysisComplete);
+        Assert.Contains(result.CompletionReasons, r => r.Contains("Operation new-registration is uninspected"));
         Assert.Contains("new-registration | uninspected", ErgonomicsReviewPipeline.Render(input, result));
+    }
+
+    [Fact]
+    public void UnresolvedDiscoveryPreventsCompletionEvenWithInspectedOperations()
+    {
+        var input = Prepare();
+        var review = Review(input);
+        var unresolved = review.Discovery[0] with
+        {
+            Disposition = "inconclusive", OperationIds = [], Reason = "The registration needs further investigation."
+        };
+        review = review with
+        {
+            Decisions = [review.Decisions[0] with { Outcome = "inconclusive" }],
+            Discovery = [unresolved, .. review.Discovery.Skip(1)]
+        };
+        var result = ErgonomicsReviewPipeline.Validate(input, review, _root);
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+        Assert.All(result.Coverage, c => Assert.Equal("inspected", c.Status));
+        Assert.False(result.AnalysisComplete);
+        Assert.Contains(result.CompletionReasons, r => r.Contains($"Discovery {unresolved.DiscoveryId} is inconclusive"));
     }
 
     [Fact]

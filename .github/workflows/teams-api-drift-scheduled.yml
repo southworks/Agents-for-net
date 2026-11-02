@@ -533,6 +533,16 @@ jobs:
             exit 1
           fi
 
+      - name: Require completed ergonomics analysis
+        shell: bash
+        run: |
+          validation="$ARTIFACTS/ergonomics-review-validation.json"
+          if ! jq -e '.valid == true and .analysisComplete == true' "$validation" > /dev/null; then
+            echo '::error::Ergonomics output validation passed, but the analysis is incomplete. See the report and completionReasons in the validation artifact.'
+            exit 1
+          fi
+          echo 'Summary: Ergonomics output is valid and analysis is complete; recommendations remain advisory.'
+
       - name: Transfer ergonomics diagnostics
         id: stage_artifact
         if: always()
@@ -755,6 +765,9 @@ jobs:
                 !Array.isArray(validation.coverage) || !Array.isArray(validation.additionalOperations) ||
                 !Array.isArray(validation.discovery)) {
               throw new Error('A valid ergonomics review is required for issue publication.');
+            }
+            if (validation.analysisComplete !== true) {
+              throw new Error('A completed ergonomics analysis is required for issue publication. Partial findings remain in artifacts.');
             }
             const report = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
             const marker = '<!-- teams-api-ergonomics-scheduled -->';

@@ -312,6 +312,8 @@ for kind in pr scheduled; do
         should_run ergonomics_analysis || fail 'API failures skipped ergonomics analysis'
         contains "$(job ergonomics_analysis)" 'needs: versions'
         contains "$(step 'Collect ergonomics diagnostics')" 'needs.ergonomics_analysis.outputs.artifact_id'
+        contains "$(step 'Require completed ergonomics analysis')" '.valid == true and .analysisComplete == true'
+        contains "$(step 'Transfer ergonomics diagnostics')" 'if: always()'
         contains "$(step 'Create or update ergonomics review issue')" "needs.ergonomics_analysis.result == 'success'"
         contains "$(step 'Create or update ergonomics review issue')" "steps.download_ergonomics.outcome == 'success'"
         [[ "$(step 'Prepare declared baseline and candidate ergonomics sources')" != *'--from'* ]] || fail 'Ergonomics used the drift baseline override'

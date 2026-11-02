@@ -72,7 +72,7 @@ for attempt in 1 2 3; do
         --workspace "$workspace_dir" --repository-root "$repository_dir" \
         --output "$artifacts_dir/$review_prefix.attempt-$attempt.validation.json" \
         --report "$artifacts_dir/$review_prefix.attempt-$attempt.report.md"; then
-        printf 'Summary: AI review produced valid decisions and evidence on attempt %s; the caller handles review policy.\n' "$attempt"
+        printf 'Summary: AI review produced valid output on attempt %s; the caller handles analysis completion and review policy.\n' "$attempt"
         exit 0
     else
         validation_status=$?

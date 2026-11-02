@@ -87,6 +87,8 @@ public sealed class ErgonomicsReviewTests : IDisposable
         var result = ErgonomicsReviewPipeline.Validate(input, Review(input), _root);
         Assert.True(result.Valid, string.Join("\n", result.Errors));
         Assert.True(result.HasRecommendations);
+        Assert.True(result.AnalysisComplete);
+        Assert.Empty(result.CompletionReasons);
         Assert.Equal("public class Activity { public string Type { get; set; } }\n// Known values", result.Decisions[0].Proposals[0].Evidence[0].Quote);
         Assert.Equal("public class Activity { public string Type { get; set; } }\n// Known values", result.Decisions[0].Scenarios[0].Evidence[0].Quote);
         var report = ErgonomicsReviewPipeline.Render(input, result);
@@ -111,14 +113,21 @@ public sealed class ErgonomicsReviewTests : IDisposable
     [Theory]
     [InlineData("no-improvement")]
     [InlineData("inconclusive")]
-    public void EmptyAndInconclusiveReviewsAreValidAdvisoryResults(string outcome)
+    public void ValidOutputAndCompletedAnalysisAreSeparateResults(string outcome)
     {
         var input = Prepare();
         var result = ErgonomicsReviewPipeline.Validate(input, Review(input, outcome), _root);
         Assert.True(result.Valid);
         Assert.False(result.HasRecommendations);
+        Assert.Equal(outcome == "no-improvement", result.AnalysisComplete);
+        var json = JsonSerializer.SerializeToElement(result, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Assert.True(json.GetProperty("valid").GetBoolean());
+        Assert.Equal(result.AnalysisComplete, json.GetProperty("analysisComplete").GetBoolean());
+        Assert.Equal(result.CompletionReasons.Count, json.GetProperty("completionReasons").GetArrayLength());
         var report = ErgonomicsReviewPipeline.Render(input, result);
-        Assert.Contains("No compatible API ergonomics improvements", report);
+        Assert.Equal(result.AnalysisComplete, report.Contains("No compatible API ergonomics improvements"));
+        Assert.Contains($"Analysis completion: **{(result.AnalysisComplete ? "complete" : "INCOMPLETE")}**", report);
+        if (!result.AnalysisComplete) Assert.Contains(result.CompletionReasons, r => r.Contains("Assessment discoverability is inconclusive"));
         Assert.Equal(outcome == "inconclusive", report.Contains("Review limitation"));
     }
 
@@ -340,6 +349,8 @@ public sealed class ErgonomicsReviewTests : IDisposable
         review = review with { Decisions = [review.Decisions[0] with { Outcome = "inconclusive" }] };
         var valid = ErgonomicsReviewPipeline.Validate(input, review, _root);
         Assert.True(valid.Valid);
+        Assert.False(valid.AnalysisComplete);
+        Assert.Contains(valid.CompletionReasons, r => r.Contains($"Operation known-values is {status}"));
         var report = ErgonomicsReviewPipeline.Render(input, valid);
         Assert.Contains("0 of 1 required operations inspected", report);
         Assert.Contains($"| known-values | {status} | Upstream comparison remains unavailable.", report);
@@ -359,7 +370,10 @@ public sealed class ErgonomicsReviewTests : IDisposable
         var result = ErgonomicsReviewPipeline.Validate(input, review, _root);
         Assert.True(result.Valid);
         Assert.True(result.HasRecommendations);
+        Assert.False(result.AnalysisComplete);
+        Assert.Contains(result.CompletionReasons, r => r.Contains("Operation other-task is uninspected"));
         var report = ErgonomicsReviewPipeline.Render(input, result);
+        Assert.Contains("partial findings", report);
         Assert.Contains("1 of 2 required operations inspected", report);
         Assert.Contains("other-task | uninspected", report);
         Assert.Contains("Discover known activity types", report);

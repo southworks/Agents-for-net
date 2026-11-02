@@ -56,7 +56,22 @@ public sealed record ErgonomicsReview(int SchemaVersion, string ReviewId, IReadO
 public sealed record ErgonomicsValidation(int SchemaVersion, bool Valid, bool HasRecommendations,
     IReadOnlyList<string> Errors, IReadOnlyList<ErgonomicsDecision> Decisions,
     IReadOnlyList<ErgonomicsOperationCoverage> Coverage, IReadOnlyList<ErgonomicsOperation> AdditionalOperations,
-    IReadOnlyList<ErgonomicsDiscoveryAssessment> Discovery);
+    IReadOnlyList<ErgonomicsDiscoveryAssessment> Discovery)
+{
+    public bool AnalysisComplete => Valid &&
+        Coverage.All(c => c.Status is "inspected" or "not-applicable") &&
+        Decisions.All(d => d.Outcome != "inconclusive") &&
+        Discovery.All(d => d.Disposition != "inconclusive");
+
+    public IReadOnlyList<string> CompletionReasons => !Valid
+        ? ["Analysis completion cannot be established because output validation failed."]
+        : [.. Coverage.Where(c => c.Status is not ("inspected" or "not-applicable"))
+                .Select(c => $"Operation {c.OperationId} is {c.Status}: {c.Reason}"),
+           .. Decisions.Where(d => d.Outcome == "inconclusive")
+                .Select(d => $"Assessment {d.CheckId} is inconclusive: {d.Reason}"),
+           .. Discovery.Where(d => d.Disposition == "inconclusive")
+                .Select(d => $"Discovery {d.DiscoveryId} is inconclusive: {d.Reason}")];
+}
 
 public static class ErgonomicsReviewPipeline
 {
@@ -515,6 +530,15 @@ public static class ErgonomicsReviewPipeline
         text.AppendLine("Recommendations are advisory, unimplemented designs. Caller examples have not been compiled. " +
             "Evidence validation checks source integrity and report structure; compatibility reasoning still requires implementation tests.\n");
         text.AppendLine($"Evidence validation: **{(validation.Valid ? "passed" : "FAILED")}**. Review: `{input.ReviewId}`.\n");
+        text.AppendLine($"Analysis completion: **{(validation.AnalysisComplete ? "complete" : "INCOMPLETE")}**. " +
+            "Completion reflects reported coverage and resolved assessments; it does not independently prove semantic correctness.\n");
+        if (!validation.AnalysisComplete)
+        {
+            text.AppendLine("The analysis did not finish. Any supported recommendations below are partial findings; " +
+                "this report cannot establish that no compatible improvements exist.\n");
+            foreach (var reason in validation.CompletionReasons) text.AppendLine($"- {TableText(reason)}");
+            text.AppendLine();
+        }
         text.AppendLine("The declared Teams dependency is the primary reference; the candidate provides additional inspiration.\n");
 
         foreach (var source in input.Sources)
@@ -532,7 +556,7 @@ public static class ErgonomicsReviewPipeline
             return text.ToString();
         }
 
-        if (!validation.HasRecommendations)
+        if (!validation.HasRecommendations && validation.AnalysisComplete)
         {
             text.AppendLine("\nNo compatible API ergonomics improvements were proposed in this review.");
         }

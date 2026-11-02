@@ -51,6 +51,29 @@ awk '/^          script: \|$/ { script=1; next } script { sub(/^            /, "
 [[ -s "$test_root/publisher.js" ]] || fail 'Missing ergonomics issue publisher'
 pass 'failed jobs and downloads cannot overwrite the issue'
 
+awk '
+    $0 == "      - name: Require completed ergonomics analysis" { found=1; next }
+    found && /^      - name:/ { exit }
+    found && /^        run: \|$/ { script=1; next }
+    found && script { sub(/^          /, ""); print }
+' "$workflow" > "$test_root/completion-gate.sh"
+[[ -s "$test_root/completion-gate.sh" ]] || fail 'Missing completion gate'
+mkdir -p "$test_root/gate-artifacts"
+for payload in \
+    '{"valid":true,"analysisComplete":true,"hasRecommendations":true}' \
+    '{"valid":true,"analysisComplete":true,"hasRecommendations":false}' \
+    '{"valid":true,"analysisComplete":false,"hasRecommendations":true}' \
+    '{"valid":true,"analysisComplete":false,"hasRecommendations":false}' \
+    '{"valid":true}' '{"valid":false,"analysisComplete":true}'; do
+    printf '%s' "$payload" > "$test_root/gate-artifacts/ergonomics-review-validation.json"
+    status=0 expected=1
+    [[ "$(jq -r '.valid == true and .analysisComplete == true' <<< "$payload")" != true ]] || expected=0
+    ARTIFACTS="$test_root/gate-artifacts" bash -e "$test_root/completion-gate.sh" > "$test_root/gate.log" 2>&1 || status=$?
+    [[ "$status" == "$expected" ]] || fail "Unexpected completion-gate exit for $payload: $status"
+    [[ "$expected" == 0 ]] || contains "$(cat "$test_root/gate.log")" 'analysis is incomplete'
+done
+pass 'completion gate accepts complete analyses with or without recommendations and fails incomplete or missing status'
+
 case_index=0
 marker='<!-- teams-api-ergonomics-scheduled -->'
 
@@ -60,7 +83,7 @@ new_case() {
     case_dir="$test_root/case-$case_index"
     mkdir -p "$case_dir"
     jq -n --argjson recommendations "$recommendations" \
-        '{schemaVersion: 1, valid: true, hasRecommendations: $recommendations, decisions: [], coverage: [], additionalOperations: [], discovery: []}' > "$case_dir/validation.json"
+        '{schemaVersion: 1, valid: true, analysisComplete: true, completionReasons: [], hasRecommendations: $recommendations, decisions: [], coverage: [], additionalOperations: [], discovery: []}' > "$case_dir/validation.json"
     jq -n --arg marker "$marker" --argjson existing "$existing" '
         [{number: 10, body: "<!-- teams-api-drift-scheduled --> Existing drift issue."},
          {number: 11, body: $marker, pull_request: {}}] +
@@ -131,12 +154,23 @@ jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Empty recommenda
 pass 'empty recommendations do not create an issue'
 
 new_case false true
-printf 'No proposals.\nReview limitations.\n' > "$case_dir/report.md"
+printf 'No proposals.\nAnalysis complete.\n' > "$case_dir/report.md"
 expect_publication 0
 jq -e 'length == 1 and .[0].action == "update" and .[0].issue_number == 42 and
-    (.[0].body | contains("Review limitations.")) and (.[0] | has("state") | not)' \
-    "$case_dir/calls.json" > /dev/null || fail 'Empty review did not update the existing issue with limitations'
-pass 'empty reviews update existing issues with their latest limitations'
+    (.[0].body | contains("Analysis complete.")) and (.[0] | has("state") | not)' \
+    "$case_dir/calls.json" > /dev/null || fail 'Complete empty review did not update the existing issue'
+pass 'complete empty reviews update existing issues without closing them'
+
+for recommendations in true false; do
+    new_case "$recommendations" true
+    jq '.analysisComplete = false | .completionReasons = ["Operation task-submit-response is uninspected"]' \
+        "$case_dir/validation.json" > "$case_dir/partial.json"
+    mv "$case_dir/partial.json" "$case_dir/validation.json"
+    expect_publication 1
+    contains "$(cat "$case_dir/publication.log")" 'A completed ergonomics analysis is required'
+    jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Incomplete analysis changed the issue'
+done
+pass 'valid incomplete reviews preserve the existing issue even when they contain recommendations'
 
 new_case true true
 jq '.valid = false' "$case_dir/validation.json" > "$case_dir/invalid.json"
@@ -166,7 +200,7 @@ expect_publication 1
 jq -e 'length == 0' "$case_dir/calls.json" > /dev/null || fail 'Report without coverage changed the issue'
 pass 'missing operation coverage prevents publication'
 
-for field in additionalOperations discovery; do
+for field in additionalOperations discovery analysisComplete; do
     new_case true true
     jq --arg field "$field" 'del(.[$field])' "$case_dir/validation.json" > "$case_dir/incomplete.json"
     mv "$case_dir/incomplete.json" "$case_dir/validation.json"

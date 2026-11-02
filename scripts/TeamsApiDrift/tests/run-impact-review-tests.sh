@@ -113,7 +113,7 @@ dotnet() {
     fi
 
     # A valid blocked review must not be retried in search of a safe verdict.
-    printf '{"valid":true,"canProceed":false,"hasFindings":true,"errors":[]}' > "$output"
+    printf '{"valid":true,"analysisComplete":false,"canProceed":false,"hasFindings":true,"errors":[]}' > "$output"
 }
 
 export -f copilot dotnet
@@ -172,6 +172,7 @@ for scenario in first-valid correction always-invalid agent-failure validator-fa
         [[ "$(cat "$MOCK_STATE/validations")" == 1 ]]
         [[ ! -f "$REVIEW_WORKSPACE/review-feedback.json" ]]
     else
+        [[ "$(cat "$MOCK_STATE/log")" == *'the caller handles analysis completion and review policy'* || "$scenario" == always-invalid ]]
         [[ "$(wc -l < "$MOCK_STATE/validations" | tr -d ' ')" == "$expected_calls" ]]
 
         for ((i=1; i<=expected_calls; i++)); do
