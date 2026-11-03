@@ -19,6 +19,14 @@ review_input=$REVIEW_INPUT
 review_command=$REVIEW_COMMAND
 review_instructions=$REVIEW_INSTRUCTIONS
 instructions=$(cat "$review_instructions")
+if [[ -n "${REVIEW_TASK:-}" ]]; then
+    instructions+=$'\nTask assignment: Read '"$REVIEW_TASK"$' first. This is your complete assigned scope. Do not read the global ergonomics-input.json wholesale.'
+fi
+feedback_name=${REVIEW_FEEDBACK_NAME:-review-feedback.json}
+previous_name=${REVIEW_PREVIOUS_NAME:-previous-review.txt}
+extra_arguments=()
+[[ -z "${REVIEW_TASK:-}" ]] || extra_arguments+=(--task "$REVIEW_TASK")
+[[ -z "${REVIEW_DISCOVERY:-}" ]] || extra_arguments+=(--discovery "$REVIEW_DISCOVERY")
 cli_version=$(copilot --version)
 
 dotnet run --project "$TOOL" -c Release --no-build -- write-agent-metadata \
@@ -26,12 +34,13 @@ dotnet run --project "$TOOL" -c Release --no-build -- write-agent-metadata \
 
 # Prevent a failed invocation from leaving an earlier response as the current result.
 : > "$artifacts_dir/$review_prefix.raw.json"
+: > "$artifacts_dir/$review_prefix.raw.json.accepted.json"
 
 for attempt in 1 2 3; do
     prompt="$instructions"
 
     if (( attempt > 1 )); then
-        prompt+=$'\nCorrection attempt: read review-feedback.json and previous-review.txt in the snapshot. Re-read the affected source with line numbers, correct the specific validation errors, and return the complete review. Preserve supported findings and unaffected evidence ranges. Do not replace useful excerpts with declarations or test names merely to pass validation. Correct only affected structure/evidence; explain any claim that source cannot support.'
+        prompt+=$'\nCorrection attempt: read '"$feedback_name and $previous_name"$' in the snapshot. Re-read the affected source with line numbers, correct the specific validation errors, and return the complete review. Preserve supported findings and unaffected evidence ranges. Do not replace useful excerpts with declarations or test names merely to pass validation. Correct only affected structure/evidence; explain any claim that source cannot support.'
     fi
 
     printf 'Starting review attempt %s/3 with read/search tools in %s\n' "$attempt" "$workspace_dir"
@@ -70,6 +79,7 @@ for attempt in 1 2 3; do
     if dotnet run --project "$TOOL" -c Release --no-build -- "$review_command" \
         --input "$artifacts_dir/$review_input" --review "$artifacts_dir/$review_prefix.raw.json" \
         --workspace "$workspace_dir" --repository-root "$repository_dir" \
+        "${extra_arguments[@]}" \
         --output "$artifacts_dir/$review_prefix.attempt-$attempt.validation.json" \
         --report "$artifacts_dir/$review_prefix.attempt-$attempt.report.md"; then
         printf 'Summary: AI review produced valid output on attempt %s; the caller handles analysis completion and review policy.\n' "$attempt"
@@ -84,10 +94,10 @@ for attempt in 1 2 3; do
     fi
 
     if (( attempt < 3 )); then
-        cp "$artifacts_dir/$review_prefix.raw.json" "$workspace_dir/previous-review.txt"
+        cp "$artifacts_dir/$review_prefix.raw.json" "$workspace_dir/$previous_name"
         dotnet run --project "$TOOL" -c Release --no-build -- write-review-feedback \
             --input "$artifacts_dir/$review_prefix.attempt-$attempt.validation.json" \
-            --output "$workspace_dir/review-feedback.json"
+            --output "$workspace_dir/$feedback_name"
         printf 'Summary: Attempt %s failed validation; requesting evidence/format corrections.\n' "$attempt"
     fi
 done

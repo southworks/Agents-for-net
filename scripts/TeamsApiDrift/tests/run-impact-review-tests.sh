@@ -133,7 +133,13 @@ for scenario in first-valid correction always-invalid agent-failure validator-fa
     printf 'stale successful response' > "$ARTIFACTS/$REVIEW_PREFIX.raw.json"
 
     status=0
-    bash "scripts/TeamsApiDrift/run-$review_kind-review.sh" > "$MOCK_STATE/log" 2>&1 || status=$?
+    if [[ "$review_kind" == ergonomics ]]; then
+        # Task orchestration has its own regression suite; exercise the shared
+        # correction/capture contract here with the ergonomics artifact prefix.
+        bash scripts/TeamsApiDrift/run-review.sh > "$MOCK_STATE/log" 2>&1 || status=$?
+    else
+        bash "scripts/TeamsApiDrift/run-$review_kind-review.sh" > "$MOCK_STATE/log" 2>&1 || status=$?
+    fi
 
     expected_calls=1 expected_status=0
 

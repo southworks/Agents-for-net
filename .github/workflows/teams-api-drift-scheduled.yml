@@ -150,6 +150,7 @@ jobs:
           dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
           bash scripts/TeamsApiDrift/tests/workflow-jobs-tests.sh
           bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
+          bash scripts/TeamsApiDrift/tests/ergonomics-task-tests.sh
           bash scripts/TeamsApiDrift/tests/ergonomics-publication-tests.sh
 
       - name: Run candidate contract and boundary tests
@@ -461,7 +462,7 @@ jobs:
     needs: versions
     if: needs.versions.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     permissions:
       contents: read
       copilot-requests: write
@@ -510,7 +511,7 @@ jobs:
         run: npm install --global "@github/copilot@$COPILOT_CLI_VERSION"
 
       - name: Review API ergonomics and compatible improvements
-        timeout-minutes: 20
+        timeout-minutes: 45
         env:
           GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
           COPILOT_HOME: ${{ runner.temp }}/teams-ergonomics-copilot

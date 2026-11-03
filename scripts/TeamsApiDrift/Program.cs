@@ -17,6 +17,9 @@ internal static class Program
             {
                 "prepare-ergonomics-review" => await PrepareErgonomicsReviewAsync(options).ConfigureAwait(false),
                 "validate-ergonomics-review" => ValidateErgonomicsReview(options),
+                "plan-ergonomics-tasks" => PlanErgonomicsTasks(options),
+                "validate-ergonomics-task" => ValidateErgonomicsTask(options),
+                "merge-ergonomics-tasks" => MergeErgonomicsTasks(options),
                 "prepare-behavior-review" => await PrepareBehaviorReviewAsync(options).ConfigureAwait(false),
                 "validate-behavior-review" => ValidateBehaviorReview(options),
                 "write-agent-metadata" => WriteAgentMetadata(options),
@@ -47,6 +50,52 @@ internal static class Program
         var output = options.Required("--output");
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
         File.WriteAllText(output, feedback + Environment.NewLine);
+        return 0;
+    }
+
+    private static int PlanErgonomicsTasks(Arguments options)
+    {
+        var input = ToolJson.Read<ErgonomicsInput>(options.Required("--input"));
+        var discovery = options.Optional("--discovery") is { } path ? ErgonomicsReviewPipeline.Parse(File.ReadAllText(path)) : null;
+        var tasks = ErgonomicsTasks.Plan(input, options.Required("--phase"), options.Required("--workspace"), discovery);
+        foreach (var task in tasks) ToolJson.Write(Path.Combine(options.Required("--tasks-dir"), task.TaskId + ".json"), task);
+        ToolJson.Write(options.Required("--output"), tasks.Select(t => t.TaskId).ToArray());
+        return 0;
+    }
+
+    private static int ValidateErgonomicsTask(Arguments options)
+    {
+        var input = ToolJson.Read<ErgonomicsInput>(options.Required("--input"));
+        var task = ToolJson.Read<ErgonomicsTask>(options.Required("--task"));
+        var discovery = options.Optional("--discovery") is { } path ? ErgonomicsReviewPipeline.Parse(File.ReadAllText(path)) : null;
+        var accepted = options.Required("--review") + ".accepted.json";
+        if (File.Exists(accepted)) File.Delete(accepted);
+        ErgonomicsValidation validation;
+        try
+        {
+            var review = ErgonomicsTasks.Expand(input, task, File.ReadAllText(options.Required("--review")));
+            validation = ErgonomicsTasks.ValidateTask(input, task, review, options.Required("--workspace"), discovery);
+            if (validation.Valid) ToolJson.Write(accepted, review);
+        }
+        catch (Exception exception) when (exception is System.Text.Json.JsonException or InvalidDataException or IOException or
+            ArgumentException or NullReferenceException or InvalidOperationException or KeyNotFoundException)
+        {
+            validation = new(1, false, false, [exception.Message], [], [], [], []);
+        }
+        ToolJson.Write(options.Required("--output"), validation);
+        File.WriteAllText(options.Required("--report"), ErgonomicsReviewPipeline.Render(input, validation));
+        foreach (var error in validation.Errors) Console.Error.WriteLine(error);
+        return validation.Valid ? 0 : 1;
+    }
+
+    private static int MergeErgonomicsTasks(Arguments options)
+    {
+        var input = ToolJson.Read<ErgonomicsInput>(options.Required("--input"));
+        var parts = options.Many("--part").Select(p => ErgonomicsReviewPipeline.Parse(File.ReadAllText(p))).ToArray();
+        var merged = ErgonomicsTasks.Merge(input, parts);
+        if (options.Optional("--phase") == "discovery")
+            merged = merged with { Decisions = [], Coverage = [], Discovery = parts.SelectMany(p => p.Discovery).ToArray() };
+        ToolJson.Write(options.Required("--output"), merged);
         return 0;
     }
 
@@ -373,5 +422,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: prepare-ergonomics-review, validate-ergonomics-review, prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, write-review-feedback, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
+        "Commands: prepare-ergonomics-review, validate-ergonomics-review, plan-ergonomics-tasks, validate-ergonomics-task, merge-ergonomics-tasks, prepare-behavior-review, validate-behavior-review, write-agent-metadata, extract-agent-response, write-review-feedback, resolve-version, resolve-comparison, compare, collect-usage, validate-usage, validate-metadata, write-test-summary, prepare-impact-review, validate-impact-review");
 }

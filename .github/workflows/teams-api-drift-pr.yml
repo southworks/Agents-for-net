@@ -152,6 +152,7 @@ jobs:
           dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
           bash scripts/TeamsApiDrift/tests/workflow-jobs-tests.sh
           bash scripts/TeamsApiDrift/tests/run-impact-review-tests.sh
+          bash scripts/TeamsApiDrift/tests/ergonomics-task-tests.sh
 
       - name: Run Teams API compile-time contracts for net8.0
         id: contract_net8
