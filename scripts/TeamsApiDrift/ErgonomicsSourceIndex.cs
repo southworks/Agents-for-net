@@ -162,21 +162,23 @@ internal sealed class ErgonomicsSourceIndex
             return matches.Select(d => new ErgonomicsSymbolLocation(d.Symbol, d.Evidence)).ToArray();
         }
 
-        // Existing paths are hints, never mandatory source locations. Documentation may move too.
+        // Prefer known files. Search by basename only when no hinted path remains;
+        // README.md and Program.cs are common names, not unique identities.
         var paths = _files.Where(f => f.Path.StartsWith(surface.Role + "/", StringComparison.Ordinal) &&
-            (surface.PathHints.Contains(f.Path, StringComparer.Ordinal) ||
-             (surface.Symbols.Count == 0 && surface.PathHints.Any(h => Path.GetFileName(h) == Path.GetFileName(f.Path)))))
+            surface.PathHints.Contains(f.Path, StringComparer.Ordinal))
             .Select(f => f.Path).ToHashSet(StringComparer.Ordinal);
-
-        var declarations = _declarations.Where(d => paths.Contains(d.Evidence.Path))
-            .Select(d => new ErgonomicsSymbolLocation(d.Symbol, d.Evidence)).ToList();
-
-        if (surface.Symbols.Count == 0)
+        if (paths.Count == 0 && surface.Symbols.Count == 0)
         {
-            declarations.AddRange(paths.Select(p => new ErgonomicsSymbolLocation("", new(p, StartLine: 1, EndLine: 1))));
+            paths = _files.Where(f => f.Path.StartsWith(surface.Role + "/", StringComparison.Ordinal) &&
+                surface.PathHints.Any(h => Path.GetFileName(h) == Path.GetFileName(f.Path)))
+                .Select(f => f.Path).ToHashSet(StringComparer.Ordinal);
         }
+        if (surface.Symbols.Count == 0)
+            return paths.Order(StringComparer.Ordinal).Select(p =>
+                new ErgonomicsSymbolLocation("file:" + p, new(p, StartLine: 1, EndLine: 1))).ToArray();
 
-        return declarations;
+        return _declarations.Where(d => paths.Contains(d.Evidence.Path))
+            .Select(d => new ErgonomicsSymbolLocation(d.Symbol, d.Evidence)).ToArray();
     }
 
     internal bool Binds(ErgonomicsSurface surface, ErgonomicsSurfaceEvidence resolution, IReadOnlyList<ReviewCitation> evidence)

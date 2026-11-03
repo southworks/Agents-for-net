@@ -32,6 +32,32 @@ public sealed class ErgonomicsTasksTests : IDisposable
 
     private static ErgonomicsReview Empty(ErgonomicsInput input) => new(1, input.ReviewId, [], [], [], []);
 
+    private ErgonomicsInput PrepareDocuments(bool moved = false)
+    {
+        var directory = moved ? "moved" : "current";
+        var operation = new ErgonomicsOperation("onboarding", "docs", "Read the guide and startup sample.",
+            [new("readme", "agents", "Read the package guide.", [], ["agents/current/README.md"]),
+             new("startup", "agents", "Read the top-level startup sample.", [], ["agents/current/Program.cs"]),
+             new("api", "agents", "Resolve the relevant named declaration.",
+                 ["Microsoft.Agents.Extensions.MSTeams.SelectedApi", "Microsoft.Agents.Extensions.MSTeams.UnrelatedApi"], [])]);
+        var sources = new[] { "agents", "teams-baseline", "teams-candidate" }.Select(role =>
+        {
+            var package = role == "agents" ? "Microsoft.Agents.Extensions.MSTeams" : "Microsoft.Teams.Apps";
+            return (new BehaviorSource(role, "2.1.2", "fixture", new string('a', 40)), new Dictionary<string, string>
+            {
+                ["Directory.Packages.props"] = "<Project><ItemGroup><PackageVersion Include=\"Microsoft.Teams.Apps\" Version=\"2.1.2\" /></ItemGroup></Project>",
+                ["Project.csproj"] = $"<Project><PropertyGroup><PackageId>{package}</PackageId></PropertyGroup></Project>",
+                [$"{directory}/README.md"] = "# Setup\nRegister the agent.\n",
+                [$"{directory}/Program.cs"] = "using System;\nConsole.WriteLine(\"Start\");\n",
+                ["other/README.md"] = "# An unrelated guide\nOther setup.\n",
+                ["other/Program.cs"] = $"namespace {package}; public class UnrelatedProgram {{ public void Run() {{ }} }}\n",
+                ["api/Selected.cs"] = $"namespace {package}; public class SelectedApi {{ }}\n",
+                ["api/Unrelated.cs"] = $"namespace {package}; public class UnrelatedApi {{ }}\n"
+            });
+        }).ToArray();
+        return ErgonomicsReviewPipeline.Prepare(_root, new(1, [new("docs", "Follow onboarding.")], [operation]), sources);
+    }
+
     private static ErgonomicsReview Discovery(ErgonomicsInput input) => Empty(input) with
     {
         Discovery = input.Navigation.DiscoveredOperations.Select(d => new ErgonomicsDiscoveryAssessment(d.Id, "docs", "cataloged",
@@ -70,6 +96,96 @@ public sealed class ErgonomicsTasksTests : IDisposable
         Assert.Equal(input.Navigation.DiscoveredOperations.Count, discovery.Sum(t => t.Registrations.Count));
         Assert.All(discovery.SelectMany(t => t.Registrations), r => Assert.Contains("operation-1", r.SuggestedOperationIds));
         Assert.All(discovery, t => { Assert.InRange(t.Registrations.Count, 1, 20); Assert.Empty(t.Bindings); });
+    }
+
+    [Fact]
+    public void ExactDocumentPathsExcludeUnrelatedBasenamesAndBindTopLevelStartupAsAFile()
+    {
+        var input = PrepareDocuments();
+        var task = Assert.Single(ErgonomicsTasks.Plan(input, "operations", _root));
+        foreach (var id in new[] { "readme", "startup" })
+        {
+            var candidate = Assert.Single(task.Bindings.Single(b => b.SurfaceId == id).Candidates);
+            Assert.StartsWith("file:agents/current/", candidate.Symbol);
+            Assert.DoesNotContain("other/", candidate.Evidence.Path);
+        }
+        var node = JsonSerializer.SerializeToNode(Caller(input, task), ToolJson.Options)!;
+        foreach (var surface in node["coverage"]![0]!["surfaces"]!.AsArray())
+        {
+            surface!.AsObject().Remove("resolvedSymbols");
+            surface.AsObject().Remove("evidence");
+        }
+        var expanded = ErgonomicsTasks.Expand(input, task, node.ToJsonString());
+        var result = ErgonomicsTasks.ValidateTask(input, task, expanded, _root, Empty(input));
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+        Assert.True(result.AnalysisComplete);
+    }
+
+    [Fact]
+    public void MovedDocumentsStillUseBasenameSearchAndExplicitEvidenceSelectsTheActualFiles()
+    {
+        var input = PrepareDocuments(moved: true);
+        var task = Assert.Single(ErgonomicsTasks.Plan(input, "operations", _root));
+        var node = JsonSerializer.SerializeToNode(Caller(input, task), ToolJson.Options)!;
+        foreach (var id in new[] { "readme", "startup" })
+        {
+            Assert.Equal(2, task.Bindings.Single(b => b.SurfaceId == id).Candidates.Count);
+            var file = id == "readme" ? "README.md" : "Program.cs";
+            var surface = node["coverage"]![0]!["surfaces"]!.AsArray().Single(s => s!["surfaceId"]!.GetValue<string>() == id)!;
+            surface.AsObject().Remove("resolvedSymbols");
+            // A body range need not overlap the first-line navigation citation.
+            surface["evidence"] = JsonSerializer.SerializeToNode(new[] { new ReviewCitation($"agents/moved/{file}", StartLine: 2, EndLine: 2) }, ToolJson.Options);
+        }
+        var expanded = ErgonomicsTasks.Expand(input, task, node.ToJsonString());
+        Assert.All(expanded.Coverage[0].Surfaces.Where(s => s.SurfaceId is "readme" or "startup"),
+            s => Assert.StartsWith("file:agents/moved/", Assert.Single(s.ResolvedSymbols)));
+        var result = ErgonomicsTasks.ValidateTask(input, task, expanded, _root, Empty(input));
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+    }
+
+    [Fact]
+    public void CapturedStyleLegacyBindingsAndIndexedEvidenceDoNotGenerateEmptyOrUnrelatedSymbols()
+    {
+        var input = PrepareDocuments();
+        var task = Assert.Single(ErgonomicsTasks.Plan(input, "operations", _root));
+        var original = Caller(input, task);
+        var node = JsonSerializer.SerializeToNode(original, ToolJson.Options)!;
+        foreach (var surface in node["coverage"]![0]!["surfaces"]!.AsArray())
+        {
+            var id = surface!["surfaceId"]!.GetValue<string>();
+            var candidate = task.Bindings.Single(b => b.SurfaceId == id).Candidates[0];
+            surface.AsObject().Remove("resolvedSymbols");
+            surface["evidence"] = JsonNodeForReference(candidate.Reference!);
+        }
+        // Older plans supplied blank file symbols and unrelated Program.cs declarations.
+        task = task with { Bindings = task.Bindings.Select(b => b.SurfaceId == "api" ? b : b with
+        {
+            Candidates = [b.Candidates[0] with { Symbol = "" },
+                new("UnrelatedProgram.Run", new("agents/other/Program.cs", StartLine: 1, EndLine: 1))]
+        }).ToArray() };
+        var expanded = ErgonomicsTasks.Expand(input, task, node.ToJsonString());
+        Assert.All(expanded.Coverage[0].Surfaces.Where(s => s.SurfaceId is "readme" or "startup"),
+            s => Assert.StartsWith("file:agents/current/", Assert.Single(s.ResolvedSymbols)));
+        Assert.Single(expanded.Coverage[0].Surfaces.Single(s => s.SurfaceId == "api").ResolvedSymbols);
+        var result = ErgonomicsReviewPipeline.Validate(input, expanded, _root);
+        Assert.True(result.Valid, string.Join("\n", result.Errors));
+    }
+
+    [Fact]
+    public void ExplicitInvalidDocumentSymbolsAndQuotesRemainValidationErrors()
+    {
+        var input = PrepareDocuments();
+        var task = Assert.Single(ErgonomicsTasks.Plan(input, "operations", _root));
+        foreach (var invalidQuote in new[] { false, true })
+        {
+            var node = JsonSerializer.SerializeToNode(Caller(input, task), ToolJson.Options)!;
+            var surface = node["coverage"]![0]!["surfaces"]![0]!;
+            if (invalidQuote) surface["evidence"]![0]!["quote"] = "Invented source text";
+            else surface["resolvedSymbols"] = JsonSerializer.SerializeToNode(new[] { "" });
+            var result = ErgonomicsTasks.ValidateTask(input, task, ErgonomicsTasks.Expand(input, task, node.ToJsonString()), _root, Empty(input));
+            Assert.False(result.Valid);
+            Assert.Contains(result.Errors, e => e.Contains(invalidQuote ? "Invalid citation quote" : "comparison surface"));
+        }
     }
 
     [Fact]

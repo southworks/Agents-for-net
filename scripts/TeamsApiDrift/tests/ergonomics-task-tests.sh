@@ -16,6 +16,7 @@ copilot() {
     if [[ "${1:-}" == --version ]]; then echo 'GitHub Copilot CLI mock'; return; fi
     [[ "$REVIEW_COMMAND" == validate-ergonomics-task && -s "$REVIEW_TASK" ]] || return 91
     [[ "$COPILOT_HOME" == */"${REVIEW_PREFIX#ergonomics-}" ]] || return 91
+    [[ "$GITHUB_STEP_SUMMARY" == "$ARTIFACTS/$REVIEW_PREFIX.summary.md" ]] || return 91
     [[ "$REVIEW_FEEDBACK_NAME" == "ergonomics-tasks/${REVIEW_PREFIX#ergonomics-}-feedback.json" ]] || return 91
     [[ " $* " == *'Do not read the global ergonomics-input.json wholesale.'* ]] || return 91
     [[ " $* " == *'--available-tools=view,grep,glob'* && " $* " == *'--deny-tool=shell,write,url,memory'* ]] || return 91
@@ -100,6 +101,7 @@ for scenario in success correction execution-failure; do
     [[ "$status" == "$expected" ]] || { cat "$test_root/$scenario/log"; exit 1; }
     [[ -s "$ARTIFACTS/ergonomics-review-agent.json" && -s "$ARTIFACTS/ergonomics-review.raw.json" ]]
     [[ "$(cat "$ARTIFACTS/ergonomics-review.raw.json")" == *merged* ]]
+    [[ "$(cat "$GITHUB_STEP_SUMMARY")" == *'Model reported in final response event:'* ]]
     if [[ "$scenario" == correction ]]; then
         [[ "$(cat "$ARTIFACTS/ergonomics-operations-001.calls")" == 2 ]]
         [[ "$(cat "$ARTIFACTS/ergonomics-operations-002.calls")" == 1 ]]

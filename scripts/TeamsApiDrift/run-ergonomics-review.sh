@@ -26,6 +26,7 @@ run_task() (
     export REVIEW_FEEDBACK_NAME="ergonomics-tasks/$task-feedback.json"
     export REVIEW_PREVIOUS_NAME="ergonomics-tasks/$task-previous.txt"
     export COPILOT_HOME="$copilot_home/$task"
+    export GITHUB_STEP_SUMMARY="$artifacts_dir/ergonomics-$task.summary.md"
     unset REVIEW_DISCOVERY
     [[ "$task" != operations-* ]] || export REVIEW_DISCOVERY="$discovery"
     bash scripts/TeamsApiDrift/run-review.sh
@@ -59,6 +60,10 @@ for phase in discovery operations; do
     parts=()
     if [[ "$phase" == operations ]]; then parts+=(--part "$discovery"); fi
     for task in "${tasks[@]}"; do
+        summary="$artifacts_dir/ergonomics-$task.summary.md"
+        if [[ -n "${GITHUB_STEP_SUMMARY:-}" && -f "$summary" ]]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+        fi
         accepted="$artifacts_dir/ergonomics-$task.raw.json.accepted.json"
         [[ ! -s "$accepted" ]] || parts+=(--part "$accepted")
     done

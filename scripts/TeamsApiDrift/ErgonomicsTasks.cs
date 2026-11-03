@@ -54,6 +54,13 @@ internal static class ErgonomicsTasks
     internal static ErgonomicsReview Expand(ErgonomicsInput input, ErgonomicsTask task, string json)
     {
         var node = JsonNode.Parse(json) ?? throw new InvalidDataException("Empty task response.");
+        ReviewCitation ResolveCitation(ReviewCitation citation) =>
+            citation.Path.StartsWith(ErgonomicsCitationConverter.ReferencePrefix, StringComparison.Ordinal)
+                ? input.Navigation.IndexedCitations.SingleOrDefault(r => r.Id == citation.Path[ErgonomicsCitationConverter.ReferencePrefix.Length..])?.Citation
+                    ?? throw new InvalidDataException($"Unknown indexed citation reference: {citation.Path}.")
+                : citation;
+        IReadOnlyList<ReviewCitation> Resolve(IReadOnlyList<ReviewCitation> citations) => citations.Select(ResolveCitation).ToArray();
+        var evidenceOptions = new JsonSerializerOptions(ToolJson.Options) { Converters = { new ErgonomicsCitationConverter() } };
         // Fill only omitted mechanical fields. Explicit evidence/renamed bindings are
         // preserved for the normal source/role/symbol validator to check.
         foreach (var entry in node["discovery"]?.AsArray() ?? [])
@@ -72,10 +79,21 @@ internal static class ErgonomicsTasks
                     b.SurfaceId == surface?["surfaceId"]?.GetValue<string>());
                 if (binding is null || binding.Candidates.Count == 0 || surface is not JsonObject obj ||
                     surface["status"]?.GetValue<string>() == "not-applicable") continue;
+                var fileSurface = task.Operations.Single(o => o.Id == operationId).Surfaces
+                    .Single(s => s.Id == binding.SurfaceId).Symbols.Count == 0;
+                var candidates = binding.Candidates;
+                if (obj.ContainsKey("evidence"))
+                {
+                    var evidence = Resolve(obj["evidence"]?.Deserialize<ReviewCitation[]>(evidenceOptions) ?? []);
+                    candidates = candidates.Where(c => evidence.Any(e => fileSurface
+                        ? e.Path == c.Evidence.Path
+                        : ErgonomicsSourceIndex.Overlaps(e, c.Evidence))).ToArray();
+                }
                 if (!obj.ContainsKey("resolvedSymbols"))
-                    obj["resolvedSymbols"] = JsonSerializer.SerializeToNode(binding.Candidates.Select(c => c.Symbol).Distinct().ToArray(), ToolJson.Options);
+                    obj["resolvedSymbols"] = JsonSerializer.SerializeToNode(candidates.Select(c => fileSurface
+                        ? "file:" + c.Evidence.Path : c.Symbol).Distinct().ToArray(), ToolJson.Options);
                 if (!obj.ContainsKey("evidence"))
-                    obj["evidence"] = JsonSerializer.SerializeToNode(binding.Candidates.Select(c => c.Evidence).ToArray(), ToolJson.Options);
+                    obj["evidence"] = JsonSerializer.SerializeToNode(candidates.Select(c => c.Evidence).ToArray(), ToolJson.Options);
             }
         }
         var review = ErgonomicsReviewPipeline.Parse(node.ToJsonString());
@@ -94,11 +112,6 @@ internal static class ErgonomicsTasks
             throw new InvalidDataException("Caller task must assess exactly its assigned operations and check; discovery and task definitions are supplied by the discovery phase.");
         // Accepted task JSON must round-trip through the strict public reader.
         // Its internal reference sentinel is never serialized as an explicit path.
-        IReadOnlyList<ReviewCitation> Resolve(IReadOnlyList<ReviewCitation> citations) => citations.Select(c =>
-            c.Path.StartsWith(ErgonomicsCitationConverter.ReferencePrefix, StringComparison.Ordinal)
-                ? input.Navigation.IndexedCitations.SingleOrDefault(r => r.Id == c.Path[ErgonomicsCitationConverter.ReferencePrefix.Length..])?.Citation
-                    ?? throw new InvalidDataException($"Unknown indexed citation reference: {c.Path}.")
-                : c).ToArray();
         return review with
         {
             Coverage = review.Coverage.Select(c => c with
